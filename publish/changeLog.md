@@ -1,4 +1,4 @@
-Q-music 2.12.2
+Q-music 0.1.0
 
 本版本基于 LX Music Desktop 2.12.2 二次修改。
 
