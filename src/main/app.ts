@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { existsSync, mkdirSync, renameSync } from 'fs'
 import { app, shell, screen, nativeTheme, dialog } from 'electron'
-import { URL_SCHEME_RXP } from '@common/constants'
+import { URL_SCHEME, URL_SCHEME_RXP } from '@common/constants'
 import { getProxy, getTheme, initHotKey, initSetting, parseEnvParams } from './utils'
 import { navigationUrlWhiteList } from '@common/config'
 import defaultSetting from '@common/defaultSetting'
@@ -147,9 +147,9 @@ export const registerDeeplink = (startApp: () => void) => {
     // Set the path of electron.exe and your app.
     // These two additional parameters are only available on windows.
     // console.log(process.execPath, process.argv)
-    app.setAsDefaultProtocolClient('lxmusic', process.execPath, process.argv.slice(1))
+    app.setAsDefaultProtocolClient(URL_SCHEME, process.execPath, process.argv.slice(1))
   } else {
-    app.setAsDefaultProtocolClient('lxmusic')
+    app.setAsDefaultProtocolClient(URL_SCHEME)
   }
 
   // deep link

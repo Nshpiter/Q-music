@@ -152,6 +152,13 @@
       <g id="icon-window-minimize-2" fill="currentColor">
         <path d="M19,13H5V11H19V13Z" />
       </g>
+      <g id="icon-window-max" fill="currentColor">
+        <path d="M6,5H18C18.55,5 19,5.45 19,6V18C19,18.55 18.55,19 18,19H6C5.45,19 5,18.55 5,18V6C5,5.45 5.45,5 6,5ZM7,7V17H17V7H7Z" />
+      </g>
+      <g id="icon-window-restore" fill="currentColor">
+        <path d="M8,4H18C18.55,4 19,4.45 19,5V15H17V6H8V4Z" />
+        <path d="M5,8H15C15.55,8 16,8.45 16,9V19C16,19.55 15.55,20 15,20H5C4.45,20 4,19.55 4,19V9C4,8.45 4.45,8 5,8ZM6,10V18H14V10H6Z" />
+      </g>
       <g id="icon-window-close" fill="currentColor">
         <path d="M20 6.91L17.09 4L12 9.09L6.91 4L4 6.91L9.09 12L4 17.09L6.91 20L12 14.91L17.09 20L20 17.09L14.91 12L20 6.91Z" />
       </g>

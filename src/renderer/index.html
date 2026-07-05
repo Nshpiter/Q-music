@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LX Music</title>
+  <title>Q-music</title>
 </head>
 <body id="body" style="background-color: transparent;">
   <!-- <div id="waiting-mask">
@@ -32,6 +32,7 @@
     window.dom_style = document.createElement('style')
 
     window.setTheme = colors => {
+      if (!colors || typeof colors !== 'object') return
       window.dom_style.innerText = `:root {${(Object.entries(colors)).map(([key, value]) => `${key}:${value};`).join('')}}`
     }
     const applyThemeColor = (theme) => {

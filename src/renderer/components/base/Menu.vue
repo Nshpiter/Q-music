@@ -92,9 +92,10 @@ export default {
   transition: .14s ease;
   transition-property: transform, opacity;
   border-radius: @radius-border;
-  background-color: var(--color-content-background);
-  box-shadow: 0 1px 8px 0 rgba(0,0,0,.2);
-  z-index: 10;
+  background-color: rgba(255, 255, 255, .92);
+  box-shadow: var(--q-shadow-float);
+  backdrop-filter: blur(14px);
+  z-index: var(--q-z-float);
   overflow: hidden;
   // will-change: transform;
 }
@@ -103,7 +104,7 @@ export default {
   min-width: 96px;
   line-height: 34px;
   // color: var(--color-button-font);
-  padding: 0 10px;
+  padding: 0 12px;
   text-align: center;
   outline: none;
   transition: @transition-normal;
@@ -113,7 +114,8 @@ export default {
   // background-color: var(--color-primary-light-600-alpha-800);
 
   &:hover {
-    background-color: var(--color-primary-background-hover);
+    color: var(--color-primary-dark-300);
+    background-color: rgba(255, 255, 255, .62);
   }
   &:active {
     background-color: var(--color-primary-background-active);

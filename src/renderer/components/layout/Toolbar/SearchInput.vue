@@ -1,10 +1,11 @@
 <template>
-  <material-search-input v-model="searchText" :list="tipList" :visible-list="visibleList" @event="handleEvent" />
+  <material-search-input v-model="searchText" :placeholder="$t('search')" :list="tipList" :visible-list="visibleList" @event="handleEvent" />
 </template>
 
 <script>
 import music from '@renderer/utils/musicSdk'
 import { debounce } from '@common/utils'
+import { DEFAULT_SETTING } from '@common/constants'
 import {
   ref,
   watch,
@@ -51,7 +52,7 @@ export default {
         music[prevTempSearchSource].tipSearch.cancelTipSearch()
         return
       }
-      const { temp_source } = await getSearchSetting()
+      const { temp_source } = await getSearchSetting().catch(() => ({ ...DEFAULT_SETTING.search }))
       prevTempSearchSource ||= temp_source
       music[prevTempSearchSource].tipSearch.search(searchText.value).then(list => {
         tipList.value = list

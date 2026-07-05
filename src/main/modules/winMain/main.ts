@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, session } from 'electron'
+import { BrowserWindow, dialog, screen, session } from 'electron'
 import path from 'node:path'
 import { createTaskBarButtons, getWindowSizeInfo } from './utils'
 import { getPlatform, isLinux, isWin } from '@common/utils'
@@ -8,6 +8,24 @@ import { sendFocus, sendTaskbarButtonClick } from './rendererEvent'
 import { encodePath } from '@common/utils/electron'
 
 let browserWindow: Electron.BrowserWindow | null = null
+let isWindowMaximized = false
+// 透明窗口在 Windows 下无法使用原生 maximize/unmaximize（会卡住无法还原），
+// 因此改为手动记录还原前的窗口尺寸，通过 setBounds 模拟最大化/还原。
+let normalBounds: Electron.Rectangle | null = null
+let isApplyingBounds = false
+// 透明模式下窗体边缘留有 @shadow-app(8px) 的阴影内边距，最大化时向外扩展使内容铺满工作区。
+const TRANSPARENT_SHADOW = 8
+
+// setBounds 会异步触发 move/resize 事件，用该辅助函数包裹并延迟复位标记，
+// 避免把程序触发的尺寸变化误判为用户手动调整。
+const applyBounds = (bounds: Electron.Rectangle) => {
+  if (!browserWindow) return
+  isApplyingBounds = true
+  browserWindow.setBounds(bounds)
+  setTimeout(() => {
+    isApplyingBounds = false
+  }, 50)
+}
 
 const winEvent = () => {
   if (!browserWindow) return
@@ -27,7 +45,18 @@ const winEvent = () => {
   browserWindow.on('closed', () => {
     // global.lx.mainWindowClosed = true
     browserWindow = null
+    isWindowMaximized = false
+    normalBounds = null
   })
+
+  // 用户手动拖动或调整窗口大小时，退出“已最大化”状态，使下次点击能重新最大化
+  const handleUserBoundsChange = () => {
+    if (isApplyingBounds) return
+    isWindowMaximized = false
+    normalBounds = null
+  }
+  browserWindow.on('move', handleUserBoundsChange)
+  browserWindow.on('resize', handleUserBoundsChange)
 
   // browserWindow.on('restore', () => {
   //   browserWindow.webContents.send('restore')
@@ -64,6 +93,7 @@ const winEvent = () => {
 export const createWindow = () => {
   closeWindow()
   const windowSizeInfo = getWindowSizeInfo(global.lx.appSetting['common.windowSizeId'])
+  const minWindowSizeInfo = getWindowSizeInfo(0)
 
   const { shouldUseDarkColors, theme } = global.lx.theme
   const ses = session.fromPartition('persist:win-main')
@@ -82,8 +112,11 @@ export const createWindow = () => {
     hasShadow: global.envParams.cmdParams.dt,
     // enableRemoteModule: false,
     // icon: join(global.__static, isWin ? 'icons/256x256.ico' : 'icons/512x512.png'),
-    resizable: false,
-    maximizable: false,
+    minWidth: minWindowSizeInfo.width,
+    minHeight: minWindowSizeInfo.height,
+    resizable: true,
+    thickFrame: true,
+    maximizable: true,
     fullscreenable: true,
     roundedCorners: global.envParams.cmdParams.dt,
     show: false,
@@ -102,7 +135,6 @@ export const createWindow = () => {
   if (global.envParams.cmdParams.dt) options.backgroundColor = theme.colors['--color-primary-light-1000']
   if (global.lx.appSetting['common.startInFullscreen']) {
     options.fullscreen = true
-    if (isLinux) options.resizable = true
   }
   browserWindow = new BrowserWindow(options)
 
@@ -175,11 +207,32 @@ export const minimize = () => {
 }
 export const maximize = () => {
   if (!browserWindow) return
-  browserWindow.maximize()
+  if (isWindowMaximized) {
+    unmaximize()
+    return
+  }
+  // 记录还原前尺寸
+  normalBounds = browserWindow.getBounds()
+  const workArea = screen.getDisplayMatching(normalBounds).workArea
+  // 透明模式下窗体含 8px 阴影内边距，向外扩展让内容正好铺满工作区，阴影溢出屏幕
+  const bleed = global.envParams.cmdParams.dt ? 0 : TRANSPARENT_SHADOW
+  applyBounds({
+    x: workArea.x - bleed,
+    y: workArea.y - bleed,
+    width: workArea.width + bleed * 2,
+    height: workArea.height + bleed * 2,
+  })
+  isWindowMaximized = true
 }
 export const unmaximize = () => {
   if (!browserWindow) return
-  browserWindow.unmaximize()
+  if (!isWindowMaximized || !normalBounds) {
+    isWindowMaximized = false
+    return
+  }
+  applyBounds(normalBounds)
+  isWindowMaximized = false
+  normalBounds = null
 }
 export const toggleHide = () => {
   if (!browserWindow) return
@@ -229,12 +282,12 @@ export const toggleDevTools = () => {
 export const setFullScreen = (isFullscreen: boolean): boolean => {
   if (!browserWindow) return false
   if (isLinux) { // linux 需要先设置为可调整窗口大小才能全屏
+    browserWindow.setResizable(true)
     if (isFullscreen) {
-      browserWindow.setResizable(isFullscreen)
       browserWindow.setFullScreen(isFullscreen)
     } else {
       browserWindow.setFullScreen(isFullscreen)
-      browserWindow.setResizable(isFullscreen)
+      browserWindow.setResizable(true)
     }
   } else {
     browserWindow.setFullScreen(isFullscreen)

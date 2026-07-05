@@ -1,7 +1,15 @@
 <template>
   <button :class="$style.btn" :aria-label="$t('player__sound_effect')" @click="visible = true">
-    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="90%" viewBox="0 0 24 24" space="preserve">
-      <use xlink:href="#icon-tune-variant" />
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 7h8" />
+      <path d="M17 7h2" />
+      <path d="M15 5v4" />
+      <path d="M5 12h2" />
+      <path d="M11 12h8" />
+      <path d="M9 10v4" />
+      <path d="M5 17h10" />
+      <path d="M19 17h0" />
+      <path d="M17 15v4" />
     </svg>
   </button>
   <material-modal :show="visible" bg-close="bg-close" :teleport="teleport" @close="visible = false">
@@ -65,15 +73,24 @@ watch(visible, (visible) => {
   cursor: pointer;
   background-color: transparent;
   border: none;
-  width: 24px;
+  width: var(--q-footer-tool-size, 34px);
+  height: var(--q-footer-tool-size, 34px);
   display: flex;
   flex-flow: column nowrap;
   padding: 0;
+  border-radius: 50%;
 
   svg {
     transition: opacity @transition-fast;
-    opacity: .6;
-    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.2));
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .72;
+    filter: none;
   }
   &:hover {
     svg {

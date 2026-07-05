@@ -4,11 +4,15 @@ div.comment(ref="dom_container" :class="$style.comment")
     h3 {{ $t('comment__title', { name: currentMusicInfo.name }) }}
     div(:class="$style.commentHeaderBtns")
       div(:class="$style.commentHeaderBtn" :aria-label="$t('comment__refresh')" @click="handleShowComment")
-        svg(version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="transform: rotate(45deg);" viewBox="0 0 24 24" space="preserve")
-          use(xlink:href="#icon-refresh")
+        svg(viewBox="0 0 24 24" aria-hidden="true")
+          path(d="M20 12a8 8 0 0 1-13.6 5.7")
+          path(d="M4 12A8 8 0 0 1 17.6 6.3")
+          path(d="M17 3v4h4")
+          path(d="M7 21v-4H3")
       div(:class="$style.commentHeaderBtn" @click="$emit('close')")
-        svg(version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve")
-          use(xlink:href="#icon-close")
+        svg(viewBox="0 0 24 24" aria-hidden="true")
+          path(d="M6 6l12 12")
+          path(d="M18 6L6 18")
 
   div(:class="$style.commentMain")
     template(v-if="available")
@@ -128,7 +132,7 @@ export default {
   methods: {
     setWidth() {
       setTimeout(() => {
-        this.$refs.dom_container.style.width = Math.floor(this.$refs.dom_container.parentNode.clientWidth * 0.5) + 'px'
+        this.$refs.dom_container.style.width = ''
 
         setTimeout(() => {
           this.handleToggleTab(this.tabActiveId, true)
@@ -251,16 +255,17 @@ export default {
   transition-property: transform,opacity;
   transform-origin: 100%;
   overflow: hidden;
+  padding: 4px 0 0;
 }
 .commentHeader {
   flex: none;
-  padding-bottom: 5px;
+  padding: 0 8px 10px;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
   // border-bottom: 1px solid #eee;
   h3 {
-    font-size: 14px;
+    font-size: 15px;
     .mixin-ellipsis-1();
     line-height: 1.2;
   }
@@ -277,6 +282,19 @@ export default {
   width: 22px;
   cursor: pointer;
   transition: opacity @transition-normal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
 
   +.commentHeaderBtn {
     margin-left: 5px;
@@ -288,17 +306,20 @@ export default {
 }
 .commentMain {
   flex: auto;
-  background-color: var(--color-primary-light-400-alpha-700);
-  border-radius: 4px;
+  background-color: rgba(255, 255, 255, .54);
+  border-radius: 22px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .64), 0 16px 38px rgba(88, 98, 114, .08);
+  backdrop-filter: blur(16px);
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 .tab_header {
   display: flex;
   flex-flow: row nowrap;
-  gap: 15px;
-  padding-left: 15px;
-  padding-right: 10px;
+  gap: 18px;
+  padding: 10px 22px 2px;
 }
 .tab_main {
   flex: auto;
@@ -319,8 +340,7 @@ export default {
   top: 0;
   width: 100%;
   height: 100%;
-  padding-left: 15px;
-  padding-right: 10px;
+  padding: 0 22px;
   scroll-behavior: smooth;
 }
 .commentLabel {
@@ -329,9 +349,9 @@ export default {
   font-size: 14px;
 }
 .commentType {
-  padding: 5px;
-  margin: 5px 0;
-  font-size: 13px;
+  padding: 6px 0;
+  margin: 0;
+  font-size: 14px;
   background: none;
   border: none;
   cursor: pointer;

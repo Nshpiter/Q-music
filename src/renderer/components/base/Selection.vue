@@ -8,14 +8,16 @@
         </svg>
       </div>
     </div>
-    <ul v-if="show" ref="dom_list" class="selection-list scroll" :class="$style.list" :style="listStyles">
-      <li
-        v-for="(item, index) in list" :key="index" :class="[$style.listItem, (itemKey ? item[itemKey] : item) == modelValue ? $style.active : null]"
-        :aria-label="itemName ? item[itemName] : item" @click="handleClick(item)"
-      >
-        {{ itemName ? item[itemName] : item }}
-      </li>
-    </ul>
+    <teleport to="#root">
+      <ul v-if="show" ref="dom_list" class="selection-list scroll" :class="$style.list" :style="listStyles">
+        <li
+          v-for="(item, index) in list" :key="index" :class="[$style.listItem, (itemKey ? item[itemKey] : item) == modelValue ? $style.active : null]"
+          :aria-label="itemName ? item[itemName] : item" @click="handleClick(item)"
+        >
+          {{ itemName ? item[itemName] : item }}
+        </li>
+      </ul>
+    </teleport>
   </div>
 </template>
 
@@ -48,7 +50,10 @@ export default {
       show: false,
       listStyles: {
         transform: 'scaleY(0) translateY(0)',
+        opacity: 0,
+        pointerEvents: 'none',
       },
+      hideTimer: null,
     }
   },
   computed: {
@@ -67,44 +72,92 @@ export default {
   },
   mounted() {
     document.addEventListener('click', this.handleHide, true)
+    document.addEventListener('scroll', this.handleScroll, true)
+    window.addEventListener('resize', this.handleHide)
   },
   beforeUnmount() {
     document.removeEventListener('click', this.handleHide, true)
+    document.removeEventListener('scroll', this.handleScroll, true)
+    window.removeEventListener('resize', this.handleHide)
+    if (this.hideTimer) clearTimeout(this.hideTimer)
   },
   methods: {
     handleHide(e) {
       if (!this.show) return
       // if (e && e.target.parentNode != this.$refs.dom_list && this.show) return this.show = false
       if (e && (e.target == this.$refs.dom_btn || this.$refs.dom_btn.contains(e.target))) return
-      this.listStyles.transform = 'scaleY(0) translateY(0)'
-      setTimeout(() => {
+      if (e && this.$refs.dom_list && (e.target == this.$refs.dom_list || this.$refs.dom_list.contains(e.target))) return
+      this.listStyles = {
+        ...this.listStyles,
+        transform: 'scaleY(0) translateY(0)',
+        opacity: 0,
+        pointerEvents: 'none',
+      }
+      if (this.hideTimer) clearTimeout(this.hideTimer)
+      this.hideTimer = setTimeout(() => {
         this.show = false
+        this.hideTimer = null
       }, 50)
+    },
+    handleScroll() {
+      if (!this.show) return
+      this.updateListPosition()
     },
     handleClick(item) {
       // console.log(this.modelValue)
-      if (item === this.modelValue) return
-      this.$emit('update:modelValue', this.itemKey ? item[this.itemKey] : item)
-      this.$emit('change', item)
+      const value = this.itemKey ? item[this.itemKey] : item
+      if (value !== this.modelValue) {
+        this.$emit('update:modelValue', value)
+        this.$emit('change', item)
+      }
+      this.handleHide()
     },
     handleShow() {
+      if (this.show) {
+        this.handleHide()
+        return
+      }
+      if (this.hideTimer) {
+        clearTimeout(this.hideTimer)
+        this.hideTimer = null
+      }
       this.show = true
       this.$nextTick(() => {
-        this.listStyles.transform = `scaleY(1) translateY(${this.handleGetOffset()}px)`
+        this.updateListPosition()
+        if (!this.$refs.dom_list) return
 
         const activeItem = this.$refs.dom_list.children[this.activeIndex]
         if (activeItem) this.$refs.dom_list.scrollTop = activeItem.offsetTop - this.$refs.dom_list.clientHeight * 0.38
       })
     },
-    handleGetOffset() {
-      const listHeight = this.$refs.dom_list.clientHeight
-      const dom_select = this.$refs.dom_list.offsetParent
-      const dom_container = dom_select.offsetParent
-      const containerHeight = dom_container.clientHeight
-      if (containerHeight < listHeight) return 0
-      const offsetHeight = (dom_container.scrollTop + containerHeight) - (dom_select.offsetTop + listHeight)
-      if (offsetHeight > 0) return 0
-      return offsetHeight - 5
+    updateListPosition() {
+      if (!this.$refs.dom_btn || !this.$refs.dom_list) return
+      const margin = 10
+      const gap = 6
+      const rect = this.$refs.dom_btn.getBoundingClientRect()
+      const listHeight = Math.min(this.$refs.dom_list.scrollHeight, 220)
+      const belowHeight = window.innerHeight - rect.bottom - margin
+      const aboveHeight = rect.top - margin
+      const openUp = belowHeight < listHeight && aboveHeight > belowHeight
+      const maxHeight = Math.max(80, Math.min(listHeight, (openUp ? aboveHeight : belowHeight) - gap))
+      const top = openUp
+        ? Math.max(margin, rect.top - maxHeight - gap)
+        : Math.min(rect.bottom + gap, window.innerHeight - margin - maxHeight)
+      const left = Math.min(
+        Math.max(margin, rect.left),
+        Math.max(margin, window.innerWidth - rect.width - margin),
+      )
+
+      this.listStyles = {
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${rect.width}px`,
+        maxHeight: `${maxHeight}px`,
+        transform: 'scaleY(1) translateY(0)',
+        transformOrigin: openUp ? 'center bottom' : 'center top',
+        opacity: 1,
+        pointerEvents: 'auto',
+      }
     },
   },
 }
@@ -126,9 +179,6 @@ export default {
     .label {
       background-color: var(--color-button-background);
     }
-    .list {
-      opacity: 1;
-    }
     .icon {
       svg{
         transform: rotate(180deg);
@@ -138,15 +188,17 @@ export default {
 }
 
 .label {
-  background-color: var(--color-button-background);
-  padding: 0 10px;
-  transition: background-color @transition-normal;
+  background: rgba(255, 255, 255, .52);
+  padding: 0 11px;
+  transition: @transition-fast;
+  transition-property: background-color, color, box-shadow;
   height: @selection-height;
   // line-height: 27px;
   line-height: 1.5;
   box-sizing: border-box;
   color: var(--color-button-font);
   border-radius: @form-radius;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .62), 0 8px 18px rgba(70, 88, 106, .05);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -167,7 +219,9 @@ export default {
   }
 
   &:hover {
-    background-color: var(--color-button-background-hover);
+    color: var(--color-primary-dark-300);
+    background-color: rgba(255, 255, 255, .68);
+    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800), 0 10px 22px rgba(70, 88, 106, .08);
   }
   &:active {
     background-color: var(--color-button-background-active);
@@ -175,21 +229,22 @@ export default {
 }
 
 .list {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  background-color: var(--color-content-background);
+  width: var(--selection-width, 300px);
+  background-color: rgba(255, 255, 255, .92);
   opacity: 0;
   transform: scaleY(0) translateY(0);
-  transform-origin: 0 (@selection-height / 2) 0;
+  transform-origin: center top;
   transition: .25s ease;
   transition-property: transform, opacity;
-  z-index: 10;
   border-radius: @form-radius;
-  box-shadow: 0 0 4px rgba(0, 0, 0, .15);
+  box-shadow: var(--q-shadow-float);
+  backdrop-filter: blur(14px);
   overflow: auto;
   max-height: 200px;
+  z-index: var(--q-z-float);
 }
 .listItem {
   cursor: pointer;

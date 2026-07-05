@@ -8,9 +8,9 @@ body:
     label: 解决方案检查
     description: 请确保你已完成以下所有操作。
     options:
-      - label: 我已阅读 [常见问题](https://lyswhut.github.io/lx-music-doc/desktop/faq)，并没有找到解决方案。
+      - label: 我已阅读 [上游常见问题](https://lyswhut.github.io/lx-music-doc/desktop/faq)，并没有找到解决方案。
         required: true
-      - label: 我已搜索 [Issue 列表](https://github.com/lyswhut/lx-music-desktop/issues?q=is%3Aissue+)，并没有发现类似的问题。
+      - label: 我已搜索当前 Q-music 仓库的 Issue 列表，并没有发现类似的问题。
         required: true
 - type: textarea
   id: expected-behavior
@@ -29,8 +29,8 @@ body:
 - type: input
   id: version
   attributes:
-    label: LX Music 版本
-    description: 你使用什么版本的 LX Music？
+    label: Q-music 版本
+    description: 你使用什么版本的 Q-music？
     placeholder: 例如 2.9.0
   validations:
     required: true

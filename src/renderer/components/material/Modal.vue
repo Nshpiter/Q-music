@@ -27,6 +27,10 @@ import { nextTick } from '@common/utils/vueTools'
 import { appSetting } from '@renderer/store/setting'
 
 let modalCount = 0
+let modalSeq = 0
+// 按目标节点记录正在显示的弹窗实例 id 集合。用 Set 而非计数器，保证多次 add/remove
+// 幂等且不会失衡，避免 show-modal 类残留导致视图被持续置灰（看起来空白）。
+const modalTargets = new WeakMap()
 export default {
   props: {
     show: {
@@ -145,6 +149,10 @@ export default {
       showContent: false,
       modalCount: false,
       isAddedClass: false,
+      isCounted: false,
+      modalTarget: null,
+      modalUid: ++modalSeq,
+      showChangeId: 0,
       // ai: 0,
     }
   },
@@ -172,35 +180,69 @@ export default {
     this.setRandomAnimation()
   },
   beforeUnmount() {
+    this.showChangeId++
+    this.removeModalCount()
     this.removeClass()
   },
   methods: {
     handleShowChange(val) {
+      const showChangeId = ++this.showChangeId
       if (val) {
         // const dom = document.getElementById(this.teleport)
         // if (dom) {
         //   // dom.t
         // }
         this.setRandomAnimation()
-        this.modalCount = ++modalCount
+        if (!this.isCounted) {
+          this.modalCount = ++modalCount
+          this.isCounted = true
+        }
         this.showModal = true
         void nextTick(() => {
+          if (showChangeId !== this.showChangeId || !this.show) return
+          if (!this.$refs.dom_container) return
           const node = this.$refs.dom_container.parentNode
-          if (!node.classList.contains('show-modal')) {
-            node.classList.add('show-modal')
-            this.isAddedClass = true
-          }
+          this.addClass(node)
           this.showContent = true
         })
       } else {
-        if (modalCount > 0) this.modalCount = --modalCount
+        this.removeModalCount()
         this.removeClass()
         this.showContent = false
       }
     },
+    addClass(node) {
+      if (!node) return
+      if (this.modalTarget && this.modalTarget !== node) this.removeClass()
+      let set = modalTargets.get(node)
+      if (!set) {
+        set = new Set()
+        modalTargets.set(node, set)
+      }
+      set.add(this.modalUid)
+      node.classList.add('show-modal')
+      this.modalTarget = node
+      this.isAddedClass = true
+    },
+    removeModalCount() {
+      if (!this.isCounted) return
+      if (modalCount > 0) modalCount--
+      this.modalCount = modalCount
+      this.isCounted = false
+    },
     removeClass() {
       if (!this.isAddedClass) return
-      this.$refs.dom_container?.parentNode.classList.remove('show-modal')
+      const node = this.modalTarget || this.$refs.dom_container?.parentNode
+      this.modalTarget = null
+      this.isAddedClass = false
+      if (!node) return
+      const set = modalTargets.get(node)
+      if (set) {
+        set.delete(this.modalUid)
+        if (set.size) return
+        modalTargets.delete(node)
+      }
+      node.classList.remove('show-modal')
     },
     setRandomAnimation() {
       if (appSetting['common.randomAnimate']) {
@@ -252,7 +294,8 @@ export default {
   // will-change: transform;
 
   &.filter {
-    backdrop-filter: grayscale(70%);
+    background: rgba(255, 255, 255, .22);
+    backdrop-filter: blur(14px) saturate(1.08);
   }
 
   // &:before {
@@ -269,8 +312,8 @@ export default {
 
 .content {
   position: relative;
-  border-radius: 4px;
-  box-shadow: 0 0 4px rgba(0, 0, 0, .25);
+  border-radius: 22px;
+  box-shadow: var(--q-shadow-float);
   overflow: hidden;
   // max-height: 80%;
   // max-width: 76%;
@@ -279,36 +322,46 @@ export default {
   display: flex;
   flex-flow: column nowrap;
   z-index: 100;
-  background-color: var(--color-content-background);
+  background: rgba(255, 255, 255, .86);
+  backdrop-filter: blur(18px);
 }
 
 .header {
   flex: none;
-  background-color: var(--color-primary-light-100-alpha-100);
+  background: rgba(255, 255, 255, .42);
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  height: 18px;
+  height: 32px;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .58);
 
   button {
     border: none;
     cursor: pointer;
-    padding: 4px 7px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    margin-right: 4px;
+    border-radius: 12px;
     background-color: transparent;
     color: var(--color-primary-dark-500-alpha-500);
     outline: none;
-    transition: background-color 0.2s ease;
+    transition: @transition-fast;
+    transition-property: background-color, color, transform;
     line-height: 0;
 
     svg {
-      height: .7em;
+      height: .72em;
     }
 
     &:hover {
-      background-color: var(--color-primary-dark-100-alpha-600);
+      color: var(--color-primary-dark-300);
+      background-color: rgba(255, 255, 255, .7);
+      transform: translateY(-1px);
     }
     &:active {
       background-color: var(--color-primary-dark-200-alpha-600);
+      transform: scale(.96);
     }
   }
 }

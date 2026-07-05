@@ -95,12 +95,15 @@ export default {
   display: inline-block;
   border: none;
   border-radius: @form-radius;
-  padding: 7px 8px;
+  padding: 8px 11px;
   color: var(--color-button-font);
   outline: none;
-  transition: background-color 0.2s ease;
-  background-color: var(--color-primary-background);
+  transition: @transition-fast;
+  transition-property: background-color, box-shadow, color, opacity;
+  background: rgba(255, 255, 255, .5);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .64), 0 8px 18px rgba(70, 88, 106, .05);
   font-size: 13.3px;
+  letter-spacing: 0;
 
   &::-webkit-outer-spin-button,
   &::-webkit-inner-spin-button {
@@ -113,7 +116,9 @@ export default {
   }
 
   &:hover, &:focus {
-    background-color: var(--color-primary-background-hover);
+    color: var(--color-primary-dark-300);
+    background-color: rgba(255, 255, 255, .68);
+    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800), 0 10px 22px rgba(70, 88, 106, .08);
   }
   &:active {
     background-color: var(--color-primary-background-active);

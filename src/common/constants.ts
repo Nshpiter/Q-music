@@ -1,4 +1,5 @@
-export const URL_SCHEME_RXP = /^lxmusic:\/\//
+export const URL_SCHEME = 'qmusic'
+export const URL_SCHEME_RXP = /^qmusic:\/\//
 
 export const SPLIT_CHAR = {
   DISLIKE_NAME: '@',

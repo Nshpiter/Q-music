@@ -6,6 +6,13 @@ import { setLanguage } from '@root/lang'
 import { setUserApi } from '../apiSource'
 // import { applyTheme, getThemes } from '@renderer/store/utils'
 
+const normalizeFontFamily = (font: string) => {
+  return font.split(',')
+    .map(f => f.trim())
+    .filter(Boolean)
+    .join(', ')
+}
+
 
 export default () => {
   watch(() => appSetting['common.windowSizeId'], (index) => {
@@ -28,7 +35,12 @@ export default () => {
   })
 
   watch(() => appSetting['common.font'], (val) => {
-    document.documentElement.style.fontFamily = val
+    const fontFamily = normalizeFontFamily(val)
+    if (fontFamily) {
+      document.documentElement.style.fontFamily = fontFamily
+    } else {
+      document.documentElement.style.removeProperty('font-family')
+    }
   }, {
     immediate: true,
   })

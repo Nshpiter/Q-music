@@ -66,7 +66,7 @@ export default {
 }
 
 .content {
-  padding: 12px 0;
+  padding: 14px 0;
   font-size: 13px;
   color: var(--color-font);
   display: flex;
@@ -76,13 +76,15 @@ export default {
 }
 .avatar {
   width: 40px;
-  border-radius: 4px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 10px;
   box-shadow: 0 0 2px rgba(0, 0, 0, .15);
 }
 .right {
   flex: auto;
   min-width: 0;
-  margin-left: 10px;
+  margin-left: 12px;
 }
 
 .info {
@@ -136,7 +138,7 @@ export default {
 .comment_text {
   text-align: justify;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.62;
   word-break: break-all;
   overflow-wrap: break-word;
   white-space: pre-wrap;
@@ -153,9 +155,9 @@ export default {
 }
 
 .reply_floor {
-  padding: 0 0 0 @padding;
-  margin-left: @padding * 2;
-  border-radius: .5rem;
+  padding: 0 0 0 14px;
+  margin-left: 24px;
+  border-radius: 14px;
   &:last-child {
     margin-bottom: 12px;
   }
@@ -165,8 +167,7 @@ export default {
   .right {
     margin-right: 10px;
   }
-
-  background-color: var(--color-primary-light-500-alpha-700);
+  background-color: rgba(72, 186, 148, .08);
 }
 
 

@@ -1,47 +1,56 @@
 <template lang="pug">
-transition(enter-active-class="animated slideInRight" leave-active-class="animated slideOutDown" @after-enter="handleAfterEnter" @after-leave="handleAfterLeave")
+transition(enter-active-class="q-detail-enter-active" leave-active-class="q-detail-leave-active" @after-enter="handleAfterEnter" @after-leave="handleAfterLeave")
   div(v-if="isShowPlayerDetail" :class="[$style.container, { fullscreen: isFullscreen }]" @contextmenu="handleContextMenu")
-    div(:class="$style.bg")
+    div(:class="$style.bg" :style="detailBgStyle")
     //- div(:class="$style.bg" :style="bgStyle")
     //- div(:class="$style.bg2")
     ControlBtnsLeftHeader(v-if="appSetting['common.controlBtnPosition'] == 'left'")
     ControlBtnsRightHeader(v-else)
-    div(:class="[$style.main, {[$style.showComment]: isShowPlayComment}]")
+    div(ref="dom_main" :class="[$style.main, {[$style.showComment]: isCommentLayoutVisible, [$style.commentClosing]: isCommentLayoutClosing, [$style.commentSettling]: isCommentLayoutSettling}]" :style="mainStyle")
       div.left(:class="$style.left")
-        //- div(:class="$style.info")
-        div(:class="$style.info")
-          img(v-if="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
-          div.description(:class="['scroll', $style.description]")
-            p {{ $t('player__music_name') }}{{ musicInfo.name }}
-            p {{ $t('player__music_singer') }}{{ musicInfo.singer }}
-            p(v-if="musicInfo.album") {{ $t('player__music_album') }}{{ musicInfo.album }}
+        div(ref="dom_record" :class="['q-album-stage', $style.albumStage, { [$style.albumStagePlaying]: isPlay }]")
+          div(:class="$style.record")
+            img(v-if="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
+            div(v-else :class="$style.emptyCover") Q
+          div(:class="$style.toneArm")
+        div.description(:class="['scroll', $style.description]")
+          p {{ musicInfo.name }}
+          p {{ musicInfo.singer }}
+          p(v-if="musicInfo.album") {{ musicInfo.album }}
 
-      transition(enter-active-class="animated fadeIn" leave-active-class="animated fadeOut")
-        LyricPlayer(v-if="visibled")
-      music-comment(v-if="visibled" :class="$style.comment" :show="isShowPlayComment" :music-info="playMusicInfo.musicInfo" @close="hideComment")
-    transition(enter-active-class="animated fadeIn" leave-active-class="animated fadeOut")
-      play-bar(v-if="visibled")
+      LyricPlayer(:comment-layout-visible="isCommentLayoutVisible" :comment-layout-settling="isCommentLayoutSettling")
+      button(
+        v-show="isCommentLayoutVisible"
+        type="button"
+        :class="[$style.commentResizeHandle, { [$style.commentResizeHandleActive]: isCommentResizing }]"
+        aria-label="Resize lyric and comment panels"
+        @pointerdown.stop.prevent="handleCommentResizeStart"
+        @mousedown.stop.prevent="handleCommentResizeStart"
+        @touchstart.stop.prevent="handleCommentResizeStart"
+      )
+      music-comment(:class="$style.comment" :show="isShowPlayComment" :music-info="playMusicInfo.musicInfo" @close="hideComment")
     transition(enter-active-class="animated-slow fadeIn" leave-active-class="animated-slow fadeOut")
       common-audio-visualizer(v-if="appSetting['player.audioVisualization'] && visibled")
 </template>
 
 
 <script>
-import { ref, watch } from '@common/utils/vueTools'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from '@common/utils/vueTools'
 import { isFullscreen } from '@renderer/store'
 import {
   isShowPlayerDetail,
   isShowPlayComment,
+  isPlay,
   musicInfo,
   playMusicInfo,
 } from '@renderer/store/player/state'
+import { playProgress } from '@renderer/store/player/playProgress'
 import {
   setShowPlayerDetail,
   setShowPlayComment,
   setShowPlayLrcSelectContentLrc,
 } from '@renderer/store/player/action'
 import LyricPlayer from './LyricPlayer.vue'
-import PlayBar from './PlayBar.vue'
 import MusicComment from './components/MusicComment/index.vue'
 import ControlBtnsLeftHeader from './ControlBtnsLeftHeader.vue'
 import ControlBtnsRightHeader from './ControlBtnsRightHeader.vue'
@@ -49,17 +58,117 @@ import { registerAutoHideMounse, unregisterAutoHideMounse } from './autoHideMoun
 import { appSetting } from '@renderer/store/setting'
 import { closeWindow, maxWindow, minWindow, setFullScreen } from '@renderer/utils/ipc'
 
+const COMMENT_WIDTH_KEY = 'q-music.play-detail.comment-width'
+const COMMENT_MIN_WIDTH = 320
+const COMMENT_MAX_WIDTH = 720
+const COVER_MIN_WIDTH = 240
+const COVER_MAX_WIDTH = 330
+const LYRIC_MIN_WIDTH = 300
+const RESIZE_HANDLE_WIDTH = 24
+const COMMENT_LAYOUT_GAP = 18
+const RECORD_SPIN_SECONDS = 18
+const COMMENT_LAYOUT_CLOSE_MS = 500
+
+const getInitialCommentWidth = () => {
+  try {
+    const savedWidth = Number(window.localStorage.getItem(COMMENT_WIDTH_KEY))
+    if (Number.isFinite(savedWidth)) {
+      return Math.min(Math.max(savedWidth, COMMENT_MIN_WIDTH), COMMENT_MAX_WIDTH)
+    }
+  } catch (_) {}
+  return 520
+}
+
 export default {
   name: 'CorePlayDetail',
   components: {
     ControlBtnsLeftHeader,
     ControlBtnsRightHeader,
     LyricPlayer,
-    PlayBar,
     MusicComment,
   },
   setup() {
     const visibled = ref(false)
+    const dom_main = ref(null)
+    const dom_record = ref(null)
+    const commentWidth = ref(getInitialCommentWidth())
+    const isCommentResizing = ref(false)
+    const isCommentLayoutVisible = ref(isShowPlayComment.value)
+    const isCommentLayoutClosing = ref(false)
+    const isCommentLayoutSettling = ref(false)
+    const lastMainWidth = ref(0)
+    let recordAnimationFrameId = null
+    let recordSpinStartTime = 0
+    let recordSpinStartPlayTime = 0
+    let activePointerId = null
+    let activeResizeType = null
+    let resizeHandleElement = null
+    let resizeStartX = 0
+    let resizeStartWidth = 0
+    let commentLayoutCloseTimer = null
+    const detailBgStyle = computed(() => {
+      if (!musicInfo.pic) return {}
+      return {
+        '--play-detail-cover': `url("${String(musicInfo.pic).replace(/"/g, '\\"')}")`,
+      }
+    })
+    const mainStyle = computed(() => {
+      return isCommentLayoutVisible.value
+        ? {
+            '--comment-width': `${commentWidth.value}px`,
+            '--cover-width': `${getCoverWidth(lastMainWidth.value)}px`,
+          }
+        : {}
+    })
+
+    const getRecordRotation = time => (time % RECORD_SPIN_SECONDS) / RECORD_SPIN_SECONDS * 360
+    const setRecordRotation = rotation => {
+      dom_record.value?.style.setProperty('--q-record-rotation', `${rotation}deg`)
+    }
+    const syncRecordRotation = () => {
+      setRecordRotation(getRecordRotation(playProgress.nowPlayTime))
+    }
+    const stopRecordSpin = () => {
+      if (!recordAnimationFrameId) return
+      window.cancelAnimationFrame(recordAnimationFrameId)
+      recordAnimationFrameId = null
+    }
+    const clearCommentLayoutCloseTimer = () => {
+      if (!commentLayoutCloseTimer) return
+      window.clearTimeout(commentLayoutCloseTimer)
+      commentLayoutCloseTimer = null
+    }
+    const settleCommentLayout = () => {
+      isCommentLayoutSettling.value = true
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          isCommentLayoutSettling.value = false
+        })
+      })
+    }
+    const updateRecordSpin = () => {
+      const elapsed = (window.performance.now() - recordSpinStartTime) / 1000
+      setRecordRotation(getRecordRotation(recordSpinStartPlayTime + elapsed))
+      recordAnimationFrameId = window.requestAnimationFrame(updateRecordSpin)
+    }
+    const startRecordSpin = () => {
+      stopRecordSpin()
+      recordSpinStartTime = window.performance.now()
+      recordSpinStartPlayTime = playProgress.nowPlayTime
+      syncRecordRotation()
+      recordAnimationFrameId = window.requestAnimationFrame(updateRecordSpin)
+    }
+
+    const getCommentMaxWidth = width => {
+      if (!width) return COMMENT_MAX_WIDTH
+      const layoutReserve = getCoverWidth(width) + LYRIC_MIN_WIDTH + RESIZE_HANDLE_WIDTH + COMMENT_LAYOUT_GAP * 3
+      return Math.min(COMMENT_MAX_WIDTH, Math.max(COMMENT_MIN_WIDTH, width - layoutReserve))
+    }
+
+    function getCoverWidth(width) {
+      if (!width) return 340
+      return Math.round(Math.min(Math.max(width * 0.23, COVER_MIN_WIDTH), COVER_MAX_WIDTH))
+    }
 
     let clickTime = 0
 
@@ -77,6 +186,86 @@ export default {
 
     const hideComment = () => {
       setShowPlayComment(false)
+    }
+
+    const updateMainWidth = () => {
+      const rect = dom_main.value?.getBoundingClientRect()
+      if (!rect) return
+      lastMainWidth.value = rect.width
+      commentWidth.value = Math.min(Math.max(commentWidth.value, COMMENT_MIN_WIDTH), getCommentMaxWidth(rect.width))
+    }
+
+    const getClientX = event => {
+      return event.touches?.[0]?.clientX ?? event.changedTouches?.[0]?.clientX ?? event.clientX
+    }
+
+    const updateCommentWidth = event => {
+      if (!isCommentResizing.value) return
+      if (activeResizeType === 'pointer' && activePointerId != null && event.pointerId !== activePointerId) return
+      if (event.cancelable) event.preventDefault()
+      const rect = dom_main.value?.getBoundingClientRect()
+      const clientX = getClientX(event)
+      if (!rect || clientX == null) return
+      lastMainWidth.value = rect.width
+      const maxWidth = getCommentMaxWidth(rect.width)
+      const nextWidth = resizeStartWidth + resizeStartX - clientX
+      commentWidth.value = Math.round(Math.min(Math.max(nextWidth, COMMENT_MIN_WIDTH), maxWidth))
+    }
+
+    const stopCommentResize = event => {
+      if (activeResizeType === 'pointer' && event?.pointerId != null && activePointerId != null && event.pointerId !== activePointerId) return
+      if (!isCommentResizing.value) return
+      isCommentResizing.value = false
+      document.body.classList.remove('q-comment-resizing')
+      if (activeResizeType === 'pointer' && resizeHandleElement && activePointerId != null) {
+        try {
+          resizeHandleElement.releasePointerCapture?.(activePointerId)
+        } catch (_) {}
+      }
+      document.removeEventListener('pointermove', updateCommentWidth)
+      document.removeEventListener('pointerup', stopCommentResize)
+      document.removeEventListener('pointercancel', stopCommentResize)
+      document.removeEventListener('mousemove', updateCommentWidth)
+      document.removeEventListener('mouseup', stopCommentResize)
+      document.removeEventListener('touchmove', updateCommentWidth)
+      document.removeEventListener('touchend', stopCommentResize)
+      document.removeEventListener('touchcancel', stopCommentResize)
+      activePointerId = null
+      activeResizeType = null
+      resizeHandleElement = null
+
+      try {
+        window.localStorage.setItem(COMMENT_WIDTH_KEY, String(commentWidth.value))
+      } catch (_) {}
+    }
+
+    const handleCommentResizeStart = event => {
+      if (!isShowPlayComment.value) return
+      if (isCommentResizing.value) return
+      if (event.isPrimary === false) return
+      updateMainWidth()
+      const clientX = getClientX(event)
+      if (clientX == null) return
+      activeResizeType = event.pointerId == null ? (event.type === 'touchstart' ? 'touch' : 'mouse') : 'pointer'
+      activePointerId = event.pointerId ?? null
+      resizeHandleElement = event.currentTarget
+      resizeStartX = clientX
+      resizeStartWidth = commentWidth.value
+      if (activeResizeType === 'pointer') resizeHandleElement?.setPointerCapture?.(activePointerId)
+      isCommentResizing.value = true
+      document.body.classList.add('q-comment-resizing')
+      if (activeResizeType === 'pointer') {
+        document.addEventListener('pointermove', updateCommentWidth, { passive: false })
+        document.addEventListener('pointerup', stopCommentResize)
+        document.addEventListener('pointercancel', stopCommentResize)
+      } else if (activeResizeType === 'touch') {
+        document.addEventListener('touchmove', updateCommentWidth, { passive: false })
+        document.addEventListener('touchend', stopCommentResize)
+        document.addEventListener('touchcancel', stopCommentResize)
+      } else {
+        document.addEventListener('mousemove', updateCommentWidth)
+        document.addEventListener('mouseup', stopCommentResize)
+      }
     }
 
     const handleAfterEnter = () => {
@@ -97,16 +286,73 @@ export default {
       (isFullscreen ? registerAutoHideMounse : unregisterAutoHideMounse)()
     })
 
+    watch(isShowPlayComment, visible => {
+      clearCommentLayoutCloseTimer()
+      if (!visible) {
+        stopCommentResize()
+        if (isCommentLayoutVisible.value) {
+          isCommentLayoutClosing.value = true
+          commentLayoutCloseTimer = window.setTimeout(() => {
+            commentLayoutCloseTimer = null
+            settleCommentLayout()
+            isCommentLayoutVisible.value = false
+            isCommentLayoutClosing.value = false
+          }, COMMENT_LAYOUT_CLOSE_MS)
+        }
+        return
+      }
+      isCommentLayoutVisible.value = true
+      isCommentLayoutClosing.value = false
+      isCommentLayoutSettling.value = false
+      setTimeout(updateMainWidth)
+    })
+
+    watch(isPlay, playing => {
+      playing ? startRecordSpin() : stopRecordSpin()
+    })
+
+    watch(() => playProgress.nowPlayTime, () => {
+      if (!isPlay.value) {
+        syncRecordRotation()
+        return
+      }
+      const elapsed = (window.performance.now() - recordSpinStartTime) / 1000
+      if (Math.abs(playProgress.nowPlayTime - (recordSpinStartPlayTime + elapsed)) > 1.2) startRecordSpin()
+    })
+
+    onMounted(() => {
+      syncRecordRotation()
+      if (isPlay.value) startRecordSpin()
+      window.addEventListener('resize', updateMainWidth)
+    })
+
+    onBeforeUnmount(() => {
+      stopRecordSpin()
+      clearCommentLayoutCloseTimer()
+      stopCommentResize()
+      window.removeEventListener('resize', updateMainWidth)
+    })
+
 
     return {
       appSetting,
       playMusicInfo,
       isShowPlayerDetail,
       isShowPlayComment,
+      isCommentLayoutVisible,
+      isCommentLayoutClosing,
+      isCommentLayoutSettling,
+      isPlay,
       musicInfo,
+      dom_main,
+      dom_record,
+      detailBgStyle,
+      mainStyle,
+      isCommentResizing,
       hide,
       handleContextMenu,
       hideComment,
+      handleCommentResizeStart,
       handleAfterEnter,
       handleAfterLeave,
       visibled,
@@ -135,6 +381,13 @@ export default {
 @import '@renderer/assets/styles/layout.less';
 
 @control-btn-width: @height-toolbar * .26;
+@comment-resize-handle-width: 28px;
+@comment-layout-duration: .5s;
+@comment-layout-easing: cubic-bezier(.22, 1, .36, 1);
+@comment-layout-easing-soft: cubic-bezier(.2, .8, .2, 1);
+@play-detail-main-padding-top: 8px;
+@play-detail-main-padding-bottom: @height-player * 1.16;
+@play-detail-main-center-offset: (@play-detail-main-padding-bottom - @play-detail-main-padding-top) / 2;
 
 .container {
   position: absolute;
@@ -144,7 +397,7 @@ export default {
   height: 100%;
   top: 0;
   left: 0;
-  background-color: var(--color-content-background);
+  background-color: #fbfcf7;
   z-index: 10;
   // -webkit-app-region: drag;
   overflow: hidden;
@@ -153,6 +406,7 @@ export default {
   // border-left: 12px solid var(--color-primary-alpha-900);
   -webkit-app-region: no-drag;
   contain: strict;
+  padding-bottom: 0;
 
   box-sizing: border-box;
 
@@ -160,24 +414,66 @@ export default {
     box-sizing: border-box;
   }
 }
+
+:global(.q-detail-enter-active) {
+  animation: qDetailEnter .42s cubic-bezier(.16, 1, .3, 1);
+}
+
+:global(.q-detail-leave-active) {
+  animation: qDetailLeave .28s ease forwards;
+}
+
+@keyframes qDetailEnter {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(.97);
+    filter: saturate(.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: saturate(1);
+  }
+}
+
+@keyframes qDetailLeave {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(34px) scale(.98);
+  }
+}
+
 .bg {
   position: absolute;
   width: 100%;
   height: 100%;
   top: 0;
   left: 0;
-  background: var(--background-image) var(--background-image-position) no-repeat;
-  background-size: var(--background-image-size);
-  // background-size: 110% 110%;
-  // filter: blur(60px);
-  opacity: .7;
+  --play-detail-cover: var(--background-image);
+  background:
+    linear-gradient(110deg, rgba(211, 225, 255, .86) 0%, rgba(245, 252, 242, .9) 48%, rgba(255, 249, 222, .86) 100%),
+    var(--play-detail-cover) center / cover no-repeat,
+    var(--background-image) var(--background-image-position) / var(--background-image-size) no-repeat;
+  filter: blur(42px) saturate(1.18);
+  transform: scale(1.08);
+  opacity: .58;
   z-index: -1;
   &:before {
+    position: absolute;
+    left: 0;
+    top: 0;
     content: '';
     display: block;
     width: 100%;
     height: 100%;
-    background-color: var(--color-app-background);
+    background:
+      radial-gradient(circle at 24% 62%, rgba(111, 139, 255, .26), transparent 36%),
+      radial-gradient(circle at 72% 42%, rgba(252, 238, 174, .34), transparent 36%),
+      linear-gradient(135deg, rgba(250, 253, 255, .72), rgba(255, 255, 248, .86));
   }
   &:after {
     position: absolute;
@@ -187,7 +483,7 @@ export default {
     display: block;
     width: 100%;
     height: 100%;
-    background-color: var(--color-main-background);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .36), rgba(255, 255, 255, .68) 58%, rgba(255, 255, 248, .92));
   }
 }
 // .bg2 {
@@ -201,82 +497,560 @@ export default {
 // }
 
 .main {
+  --comment-width: clamp(420px, 36vw, 560px);
+  --cover-width: 360px;
+  --normal-gap: clamp(48px, 7vw, 116px);
+  --normal-left-width: min(42%, 520px);
+  --normal-right-width: min(690px, calc(100% - var(--normal-left-width) - var(--normal-gap)));
+  --normal-content-left: max(0px, calc((100% - var(--normal-left-width) - var(--normal-right-width) - var(--normal-gap)) / 2));
+  --normal-lyric-left: calc(var(--normal-content-left) + var(--normal-left-width) + var(--normal-gap));
+  --closing-lyric-width: clamp(520px, 42vw, 690px);
   flex: auto;
   min-height: 0;
   overflow: hidden;
   display: flex;
-  margin: 0 30px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--normal-gap);
+  margin: 0 clamp(56px, 7vw, 96px);
+  padding: @play-detail-main-padding-top 0 @play-detail-main-padding-bottom;
   position: relative;
+  z-index: 2;
+  transition:
+    grid-template-columns @comment-layout-duration @comment-layout-easing,
+    margin @comment-layout-duration @comment-layout-easing,
+    padding @comment-layout-duration @comment-layout-easing,
+    gap @comment-layout-duration @comment-layout-easing;
 
   &.showComment {
+    --cover-space: var(--cover-width, clamp(250px, 23vw, 350px));
+    display: grid;
+    grid-template-columns: minmax(300px, 1fr) @comment-resize-handle-width minmax(320px, var(--comment-width));
+    gap: clamp(12px, 1.4vw, 18px);
+    margin: 0 clamp(24px, 3.5vw, 52px);
+    padding-left: var(--cover-space);
+    padding-bottom: calc(@height-player * .7);
+    align-items: center;
+
+    .left {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      z-index: 3;
+      display: flex;
+      width: calc(var(--cover-space) - 20px);
+      height: calc(100% - 36px);
+      min-width: 0;
+      flex-basis: auto;
+      opacity: 1;
+      visibility: visible;
+      transform: translate3d(0, -50%, 0) scale(.985);
+      will-change: transform, width, height;
+      backface-visibility: hidden;
+      animation: qCommentCoverEnter @comment-layout-duration @comment-layout-easing both;
+    }
+
+    .albumStage {
+      width: min(100%, calc(var(--cover-space) - 42px));
+      transform: translate3d(0, -2px, 0) scale(.97);
+      will-change: transform, width;
+      backface-visibility: hidden;
+    }
+
+    .description {
+      width: min(100%, calc(var(--cover-space) - 42px));
+      margin-top: 16px;
+      opacity: .86;
+      transform: translate3d(0, -2px, 0);
+    }
+
+    .comment {
+      width: 100%;
+      min-width: 0;
+      flex-basis: auto;
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+      pointer-events: auto;
+      animation: qCommentPanelEnter .46s @comment-layout-easing .04s both;
+    }
+
+    .commentResizeHandle {
+      width: @comment-resize-handle-width;
+      flex-basis: auto;
+      opacity: .74;
+      pointer-events: auto;
+    }
+
     :global {
-      .left {
-        flex-basis: 18%;
-        .description p {
-          font-size: 12px;
-        }
-      }
       .right {
-        flex-basis: 30%;
+        width: 100%;
+        height: 100%;
+        flex: none;
+        max-width: none;
+        min-width: 0;
+        animation: qCommentLyricEnter .46s @comment-layout-easing-soft .02s both;
         .lyricSelectContent {
           font-size: 14px;
         }
       }
-      .comment {
-        opacity: 1;
-        transform: scaleX(1);
+      .left {
+        .description p {
+          font-size: 12px;
+        }
+      }
+    }
+  }
+
+  &.showComment.commentClosing {
+    grid-template-columns: var(--closing-lyric-width) 0 minmax(0, 0);
+    justify-content: start;
+    gap: 0;
+    margin: 0 clamp(56px, 7vw, 96px);
+    padding-left: calc(clamp(280px, 31vw, 430px) + var(--normal-gap));
+    padding-bottom: @play-detail-main-padding-bottom;
+
+    .left {
+      pointer-events: none;
+      left: var(--normal-content-left);
+      top: calc(50% - @play-detail-main-center-offset);
+      width: var(--normal-left-width);
+      height: 100%;
+      transform: translate3d(0, -50%, 0) scale(1);
+      animation: none;
+    }
+
+    .albumStage {
+      width: clamp(280px, 31vw, 430px);
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    .description {
+      width: min(100%, 430px);
+      margin-top: 22px;
+      opacity: .9;
+      transform: translate3d(0, 0, 0);
+    }
+
+    .comment {
+      width: 0;
+      pointer-events: none;
+      animation: qCommentPanelLeave .28s ease both;
+    }
+
+    .commentResizeHandle {
+      width: 0;
+      flex-basis: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    :global {
+      .left {
+        .description p {
+          font-size: 14px;
+
+          &:first-child {
+            font-size: 17px;
+          }
+        }
+      }
+
+      .right {
+        width: var(--closing-lyric-width);
+        max-width: var(--closing-lyric-width);
+        animation: none;
+      }
+    }
+  }
+
+  &.commentSettling {
+    transition: none !important;
+
+    .left,
+    .albumStage,
+    .description,
+    .comment,
+    .commentResizeHandle {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    :global {
+      .right {
+        transition: none !important;
+        animation: none !important;
       }
     }
   }
 }
 .left {
-  flex: 0 0 40%;
+  flex: 0 0 min(42%, 520px);
+  height: 100%;
   display: flex;
   flex-flow: column nowrap;
   align-items: center;
-  padding: 13px;
-  overflow: hidden;
-  transition: flex-basis @transition-normal;
+  justify-content: center;
+  padding: 0;
+  overflow: visible;
+  transition:
+    flex-basis @comment-layout-duration @comment-layout-easing,
+    width @comment-layout-duration @comment-layout-easing,
+    height @comment-layout-duration @comment-layout-easing,
+    opacity @transition-fast,
+    transform @comment-layout-duration @comment-layout-easing;
 }
 
-.info {
+.albumStage {
+  position: relative;
+  width: clamp(280px, 31vw, 430px);
+  aspect-ratio: 1 / 1;
   display: flex;
-  flex-flow: column nowrap;
-  justify-content: flex-start;
-  max-width: 300px;
-  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  transition:
+    width @comment-layout-duration @comment-layout-easing,
+    transform @comment-layout-duration @comment-layout-easing,
+    filter .32s ease;
+
+  &:before {
+    content: '';
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    bottom: 3%;
+    z-index: 0;
+    height: 22%;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(78, 96, 118, .14), rgba(78, 96, 118, .06) 44%, transparent 72%);
+    filter: blur(24px);
+    opacity: .62;
+    transform: translateY(18px);
+    transition: opacity .32s ease, transform @comment-layout-duration @comment-layout-easing;
+  }
+
+  &:hover {
+    filter: saturate(1.04) brightness(1.01);
+    transform: translate3d(0, -4px, 0) scale(1.01);
+
+    &:before {
+      opacity: .72;
+      transform: translateY(20px) scale(1.02);
+    }
+  }
+
+  &.albumStagePlaying {
+    .record {
+      &:before {
+        will-change: transform;
+      }
+    }
+
+    .img,
+    .emptyCover {
+      will-change: transform;
+    }
+
+    .toneArm {
+      transform: rotate(12deg);
+    }
+  }
+}
+.record {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 34px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .94), rgba(245, 248, 250, .8)),
+    rgba(255, 255, 255, .86);
+  border: 1px solid rgba(255, 255, 255, .62);
+  box-shadow: 0 18px 44px rgba(76, 93, 122, .08), inset 0 1px 0 rgba(255, 255, 255, .9);
+
+  &:before {
+    content: '';
+    position: absolute;
+    width: 78%;
+    height: 78%;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at center, rgba(33, 39, 35, .95) 0 18%, rgba(73, 79, 75, .72) 19% 20%, transparent 21%),
+      conic-gradient(from 0deg, rgba(255, 255, 255, .14), transparent 8%, rgba(255, 255, 255, .08) 18%, transparent 31%, rgba(0, 0, 0, .12) 45%, transparent 62%, rgba(255, 255, 255, .1) 78%, transparent),
+      repeating-radial-gradient(circle, rgba(255, 255, 255, .2) 0 1px, rgba(0, 0, 0, .08) 2px 4px),
+      radial-gradient(circle, #8f9490, #545956 72%, #2f3532);
+    box-shadow: inset 0 0 34px rgba(255, 255, 255, .2), 0 18px 38px rgba(47, 60, 72, .18);
+    transform-origin: center;
+    transform: rotate(var(--q-record-rotation, 0deg));
+    will-change: transform;
+  }
+
+  &:after {
+    content: '';
+    position: absolute;
+    width: 44%;
+    height: 44%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, .96), rgba(232, 238, 232, .76));
+    box-shadow: inset 0 0 0 10px rgba(19, 26, 22, .82);
+  }
 }
 .img {
-  max-width: 100%;
-  max-height: 80%;
-  min-width: 100%;
-  box-shadow: 0 0 6px var(--color-primary-alpha-500);
-  border-radius: 6px;
-  opacity: .8;
+  position: relative;
+  z-index: 2;
+  width: 40%;
+  height: 40%;
+  object-fit: cover;
+  border-radius: 50%;
+  box-shadow: 0 10px 28px rgba(22, 28, 34, .26);
+  transform-origin: center;
+  transform: rotate(var(--q-record-rotation, 0deg));
+  will-change: transform;
 }
+.emptyCover {
+  position: relative;
+  z-index: 2;
+  width: 40%;
+  height: 40%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 34px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6374ff, var(--color-primary));
+  box-shadow: 0 10px 28px rgba(22, 28, 34, .24);
+  transform-origin: center;
+  transform: rotate(var(--q-record-rotation, 0deg));
+  will-change: transform;
+}
+.toneArm {
+  position: absolute;
+  z-index: 3;
+  right: 10%;
+  top: -7%;
+  width: 28%;
+  height: 62%;
+  transform: rotate(6deg);
+  transform-origin: 76% 9%;
+  pointer-events: none;
+  transition: transform .48s cubic-bezier(.16, 1, .3, 1);
+
+  &:before {
+    content: '';
+    position: absolute;
+    right: 44%;
+    top: 12%;
+    width: 10px;
+    height: 80%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(245, 245, 245, .95), rgba(150, 154, 157, .88), rgba(255, 255, 255, .9));
+    box-shadow: 8px 10px 18px rgba(58, 66, 76, .18);
+  }
+
+  &:after {
+    content: '';
+    position: absolute;
+    right: 34%;
+    top: 8%;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff, #d9dedb);
+    box-shadow: inset 0 0 0 8px rgba(226, 230, 228, .92), 0 10px 24px rgba(50, 58, 64, .18);
+  }
+}
+
 .description {
-  max-width: 300px;
-  margin-top: 15px;
-  padding-bottom: 15px;
-  min-height: 0;
+  width: min(100%, 430px);
+  max-height: 92px;
+  margin-top: 22px;
+  padding: 0 8px;
+  text-align: center;
+  color: var(--color-font-label);
+  transition:
+    width @comment-layout-duration @comment-layout-easing,
+    margin-top @comment-layout-duration @comment-layout-easing,
+    opacity @transition-fast,
+    transform @comment-layout-duration @comment-layout-easing;
   p {
-    line-height: 1.5;
+    line-height: 1.55;
     font-size: 14px;
     overflow-wrap: break-word;
+    color: var(--color-font-label);
+    .mixin-ellipsis-1();
+
+    &:first-child {
+      color: var(--color-font);
+      font-size: 17px;
+      font-weight: 700;
+    }
   }
 }
 
 
 .comment {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 50%;
+  flex: 0 0 0;
+  min-width: 0;
   height: 100%;
-  opacity: 1;
-  margin-left: 10px;
-  transform: scaleX(0);
+  opacity: 0;
+  transform: translate3d(18px, 0, 0);
+  transform-origin: right center;
+  pointer-events: none;
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+  transition:
+    flex-basis .42s @comment-layout-easing,
+    opacity .28s ease,
+    transform .42s @comment-layout-easing;
 }
 
+@keyframes qCommentCoverEnter {
+  from {
+    opacity: .78;
+    transform: translate3d(20px, -50%, 0) scale(1.025);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, -50%, 0) scale(.985);
+  }
+}
+
+@keyframes qCommentCoverLeave {
+  from {
+    opacity: 1;
+    transform: translate3d(0, -50%, 0) scale(.985);
+  }
+  to {
+    opacity: .92;
+    transform: translate3d(10px, -50%, 0) scale(1.005);
+  }
+}
+
+@keyframes qCommentLyricEnter {
+  from {
+    opacity: .84;
+    transform: translate3d(14px, 0, 0) scale(.992);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes qCommentLyricLeave {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: .88;
+    transform: translate3d(-10px, 0, 0) scale(.996);
+  }
+}
+
+@keyframes qCommentPanelEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(26px, 0, 0) scale(.992);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes qCommentPanelLeave {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(24px, 0, 0) scale(.992);
+  }
+}
+
+.commentResizeHandle {
+  position: relative;
+  z-index: 5;
+  flex: 0 0 0;
+  display: block;
+  align-self: stretch;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: col-resize;
+  opacity: 0;
+  pointer-events: none;
+  touch-action: none;
+  -webkit-app-region: no-drag;
+  transition:
+    flex-basis .42s @comment-layout-easing,
+    opacity @transition-fast;
+
+  &:before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 11%;
+    width: 3px;
+    height: 78%;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(99, 116, 255, .1), rgba(72, 186, 148, .48), rgba(99, 116, 255, .1));
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .6), 0 14px 30px rgba(72, 186, 148, .16);
+    transition:
+      width @transition-fast,
+      height @transition-fast,
+      opacity @transition-fast,
+      background-color @transition-fast,
+      box-shadow @transition-fast;
+  }
+
+  &:after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: @comment-resize-handle-width;
+    height: 100%;
+    transform: translateX(-50%);
+  }
+
+  &:hover,
+  &.commentResizeHandleActive {
+    opacity: 1;
+
+    &:before {
+      width: 5px;
+      height: 84%;
+      background: linear-gradient(180deg, rgba(99, 116, 255, .18), rgba(72, 186, 148, .72), rgba(99, 116, 255, .18));
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, .75), 0 18px 34px rgba(72, 186, 148, .24);
+    }
+  }
+}
+
+:global(.q-comment-resizing) {
+  cursor: col-resize !important;
+  user-select: none !important;
+
+  * {
+    cursor: col-resize !important;
+    user-select: none !important;
+  }
+
+  :global(.right),
+  :global(.comment) {
+    transition: none !important;
+  }
+}
 
 </style>

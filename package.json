@@ -1,8 +1,9 @@
 {
-  "name": "lx-music-desktop",
+  "name": "q-music",
   "version": "2.12.2",
   "description": "一个免费的音乐查找助手",
   "main": "./dist/main.js",
+  "private": true,
   "scripts": {
     "pack": "node build-config/pack.js && npm run pack:win:setup:x64",
     "pack:win": "node build-config/pack.js && npm run pack:win:setup:x64 && npm run pack:win:setup:x86 && npm run pack:win:setup:arm64 && npm run pack:win:setup:x86_64 && npm run pack:win:7z",
@@ -76,36 +77,44 @@
   },
   "macLanguagesInfoPlistStrings": {
     "en": {
-      "CFBundleDisplayName": "LX Music",
-      "CFBundleName": "LX Music"
+      "CFBundleDisplayName": "Q-music",
+      "CFBundleName": "Q-music"
     },
     "zh_CN": {
-      "CFBundleDisplayName": "LX Music",
-      "CFBundleName": "LX Music"
+      "CFBundleDisplayName": "Q-music",
+      "CFBundleName": "Q-music"
     },
     "zh_TW": {
-      "CFBundleDisplayName": "LX Music",
-      "CFBundleName": "LX Music"
+      "CFBundleDisplayName": "Q-music",
+      "CFBundleName": "Q-music"
     }
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/lyswhut/lx-music-desktop.git"
   },
   "keywords": [
     "music-player",
     "electron-app",
-    "vuejs3"
+    "vuejs3",
+    "lx-music-fork"
   ],
-  "author": {
-    "name": "lyswhut",
-    "email": "lyswhut@qq.com"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nshpiter/Q-music.git"
   },
+  "author": {
+    "name": "Nshpiter",
+    "url": "https://github.com/Nshpiter"
+  },
+  "contributors": [
+    {
+      "name": "lyswhut",
+      "email": "lyswhut@qq.com",
+      "url": "https://github.com/lyswhut/lx-music-desktop"
+    }
+  ],
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/lyswhut/lx-music-desktop/issues"
+    "url": "https://github.com/Nshpiter/Q-music/issues"
   },
-  "homepage": "https://github.com/lyswhut/lx-music-desktop#readme",
+  "homepage": "https://github.com/Nshpiter/Q-music#readme",
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.13",
     "@types/better-sqlite3": "^7.6.13",

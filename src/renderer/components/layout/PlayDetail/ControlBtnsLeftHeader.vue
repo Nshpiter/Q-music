@@ -10,8 +10,9 @@ div(:class="$style.header")
     button(type="button" :class="$style.min" :aria-label="$t('min')" ignore-tip :title="$t('min')" @click="minWindow")
       svg(:class="$style.controBtnIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 24 24" space="preserve")
         use(xlink:href="#icon-window-minimize")
-
-    //- button(type="button" :class="$style.max" @click="max")
+    button(type="button" :class="$style.max" :aria-label="$t('max')" ignore-tip :title="$t('max')" @click="maxWindow")
+      svg(:class="$style.controBtnIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 24 24" space="preserve")
+        use(xlink:href="#icon-window-max")
     button(type="button" :class="$style.close" :aria-label="$t('close')" ignore-tip :title="$t('close')" @click="closeWindow")
       svg(:class="$style.controBtnIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 24 24" space="preserve")
         use(xlink:href="#icon-window-close")
@@ -22,7 +23,7 @@ div(:class="$style.header")
 import { ref, onMounted, onBeforeUnmount, useCssModule } from '@common/utils/vueTools'
 import { isFullscreen } from '@renderer/store'
 import { setShowPlayerDetail } from '@renderer/store/player/action'
-import { closeWindow, minWindow, setFullScreen } from '@renderer/utils/ipc'
+import { closeWindow, maxWindow, minWindow, setFullScreen } from '@renderer/utils/ipc'
 
 const dom_btns = ref()
 
@@ -76,8 +77,11 @@ const fullscreenExit = () => {
   .header {
     -webkit-app-region: no-drag;
     align-self: flex-start;
+    &:before {
+      display: none;
+    }
     .controBtn {
-      .close, .min {
+      .close, .min, .max {
         display: none;
       }
       .fullscreenExit {
@@ -89,12 +93,23 @@ const fullscreenExit = () => {
 .header {
   position: relative;
   flex: 0 0 @height-toolbar;
-  -webkit-app-region: drag;
+  -webkit-app-region: no-drag;
   width: 100%;
+
+  &:before {
+    content: '';
+    position: absolute;
+    left: 170px;
+    right: 0;
+    top: 8px;
+    height: calc(100% - 8px);
+    -webkit-app-region: drag;
+  }
 
   .controBtn {
     position: absolute;
     top: 0;
+    z-index: 1;
     display: flex;
     -webkit-app-region: no-drag;
 
@@ -145,9 +160,9 @@ const fullscreenExit = () => {
       &.min, &.fullscreenExit {
         background-color: var(--color-btn-min);
       }
-      // &.max {
-      //   background-color: var(--color-btn-max);
-      // }
+      &.max {
+        background-color: var(--color-btn-max);
+      }
       &.close {
         background-color: var(--color-btn-close);
       }

@@ -1,44 +1,36 @@
 <template>
   <material-popup-btn ref="btn_ref" :class="$style.btnContent">
     <button :class="$style.btn" :aria-label="nextTogglePlayName">
-      <svg
-        v-if="appSetting['player.togglePlayMethod'] == 'listLoop'"
-        version="1.1"
-        xmlns="http://www.w3.org/2000/svg"
-        xlink="http://www.w3.org/1999/xlink"
-        height="80%" viewBox="0 0 24 24" space="preserve"
-      >
-        <use xlink:href="#icon-list-loop" />
+      <svg v-if="appSetting['player.togglePlayMethod'] == 'listLoop'" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M17 3l4 4-4 4" />
+        <path d="M3 7h18" />
+        <path d="M7 21l-4-4 4-4" />
+        <path d="M21 17H3" />
       </svg>
-      <svg
-        v-else-if="appSetting['player.togglePlayMethod'] == 'random'"
-        version="1.1"
-        xmlns="http://www.w3.org/2000/svg"
-        xlink="http://www.w3.org/1999/xlink"
-        width="100%" viewBox="0 0 24 24" space="preserve"
-      >
-        <use xlink:href="#icon-list-random" />
+      <svg v-else-if="appSetting['player.togglePlayMethod'] == 'random'" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 7h3l10 10h3" />
+        <path d="M17 13l3 4-3 4" />
+        <path d="M4 17h3l3-3" />
+        <path d="M17 3l3 4-3 4" />
+        <path d="M14 7h6" />
       </svg>
-      <svg
-        v-else-if="appSetting['player.togglePlayMethod'] == 'list'"
-        version="1.1"
-        xmlns="http://www.w3.org/2000/svg"
-        xlink="http://www.w3.org/1999/xlink"
-        width="100%" viewBox="0 0 32 32" space="preserve"
-      >
-        <use xlink:href="#icon-list-order" />
+      <svg v-else-if="appSetting['player.togglePlayMethod'] == 'list'" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 7h12" />
+        <path d="M6 12h12" />
+        <path d="M6 17h8" />
       </svg>
-      <svg
-        v-else-if="appSetting['player.togglePlayMethod'] == 'singleLoop'"
-        version="1.1"
-        xmlns="http://www.w3.org/2000/svg"
-        xlink="http://www.w3.org/1999/xlink"
-        width="100%" viewBox="0 0 24 24" space="preserve"
-      >
-        <use xlink:href="#icon-single-loop" />
+      <svg v-else-if="appSetting['player.togglePlayMethod'] == 'singleLoop'" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M17 3l4 4-4 4" />
+        <path d="M3 7h18" />
+        <path d="M7 21l-4-4 4-4" />
+        <path d="M21 17H3" />
+        <path d="M12 10v5" />
+        <path d="M10.5 11.5L12 10l1.5 1.5" />
       </svg>
-      <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 32 32" space="preserve">
-        <use xlink:href="#icon-single" />
+      <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 6h8" />
+        <path d="M8 12h8" />
+        <path d="M8 18h8" />
       </svg>
     </button>
     <template #content>
@@ -99,7 +91,11 @@ const toggleMode = (mode) => {
 @import '@renderer/assets/styles/layout.less';
 .btnContent {
   flex: none;
-  height: 100%;
+  width: var(--q-footer-tool-size, 34px);
+  height: var(--q-footer-tool-size, 34px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn {
@@ -107,23 +103,33 @@ const toggleMode = (mode) => {
   // color: var(--color-button-font);
   justify-content: center;
   align-items: center;
-  transition: color @transition-normal;
+  transition: color @transition-normal, background-color @transition-fast, opacity @transition-fast;
   cursor: pointer;
   background-color: transparent;
   border: none;
-  width: 24px;
+  width: var(--q-footer-tool-size, 34px);
+  height: var(--q-footer-tool-size, 34px);
   display: flex;
   flex-flow: column nowrap;
   padding: 0;
+  border-radius: 50%;
 
   svg {
     transition: opacity @transition-fast;
-    opacity: .6;
-    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.2));
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .72;
+    filter: none;
   }
   &:hover {
+    background-color: var(--color-primary-light-600-alpha-300);
     svg {
-      opacity: .9;
+      opacity: 1;
     }
   }
   &:active {

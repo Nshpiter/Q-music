@@ -4,8 +4,8 @@
     <div id="right">
       <layout-toolbar id="toolbar" />
       <layout-view id="view" />
-      <layout-play-bar id="player" />
     </div>
+    <layout-play-bar id="player" />
     <layout-icons />
     <layout-change-log-modal />
     <layout-update-modal />
@@ -125,33 +125,51 @@ body {
   position: relative;
   display: flex;
   height: 100%;
-  background-color: var(--color-app-background);
+  background:
+    radial-gradient(circle at 18% 8%, var(--color-primary-alpha-800), transparent 30%),
+    linear-gradient(135deg, var(--color-primary-light-1000-alpha-100), var(--color-primary-light-900-alpha-200) 42%, var(--color-primary-alpha-900)),
+    var(--color-app-background);
 }
 
 #left {
   flex: none;
   width: @width-app-left;
+  min-width: @width-app-left;
 }
 #right {
   flex: auto;
   display: flex;
   flex-flow: column nowrap;
   transition: background-color @transition-normal;
+  min-width: 0;
+  margin: 14px 14px 14px 0;
+  padding-bottom: @height-player;
   background-color: var(--color-main-background);
 
-  border-top-left-radius: @radius-border;
-  border-bottom-left-radius: @radius-border;
+  border-radius: @radius-border;
   overflow: hidden;
-  box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 18px 52px rgba(31, 45, 39, 0.12);
+  backdrop-filter: blur(18px);
 }
-#toolbar, #player {
+#toolbar {
   flex: none;
+}
+#player {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: @height-player;
+  z-index: 12;
 }
 #view {
   position: relative;
   flex: auto;
   // display: flex;
   min-height: 0;
+}
+#view.show-modal {
+  z-index: 20;
 }
 
 .view-container {

@@ -8,8 +8,18 @@ dd
       base-checkbox(id="setting_animate" :disabled="!appSetting['common.isShowAnimation']" :model-value="appSetting['common.randomAnimate']" :label="$t('setting__basic_animation')" @update:model-value="updateSetting({'common.randomAnimate': $event})")
     .gap-top
       base-checkbox(id="setting_start_in_fullscreen" :model-value="appSetting['common.startInFullscreen']" :label="$t('setting__basic_start_in_fullscreen')" @update:model-value="updateSetting({'common.startInFullscreen': $event})")
-    .gap-top
-      base-checkbox(id="setting_to_tray" :model-value="appSetting['tray.enable']" :label="$t('setting__basic_to_tray')" @update:model-value="updateSetting({'tray.enable': $event})")
+    .gap-top(:class="$style.closeAction")
+      div(:class="$style.closeActionTitle") {{ $t('setting__basic_close_action') }}
+      div(:class="$style.closeActionOptions")
+        base-checkbox(
+          id="setting_close_action_exit" name="setting_close_action" need
+          :model-value="closeAction" value="exit" :label="$t('setting__basic_close_action_exit')"
+          @update:model-value="updateCloseAction")
+        base-checkbox.gap-left(
+          id="setting_close_action_tray" name="setting_close_action" need
+          :model-value="closeAction" value="tray" :label="$t('setting__basic_close_action_tray')"
+          @update:model-value="updateCloseAction")
+      div(:class="$style.closeActionTip") {{ $t('setting__basic_close_action_tip') }}
     .p.gap-top
       base-btn.btn(min @click="isShowPlayTimeoutModal = true") {{ $t('setting__play_timeout')}} {{ timeLabel ? ` (${timeLabel})` : '' }}
 
@@ -222,6 +232,10 @@ export default {
       init()
     }
     init()
+    const closeAction = computed(() => appSetting['tray.enable'] ? 'tray' : 'exit')
+    const updateCloseAction = action => {
+      updateSetting({ 'tray.enable': action == 'tray' })
+    }
     const toggleTheme = (theme) => {
       if (themeId.value == theme.id) return
       themeId.value = theme.id
@@ -302,16 +316,21 @@ export default {
       systemFontList.value = fonts.map(f => ({ id: f, label: f.replace(/(^"|"$)/g, '') }))
     })
 
+    const parseFontSetting = font => {
+      if (!font) return []
+      return font.split(',')
+        .map(f => f.trim())
+        .filter(Boolean)
+    }
     const fonts = computed(() => {
-      if (!appSetting['common.font']) return ['', '']
-      let [f1 = '', f2 = ''] = appSetting['common.font'].split(',')
-      return [f1.trim(), f2.trim()]
+      const [f1 = '', f2 = ''] = parseFontSetting(appSetting['common.font'])
+      return [f1, f2]
     })
     const updateFonts = (font1, font2) => {
-      let font = []
-      if (font1) font.push(font1)
-      if (font2) font.push(font2)
-      updateSetting({ 'common.font': font.join(', ') })
+      const fonts = []
+      if (font1) fonts.push(font1)
+      if (font1 && font2 && font2 != font1) fonts.push(font2)
+      updateSetting({ 'common.font': fonts.join(', ') })
     }
     const fontSizeList = computed(() => {
       return [
@@ -332,6 +351,8 @@ export default {
       autoTheme,
       showAllTheme,
       themeList,
+      closeAction,
+      updateCloseAction,
       fonts,
       updateFonts,
       // currentStting,
@@ -533,6 +554,23 @@ export default {
       }
     }
   }
+}
+
+.closeAction {
+  line-height: 1.5;
+}
+.closeActionTitle {
+  margin-bottom: 6px;
+}
+.closeActionOptions {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+}
+.closeActionTip {
+  margin-top: 5px;
+  color: var(--color-500);
+  font-size: 12px;
 }
 
 .sourceLabel {

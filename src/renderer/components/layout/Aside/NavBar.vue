@@ -6,6 +6,7 @@
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" :viewBox="item.iconSize" :height="item.size" :width="item.size" space="preserve">
             <use :xlink:href="item.icon" />
           </svg>
+          <span>{{ item.tips }}</span>
         </router-link>
       </li>
     </ul>
@@ -108,6 +109,9 @@ export default {
 }
 .list {
   -webkit-app-region: no-drag;
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 6px;
   // margin-bottom: 15px;
   &:last-child {
     margin-bottom: 0;
@@ -124,19 +128,13 @@ export default {
 }
 .navItem {
   position: relative;
-  &:before {
-    content: '';
-    display: block;
-    width: 100%;
-    padding-bottom: 84%;
-  }
 }
 .link {
-  position: absolute;
-  left: 0%;
-  top: 0%;
+  position: relative;
+  left: auto;
+  top: auto;
   width: 100%;
-  height: 100%;
+  height: 46px;
   // left: 15%;
   // top: 15%;
   // width: 70%;
@@ -149,8 +147,11 @@ export default {
   // padding: 18px 3px;
   // margin: 5px 0;
   // border-left: 5px solid transparent;
+  padding: 0 12px;
+  gap: 12px;
+  border-radius: @radius-border;
   transition: @transition-fast;
-  transition-property: background-color, opacity;
+  transition-property: background-color, color, opacity, box-shadow, transform;
   color: var(--color-nav-font);
   cursor: pointer;
   // font-size: 11.5px;
@@ -158,32 +159,60 @@ export default {
   outline: none;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 
   // border-radius: @radius-border;
   .mixin-ellipsis-1();
+
+  svg {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    padding: 6px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .42);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .58);
+    transition: @transition-fast;
+    transition-property: background-color, color, box-shadow;
+  }
+
+  span {
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    .mixin-ellipsis-1();
+  }
+
   &:before {
     .mixin-after();
     left: 0;
-    top: 0;
+    top: 10px;
     width: 3px;
-    height: 100%;
-    background-color: var(--color-primary-dark-200-alpha-700);
-    border-radius: 4px;
+    height: 24px;
+    background-color: var(--color-primary);
+    border-radius: 3px;
     transform: translateX(-100%);
     transition: transform @transition-fast;
   }
 
   &.active {
     // border-left-color: @color-theme-active;
-    background-color: var(--color-primary-light-300-alpha-700);
+    color: var(--color-primary-dark-300);
+    background-color: rgba(255, 255, 255, .56);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72), 0 12px 28px rgba(72, 91, 112, .06);
+
+    svg {
+      color: #fff;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark-300));
+      box-shadow: 0 10px 22px var(--color-primary-alpha-800);
+    }
 
     &:before {
       transform: translateX(0);
     }
 
     &:hover {
-      background-color: var(--color-primary-light-300-alpha-800);
+      background-color: var(--color-primary-light-600-alpha-100);
     }
   }
 
@@ -192,13 +221,14 @@ export default {
     color: var(--color-nav-font);
 
     &:not(.active) {
-      opacity: .8;
-      background-color: var(--color-primary-light-400-alpha-700);
+      opacity: 1;
+      background-color: rgba(255, 255, 255, .42);
+      transform: translateX(2px);
     }
   }
   &:active:not(.active) {
-    opacity: .6;
-    background-color: var(--color-primary-light-300-alpha-600);
+    opacity: .72;
+    background-color: var(--color-primary-light-600-alpha-400);
   }
 }
 

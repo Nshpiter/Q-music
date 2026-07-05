@@ -38,7 +38,7 @@ export const dateFormat2 = (time: number): string => {
  */
 let dom_title = document.getElementsByTagName('title')[0]
 export const setTitle = (title: string | null) => {
-  title ||= 'LX Music'
+  title ||= 'Q-music'
   dom_title.innerText = title
 }
 

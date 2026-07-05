@@ -127,7 +127,6 @@ export default {
       this.$refs.dom_input.focus()
     },
     handleTemplistClick(index) {
-      console.log(index)
       this.sendEvent('listClick', index)
     },
     handleFocus() {
@@ -203,8 +202,10 @@ export default {
 
 .container {
   position: relative;
-  width: 35%;
-  height: @height-toolbar * 0.52;
+  width: 45%;
+  min-width: 260px;
+  max-width: 520px;
+  height: 38px;
   -webkit-app-region: no-drag;
 }
 
@@ -212,14 +213,17 @@ export default {
   position: absolute;
   width: 100%;
   border-radius: @form-radius;
-  transition: box-shadow .4s ease, background-color @transition-normal;
+  transition: box-shadow .4s ease, background-color @transition-normal, border-color @transition-fast;
   display: flex;
   flex-flow: column nowrap;
-  background-color: var(--color-primary-light-300-alpha-700);
+  background-color: var(--color-primary-light-1000-alpha-700);
+  border: 1px solid var(--color-primary-alpha-900);
+  box-shadow: 0 8px 26px rgba(31, 45, 39, 0.06);
 
   &.active {
-    background-color: var(--color-primary-light-600-alpha-100);
-    box-shadow: 0 1px 5px 0 rgba(0,0,0,.2);
+    background-color: var(--color-main-background);
+    border-color: var(--color-primary-alpha-700);
+    box-shadow: 0 12px 32px rgba(31, 45, 39, 0.12);
     .form {
       input {
         border-bottom-left-radius: 0;
@@ -232,7 +236,7 @@ export default {
   }
   .form {
     display: flex;
-    height: @height-toolbar * 0.52;
+    height: 38px;
     position: relative;
     input {
       flex: auto;
@@ -247,12 +251,12 @@ export default {
 
       outline: none;
       // height: @height-toolbar * .7;
-      padding: 0 5px;
+      padding: 0 8px 0 14px;
       overflow: hidden;
       font-size: 13.5px;
-      line-height: @height-toolbar * 0.52 + 5px;
+      line-height: 38px;
       &::placeholder {
-        color: var(--color-button-font);
+        color: var(--color-font-label);
         font-size: .98em;
       }
     }
@@ -264,8 +268,8 @@ export default {
       outline: none;
       cursor: pointer;
       height: 100%;
-      padding: 6px 7px;
-      color: var(--color-button-font);
+      padding: 8px 10px;
+      color: var(--color-font-label);
       transition: background-color .2s ease;
 
       &:last-child {
@@ -288,9 +292,10 @@ export default {
     height: 0;
     transition-property: height;
     overflow: hidden;
+    border-top: 1px solid var(--color-primary-alpha-900);
     li {
       cursor: pointer;
-      padding: 8px 5px;
+      padding: 9px 12px;
       transition: background-color .2s ease;
       line-height: 1.3;
       span {
@@ -298,7 +303,7 @@ export default {
       }
 
       &.select {
-        background-color: var(--color-primary-dark-100-alpha-700);
+        background-color: var(--color-primary-light-600-alpha-200);
       }
       &:last-child {
         border-bottom-left-radius: 3px;

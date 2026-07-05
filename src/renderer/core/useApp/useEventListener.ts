@@ -27,7 +27,6 @@ import {
 // import { isLinux, isProd } from '@common/utils'
 import { openUrl } from '@common/utils/electron'
 import { HOTKEY_COMMON } from '@common/hotKey'
-import { applyTheme, getThemes } from '@renderer/store/utils'
 import { clearDownKeys } from '@renderer/event'
 
 const handle_key_down = ({ event, type, key }: LX.KeyDownEevent) => {
@@ -110,16 +109,9 @@ export default () => {
 
   const rThemeChange = onThemeChange(({ params: setting }) => {
     // console.log(setting)
-    if (themeShouldUseDarkColors.value == setting.shouldUseDarkColors) {
-      if (themeId.value == setting.theme.id) return
-      themeId.value = setting.theme.id
-    } else {
-      themeShouldUseDarkColors.value = setting.shouldUseDarkColors
-      if (themeId.value != 'auto') return
-    }
-    getThemes(({ dataPath }) => {
-      applyTheme('auto', appSetting['theme.lightId'], appSetting['theme.darkId'], dataPath)
-    })
+    themeShouldUseDarkColors.value = setting.shouldUseDarkColors
+    themeId.value = setting.theme.id
+    window.setTheme(setting.theme.colors)
   })
 
   window.key_event.on(HOTKEY_COMMON.min.action, minWindow)

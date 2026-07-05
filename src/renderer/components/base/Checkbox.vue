@@ -151,12 +151,13 @@ export default {
 .content {
   display: flex;
   align-items: center;
+  min-height: 26px;
 }
 .container {
   flex: none;
   position: relative;
-  width: 1em;
-  height: 1em;
+  width: 1.15em;
+  height: 1.15em;
   cursor: pointer;
   display: flex;
   color: var(--color-primary);
@@ -168,22 +169,25 @@ export default {
     bottom: 0;
     left: 0;
     right: 0;
-    border: 1px solid var(--color-font-label);
-    transition: border-color 0.2s ease;
-    border-radius: 2px;
+    border: 1px solid var(--color-primary-alpha-700);
+    background: rgba(255, 255, 255, .58);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55);
+    transition: @transition-fast;
+    transition-property: border-color, background-color, box-shadow;
+    border-radius: 7px;
   }
 }
 .icon {
   transition: 0.3s ease;
   transition-property: transform;
   transform: scale(0);
-  border-radius: 2px;
+  border-radius: 7px;
   // opacity: 0;
 }
 
 .label {
   flex: auto;
-  margin-left: 5px;
+  margin-left: 8px;
   line-height: 1.5;
   cursor: pointer;
 }

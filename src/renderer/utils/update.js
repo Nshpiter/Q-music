@@ -1,20 +1,8 @@
 import { httpGet } from './request'
-import pkg from '../../../package.json'
-
-// TODO add Notice
-
-const author = pkg.author.name
-const name = pkg.name
 
 const address = [
-  [`https://raw.githubusercontent.com/${author}/${name}/master/publish/version.json`, 'direct'],
-  ['https://registry.npmjs.org/lx-music-desktop-version-info/latest', 'npm'],
-  [`https://cdn.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
-  [`https://fastly.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
-  [`https://gcore.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
-  ['https://registry.npmmirror.com/lx-music-desktop-version-info/latest', 'npm'],
-  ['https://gitee.com/lyswhut/lx-music-desktop-versions/raw/master/version.json', 'direct'],
-  ['http://cdn.stsky.cn/lx-music/desktop/version.json', 'direct'],
+  ['https://raw.githubusercontent.com/Nshpiter/Q-music/master/publish/version.json', 'direct'],
+  ['https://cdn.jsdelivr.net/gh/Nshpiter/Q-music@master/publish/version.json', 'direct'],
 ]
 
 const request = async(url, retryNum = 0) => {
@@ -48,6 +36,13 @@ const getNpmPkgInfo = async(url) => {
 }
 
 export const getVersionInfo = async(index = 0) => {
+  if (!address.length || !address[index]) {
+    return {
+      version: process.versions.app,
+      desc: '',
+      history: [],
+    }
+  }
   const [url, source] = address[index]
   let promise
   switch (source) {

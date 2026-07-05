@@ -7,6 +7,7 @@
 
 <script>
 import { getListPrevSelectId } from '@renderer/utils/data'
+import { defaultList } from '@renderer/store/list/state'
 
 import MyList from './MyList/index.vue'
 import MusicList from './MusicList/index.vue'
@@ -21,6 +22,7 @@ export default {
     let id = to.query.id
     if (!id) {
       id = await getListPrevSelectId()
+      id ||= defaultList.id
       next({
         path: to.path,
         query: { id },
@@ -31,7 +33,7 @@ export default {
     // console.log(to, from)
     if (to.query.updated) return
     let id = to.query.id
-    if (id == null) return
+    id ||= defaultList.id
     // if (!getList(id)) {
     //   id = defaultList.id
     // }
@@ -54,7 +56,7 @@ export default {
     }
   },
   created() {
-    this.listId = this.$route.query.id
+    this.listId = this.$route.query.id || defaultList.id
   },
 }
 </script>

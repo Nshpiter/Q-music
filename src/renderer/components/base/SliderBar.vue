@@ -132,12 +132,13 @@ export default {
 .slider {
   // cursor: pointer;
   width: 100%;
-  height: 5px;
+  height: 6px;
   border-radius: 20px;
   overflow: hidden;
   transition: @transition-normal;
   transition-property: background-color, opacity;
-  background-color: var(--color-primary-alpha-700);
+  background-color: rgba(255, 255, 255, .58);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55);
   // background-color: #f5f5f5;
   position: relative;
   // border-radius: @radius-progress-border;
@@ -159,8 +160,8 @@ export default {
   height: 100%;
   // border-radius: @radius-progress-border;
   transition-duration: 0.2s;
-  background-color: var(--color-button-font);
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(90deg, var(--color-primary), #6374ff);
+  box-shadow: 0 0 14px var(--color-primary-alpha-800);
 }
 
 .sliderMask {

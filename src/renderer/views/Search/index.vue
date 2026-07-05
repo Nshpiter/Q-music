@@ -14,6 +14,7 @@
 
 <script>
 import { useRoute, useRouter } from '@common/utils/vueRouter'
+import { DEFAULT_SETTING } from '@common/constants'
 import { searchText } from '@renderer/store/search/state'
 import { getSearchSetting, setSearchSetting } from '@renderer/utils/data'
 import { sources as _sources } from '@renderer/store/search/music'
@@ -34,7 +35,7 @@ const verifyQueryParams = async(to, from, next) => {
   let _page = to.query.page
 
   if (_source == null || _type == null) {
-    const setting = await getSearchSetting()
+    const setting = await getSearchSetting().catch(() => ({ ...DEFAULT_SETTING.search }))
     _source ??= setting.source
     _type ??= setting.type
 

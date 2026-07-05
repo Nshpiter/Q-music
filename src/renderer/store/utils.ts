@@ -31,6 +31,8 @@ export const getThemes = (callback: (themeInfo: LX.ThemeInfo) => void) => {
     themeInfo.userThemes = shallowReactive(info.userThemes)
     themeInfo.dataPath = info.dataPath
     callback(themeInfo)
+  }).catch(err => {
+    console.error(err)
   })
 }
 export const buildThemeColors = (theme: LX.Theme, dataPath: string) => {
@@ -64,8 +66,12 @@ export const findTheme = (themeInfo: LX.ThemeInfo, id: string): LX.Theme | undef
   return theme
 }
 
+let applyThemeId = 0
+
 export const applyTheme = (id: string, lightId: string, darkId: string, dataPath: string) => {
+  const currentApplyThemeId = ++applyThemeId
   getThemes((themeInfo) => {
+    if (currentApplyThemeId != applyThemeId) return
     let themeId = id == 'auto'
       ? themeShouldUseDarkColors.value
         ? darkId
@@ -75,8 +81,9 @@ export const applyTheme = (id: string, lightId: string, darkId: string, dataPath
     let theme = findTheme(themeInfo, themeId)
     if (!theme) {
       themeId = id == 'auto' && themeShouldUseDarkColors.value ? 'black' : 'green'
-      theme = themeInfo.themes.find(theme => theme.id == themeId)!
+      theme = themeInfo.themes.find(theme => theme.id == themeId) ?? themeInfo.themes[0]
     }
+    if (!theme) return
     window.setTheme(buildThemeColors(theme, dataPath))
   })
 }

@@ -4,25 +4,30 @@ const builder = require('electron-builder')
 const beforePack = require('./build-before-pack')
 const afterPack = require('./build-after-pack')
 
+const githubPublishOwner = process.env.Q_MUSIC_GITHUB_OWNER
+const githubPublishRepo = process.env.Q_MUSIC_GITHUB_REPO || 'Q-music'
+
 /**
 * @type {import('electron-builder').Configuration}
 * @see https://www.electron.build/configuration/configuration
 */
 const options = {
-  appId: 'cn.toside.music.desktop',
-  productName: 'lx-music-desktop',
+  appId: 'io.github.qmusic.desktop',
+  productName: 'Q-music',
   beforePack,
   afterPack,
   protocols: {
-    name: 'lx-music-protocol',
+    name: 'q-music-protocol',
     schemes: [
-      'lxmusic',
+      'qmusic',
     ],
   },
   directories: {
     buildResources: './resources',
     output: './build',
   },
+  electronDist: './node_modules/electron/dist',
+  npmRebuild: false,
   files: [
     '!node_modules/**/*',
     'node_modules/font-list',
@@ -44,13 +49,15 @@ const options = {
   extraResources: [
     './licenses',
   ],
-  publish: [
-    {
-      provider: 'github',
-      owner: 'lyswhut',
-      repo: 'lx-music-desktop',
-    },
-  ],
+  publish: githubPublishOwner
+    ? [
+        {
+          provider: 'github',
+          owner: githubPublishOwner,
+          repo: githubPublishRepo,
+        },
+      ]
+    : [],
 }
 /**
  * @type {import('electron-builder').Configuration}
@@ -59,7 +66,7 @@ const options = {
 const winOptions = {
   win: {
     icon: './resources/icons/icon.ico',
-    legalTrademarks: 'lyswhut',
+    legalTrademarks: 'Q-music',
     // artifactName: '${productName}-v${version}-${env.ARCH}-${env.TARGET}.${ext}',
   },
   nsis: {
@@ -68,7 +75,7 @@ const winOptions = {
     allowToChangeInstallationDirectory: true,
     // differentialPackage: true,
     license: './licenses/license.rtf',
-    shortcutName: 'LX Music',
+    shortcutName: 'Q-music',
   },
 }
 /**
@@ -87,11 +94,11 @@ const linuxOptions = {
       // https://specifications.freedesktop.org/desktop-entry-spec/latest/example.html
       // https://developer.gnome.org/documentation/guidelines/maintainer/integrating.html#desktop-files
       entry: {
-        Name: 'LX Music',
-        'Name[zh_CN]': 'LX Music',
-        'Name[zh_TW]': 'LX Music',
+        Name: 'Q-music',
+        'Name[zh_CN]': 'Q-music',
+        'Name[zh_TW]': 'Q-music',
         Encoding: 'UTF-8',
-        MimeType: 'x-scheme-handler/lxmusic',
+        MimeType: 'x-scheme-handler/qmusic',
         StartupNotify: 'false',
       },
     },
@@ -128,7 +135,7 @@ const macOptions = {
         path: '/Applications',
       },
     ],
-    title: 'LX Music v${version}',
+    title: 'Q-music v${version}',
   },
 }
 

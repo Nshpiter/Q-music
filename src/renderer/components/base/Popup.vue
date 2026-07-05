@@ -129,7 +129,7 @@ onBeforeUnmount(() => {
   transition: .16s ease;
   transition-property: transform, opacity;
   max-height: 250px;
-  z-index: 10;
+  z-index: var(--q-z-float);
   pointer-events: none;
   filter: drop-shadow(0px 0px 3px rgba(0, 0, 0, .12));
   display: flex;

@@ -1,7 +1,10 @@
 <template>
   <div :class="[$style.aside, { [$style.fullscreen]: isFullscreen }]">
     <ControlBtns v-if="appSetting['common.controlBtnPosition'] == 'left'" />
-    <div v-else :class="$style.logo">L X</div>
+    <div v-else :class="$style.logo">
+      <span :class="$style.logoMark">Q</span>
+      <span :class="$style.logoText">music</span>
+    </div>
     <NavBar />
   </div>
 </template>
@@ -26,10 +29,13 @@ import NavBar from './NavBar.vue'
   // background-color: @color-theme-sidebar;
   // background-color: @color-aside-background;
   // border-right: 2px solid var(--color-primary);
-  -webkit-app-region: drag;
+  -webkit-app-region: no-drag;
   -webkit-user-select: none;
   display: flex;
   flex-flow: column nowrap;
+  gap: 18px;
+  padding: 22px 14px;
+  box-sizing: border-box;
 
   &.fullscreen {
     -webkit-app-region: no-drag;
@@ -41,15 +47,38 @@ import NavBar from './NavBar.vue'
 
 .logo {
   box-sizing: border-box;
-  padding: 0 13%;
-  height: 50px;
+  height: 42px;
   color: var(--color-nav-font);
-  opacity: .8;
   flex: none;
-  text-align: center;
-  line-height: 50px;
-  font-weight: bold;
-  // -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  -webkit-app-region: drag;
+}
+
+.logoMark {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: @radius-border;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark-300));
+  box-shadow: 0 10px 22px var(--color-primary-alpha-800);
+}
+
+.logoText {
+  min-width: 0;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--color-font);
+  .mixin-ellipsis-1();
 }
 
 </style>

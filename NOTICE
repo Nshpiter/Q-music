@@ -1,0 +1,17 @@
+Q-music
+
+This product includes modified source code derived from LX Music Desktop.
+
+Upstream project:
+  LX Music Desktop
+  https://github.com/lyswhut/lx-music-desktop
+
+Original author:
+  lyswhut
+
+License:
+  Apache License 2.0
+
+Q-music is an independent modified version. It is not the official LX Music
+Desktop distribution and is not endorsed by the upstream project maintainers.
+

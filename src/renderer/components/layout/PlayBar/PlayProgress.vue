@@ -1,12 +1,11 @@
 <template>
   <div :class="$style.content" @click="handleShowPopup" @mouseenter="handlMsEnter" @mouseleave="handlMsLeave">
-    <div ref="dom_btn" :class="$style.timeContent">
-      <span>{{ nowPlayTimeStr }}</span>
-      <span style="margin: 0 1px;">/</span>
-      <span>{{ maxPlayTimeStr }}</span>
+    <div ref="dom_btn" :class="$style.progressRow">
+      <span :class="$style.timeLabel">{{ nowPlayTimeStr }}</span>
       <div :class="$style.progress">
         <div :class="[$style.progressBar, {[$style.barTransition]: isActiveTransition}]" :style="{ transform: `scaleX(${progress || 0})` }" @transitionend="handleTransitionEnd" />
       </div>
+      <span :class="$style.timeLabel">{{ maxPlayTimeStr }}</span>
       <base-popup v-model:visible="visible" :btn-el="dom_btn" @mouseenter="handlMsEnter" @mouseleave="handlMsLeave" @transitionend="handleTranEnd">
         <div :class="$style.popupProgress">
           <common-progress-bar v-if="visibleProgress" :progress="progress" :handle-transition-end="handleTransitionEnd" :is-active-transition="isActiveTransition" />
@@ -116,49 +115,54 @@ export default {
 .content {
   flex: none;
   position: relative;
-  padding: 15px 0;
+  width: 100%;
+  padding: 0;
   &:hover {
     .progress {
       opacity: 1;
     }
   }
 }
-.timeContent {
-  // width: 30%;
+.progressRow {
   position: relative;
-  // flex: none;
-  color: var(--color-550);
-  font-size: 13px;
-  // padding-left: 10px;
-  // display: flex;
-  // flex-flow: column nowrap;
-  // align-items: center;
-  padding-bottom: 3px;
+  width: 100%;
+  height: 22px;
+  display: grid;
+  grid-template-columns: 48px minmax(120px, 1fr) 48px;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.timeLabel {
+  font-size: 12px;
+  color: rgba(54, 58, 60, .7);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .progress {
-  position: absolute;
-  top: 100%;
-  left: 0;
   width: 100%;
-  flex: auto;
-  margin-top: 2px;
+  flex: none;
   // width: 160px;
   // position: relative;
   // padding-bottom: 6px;
   // margin: 0 8px;
-  height: 2px;
-  opacity: .24;
+  height: 4px;
+  opacity: .48;
   overflow: hidden;
   transition: @transition-normal;
   transition-property: background-color, opacity;
-  background-color: var(--color-primary-light-100-alpha-800);
+  background-color: rgba(54, 58, 60, .16);
+  border-radius: @radius-progress-border;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22);
 
   .progressBar {
     height: 100%;
     width: 100%;
     // position: absolute;
-    background-color: var(--color-primary-light-100-alpha-400);
+    background-color: var(--color-primary);
+    border-radius: @radius-progress-border;
     // left: 0;
     // top: 0;
     transform-origin: 0;

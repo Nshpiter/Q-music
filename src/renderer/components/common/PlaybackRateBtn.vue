@@ -1,8 +1,10 @@
 <template>
   <material-popup-btn :class="$style.btnContent">
     <button :class="[$style.btn, { [$style.active]: playbackRate != 1 }]" :aria-label="`${$t('player__playback_rate')}${playbackRate}x`">
-      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 24 24" space="preserve">
-        <use xlink:href="#icon-plex" />
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 17a8 8 0 1 1 14 0" />
+        <path d="M12 13l4-4" />
+        <path d="M8 17h8" />
       </svg>
     </button>
     <template #content>
@@ -55,7 +57,11 @@ const updatePreservesPitch = (enabled) => {
 @import '@renderer/assets/styles/layout.less';
 .btnContent {
   flex: none;
-  height: 100%;
+  width: var(--q-footer-tool-size, 34px);
+  height: var(--q-footer-tool-size, 34px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn {
@@ -67,14 +73,23 @@ const updatePreservesPitch = (enabled) => {
   cursor: pointer;
   background-color: transparent;
   border: none;
-  width: 24px;
+  width: var(--q-footer-tool-size, 34px);
+  height: var(--q-footer-tool-size, 34px);
   display: flex;
   flex-flow: column nowrap;
   padding: 0;
+  border-radius: 50%;
 
   svg {
     transition: opacity @transition-fast;
-    opacity: .5;
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .72;
     // filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.2));
   }
   &:hover {
