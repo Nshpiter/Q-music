@@ -6,6 +6,8 @@ dd
   .gap-top
     base-checkbox(id="setting__update_showChangeLog" :model-value="appSetting['common.showChangeLog']" :label="$t('setting__update_show_change_log')" @update:model-value="updateSetting({'common.showChangeLog': $event})")
   .gap-top
+    base-btn.btn(min :disabled="versionInfo.status == 'checking'" @click="handleCheckUpdate") {{ versionInfo.status == 'checking' ? $t('setting__update_checking') : $t('setting__update_check_btn') }}
+  .gap-top
     .gap-top
       .p.small(@click="handleOpenDevTools") {{ $t('setting__update_current_label') }}{{ versionInfo.version }}
       .p.small(v-if="commit_id")
@@ -36,7 +38,7 @@ import { computed } from '@common/utils/vueTools'
 import { versionInfo } from '@renderer/store'
 import { dateFormat, sizeFormate } from '@common/utils/common'
 // import { openDirInExplorer, selectDir } from '@renderer/utils'
-import { openDevTools } from '@renderer/utils/ipc'
+import { checkUpdate, openDevTools } from '@renderer/utils/ipc'
 import { useI18n } from '@renderer/plugins/i18n'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 
@@ -76,10 +78,18 @@ export default {
       versionInfo.showModal = true
     }
 
+    const handleCheckUpdate = () => {
+      versionInfo.status = 'checking'
+      versionInfo.reCheck = true
+      versionInfo.downloadProgress = null
+      checkUpdate()
+    }
+
     return {
       versionInfo,
       downloadProgress,
       handleOpenDevTools,
+      handleCheckUpdate,
       showUpdateModal,
       appSetting,
       updateSetting,

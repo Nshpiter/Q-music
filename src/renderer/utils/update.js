@@ -1,6 +1,7 @@
 import { httpGet } from './request'
 
 const address = [
+  ['https://api.github.com/repos/Nshpiter/Q-music/releases/latest', 'githubRelease'],
   ['https://raw.githubusercontent.com/Nshpiter/Q-music/master/publish/version.json', 'direct'],
   ['https://cdn.jsdelivr.net/gh/Nshpiter/Q-music@master/publish/version.json', 'direct'],
 ]
@@ -35,6 +36,20 @@ const getNpmPkgInfo = async(url) => {
   })
 }
 
+const normalizeVersion = version => String(version || '').replace(/^v/i, '')
+
+const getGithubReleaseInfo = async(url) => {
+  return request(url).then(info => {
+    const version = normalizeVersion(info.tag_name)
+    if (!version) throw new Error('failed')
+    return {
+      version,
+      desc: info.body || info.name || '',
+      history: [],
+    }
+  })
+}
+
 export const getVersionInfo = async(index = 0) => {
   if (!address.length || !address[index]) {
     return {
@@ -46,6 +61,9 @@ export const getVersionInfo = async(index = 0) => {
   const [url, source] = address[index]
   let promise
   switch (source) {
+    case 'githubRelease':
+      promise = getGithubReleaseInfo(url)
+      break
     case 'direct':
       promise = getDirectInfo(url)
       break

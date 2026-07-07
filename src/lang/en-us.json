@@ -594,6 +594,7 @@
   "setting__sync_server_show_device_list": "List of certified devices",
   "setting__sync_tip": "For how to use it, please see the \"Sync feature\" section of the FAQ",
   "setting__update": "Update",
+  "setting__update_check_btn": "Check for updates",
   "setting__update_checking": "Checking for updates...",
   "setting__update_commit_date": "Commit date: ",
   "setting__update_commit_id": "Commit hash: ",

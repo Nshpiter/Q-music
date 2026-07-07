@@ -594,6 +594,7 @@
   "setting__sync_server_show_device_list": "已認證裝置清單",
   "setting__sync_tip": "使用方式請看常見問題「同步功能」部分",
   "setting__update": "軟體更新",
+  "setting__update_check_btn": "檢查更新",
   "setting__update_checking": "檢查更新中...",
   "setting__update_commit_date": "提交日期：",
   "setting__update_commit_id": "程式碼版本：",

@@ -1,12 +1,10 @@
-Q-music 0.1.4
+Q-music 0.1.6
 
 本版本基于 LX Music Desktop 2.12.2 二次修改。
 
 ### 主要变更
 
-- 将版本检测与自动更新发布源固定到 Nshpiter/Q-music。
-- 恢复启动后的轻量版本检测，发现新版时展示更新弹窗。
-- 修复“下载更新”在更新器未激活时无法继续下载的问题。
-- 安装包新增“创建桌面快捷方式”选项，默认不创建，测试安装时无需手动清理桌面图标。
-- 更新软件发布页链接为 Q-music GitHub Releases。
-- 重写 README 项目主页，并替换为 Q-music 当前界面截图。
+- 更新检查优先读取 Q-music GitHub Latest Release，减少手动维护版本信息的遗漏。
+- 设置「软件更新」页新增「检查更新」按钮，可主动触发更新检测。
+- 更新 `publish/version.json`，让 v0.1.5 能正确发现新版本。
+- 保留 `publish/version.json` 与 jsDelivr 作为兼容兜底源。
