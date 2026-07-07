@@ -10,6 +10,7 @@ autoUpdater.autoDownload = false
 // autoUpdater.autoDownload = false
 
 // let isFirstCheckedUpdate = true
+let isManualDownloadPending = false
 
 log.info('App starting...')
 
@@ -83,12 +84,18 @@ export default () => {
   autoUpdater.on('update-available', info => {
     sendStatusToWindow('Update available.')
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_available, info })
+    if (isManualDownloadPending) {
+      isManualDownloadPending = false
+      void autoUpdater.downloadUpdate()
+    }
   })
   autoUpdater.on('update-not-available', info => {
+    isManualDownloadPending = false
     sendStatusToWindow('Update not available.')
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_not_available, info })
   })
   autoUpdater.on('error', err => {
+    isManualDownloadPending = false
     sendStatusToWindow('Error in auto-updater.')
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_error, info: err.message })
   })
@@ -110,7 +117,11 @@ export default () => {
   })
 
   mainOn(WIN_MAIN_RENDERER_EVENT_NAME.update_download_update, () => {
-    if (!autoUpdater.isUpdaterActive()) return
+    if (!autoUpdater.isUpdaterActive()) {
+      isManualDownloadPending = true
+      checkUpdate(false)
+      return
+    }
     void autoUpdater.downloadUpdate()
   })
 
@@ -123,7 +134,7 @@ export default () => {
   })
 }
 
-const checkUpdate = () => {
+const checkUpdate = (autoDownload = global.lx.appSetting['common.tryAutoUpdate']) => {
   // if (!isFirstCheckedUpdate) {
   //   if (waitEvent.length) {
   //     waitEvent.forEach((event, index) => {
@@ -141,7 +152,7 @@ const checkUpdate = () => {
   if (isWin && process.arch.includes('arm')) {
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_error, info: 'failed' })
   } else {
-    autoUpdater.autoDownload = global.lx.appSetting['common.tryAutoUpdate']
+    autoUpdater.autoDownload = autoDownload
     void autoUpdater.checkForUpdates()
   }
 }

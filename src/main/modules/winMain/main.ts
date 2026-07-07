@@ -13,8 +13,8 @@ let isWindowMaximized = false
 // 因此改为手动记录还原前的窗口尺寸，通过 setBounds 模拟最大化/还原。
 let normalBounds: Electron.Rectangle | null = null
 let isApplyingBounds = false
-// 透明模式下窗体边缘留有 @shadow-app(8px) 的阴影内边距，最大化时向外扩展使内容铺满工作区。
-const TRANSPARENT_SHADOW = 8
+// 透明模式不再保留额外阴影内边距，最大化时无需向外扩展。
+const TRANSPARENT_SHADOW = 0
 
 // setBounds 会异步触发 move/resize 事件，用该辅助函数包裹并延迟复位标记，
 // 避免把程序触发的尺寸变化误判为用户手动调整。

@@ -1,5 +1,6 @@
 <template>
   <div id="container" class="view-container">
+    <div id="window-drag-bar" aria-hidden="true" />
     <layout-aside id="left" />
     <div id="right">
       <layout-toolbar id="toolbar" />
@@ -76,7 +77,7 @@ body {
 
 .transparent {
   background: transparent;
-  padding: @shadow-app;
+  padding: 0;
   // #waiting-mask {
   //   border-radius: @radius-border;
   //   left: @shadow-app;
@@ -85,16 +86,16 @@ body {
   //   bottom: @shadow-app;
   // }
   #body {
-    border-radius: @radius-border;
+    border-radius: 12px;
   }
   #root {
-    box-shadow: 0 0 @shadow-app rgba(0, 0, 0, 0.5);
-    border-radius: @radius-border;
+    box-shadow: inset 0 0 0 1px rgba(62, 88, 76, .2);
+    border-radius: 12px;
   }
-  // #container {
-    // border-radius: @radius-border;
-    // background-color: transparent;
-  // }
+  #container {
+    border-radius: 12px;
+    border-color: rgba(62, 88, 76, .24);
+  }
 }
 .disableTransparent {
   background-color: var(--color-content-background);
@@ -121,14 +122,41 @@ body {
   }
 }
 
+#window-drag-bar {
+  display: none;
+}
+
 #container {
   position: relative;
   display: flex;
   height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid transparent;
   background:
     radial-gradient(circle at 18% 8%, var(--color-primary-alpha-800), transparent 30%),
     linear-gradient(135deg, var(--color-primary-light-1000-alpha-100), var(--color-primary-light-900-alpha-200) 42%, var(--color-primary-alpha-900)),
     var(--color-app-background);
+}
+
+.transparent,
+.disableTransparent {
+  #window-drag-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 34px;
+    z-index: 20;
+    display: block;
+    -webkit-app-region: drag;
+  }
+}
+
+.fullscreen {
+  #window-drag-bar {
+    display: none;
+  }
 }
 
 #left {
@@ -143,13 +171,14 @@ body {
   transition: background-color @transition-normal;
   min-width: 0;
   margin: 14px 14px 14px 0;
-  padding-bottom: @height-player;
   background-color: var(--color-main-background);
 
   border-radius: @radius-border;
+  border: 1px solid rgba(70, 96, 84, .16);
   overflow: hidden;
-  box-shadow: 0 18px 52px rgba(31, 45, 39, 0.12);
+  box-shadow: 0 14px 38px rgba(31, 45, 39, 0.13);
   backdrop-filter: blur(18px);
+  box-sizing: border-box;
 }
 #toolbar {
   flex: none;

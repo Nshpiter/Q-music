@@ -59,6 +59,10 @@ export const setAllStatus = (val: string) => {
 
 export const setShowPlayerDetail = (val: boolean) => {
   isShowPlayerDetail.value = val
+  if (!val) {
+    isShowPlayComment.value = false
+    isShowLrcSelectContent.value = false
+  }
 }
 
 export const setShowPlayComment = (val: boolean) => {

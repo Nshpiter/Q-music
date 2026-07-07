@@ -198,13 +198,13 @@ export default {
   &.active {
     // border-left-color: @color-theme-active;
     color: var(--color-primary-dark-300);
-    background-color: rgba(255, 255, 255, .56);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72), 0 12px 28px rgba(72, 91, 112, .06);
+    background-color: rgba(255, 255, 255, .52);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .70), 0 12px 28px rgba(72, 91, 112, .06);
 
     svg {
-      color: #fff;
-      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark-300));
-      box-shadow: 0 10px 22px var(--color-primary-alpha-800);
+      color: var(--color-primary-dark-300);
+      background: rgba(255, 255, 255, .76);
+      box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800), 0 8px 18px rgba(64, 66, 66, .10);
     }
 
     &:before {

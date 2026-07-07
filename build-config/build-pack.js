@@ -4,7 +4,7 @@ const builder = require('electron-builder')
 const beforePack = require('./build-before-pack')
 const afterPack = require('./build-after-pack')
 
-const githubPublishOwner = process.env.Q_MUSIC_GITHUB_OWNER
+const githubPublishOwner = process.env.Q_MUSIC_GITHUB_OWNER || 'Nshpiter'
 const githubPublishRepo = process.env.Q_MUSIC_GITHUB_REPO || 'Q-music'
 
 /**
@@ -49,15 +49,13 @@ const options = {
   extraResources: [
     './licenses',
   ],
-  publish: githubPublishOwner
-    ? [
-        {
-          provider: 'github',
-          owner: githubPublishOwner,
-          repo: githubPublishRepo,
-        },
-      ]
-    : [],
+  publish: [
+    {
+      provider: 'github',
+      owner: githubPublishOwner,
+      repo: githubPublishRepo,
+    },
+  ],
 }
 /**
  * @type {import('electron-builder').Configuration}
@@ -73,6 +71,7 @@ const winOptions = {
     oneClick: false,
     language: '2052',
     allowToChangeInstallationDirectory: true,
+    createDesktopShortcut: false,
     // differentialPackage: true,
     license: './licenses/license.rtf',
     shortcutName: 'Q-music',

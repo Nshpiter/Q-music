@@ -197,6 +197,10 @@ export default () => {
     }, 1000)
   })
 
+  window.setTimeout(() => {
+    showUpdateModal()
+  }, 3000)
+
   onBeforeUnmount(() => {
     clearUpdateTimeout()
     rUpdateAvailable()

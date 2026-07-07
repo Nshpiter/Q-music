@@ -66,6 +66,7 @@ import SettingNetwork from './components/SettingNetwork.vue'
 import SettingOdc from './components/SettingOdc.vue'
 import SettingBackup from './components/SettingBackup.vue'
 import SettingOther from './components/SettingOther.vue'
+import { logRendererState } from '@renderer/utils/debugLog'
 
 export default {
   name: 'Setting',
@@ -116,6 +117,7 @@ export default {
 
     const toggleTab = id => {
       avtiveComponentName.value = id
+      logRendererState('setting:toggleTab', { id })
       void nextTick(() => {
         dom_content_ref.value?.scrollTo({
           top: 0,

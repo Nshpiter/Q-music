@@ -1,8 +1,6 @@
 <template>
   <div :class="$style.view">
-    <router-view v-slot="{ Component }">
-      <component :is="Component" class="view-container" />
-    </router-view>
+    <router-view :key="$route.fullPath" class="view-container" />
   </div>
 </template>
 

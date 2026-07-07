@@ -215,6 +215,45 @@ function Write-IcnsFile {
 
 New-Item -ItemType Directory -Force -Path $iconDir | Out-Null
 
+$sourceIconPath = Join-Path $iconDir 'icon.png'
+if (Test-Path $sourceIconPath) {
+  $sourceBytes = [System.IO.File]::ReadAllBytes($sourceIconPath)
+  $sourceStream = [System.IO.MemoryStream]::new($sourceBytes)
+  $sourceBitmap = [System.Drawing.Bitmap]::new($sourceStream)
+
+  try {
+    $entries = @()
+    foreach ($size in $sizes) {
+      $bitmap = [System.Drawing.Bitmap]::new($size, $size, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+      $g = [System.Drawing.Graphics]::FromImage($bitmap)
+      $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+      $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+      $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+      $g.Clear([System.Drawing.Color]::Transparent)
+      $g.DrawImage($sourceBitmap, 0, 0, $size, $size)
+      $g.Dispose()
+
+      $path = Join-Path $iconDir "$($size)x$($size).png"
+      $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+      $bitmap.Dispose()
+      $entries += [PSCustomObject]@{
+        Size = $size
+        Bytes = [System.IO.File]::ReadAllBytes($path)
+      }
+    }
+
+    Copy-Item -LiteralPath (Join-Path $iconDir '512x512.png') -Destination $sourceIconPath -Force
+    Write-IcoFile (Join-Path $iconDir 'icon.ico') ($entries | Where-Object { $_.Size -le 256 })
+    Write-IcnsFile (Join-Path $iconDir 'icon.icns') $entries
+
+    Write-Host "Generated Q-music icons from $sourceIconPath in $iconDir"
+    return
+  } finally {
+    $sourceBitmap.Dispose()
+    $sourceStream.Dispose()
+  }
+}
+
 $entries = @()
 foreach ($size in $sizes) {
   $bitmap = New-QMusicBitmap $size

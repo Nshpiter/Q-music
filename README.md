@@ -35,7 +35,7 @@ npm run build
 npm run pack
 ```
 
-Windows x64 安装包默认输出到 `build/Q-music-v0.1.0-x64-Setup.exe`。
+Windows x64 安装包默认输出到 `build/Q-music-v0.1.3-x64-Setup.exe`。
 
 本项目使用 `qmusic://` 作为深链协议，避免与官方 LX Music 的协议注册冲突。
 

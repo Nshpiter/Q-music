@@ -66,10 +66,13 @@ onBeforeUnmount(() => {
 @import '@renderer/assets/styles/layout.less';
 
 .control {
+  position: fixed;
+  top: 2px;
+  right: 14px;
+  z-index: 50;
   display: flex;
-  align-self: flex-start;
   -webkit-app-region: no-drag;
-  height: 30px;
+  height: 32px;
 
   .btn {
     display: flex;
@@ -77,7 +80,7 @@ onBeforeUnmount(() => {
     justify-content: center;
     position: relative;
     width: 46px;
-    height: 30px;
+    height: 32px;
     background: none;
     border: none;
     outline: none;

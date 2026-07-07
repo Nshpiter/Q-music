@@ -1,6 +1,6 @@
 <template>
   <teleport :to="teleport">
-    <div v-if="showModal" ref="dom_container" :class="$style.container">
+    <div v-if="showModal" ref="dom_container" data-modal-container="true" :class="$style.container">
       <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
         <div v-show="showContent" :class="[$style.modal, {[$style.filter]: filter}]" @click="bgClose && close()">
           <transition :enter-active-class="inClass" :leave-active-class="outClass" @after-enter="$emit('after-enter', $event)" @after-leave="handleAfterLeave">

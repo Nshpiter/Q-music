@@ -213,17 +213,18 @@ export default {
   position: absolute;
   width: 100%;
   border-radius: @form-radius;
+  overflow: hidden;
   transition: box-shadow .4s ease, background-color @transition-normal, border-color @transition-fast;
   display: flex;
   flex-flow: column nowrap;
-  background-color: var(--color-primary-light-1000-alpha-700);
+  background-color: rgba(255, 255, 255, .58);
   border: 1px solid var(--color-primary-alpha-900);
-  box-shadow: 0 8px 26px rgba(31, 45, 39, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .54), 0 8px 26px rgba(31, 45, 39, 0.06);
 
   &.active {
-    background-color: var(--color-main-background);
+    background-color: rgba(255, 255, 255, .88);
     border-color: var(--color-primary-alpha-700);
-    box-shadow: 0 12px 32px rgba(31, 45, 39, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72), 0 12px 32px rgba(31, 45, 39, 0.12);
     .form {
       input {
         border-bottom-left-radius: 0;
@@ -241,8 +242,8 @@ export default {
     input {
       flex: auto;
       // border: 1px solid;
-      border-top-left-radius: 3px;
-      border-bottom-left-radius: 3px;
+      border-top-left-radius: @form-radius;
+      border-bottom-left-radius: @form-radius;
       background-color: transparent;
       // border-bottom: 2px solid var(--color-primary);
       // border-color: var(--color-primary);
@@ -268,17 +269,19 @@ export default {
       outline: none;
       cursor: pointer;
       height: 100%;
+      min-width: 42px;
       padding: 8px 10px;
       color: var(--color-font-label);
-      transition: background-color .2s ease;
+      transition: background-color .2s ease, color .2s ease;
 
       &:last-child {
-        border-top-right-radius: 3px;
-        border-bottom-right-radius: 3px;
+        border-top-right-radius: @form-radius;
+        border-bottom-right-radius: @form-radius;
       }
 
       &:hover {
-        background-color: var(--color-button-background-hover);
+        color: var(--color-primary-dark-300);
+        background-color: rgba(255, 255, 255, .54);
       }
       &:active {
         background-color: var(--color-button-background-active);
@@ -293,6 +296,8 @@ export default {
     transition-property: height;
     overflow: hidden;
     border-top: 1px solid var(--color-primary-alpha-900);
+    background-color: rgba(255, 255, 255, .72);
+    backdrop-filter: blur(14px);
     li {
       cursor: pointer;
       padding: 9px 12px;
@@ -306,8 +311,8 @@ export default {
         background-color: var(--color-primary-light-600-alpha-200);
       }
       &:last-child {
-        border-bottom-left-radius: 3px;
-        border-bottom-right-radius: 3px;
+        border-bottom-left-radius: @form-radius;
+        border-bottom-right-radius: @form-radius;
       }
     }
   }
