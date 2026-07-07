@@ -14,12 +14,17 @@ on:
       draft:
         description: 'Create a draft release when the release does not exist.'
         required: true
-        default: true
+        default: false
         type: boolean
       prerelease:
         description: 'Mark the release as a pre-release.'
         required: true
         default: false
+        type: boolean
+      latest:
+        description: 'Mark this release as the latest release.'
+        required: true
+        default: true
         type: boolean
   push:
     tags:
@@ -83,9 +88,11 @@ jobs:
 
           $releaseDraft = 'false'
           $releasePrerelease = 'false'
+          $releaseLatest = 'true'
           if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
             $releaseDraft = '${{ inputs.draft }}'
             $releasePrerelease = '${{ inputs.prerelease }}'
+            $releaseLatest = '${{ inputs.latest }}'
           }
 
           echo "PACKAGE_VERSION=$packageVersion" >> $env:GITHUB_ENV
@@ -93,6 +100,7 @@ jobs:
           echo "RELEASE_TITLE=$releaseTitle" >> $env:GITHUB_ENV
           echo "RELEASE_DRAFT=$releaseDraft" >> $env:GITHUB_ENV
           echo "RELEASE_PRERELEASE=$releasePrerelease" >> $env:GITHUB_ENV
+          echo "RELEASE_LATEST=$releaseLatest" >> $env:GITHUB_ENV
 
       - name: Lint
         run: npm run lint
@@ -123,6 +131,9 @@ jobs:
           gh release view $env:TAG_NAME --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -eq 0) {
             gh release upload $env:TAG_NAME @assets --repo $env:GITHUB_REPOSITORY --clobber
+            if ($LASTEXITCODE -eq 0 -and $env:RELEASE_LATEST -eq 'true' -and $env:RELEASE_DRAFT -ne 'true' -and $env:RELEASE_PRERELEASE -ne 'true') {
+              gh release edit $env:TAG_NAME --repo $env:GITHUB_REPOSITORY --latest
+            }
             exit $LASTEXITCODE
           }
 
@@ -147,6 +158,11 @@ jobs:
           }
           if ($env:RELEASE_PRERELEASE -eq 'true') {
             $releaseArgs += '--prerelease'
+          }
+          if ($env:RELEASE_LATEST -eq 'true' -and $env:RELEASE_DRAFT -ne 'true' -and $env:RELEASE_PRERELEASE -ne 'true') {
+            $releaseArgs += '--latest'
+          } elseif ($env:RELEASE_LATEST -ne 'true' -and $env:RELEASE_PRERELEASE -ne 'true') {
+            $releaseArgs += '--latest=false'
           }
 
           gh @releaseArgs
