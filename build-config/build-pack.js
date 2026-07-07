@@ -72,6 +72,7 @@ const winOptions = {
     language: '2052',
     allowToChangeInstallationDirectory: true,
     createDesktopShortcut: false,
+    include: './resources/installer.nsh',
     // differentialPackage: true,
     license: './licenses/license.rtf',
     shortcutName: 'Q-music',
