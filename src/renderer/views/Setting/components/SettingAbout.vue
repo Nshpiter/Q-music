@@ -2,6 +2,8 @@
 dt#about {{ $t('setting__about') }}
 dd
   .p.small
+    | 当前版本：v{{ appVersion }}
+  .p.small
     | Q-music 是基于 LX Music 桌面版二次修改的独立版本。当前项目地址：
     span.hover.underline(:aria-label="$t('setting__click_open')" @click="openUrl('https://github.com/Nshpiter/Q-music#readme')") https://github.com/Nshpiter/Q-music
   .p.small
@@ -59,6 +61,7 @@ export default {
       openUrl,
       clipboardWriteText,
       handleShowPact,
+      appVersion: process.versions.app,
     }
   },
 }
