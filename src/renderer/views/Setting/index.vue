@@ -66,6 +66,7 @@ import SettingNetwork from './components/SettingNetwork.vue'
 import SettingOdc from './components/SettingOdc.vue'
 import SettingBackup from './components/SettingBackup.vue'
 import SettingOther from './components/SettingOther.vue'
+import SettingAbout from './components/SettingAbout.vue'
 import { logRendererState } from '@renderer/utils/debugLog'
 
 export default {
@@ -85,6 +86,7 @@ export default {
     SettingOdc,
     SettingBackup,
     SettingOther,
+    SettingAbout,
   },
   setup() {
     const t = useI18n()
@@ -108,6 +110,7 @@ export default {
         { id: 'SettingOdc', title: t('setting__odc'), icon: 'headphones' },
         { id: 'SettingBackup', title: t('setting__backup'), icon: 'sdCard' },
         { id: 'SettingOther', title: t('setting__other'), icon: 'tune-variant' },
+        { id: 'SettingAbout', title: t('setting__about'), icon: 'information-slab-circle-outline' },
       ]
     })
 
@@ -190,7 +193,7 @@ export default {
 .toc {
   flex: 0 0 214px;
   overflow-y: scroll;
-  padding: 6px 4px 18px;
+  padding: 6px 4px calc(@height-player + 18px);
   box-sizing: border-box;
 }
 .tocList {
@@ -273,7 +276,7 @@ export default {
 // }
 
 .setting {
-  padding: 0 6px 24px 0;
+  padding: 0 6px calc(@height-player + 24px) 0;
   font-size: 14px;
   box-sizing: border-box;
   overflow-y: auto;

@@ -5,6 +5,9 @@ dd
     | Q-music 是基于 LX Music 桌面版二次修改的独立版本。当前项目地址：
     span.hover.underline(:aria-label="$t('setting__click_open')" @click="openUrl('https://github.com/Nshpiter/Q-music#readme')") https://github.com/Nshpiter/Q-music
   .p.small
+    | Q-music 版本下载与更新说明：
+    span.hover.underline(:aria-label="$t('setting__click_open')" @click="openUrl('https://github.com/Nshpiter/Q-music/releases')") https://github.com/Nshpiter/Q-music/releases
+  .p.small
     | 上游项目地址：
     span.hover.underline(:aria-label="$t('setting__click_open')" @click="openUrl('https://github.com/lyswhut/lx-music-desktop#readme')") https://github.com/lyswhut/lx-music-desktop
   .p.small
