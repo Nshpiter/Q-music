@@ -217,14 +217,25 @@ export default {
   transition: box-shadow .4s ease, background-color @transition-normal, border-color @transition-fast;
   display: flex;
   flex-flow: column nowrap;
-  background-color: rgba(255, 255, 255, .58);
-  border: 1px solid var(--color-primary-alpha-900);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .54), 0 8px 26px rgba(31, 45, 39, 0.06);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .72), rgba(241, 250, 246, .58)),
+    rgba(255, 255, 255, .45);
+  border: 1px solid rgba(54, 83, 70, .2);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .68),
+    inset 0 -1px 0 rgba(54, 83, 70, .065),
+    0 8px 24px rgba(31, 45, 39, .075);
+  backdrop-filter: blur(16px) saturate(1.1);
 
   &.active {
-    background-color: rgba(255, 255, 255, .88);
-    border-color: var(--color-primary-alpha-700);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72), 0 12px 32px rgba(31, 45, 39, 0.12);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .88), rgba(244, 252, 248, .76)),
+      rgba(255, 255, 255, .78);
+    border-color: rgba(75, 174, 126, .42);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, .82),
+      0 0 0 3px rgba(75, 174, 126, .08),
+      0 12px 32px rgba(31, 45, 39, .12);
     .form {
       input {
         border-bottom-left-radius: 0;
@@ -295,8 +306,8 @@ export default {
     height: 0;
     transition-property: height;
     overflow: hidden;
-    border-top: 1px solid var(--color-primary-alpha-900);
-    background-color: rgba(255, 255, 255, .72);
+    border-top: 1px solid rgba(54, 83, 70, .12);
+    background-color: rgba(255, 255, 255, .82);
     backdrop-filter: blur(14px);
     li {
       cursor: pointer;

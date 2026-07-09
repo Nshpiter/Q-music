@@ -113,16 +113,34 @@ const handleImgError = () => {
   grid-template-columns: minmax(0, 1fr) minmax(430px, 560px) minmax(0, 1fr);
   column-gap: clamp(18px, 2.3vw, 34px);
   align-items: center;
-  margin: 0 14px 14px clamp(48px, 5vw, 78px);
+  margin: 0 22px 18px clamp(48px, 5vw, 78px);
   padding: 8px 16px;
   pointer-events: auto;
   box-sizing: border-box;
   -webkit-app-region: no-drag;
   border-radius: 24px;
   color: var(--color-font);
-  background: rgba(255, 255, 255, .62);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .7), 0 16px 36px rgba(74, 86, 100, .1);
-  backdrop-filter: blur(16px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(241, 250, 246, .58)),
+    rgba(255, 255, 255, .54);
+  border: 1px solid rgba(54, 83, 70, .17);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .78),
+    inset 0 -1px 0 rgba(54, 83, 70, .12),
+    inset 0 0 0 1px rgba(255, 255, 255, .42),
+    0 18px 42px rgba(54, 83, 70, .14);
+  backdrop-filter: blur(26px) saturate(1.22);
+
+  &:before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow:
+      inset 0 0 0 1px rgba(54, 83, 70, .08),
+      inset -1px 0 0 rgba(54, 83, 70, .08);
+  }
 }
 
 .trackInfo {
@@ -320,7 +338,7 @@ const handleImgError = () => {
   .footer {
     grid-template-columns: minmax(0, 1fr) minmax(380px, 500px) minmax(0, 1fr);
     column-gap: 16px;
-    margin: 0 14px 12px clamp(22px, 3vw, 44px);
+    margin: 0 20px 16px clamp(22px, 3vw, 44px);
     padding-inline: 14px;
   }
 
@@ -337,7 +355,7 @@ const handleImgError = () => {
   .footer {
     grid-template-columns: minmax(0, .92fr) minmax(320px, 420px) minmax(0, 1fr);
     column-gap: 10px;
-    margin: 0 12px 10px 16px;
+    margin: 0 18px 14px 16px;
   }
 
   .trackInfo {

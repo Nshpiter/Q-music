@@ -12,7 +12,10 @@ transition(enter-active-class="q-detail-enter-active" leave-active-class="q-deta
           div(:class="$style.record")
             img(v-if="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
             div(v-else :class="$style.emptyCover") Q
-          div(:class="$style.toneArm")
+          div(:class="$style.toneArm" aria-hidden="true")
+            span(:class="$style.toneArmBase")
+            span(:class="$style.toneArmRod")
+            span(:class="$style.toneArmHead")
         div.description(:class="['scroll', $style.description]")
           p {{ musicInfo.name }}
           p {{ musicInfo.singer }}
@@ -752,7 +755,7 @@ export default {
     }
 
     .toneArm {
-      transform: rotate(12deg);
+      transform: rotate(8deg);
     }
   }
 }
@@ -832,37 +835,82 @@ export default {
 .toneArm {
   position: absolute;
   z-index: 3;
-  right: 10%;
-  top: -7%;
-  width: 28%;
-  height: 62%;
-  transform: rotate(6deg);
-  transform-origin: 76% 9%;
+  right: 12%;
+  top: -4%;
+  width: 30%;
+  height: 60%;
+  transform: rotate(-11deg);
+  transform-origin: 80% 12%;
   pointer-events: none;
   transition: transform .48s cubic-bezier(.16, 1, .3, 1);
+  filter: drop-shadow(8px 12px 16px rgba(42, 50, 56, .2));
+}
 
-  &:before {
-    content: '';
-    position: absolute;
-    right: 44%;
-    top: 12%;
-    width: 10px;
-    height: 80%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, rgba(245, 245, 245, .95), rgba(150, 154, 157, .88), rgba(255, 255, 255, .9));
-    box-shadow: 8px 10px 18px rgba(58, 66, 76, .18);
-  }
+.toneArmBase {
+  position: absolute;
+  right: 10%;
+  top: 2%;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid rgba(114, 129, 126, .22);
+  background:
+    radial-gradient(circle at 42% 38%, rgba(255, 255, 255, .96), rgba(230, 237, 234, .9) 38%, rgba(176, 190, 185, .84) 72%),
+    #dce6e1;
+  box-shadow:
+    inset 0 0 0 8px rgba(224, 232, 229, .84),
+    inset 0 -8px 14px rgba(74, 88, 86, .16),
+    0 12px 28px rgba(48, 58, 66, .18);
+}
+
+.toneArmRod {
+  position: absolute;
+  right: 28%;
+  top: 15%;
+  width: 10px;
+  height: 77%;
+  border-radius: 999px;
+  transform: rotate(13deg);
+  transform-origin: 50% 8%;
+  background:
+    linear-gradient(90deg, rgba(118, 132, 132, .7), rgba(248, 251, 250, .96) 24%, rgba(151, 164, 164, .94) 50%, rgba(236, 241, 239, .92) 78%, rgba(91, 105, 106, .62)),
+    #c8d2cf;
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, .78),
+    inset -2px 0 0 rgba(66, 78, 80, .22),
+    5px 10px 18px rgba(46, 56, 64, .18);
+}
+
+.toneArmHead {
+  position: absolute;
+  right: 43%;
+  bottom: 5%;
+  width: 34px;
+  height: 24px;
+  border-radius: 10px 10px 12px 12px;
+  border: 1px solid rgba(103, 116, 116, .24);
+  transform: rotate(25deg);
+  transform-origin: 70% 20%;
+  background:
+    linear-gradient(160deg, rgba(247, 250, 249, .95), rgba(178, 190, 189, .86)),
+    #cfdad6;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .82),
+    inset 0 -5px 9px rgba(65, 82, 82, .18),
+    5px 8px 16px rgba(38, 48, 56, .2);
 
   &:after {
     content: '';
     position: absolute;
-    right: 34%;
-    top: 8%;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #fff, #d9dedb);
-    box-shadow: inset 0 0 0 8px rgba(226, 230, 228, .92), 0 10px 24px rgba(50, 58, 64, .18);
+    left: 7px;
+    bottom: -9px;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 11px solid rgba(51, 60, 62, .82);
+    transform: rotate(-8deg);
+    filter: drop-shadow(2px 3px 3px rgba(38, 48, 56, .28));
   }
 }
 

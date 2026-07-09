@@ -2,7 +2,7 @@
   <teleport :to="teleport">
     <div v-if="showModal" ref="dom_container" data-modal-container="true" :class="$style.container">
       <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
-        <div v-show="showContent" :class="[$style.modal, {[$style.filter]: filter}]" @click="bgClose && close()">
+        <div v-show="showContent" :class="[$style.modal, {[$style.filter]: filter, [$style.viewModal]: isViewModal}]" @click="bgClose && close()">
           <transition :enter-active-class="inClass" :leave-active-class="outClass" @after-enter="$emit('after-enter', $event)" @after-leave="handleAfterLeave">
             <div v-show="showContent" :class="$style.content" :style="contentStyle" @click.stop>
               <header :class="$style.header">
@@ -163,11 +163,14 @@ export default {
         minWidth: this.minWidth,
         width: this.width,
         height: this.height,
-        maxHeight: this.maxHeight,
+        '--modal-max-height': this.maxHeight,
       }
     },
     filter() {
       return this.teleport == '#root' || this.modalCount > 1
+    },
+    isViewModal() {
+      return this.teleport == '#view'
     },
   },
   watch: {
@@ -291,7 +294,12 @@ export default {
   display: grid;
   align-items: center;
   justify-items: center;
+  box-sizing: border-box;
   // will-change: transform;
+
+  &.viewModal {
+    padding-bottom: @height-player;
+  }
 
   &.filter {
     background: rgba(255, 255, 255, .22);
@@ -315,7 +323,7 @@ export default {
   border-radius: 22px;
   box-shadow: var(--q-shadow-float);
   overflow: hidden;
-  // max-height: 80%;
+  max-height: var(--modal-max-height);
   // max-width: 76%;
   min-width: 220px;
   position: relative;
@@ -324,6 +332,12 @@ export default {
   z-index: 100;
   background: rgba(255, 255, 255, .86);
   backdrop-filter: blur(18px);
+}
+
+.viewModal {
+  .content {
+    max-height: min(var(--modal-max-height), calc(100% - @height-player - 24px));
+  }
 }
 
 .header {

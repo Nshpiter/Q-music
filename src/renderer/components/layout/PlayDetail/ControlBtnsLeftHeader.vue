@@ -92,6 +92,7 @@ const fullscreenExit = () => {
 }
 .header {
   position: relative;
+  z-index: 6;
   flex: 0 0 @height-toolbar;
   -webkit-app-region: no-drag;
   width: 100%;
@@ -109,7 +110,7 @@ const fullscreenExit = () => {
   .controBtn {
     position: absolute;
     top: 0;
-    z-index: 1;
+    z-index: 2;
     display: flex;
     -webkit-app-region: no-drag;
 
