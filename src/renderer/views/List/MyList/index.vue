@@ -8,6 +8,12 @@
             <use xlink:href="#icon-list-add" />
           </svg>
         </button>
+        <button :class="[$style.listsAdd, $style.importBtn]" :aria-label="$t('playlist_import_modal__title')" :title="$t('playlist_import_modal__title')" @click="isShowExternalImportModal = true">
+          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve">
+            <use xlink:href="#icon-download-2" />
+          </svg>
+          <span>{{ $t('playlist_import_modal__open') }}</span>
+        </button>
         <button :class="$style.listsAdd" :aria-label="$t('list_update_modal__title')" @click="isShowListUpdateModal = true">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="transform: rotate(45deg);" height="70%" viewBox="0 0 24 24" space="preserve">
             <use xlink:href="#icon-refresh" />
@@ -75,6 +81,7 @@
     <DuplicateMusicModal v-model:visible="isShowDuplicateMusicModal" :list-info="duplicateListInfo" />
     <ListSortModal v-model:visible="isShowListSortModal" :list-info="sortListInfo" />
     <ListUpdateModal v-model:visible="isShowListUpdateModal" />
+    <ExternalImportModal v-model:visible="isShowExternalImportModal" :list-id="listId" />
   </div>
 </template>
 
@@ -83,6 +90,7 @@ import { openUrl } from '@common/utils/electron'
 
 import musicSdk from '@renderer/utils/musicSdk'
 import DuplicateMusicModal from './components/DuplicateMusicModal.vue'
+import ExternalImportModal from './components/ExternalImportModal.vue'
 import ListSortModal from './components/ListSortModal.vue'
 import ListUpdateModal from './components/ListUpdateModal.vue'
 
@@ -113,6 +121,7 @@ export default {
   name: 'MyLists',
   components: {
     DuplicateMusicModal,
+    ExternalImportModal,
     ListSortModal,
     ListUpdateModal,
   },
@@ -129,6 +138,7 @@ export default {
 
     const dom_lists_list = ref(null)
     const rightClickItemIndex = ref(-10)
+    const isShowExternalImportModal = ref(false)
 
     const { handleImportList, handleExportList } = useShare()
     const { isShowListUpdateModal, handleUpdateSourceList } = useListUpdate()
@@ -227,6 +237,7 @@ export default {
       userLists,
       fetchingListStatus,
       dom_lists_list,
+      isShowExternalImportModal,
       isShowListUpdateModal,
       isShowListSortModal,
       sortListInfo,
@@ -302,6 +313,25 @@ export default {
   }
   &:hover {
     opacity: .6 !important;
+  }
+}
+.importBtn {
+  opacity: .9;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 56px;
+  height: 26px;
+  margin-top: 8px;
+  padding: 0 8px;
+  font-size: 12px;
+  line-height: 26px;
+  color: var(--color-primary);
+  background-color: var(--color-primary-background-hover);
+  svg {
+    width: 13px;
+    height: 13px;
+    flex: none;
   }
 }
 .listsContent {
