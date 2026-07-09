@@ -73,7 +73,7 @@ npm run pack
 Windows x64 安装包默认输出到：
 
 ```text
-build/Q-music-v0.1.4-x64-Setup.exe
+build/Q-music-v0.1.7-x64-Setup.exe
 ```
 
 ## 贡献代码
