@@ -204,13 +204,13 @@ export default {
 @import '@renderer/assets/styles/layout.less';
 
 .footerLeftControlBtns {
-  --q-footer-tool-size: 34px;
+  --q-footer-tool-size: 30px;
   width: 100%;
   display: flex;
   flex-flow: row nowrap;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
-  gap: 6px;
+  gap: 3px;
   height: 64px;
   padding: 4px 0;
   background: transparent;
@@ -218,6 +218,7 @@ export default {
   backdrop-filter: none;
 
   button {
+    flex: none;
     width: var(--q-footer-tool-size);
     height: var(--q-footer-tool-size);
     color: rgba(29, 34, 38, .7);
@@ -319,8 +320,8 @@ export default {
 
 @media (max-width: 1280px) {
   .footerLeftControlBtns {
-    --q-footer-tool-size: 30px;
-    gap: 3px;
+    --q-footer-tool-size: 28px;
+    gap: 2px;
     height: 64px;
     padding: 4px 0;
 
@@ -344,8 +345,8 @@ export default {
 
 @media (max-width: 980px) {
   .footerLeftControlBtns {
-    --q-footer-tool-size: 26px;
-    gap: 2px;
+    --q-footer-tool-size: 24px;
+    gap: 1px;
     height: 64px;
     padding: 4px 0;
 

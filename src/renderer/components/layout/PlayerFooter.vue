@@ -54,7 +54,25 @@
         <span :class="$style.timeLabel">{{ maxPlayTimeStr }}</span>
       </div>
     </div>
-    <control-btns :class="$style.tools" />
+    <div :class="$style.toolArea">
+      <control-btns :class="$style.tools" />
+      <button
+        type="button"
+        :class="[$style.queueBtn, { [$style.active]: isShowPlayQueue }]"
+        :aria-label="$t('play_queue__title')"
+        :title="$t('play_queue__title')"
+        @click.stop="togglePlayQueue"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 6h12" />
+          <path d="M4 11h12" />
+          <path d="M4 16h8" />
+          <path d="M17 14v6" />
+          <path d="M17 14l4 2.5-4 2.5" />
+        </svg>
+        <span v-if="tempPlayList.length" :class="$style.queueBadge">{{ queueBadgeText }}</span>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -63,8 +81,8 @@ import { playNext, playPrev, togglePlay } from '@renderer/core/player'
 import { computed } from '@common/utils/vueTools'
 import { formatMusicName } from '@renderer/utils'
 import { appSetting } from '@renderer/store/setting'
-import { status, isPlay, musicInfo } from '@renderer/store/player/state'
-import { setMusicInfo, setShowPlayerDetail } from '@renderer/store/player/action'
+import { status, isPlay, isShowPlayQueue, musicInfo, tempPlayList } from '@renderer/store/player/state'
+import { setMusicInfo, setShowPlayerDetail, setShowPlayQueue } from '@renderer/store/player/action'
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
 
 import ControlBtns from './PlayDetail/components/ControlBtns.vue'
@@ -90,9 +108,14 @@ const title = computed(() => {
     : ''
 })
 const artist = computed(() => musicInfo.singer || status.value || '')
+const queueBadgeText = computed(() => tempPlayList.length > 99 ? '99+' : String(tempPlayList.length))
 
 const toggleDetail = () => {
   setShowPlayerDetail(!props.detail)
+}
+
+const togglePlayQueue = () => {
+  setShowPlayQueue(!isShowPlayQueue.value)
 }
 
 const handleImgError = () => {
@@ -110,7 +133,7 @@ const handleImgError = () => {
   height: calc(@height-player - 18px);
   overflow: hidden;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(430px, 560px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(430px, 540px) minmax(336px, 1fr);
   column-gap: clamp(18px, 2.3vw, 34px);
   align-items: center;
   margin: 0 22px 18px clamp(48px, 5vw, 78px);
@@ -325,18 +348,88 @@ const handleImgError = () => {
   }
 }
 
-.tools {
+.toolArea {
   width: 100%;
   justify-self: end;
   align-self: center;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
   padding-bottom: 0;
   -webkit-app-region: no-drag;
 }
 
+.tools {
+  min-width: 0;
+  flex: auto;
+}
+
+.queueBtn {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  color: rgba(29, 34, 38, .7);
+  background-color: transparent;
+  cursor: pointer;
+  opacity: .82;
+  transition: opacity @transition-normal, color @transition-fast, background-color @transition-fast, transform @transition-fast;
+
+  &:hover,
+  &.active {
+    opacity: 1;
+    color: var(--color-primary);
+    background-color: var(--color-primary-background-hover);
+  }
+
+  &:active {
+    transform: scale(.94);
+  }
+
+  svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+.queueBadge {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 2px solid rgba(248, 253, 250, .96);
+  border-radius: 8px;
+  color: #fff;
+  background-color: #45a77f;
+  font-size: 9px;
+  line-height: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
 @media (max-width: 1280px) {
   .footer {
-    grid-template-columns: minmax(0, 1fr) minmax(380px, 500px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 460px) minmax(306px, 1fr);
     column-gap: 16px;
     margin: 0 20px 16px clamp(22px, 3vw, 44px);
     padding-inline: 14px;
@@ -349,11 +442,20 @@ const handleImgError = () => {
   .trackTitle {
     font-size: 14px;
   }
+
+  .toolArea {
+    gap: 2px;
+  }
+
+  .queueBtn {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 @media (max-width: 980px) {
   .footer {
-    grid-template-columns: minmax(0, .92fr) minmax(320px, 420px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px) minmax(258px, 1fr);
     column-gap: 10px;
     margin: 0 18px 14px 16px;
   }
@@ -365,6 +467,20 @@ const handleImgError = () => {
   .coverBtn {
     width: 48px;
     height: 48px;
+  }
+
+  .toolArea {
+    gap: 1px;
+  }
+
+  .queueBtn {
+    width: 24px;
+    height: 24px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
   }
 }
 </style>

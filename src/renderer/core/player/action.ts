@@ -369,6 +369,18 @@ const handlePlayNext = (playMusicInfo: LX.Player.PlayMusicInfo) => {
   setPlayMusicInfo(playMusicInfo.listId, playMusicInfo.musicInfo, playMusicInfo.isTempPlay)
   handlePlay()
 }
+
+/**
+ * 播放“稍后播放”列表内的指定歌曲
+ * @param index 歌曲位置
+ */
+export const playTempListByIndex = (index: number) => {
+  const targetMusicInfo = tempPlayList[index]
+  if (!targetMusicInfo) return
+  removeTempPlayList(index)
+  handlePlayNext(targetMusicInfo)
+}
+
 /**
  * 下一曲
  * @param isAutoToggle 是否自动切换
@@ -377,9 +389,7 @@ const handlePlayNext = (playMusicInfo: LX.Player.PlayMusicInfo) => {
 export const playNext = async(isAutoToggle = false): Promise<void> => {
   console.log('skip next', isAutoToggle)
   if (tempPlayList.length) { // 如果稍后播放列表存在歌曲则直接播放改列表的歌曲
-    const playMusicInfo = tempPlayList[0]
-    removeTempPlayList(0)
-    handlePlayNext(playMusicInfo)
+    playTempListByIndex(0)
     console.log('play temp list')
     return
   }

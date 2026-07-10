@@ -8,6 +8,7 @@ import {
   isShowPlayerDetail,
   isShowPlayComment,
   isShowLrcSelectContent,
+  isShowPlayQueue,
   playInfo,
   playMusicInfo,
   playedList,
@@ -71,6 +72,10 @@ export const setShowPlayComment = (val: boolean) => {
 
 export const setShowPlayLrcSelectContentLrc = (val: boolean) => {
   isShowLrcSelectContent.value = val
+}
+
+export const setShowPlayQueue = (val: boolean) => {
+  isShowPlayQueue.value = val
 }
 
 export const setPlayListId = (listId: string | null) => {
