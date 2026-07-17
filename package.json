@@ -1,6 +1,6 @@
 {
   "name": "q-music",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "一个免费的音乐查找助手",
   "main": "./dist/main.js",
   "private": true,
