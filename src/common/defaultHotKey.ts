@@ -3,6 +3,31 @@ import { HOTKEY_PLAYER, HOTKEY_COMMON, HOTKEY_DESKTOP_LYRIC } from './hotKey'
 const local: LX.HotKeyConfig = {
   enable: true,
   keys: {
+    space: {
+      type: HOTKEY_PLAYER.toggle_play.type,
+      name: HOTKEY_PLAYER.toggle_play.name,
+      action: HOTKEY_PLAYER.toggle_play.action,
+    },
+    arrowleft: {
+      type: HOTKEY_PLAYER.seekbackward.type,
+      name: HOTKEY_PLAYER.seekbackward.name,
+      action: HOTKEY_PLAYER.seekbackward.action,
+    },
+    arrowright: {
+      type: HOTKEY_PLAYER.seekforward.type,
+      name: HOTKEY_PLAYER.seekforward.name,
+      action: HOTKEY_PLAYER.seekforward.action,
+    },
+    arrowup: {
+      type: HOTKEY_PLAYER.volume_up.type,
+      name: HOTKEY_PLAYER.volume_up.name,
+      action: HOTKEY_PLAYER.volume_up.action,
+    },
+    arrowdown: {
+      type: HOTKEY_PLAYER.volume_down.type,
+      name: HOTKEY_PLAYER.volume_down.name,
+      action: HOTKEY_PLAYER.volume_down.action,
+    },
     'mod+f5': {
       type: HOTKEY_PLAYER.toggle_play.type,
       name: HOTKEY_PLAYER.toggle_play.name,

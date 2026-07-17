@@ -156,6 +156,7 @@ export const initSetting = async() => {
  */
 export const initHotKey = async() => {
   const electronStore_hotKey = getStore(STORE_NAMES.HOTKEY)
+  const localHotKeyConfigVersion = 1
 
   let localConfig = electronStore_hotKey.get('local') as LX.HotKeyConfig | null
   let globalConfig = electronStore_hotKey.get('global') as LX.HotKeyConfig | null
@@ -181,6 +182,16 @@ export const initHotKey = async() => {
 
     electronStore_hotKey.set('local', localConfig)
     electronStore_hotKey.set('global', globalConfig)
+  }
+
+  const savedLocalHotKeyConfigVersion = electronStore_hotKey.get('localConfigVersion') as number | undefined
+  if ((savedLocalHotKeyConfigVersion ?? 0) < localHotKeyConfigVersion) {
+    const standardPlayerKeys = ['space', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown']
+    for (const key of standardPlayerKeys) {
+      if (!localConfig!.keys[key]) localConfig!.keys[key] = { ...defaultHotKey.local.keys[key] }
+    }
+    electronStore_hotKey.set('local', localConfig)
+    electronStore_hotKey.set('localConfigVersion', localHotKeyConfigVersion)
   }
 
   return {
