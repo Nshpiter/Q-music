@@ -12,7 +12,6 @@
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve">
             <use xlink:href="#icon-download-2" />
           </svg>
-          <span>{{ $t('playlist_import_modal__open') }}</span>
         </button>
         <button :class="$style.listsAdd" :aria-label="$t('list_update_modal__title')" @click="isShowListUpdateModal = true">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="transform: rotate(45deg);" height="70%" viewBox="0 0 24 24" space="preserve">
@@ -297,7 +296,9 @@ export default {
   // right: 0;
   margin-top: 6px;
   background: none;
+  width: 26px;
   height: 30px;
+  padding: 0;
   border: none;
   outline: none;
   border-radius: @radius-border;
@@ -319,13 +320,11 @@ export default {
   opacity: .9;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  min-width: 56px;
+  justify-content: center;
+  width: 26px;
   height: 26px;
   margin-top: 8px;
-  padding: 0 8px;
-  font-size: 12px;
-  line-height: 26px;
+  padding: 0;
   color: var(--color-primary);
   background-color: var(--color-primary-background-hover);
   svg {

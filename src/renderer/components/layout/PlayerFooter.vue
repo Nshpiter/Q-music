@@ -11,6 +11,11 @@
       >
         <img v-if="musicInfo.pic" :src="musicInfo.pic" decoding="async" @error="handleImgError">
         <span v-else>Q</span>
+        <span :class="[$style.coverHint, { [$style.coverHintFlip]: props.detail }]" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M6 14l6-6 6 6" />
+          </svg>
+        </span>
       </button>
       <div :class="$style.trackText">
         <div :class="$style.trackTitle">{{ title || status }}</div>
@@ -60,6 +65,7 @@
         type="button"
         :class="[$style.queueBtn, { [$style.active]: isShowPlayQueue }]"
         :aria-label="$t('play_queue__title')"
+        :aria-expanded="isShowPlayQueue"
         :title="$t('play_queue__title')"
         @click.stop="togglePlayQueue"
       >
@@ -79,8 +85,6 @@
 <script setup>
 import { playNext, playPrev, togglePlay } from '@renderer/core/player'
 import { computed } from '@common/utils/vueTools'
-import { formatMusicName } from '@renderer/utils'
-import { appSetting } from '@renderer/store/setting'
 import { status, isPlay, isShowPlayQueue, musicInfo, tempPlayList } from '@renderer/store/player/state'
 import { setMusicInfo, setShowPlayerDetail, setShowPlayQueue } from '@renderer/store/player/action'
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
@@ -102,11 +106,8 @@ const {
   handleTransitionEnd,
 } = usePlayProgress()
 
-const title = computed(() => {
-  return musicInfo.name
-    ? formatMusicName(appSetting['download.fileName'], musicInfo.name, musicInfo.singer)
-    : ''
-})
+// 歌手已在第二行单独展示，标题只显示歌名，避免拼接后被截断
+const title = computed(() => musicInfo.name || '')
 const artist = computed(() => musicInfo.singer || status.value || '')
 const queueBadgeText = computed(() => tempPlayList.length > 99 ? '99+' : String(tempPlayList.length))
 
@@ -178,6 +179,7 @@ const handleImgError = () => {
   color: var(--color-font);
 }
 .coverBtn {
+  position: relative;
   flex: none;
   width: 52px;
   height: 52px;
@@ -210,11 +212,42 @@ const handleImgError = () => {
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 14px 28px rgba(50, 63, 82, .18);
+
+    .coverHint {
+      opacity: 1;
+    }
   }
 
   &:active {
     transform: scale(.96);
     opacity: .88;
+  }
+}
+.coverHint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(31, 40, 36, .34);
+  opacity: 0;
+  transition: opacity @transition-fast;
+  pointer-events: none;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform @transition-fast;
+  }
+}
+.coverHintFlip {
+  svg {
+    transform: rotate(180deg);
   }
 }
 .trackText {

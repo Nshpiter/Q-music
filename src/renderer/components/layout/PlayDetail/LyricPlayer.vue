@@ -18,6 +18,14 @@
         <div :class="[$style.lyricSpace, $style.lyricSpaceBottom]" />
       </div>
     </transition>
+    <div v-if="isShowNoLyric" :class="$style.noLyric">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 18V5l10-2v13" />
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="16" cy="16" r="3" />
+      </svg>
+      <p>{{ $t('player__no_lyric') }}</p>
+    </div>
     <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
       <button
         v-show="linePlayVisible && !isShowLrcSelectContent"
@@ -95,6 +103,7 @@ export default {
     commentLayoutSettling: Boolean,
   },
   setup(props) {
+    const isShowNoLyric = computed(() => !!playerMusicInfo.id && !lyric.lines.length && !isShowLrcSelectContent.value)
     const isZoomActiveLrc = computed(() => appSetting['playDetail.isZoomActiveLrc'])
     const isShowLyricProgressSetting = computed(() => appSetting['playDetail.isShowLyricProgressSetting'])
     const isCommentLayoutVisible = computed(() => props.commentLayoutVisible || isShowPlayComment.value)
@@ -233,6 +242,7 @@ export default {
     })
 
     return {
+      isShowNoLyric,
       dom_lyric,
       dom_lyric_text,
       dom_skip_line,
@@ -584,6 +594,43 @@ export default {
     color: #6374ff;
     background: rgba(99, 116, 255, .1);
   }
+}
+
+.noLyric {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: rgba(54, 58, 60, .38);
+  pointer-events: none;
+  opacity: 0;
+  // 延迟淡入，歌词正常加载时不闪现占位
+  animation: qNoLyricIn .4s ease .6s forwards;
+
+  svg {
+    width: 34px;
+    height: 34px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+}
+
+@keyframes qNoLyricIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .lyricSpace {
