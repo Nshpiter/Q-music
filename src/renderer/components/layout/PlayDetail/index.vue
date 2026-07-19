@@ -550,7 +550,7 @@ export default {
       transform: translate3d(0, -50%, 0) scale(.985);
       will-change: transform, width, height;
       backface-visibility: hidden;
-      animation: qCommentCoverEnter @comment-layout-duration @comment-layout-easing both;
+      animation: qCommentCoverEnter .5s @comment-layout-easing both;
     }
 
     .albumStage {
@@ -574,7 +574,7 @@ export default {
       opacity: 1;
       transform: translate3d(0, 0, 0);
       pointer-events: auto;
-      animation: qCommentPanelEnter .46s @comment-layout-easing .04s both;
+      animation: qCommentPanelEnter .56s @comment-layout-easing .1s both;
     }
 
     .commentResizeHandle {
@@ -591,7 +591,7 @@ export default {
         flex: none;
         max-width: none;
         min-width: 0;
-        animation: qCommentLyricEnter .46s @comment-layout-easing-soft .02s both;
+        animation: qCommentLyricEnter .52s @comment-layout-easing-soft .05s both;
         .lyricSelectContent {
           font-size: 14px;
         }
@@ -958,10 +958,12 @@ export default {
     transform .42s @comment-layout-easing;
 }
 
+// 打开评论时布局是 flex→grid 的瞬时切换，入场动画需要足够的幅度
+// 来重建元素的运动逻辑：封面从中央大图缩小落到左侧、歌词从右半区滑到中列、评论从右缘滑入
 @keyframes qCommentCoverEnter {
   from {
-    opacity: .78;
-    transform: translate3d(20px, -50%, 0) scale(1.025);
+    opacity: 0;
+    transform: translate3d(44px, -48%, 0) scale(1.12);
   }
   to {
     opacity: 1;
@@ -982,8 +984,8 @@ export default {
 
 @keyframes qCommentLyricEnter {
   from {
-    opacity: .84;
-    transform: translate3d(14px, 0, 0) scale(.992);
+    opacity: 0;
+    transform: translate3d(64px, 0, 0) scale(.99);
   }
   to {
     opacity: 1;
@@ -1005,7 +1007,7 @@ export default {
 @keyframes qCommentPanelEnter {
   from {
     opacity: 0;
-    transform: translate3d(26px, 0, 0) scale(.992);
+    transform: translate3d(88px, 0, 0) scale(.985);
   }
   to {
     opacity: 1;
@@ -1020,7 +1022,7 @@ export default {
   }
   to {
     opacity: 0;
-    transform: translate3d(24px, 0, 0) scale(.992);
+    transform: translate3d(56px, 0, 0) scale(.99);
   }
 }
 

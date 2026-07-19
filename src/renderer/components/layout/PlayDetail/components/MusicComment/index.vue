@@ -255,11 +255,12 @@ export default {
   transition-property: transform,opacity;
   transform-origin: 100%;
   overflow: hidden;
-  padding: 4px 0 0;
+  // 顶部留白与中列歌名基线对齐，避免标题贴住顶部控制区
+  padding: 20px 0 6px;
 }
 .commentHeader {
   flex: none;
-  padding: 0 8px 10px;
+  padding: 0 10px 12px;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
@@ -367,9 +368,22 @@ export default {
 .commentFloor {
   opacity: 1;
   transition: opacity @transition-normal;
+  // 列表加载完成挂载时淡入，避免内容突然填充
+  animation: qCommentListIn .32s ease both;
 
   &.loading {
     opacity: .4;
+  }
+}
+
+@keyframes qCommentListIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 .pagination {
