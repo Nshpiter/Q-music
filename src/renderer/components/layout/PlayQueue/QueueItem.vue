@@ -60,7 +60,8 @@ const displayInfo = computed(() => {
   border-bottom: 1px solid rgba(54, 83, 70, .08);
   transition: background-color @transition-fast;
 
-  &:hover {
+  &:hover,
+  &:focus-within {
     background-color: rgba(67, 118, 94, .06);
 
     .remove {
@@ -171,7 +172,8 @@ const displayInfo = computed(() => {
   opacity: .28;
   transition: opacity @transition-fast, color @transition-fast, background-color @transition-fast;
 
-  &:hover {
+  &:hover,
+  &:focus-visible {
     color: #d65555;
     background-color: rgba(214, 85, 85, .09);
     opacity: 1 !important;

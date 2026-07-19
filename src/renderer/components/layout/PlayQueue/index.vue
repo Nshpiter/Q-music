@@ -5,8 +5,7 @@
         ref="panelRef"
         :class="$style.panel"
         tabindex="-1"
-        role="dialog"
-        aria-modal="false"
+        role="region"
         aria-labelledby="play_queue_title"
         @click.stop
       >
@@ -32,12 +31,11 @@
           </button>
         </header>
 
-        <div :class="$style.tabs" role="tablist">
+        <div :class="$style.tabs">
           <button
             type="button"
-            role="tab"
             :class="{ [$style.activeTab]: activeTab == 'playlist' }"
-            :aria-selected="activeTab == 'playlist'"
+            :aria-pressed="activeTab == 'playlist'"
             @click="activeTab = 'playlist'"
           >
             {{ $t('play_queue__playlist') }}
@@ -45,9 +43,8 @@
           </button>
           <button
             type="button"
-            role="tab"
             :class="{ [$style.activeTab]: activeTab == 'later' }"
-            :aria-selected="activeTab == 'later'"
+            :aria-pressed="activeTab == 'later'"
             @click="activeTab = 'later'"
           >
             {{ $t('list__play_later') }}
@@ -55,7 +52,7 @@
           </button>
         </div>
 
-        <section v-show="activeTab == 'playlist'" :class="$style.tabPanel" role="tabpanel">
+        <section v-show="activeTab == 'playlist'" :class="$style.tabPanel">
           <div :class="$style.listMeta">
             <strong>{{ currentListName }}</strong>
             <span>{{ $t('play_queue__songs', { num: currentList.length }) }}</span>
@@ -74,10 +71,10 @@
               :music-info="item"
               :index="index"
               :active="currentIndex == index"
-              @play="handlePlayCurrent(index)"
+              @play="handlePlayCurrent(index, item)"
             />
           </base-virtualized-list>
-          <div v-else :class="$style.empty">
+          <div v-else-if="!isListLoading" :class="$style.empty">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 18V5l10-2v13" />
               <circle cx="6" cy="18" r="3" />
@@ -87,7 +84,7 @@
           </div>
         </section>
 
-        <section v-show="activeTab == 'later'" :class="$style.tabPanel" role="tabpanel">
+        <section v-show="activeTab == 'later'" :class="$style.tabPanel">
           <div :class="$style.listMeta">
             <strong>{{ $t('list__play_later') }}</strong>
             <button
@@ -107,17 +104,17 @@
               </svg>
             </button>
           </div>
-          <div v-if="tempPlayList.length" :class="['scroll', $style.laterList]">
+          <transition-group v-if="tempPlayList.length" tag="div" name="q-queue-item" :class="['scroll', $style.laterList]">
             <QueueItem
               v-for="(item, index) in tempPlayList"
-              :key="`${item.musicInfo.id}_${index}`"
+              :key="item.tempId ?? `${item.musicInfo.id}_${index}`"
               :music-info="item.musicInfo"
               :index="index"
               removable
               @play="handlePlayLater(index)"
               @remove="removeTempPlayList(index)"
             />
-          </div>
+          </transition-group>
           <div v-else :class="$style.empty">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 6h12" />
@@ -156,9 +153,13 @@ import {
 } from '@renderer/store/player/action'
 import QueueItem from './QueueItem.vue'
 
+// 列表元信息区（header + tabs + meta bar）的总高度，滚动定位时用于让当前歌曲露出在可视区顶部下方
+const SCROLL_TOP_OFFSET = -112
+
 const t = useI18n()
 const activeTab = ref('playlist')
 const currentList = ref([])
+const isListLoading = ref(false)
 const listRef = ref(null)
 const panelRef = ref(null)
 let loadId = 0
@@ -185,7 +186,8 @@ const currentListName = computed(() => {
 
 const currentIndex = computed(() => {
   if (playMusicInfo.isTempPlay || !playMusicInfo.musicInfo) return -1
-  return currentList.value.findIndex(item => item.id == playMusicInfo.musicInfo?.id)
+  // playerPlayIndex 是 store 维护的权威播放位置，列表内有重复歌曲时按 id 查找会定位到第一个匹配项
+  return playInfo.playerPlayIndex
 })
 
 const loadCurrentList = async() => {
@@ -196,27 +198,39 @@ const loadCurrentList = async() => {
     return
   }
 
-  const list = listId == LIST_IDS.DOWNLOAD
-    ? [...downloadList]
-    : [...await getListMusics(listId)]
-  if (requestId != loadId || listId != playInfo.playerListId) return
-  currentList.value = list
+  isListLoading.value = true
+  try {
+    const list = listId == LIST_IDS.DOWNLOAD
+      ? [...downloadList]
+      : [...await getListMusics(listId)]
+    if (requestId != loadId || listId != playInfo.playerListId) return
+    currentList.value = list
+  } catch (err) {
+    console.error('load play queue list failed:', err)
+  } finally {
+    if (requestId == loadId) isListLoading.value = false
+  }
 }
 
 const scrollToCurrent = async(animate = false) => {
   if (!isShowPlayQueue.value || activeTab.value != 'playlist' || currentIndex.value < 0) return
   await nextTick()
-  listRef.value?.scrollToIndex(currentIndex.value, -112, animate)
+  listRef.value?.scrollToIndex(currentIndex.value, SCROLL_TOP_OFFSET, animate)
 }
 
 const closeQueue = () => {
   setShowPlayQueue(false)
 }
 
-const handlePlayCurrent = index => {
+const handlePlayCurrent = async(index, item) => {
   const listId = playInfo.playerListId
   if (!listId) return
-  playList(listId, index)
+  // 本地快照可能落后于源列表，播放前用最新列表校正索引，避免播错歌
+  const list = listId == LIST_IDS.DOWNLOAD ? downloadList : await getListMusics(listId)
+  if (listId != playInfo.playerListId) return
+  const targetIndex = list[index]?.id == item.id ? index : list.findIndex(m => m.id == item.id)
+  if (targetIndex < 0) return
+  playList(listId, targetIndex)
 }
 
 const handlePlayLater = index => {
@@ -239,9 +253,9 @@ watch(() => playInfo.playerListId, () => {
   void loadCurrentList()
 }, { immediate: true })
 
-watch(() => downloadList.length, () => {
+const handleDownloadListUpdate = () => {
   if (playInfo.playerListId == LIST_IDS.DOWNLOAD) void loadCurrentList()
-})
+}
 
 watch(isShowPlayQueue, async(visible) => {
   if (!visible) return
@@ -257,12 +271,14 @@ watch([activeTab, currentIndex], () => {
 
 onMounted(() => {
   window.app_event.on('myListUpdate', handleMyListUpdate)
+  window.app_event.on('downloadListUpdate', handleDownloadListUpdate)
   document.addEventListener('click', handleDocumentClick)
   document.addEventListener('keydown', handleKeydown)
 })
 
 onBeforeUnmount(() => {
   window.app_event.off('myListUpdate', handleMyListUpdate)
+  window.app_event.off('downloadListUpdate', handleDownloadListUpdate)
   document.removeEventListener('click', handleDocumentClick)
   document.removeEventListener('keydown', handleKeydown)
 })
@@ -469,10 +485,36 @@ onBeforeUnmount(() => {
 .laterList {
   min-height: 0;
   flex: auto;
+  // 底部渐隐，避免最后一行被硬裁切
+  -webkit-mask-image: linear-gradient(180deg, #fff calc(100% - 24px), transparent 100%);
 }
 
 .laterList {
   overflow-y: auto;
+}
+
+:global(.q-queue-item-enter-active) {
+  transition: opacity .2s ease, transform .2s ease;
+}
+
+:global(.q-queue-item-enter-from) {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+:global(.q-queue-item-leave-active) {
+  overflow: hidden;
+  transition: opacity .18s ease, height .22s ease, transform .18s ease;
+}
+
+:global(.q-queue-item-leave-to) {
+  height: 0 !important;
+  opacity: 0;
+  transform: translateX(12px);
+}
+
+:global(.q-queue-item-move) {
+  transition: transform .25s ease;
 }
 
 .empty {

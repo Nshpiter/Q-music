@@ -229,6 +229,11 @@ export const clearPlayedList = () => {
   playedList.splice(0, playedList.length)
 }
 
+let tempPlayItemId = 0
+const createTempPlayItem = (musicInfo: LX.Player.TempPlayListItem['musicInfo'], listId: string | null): LX.Player.PlayMusicInfo => {
+  return { musicInfo, listId, isTempPlay: true, tempId: ++tempPlayItemId }
+}
+
 /**
  * 添加歌曲到稍后播放列表
  * @param list 歌曲列表
@@ -242,8 +247,8 @@ export const addTempPlayList = (list: LX.Player.TempPlayListItem[]) => {
     }
     return true
   })
-  if (topList.length) arrUnshift(tempPlayList, topList.map(({ musicInfo, listId }) => ({ musicInfo, listId, isTempPlay: true })))
-  if (bottomList.length) arrPush(tempPlayList, bottomList.map(({ musicInfo, listId }) => ({ musicInfo, listId, isTempPlay: true })))
+  if (topList.length) arrUnshift(tempPlayList, topList.map(({ musicInfo, listId }) => createTempPlayItem(musicInfo, listId)))
+  if (bottomList.length) arrPush(tempPlayList, bottomList.map(({ musicInfo, listId }) => createTempPlayItem(musicInfo, listId)))
 
   if (!playMusicInfo.musicInfo) void playNext()
 }

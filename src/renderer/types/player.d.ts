@@ -14,6 +14,10 @@ declare namespace LX {
         * 是否属于 “稍后播放”
         */
       isTempPlay: boolean
+      /**
+        * “稍后播放”条目的稳定标识（用于列表渲染 key，同一歌曲可重复添加）
+        */
+      tempId?: number
     }
 
     interface PlayInfo {
