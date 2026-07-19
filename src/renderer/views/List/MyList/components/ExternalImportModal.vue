@@ -88,7 +88,7 @@
       <div v-if="statusText" :class="$style.status">{{ statusText }}</div>
     </main>
     <footer :class="$style.footer">
-      <base-btn outline :disabled="isLoading" @click="handleClose">{{ $t('cancel_button_text') }}</base-btn>
+      <base-btn outline :disabled="cancelRequested" @click="handleClose">{{ $t('btn_cancel') }}</base-btn>
       <base-btn :disabled="!canSubmit" @click="handleSubmit">{{ submitText }}</base-btn>
     </footer>
   </material-modal>
@@ -99,7 +99,7 @@ import { computed, ref, watch } from '@common/utils/vueTools'
 import { useI18n } from '@renderer/plugins/i18n'
 import { defaultList, loveList, userLists } from '@renderer/store/list/state'
 import { dialog } from '@renderer/plugins/Dialog'
-import { importExternalPlaylist } from '../importPlaylist'
+import { ExternalImportError, importExternalPlaylist } from '../importPlaylist'
 
 const sourceOptions = [
   { id: 'tx', name: 'QQ音乐' },
@@ -137,11 +137,17 @@ export default {
     const spotifyAccessToken = ref('')
     const spotifySavedTracks = ref(false)
     const isLoading = ref(false)
+    const cancelRequested = ref(false)
     const statusText = ref('')
     const progressStageKeys = {
       fetch: 'playlist_import_modal__stage_fetch',
       match: 'playlist_import_modal__stage_match',
       save: 'playlist_import_modal__stage_save',
+    }
+    const errorMessageKeys = {
+      missing_token: 'playlist_import_modal__error_missing_token',
+      invalid_link: 'playlist_import_modal__error_invalid_link',
+      no_match: 'playlist_import_modal__error_no_match',
     }
 
     const currentListName = computed(() => {
@@ -200,6 +206,7 @@ export default {
       text.value = ''
       listName.value = ''
       neteaseToken.value = ''
+      spotifyAccessToken.value = ''
       spotifySavedTracks.value = false
       statusText.value = ''
     }
@@ -212,13 +219,28 @@ export default {
     }
 
     const handleClose = () => {
-      if (isLoading.value) return
+      if (isLoading.value) {
+        // 导入中点击取消/关闭：请求中止当前导入，由导入流程在下一个检查点退出
+        if (!cancelRequested.value) {
+          cancelRequested.value = true
+          statusText.value = t('playlist_import_modal__cancelling')
+        }
+        return
+      }
       emit('update:visible', false)
+    }
+
+    const getErrorMessage = (error) => {
+      if (error instanceof ExternalImportError && errorMessageKeys[error.code]) {
+        return t(errorMessageKeys[error.code])
+      }
+      return error.message || String(error)
     }
 
     const handleSubmit = async() => {
       if (!canSubmit.value) return
       isLoading.value = true
+      cancelRequested.value = false
       setProgress({
         stage: 'fetch',
         current: 0,
@@ -237,20 +259,25 @@ export default {
           spotifySavedTracks: spotifySavedTracks.value,
         }, value => {
           setProgress(value)
-        })
+        }, () => cancelRequested.value)
+        let message = t('playlist_import_modal__success', result)
+        if (result.sourceTotal > result.total) message += ' ' + t('playlist_import_modal__success_partial', result)
         await dialog({
           teleport: '#view',
-          message: t('playlist_import_modal__success', result),
+          message,
         })
         reset()
         emit('update:visible', false)
       } catch (error) {
-        await dialog({
-          teleport: '#view',
-          message: t('playlist_import_modal__failed', { message: error.message || String(error) }),
-        })
+        if (!(error instanceof ExternalImportError && error.code == 'cancelled')) {
+          await dialog({
+            teleport: '#view',
+            message: t('playlist_import_modal__failed', { message: getErrorMessage(error) }),
+          })
+        }
       } finally {
         isLoading.value = false
+        cancelRequested.value = false
         statusText.value = ''
       }
     }
@@ -273,6 +300,7 @@ export default {
       spotifyAccessToken,
       spotifySavedTracks,
       isLoading,
+      cancelRequested,
       targetOptions,
       inputLabel,
       inputPlaceholder,
