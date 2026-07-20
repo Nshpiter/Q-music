@@ -197,9 +197,12 @@ export default () => {
     }, 1000)
   })
 
-  window.setTimeout(() => {
-    showUpdateModal()
-  }, 3000)
+  // 「启动时检查更新」关闭时不自动检查（手动检查按钮仍可用）
+  if (appSetting['common.isAutoCheckUpdate'] ?? true) {
+    window.setTimeout(() => {
+      showUpdateModal()
+    }, 3000)
+  }
 
   onBeforeUnmount(() => {
     clearUpdateTimeout()

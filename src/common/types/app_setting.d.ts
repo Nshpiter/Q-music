@@ -74,6 +74,11 @@ declare global {
       'common.transparentWindow': boolean
 
       /**
+       * 启动时检查更新
+       */
+      'common.isAutoCheckUpdate': boolean
+
+      /**
        * 尝试自动更新
        */
       'common.tryAutoUpdate': boolean

@@ -20,6 +20,7 @@ const defaultSetting: LX.AppSetting = {
   'common.controlBtnPosition': isMac ? 'left' : 'right',
   'common.playBarProgressStyle': 'mini',
   'common.transparentWindow': !isMac,
+  'common.isAutoCheckUpdate': true,
   'common.tryAutoUpdate': false,
   'common.showChangeLog': true,
 

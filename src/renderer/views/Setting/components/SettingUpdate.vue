@@ -2,7 +2,9 @@
 dt#update {{ $t('setting__update') }}
 dd
   .gap-top
-    base-checkbox(id="setting__update_tryAutoUpdate" :model-value="appSetting['common.tryAutoUpdate']" :label="$t('setting__update_try_auto_update')" @update:model-value="updateSetting({'common.tryAutoUpdate': $event})")
+    base-checkbox(id="setting__update_autoCheck" :model-value="appSetting['common.isAutoCheckUpdate']" :label="$t('setting__update_auto_check')" @update:model-value="updateSetting({'common.isAutoCheckUpdate': $event})")
+  .gap-top
+    base-checkbox(id="setting__update_tryAutoUpdate" :disabled="!appSetting['common.isAutoCheckUpdate']" :model-value="appSetting['common.tryAutoUpdate']" :label="$t('setting__update_try_auto_update')" @update:model-value="updateSetting({'common.tryAutoUpdate': $event})")
   .gap-top
     base-checkbox(id="setting__update_showChangeLog" :model-value="appSetting['common.showChangeLog']" :label="$t('setting__update_show_change_log')" @update:model-value="updateSetting({'common.showChangeLog': $event})")
   .gap-top

@@ -224,6 +224,10 @@ export default {
     &:hover {
       background-color: rgba(255, 255, 255, .44);
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .58);
+      .tocIcon {
+        color: var(--color-primary);
+        background-color: var(--color-primary-alpha-900);
+      }
     }
   }
   &.active {
@@ -233,8 +237,8 @@ export default {
 
     .tocIcon {
       color: #fff;
-      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark-300));
-      box-shadow: 0 10px 22px var(--color-primary-alpha-800);
+      background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary));
+      box-shadow: 0 8px 18px var(--color-primary-alpha-700), inset 0 1px 0 rgba(255, 255, 255, .4);
     }
   }
 }
@@ -242,9 +246,11 @@ export default {
   width: 30px;
   height: 30px;
   flex: none;
-  border-radius: 12px;
-  color: var(--color-primary);
-  background-color: rgba(255, 255, 255, .46);
+  border-radius: 10px;
+  // 未选中用中性灰，只有 hover/选中才上主色，避免整列全绿显脏
+  color: var(--color-500);
+  background-color: rgba(255, 255, 255, .5);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .5);
   display: flex;
   align-items: center;
   justify-content: center;

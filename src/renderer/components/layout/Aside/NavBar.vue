@@ -169,11 +169,12 @@ export default {
     width: 18px;
     height: 18px;
     padding: 6px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, .42);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .58);
+    border-radius: 11px;
+    color: var(--color-nav-font);
+    background: rgba(255, 255, 255, .4);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55);
     transition: @transition-fast;
-    transition-property: background-color, color, box-shadow;
+    transition-property: background, color, box-shadow, transform;
   }
 
   span {
@@ -183,36 +184,20 @@ export default {
     .mixin-ellipsis-1();
   }
 
-  &:before {
-    .mixin-after();
-    left: 0;
-    top: 10px;
-    width: 3px;
-    height: 24px;
-    background-color: var(--color-primary);
-    border-radius: 3px;
-    transform: translateX(-100%);
-    transition: transform @transition-fast;
-  }
-
+  // 选中态：主色实心图标胶囊 + 柔和玻璃底，取代原来的左侧竖线
   &.active {
-    // border-left-color: @color-theme-active;
     color: var(--color-primary-dark-300);
-    background-color: rgba(255, 255, 255, .52);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .70), 0 12px 28px rgba(72, 91, 112, .06);
+    background-color: var(--color-primary-alpha-900);
+    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800);
 
     svg {
-      color: var(--color-primary-dark-300);
-      background: rgba(255, 255, 255, .76);
-      box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800), 0 8px 18px rgba(64, 66, 66, .10);
-    }
-
-    &:before {
-      transform: translateX(0);
+      color: #fff;
+      background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary));
+      box-shadow: 0 6px 14px var(--color-primary-alpha-700), inset 0 1px 0 rgba(255, 255, 255, .4);
     }
 
     &:hover {
-      background-color: var(--color-primary-light-600-alpha-100);
+      background-color: var(--color-primary-alpha-800);
     }
   }
 
@@ -224,6 +209,9 @@ export default {
       opacity: 1;
       background-color: rgba(255, 255, 255, .42);
       transform: translateX(2px);
+      svg {
+        background: rgba(255, 255, 255, .62);
+      }
     }
   }
   &:active:not(.active) {
