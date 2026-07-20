@@ -66,6 +66,7 @@ import SettingNetwork from './components/SettingNetwork.vue'
 import SettingOdc from './components/SettingOdc.vue'
 import SettingBackup from './components/SettingBackup.vue'
 import SettingOther from './components/SettingOther.vue'
+import SettingUpdate from './components/SettingUpdate.vue'
 import SettingAbout from './components/SettingAbout.vue'
 import { logRendererState } from '@renderer/utils/debugLog'
 
@@ -86,6 +87,7 @@ export default {
     SettingOdc,
     SettingBackup,
     SettingOther,
+    SettingUpdate,
     SettingAbout,
   },
   setup() {
@@ -110,6 +112,7 @@ export default {
         { id: 'SettingOdc', title: t('setting__odc'), icon: 'headphones' },
         { id: 'SettingBackup', title: t('setting__backup'), icon: 'sdCard' },
         { id: 'SettingOther', title: t('setting__other'), icon: 'tune-variant' },
+        { id: 'SettingUpdate', title: t('setting__update'), icon: 'refresh' },
         { id: 'SettingAbout', title: t('setting__about'), icon: 'information-slab-circle-outline' },
       ]
     })
