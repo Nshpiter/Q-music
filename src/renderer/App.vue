@@ -198,20 +198,20 @@ body {
   transition: background-color @transition-normal;
   min-width: 0;
   margin: 0 0 14px 0;
-  // 液态玻璃：低透明度中性白面板 + 强模糊/提饱和，让背景图透出来
+  // 液态玻璃：低透明度中性白面板 + 适度模糊/提饱和，让背景图清晰透出
   background:
-    radial-gradient(circle at 14% 4%, var(--color-primary-alpha-800), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04) 44%, rgba(255, 255, 255, .10)),
+    radial-gradient(circle at 14% 4%, var(--color-primary-alpha-900), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02) 44%, rgba(255, 255, 255, .05)),
     var(--color-main-background);
 
   border-radius: @radius-border;
   border: 1px solid rgba(40, 50, 66, .12);
   overflow: hidden;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .6),
-    inset 0 0 0 1px rgba(255, 255, 255, .28),
-    0 18px 44px rgba(24, 34, 45, 0.14);
-  backdrop-filter: blur(26px) saturate(1.7);
+    inset 0 1px 0 rgba(255, 255, 255, .55),
+    inset 0 0 0 1px rgba(255, 255, 255, .24),
+    0 18px 44px rgba(24, 34, 45, 0.16);
+  backdrop-filter: blur(20px) saturate(1.9);
   box-sizing: border-box;
 
   &:before {
