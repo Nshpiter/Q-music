@@ -221,15 +221,15 @@ export default {
     flex: none;
     width: var(--q-footer-tool-size);
     height: var(--q-footer-tool-size);
-    color: rgba(29, 34, 38, .7);
+    color: var(--color-font);
     border-radius: 50%;
-    opacity: .82;
+    opacity: .74;
     transition: opacity @transition-normal, color @transition-fast, background-color @transition-fast, transform @transition-fast;
 
     &:hover {
       opacity: 1;
-      color: rgba(29, 34, 38, .9);
-      background-color: rgba(29, 34, 38, .06) !important;
+      color: var(--color-primary-font);
+      background-color: var(--q-icon-btn-hover-bg) !important;
     }
 
     &:active {
@@ -271,15 +271,15 @@ export default {
 
     &:hover {
       opacity: 1;
-      color: rgba(29, 34, 38, .9);
-      background-color: rgba(29, 34, 38, .06);
+      color: var(--color-primary-font);
+      background-color: var(--q-icon-btn-hover-bg);
     }
 
     &.active {
-      color: #6374ff;
+      color: var(--color-primary);
       opacity: 1;
-      background-color: rgba(99, 116, 255, .12);
-      box-shadow: 0 8px 18px rgba(99, 116, 255, .1);
+      background-color: var(--color-primary-alpha-800);
+      box-shadow: 0 8px 18px var(--color-primary-alpha-800);
     }
   }
 

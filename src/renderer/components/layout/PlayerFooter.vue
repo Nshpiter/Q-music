@@ -290,9 +290,9 @@ const handleImgError = () => {
   width: 100%;
 }
 .progress {
-  --q-progress-track-color: rgba(49, 55, 59, .14);
-  --q-progress-bar-color: #4f6b62;
-  --q-progress-drag-color: rgba(79, 107, 98, .62);
+  --q-progress-track-color: rgba(49, 55, 59, .12);
+  --q-progress-bar-color: var(--color-primary);
+  --q-progress-drag-color: var(--color-primary-dark-100);
   height: 100%;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3);
 }
@@ -326,8 +326,8 @@ const handleImgError = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  color: rgba(49, 55, 59, .86);
-  gap: 16px;
+  color: var(--color-font);
+  gap: 18px;
 }
 .playBtn {
   width: 30px;
@@ -369,15 +369,26 @@ const handleImgError = () => {
 }
 
 .playBtnPrimary {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   color: #fff;
-  background: #31373b;
-  box-shadow: 0 10px 22px rgba(49, 55, 59, .17);
+  background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary));
+  box-shadow: 0 10px 22px var(--color-primary-alpha-700), inset 0 1px 0 rgba(255, 255, 255, .45);
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
 
   &:hover {
     color: #fff;
-    background: #24292d;
+    background: linear-gradient(145deg, var(--color-primary), var(--color-primary-dark-200));
+    background-color: transparent;
+    box-shadow: 0 12px 26px var(--color-primary-alpha-600), inset 0 1px 0 rgba(255, 255, 255, .5);
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: scale(.95);
   }
 }
 
