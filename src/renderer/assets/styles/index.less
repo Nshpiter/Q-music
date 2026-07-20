@@ -338,15 +338,16 @@ html {
 
 .badge {
   display: inline-block;
-  padding: 0.25em 0.4em;
-  font-size: .7em;
-  // font-weight: 700;
-  line-height: 1.2;
+  padding: 0.12em 0.5em;
+  font-size: .66em;
+  font-weight: 700;
+  line-height: 1.4;
   text-align: center;
   white-space: nowrap;
-  // vertical-align: baseline;
   vertical-align: text-top;
-  // border-radius: 2px;
+  // 语义化胶囊：用徽标色做低饱和底 + 同色文字，可一眼分辨 SQ / Hi-Res 等
+  border-radius: 5px;
+  letter-spacing: .3px;
 
   // &.badge-light {
   //   background-color: #f8f9fa;
@@ -373,12 +374,15 @@ html {
   // }
   &.badge-theme-primary {
     color: var(--color-badge-primary);
+    background-color: color-mix(in srgb, var(--color-badge-primary) 15%, transparent);
   }
   &.badge-theme-secondary {
     color: var(--color-badge-secondary);
+    background-color: color-mix(in srgb, var(--color-badge-secondary) 15%, transparent);
   }
   &.badge-theme-tertiary {
     color: var(--color-badge-tertiary);
+    background-color: color-mix(in srgb, var(--color-badge-tertiary) 15%, transparent);
   }
 }
 

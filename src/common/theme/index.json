@@ -242,7 +242,7 @@
       },
       "extInfo": {
         "--color-app-background": "var(--color-primary-light-600-alpha-700)",
-        "--color-main-background": "rgba(255, 255, 255, 1)",
+        "--color-main-background": "rgba(255, 255, 255, 0.42)",
         "--color-nav-font": "var(--color-primary)",
         "--background-image": "none",
         "--background-image-position": "center",
@@ -499,7 +499,7 @@
       },
       "extInfo": {
         "--color-app-background": "var(--color-primary-light-600-alpha-700)",
-        "--color-main-background": "rgba(255, 255, 255, 1)",
+        "--color-main-background": "rgba(255, 255, 255, 0.42)",
         "--color-nav-font": "var(--color-primary)",
         "--background-image": "none",
         "--background-image-position": "center",
@@ -756,7 +756,7 @@
       },
       "extInfo": {
         "--color-app-background": "var(--color-primary-light-600-alpha-600)",
-        "--color-main-background": "rgba(255, 255, 255, 1)",
+        "--color-main-background": "rgba(255, 255, 255, 0.42)",
         "--color-nav-font": "var(--color-primary)",
         "--background-image": "none",
         "--background-image-position": "center",
@@ -1013,7 +1013,7 @@
       },
       "extInfo": {
         "--color-app-background": "var(--color-primary-light-600-alpha-700)",
-        "--color-main-background": "rgba(255, 255, 255, 1)",
+        "--color-main-background": "rgba(255, 255, 255, 0.42)",
         "--color-nav-font": "var(--color-primary)",
         "--background-image": "none",
         "--background-image-position": "center",
@@ -1270,7 +1270,7 @@
       },
       "extInfo": {
         "--color-app-background": "var(--color-primary-light-600-alpha-700)",
-        "--color-main-background": "rgba(255, 255, 255, 1)",
+        "--color-main-background": "rgba(255, 255, 255, 0.42)",
         "--color-nav-font": "var(--color-primary)",
         "--background-image": "none",
         "--background-image-position": "center",
@@ -1527,7 +1527,7 @@
       },
       "extInfo": {
         "--color-app-background": "var(--color-primary-light-600-alpha-700)",
-        "--color-main-background": "rgba(255, 255, 255, 1)",
+        "--color-main-background": "rgba(255, 255, 255, 0.42)",
         "--color-nav-font": "var(--color-primary)",
         "--background-image": "none",
         "--background-image-position": "center",
@@ -1784,7 +1784,7 @@
       },
       "extInfo": {
         "--color-app-background": "var(--color-primary-light-600-alpha-700)",
-        "--color-main-background": "rgba(255, 255, 255, 1)",
+        "--color-main-background": "rgba(255, 255, 255, 0.42)",
         "--color-nav-font": "var(--color-primary)",
         "--background-image": "none",
         "--background-image-position": "center",
@@ -2041,7 +2041,7 @@
       },
       "extInfo": {
         "--color-app-background": "var(--color-primary-light-600-alpha-700)",
-        "--color-main-background": "rgba(255, 255, 255, 1)",
+        "--color-main-background": "rgba(255, 255, 255, 0.42)",
         "--color-nav-font": "var(--color-primary)",
         "--background-image": "none",
         "--background-image-position": "center",
@@ -2298,7 +2298,7 @@
       },
       "extInfo": {
         "--color-app-background": "var(--color-primary-light-600-alpha-700)",
-        "--color-main-background": "rgba(255, 255, 255, 1)",
+        "--color-main-background": "rgba(255, 255, 255, 0.42)",
         "--color-nav-font": "var(--color-primary)",
         "--background-image": "none",
         "--background-image-position": "center",
@@ -2555,7 +2555,7 @@
       },
       "extInfo": {
         "--color-app-background": "var(--color-primary-light-600-alpha-700)",
-        "--color-main-background": "rgba(255, 255, 255, 1)",
+        "--color-main-background": "rgba(255, 255, 255, 0.42)",
         "--color-nav-font": "var(--color-primary)",
         "--background-image": "none",
         "--background-image-position": "center",

@@ -146,16 +146,14 @@ body {
   height: 100%;
   box-sizing: border-box;
   overflow: hidden;
-  border: 1px solid rgba(62, 88, 76, .2);
+  border: 1px solid rgba(40, 50, 66, .14);
   background:
-    radial-gradient(circle at 18% 8%, var(--color-primary-alpha-800), transparent 30%),
-    linear-gradient(135deg, var(--color-primary-light-1000-alpha-100), var(--color-primary-light-900-alpha-200) 42%, var(--color-primary-alpha-900)),
+    radial-gradient(circle at 16% 6%, var(--color-primary-alpha-800), transparent 32%),
+    linear-gradient(150deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02) 44%, var(--color-primary-alpha-900)),
     var(--color-app-background);
   box-shadow:
-    inset -1px 0 0 rgba(62, 88, 76, .16),
-    inset 0 1px 0 rgba(255, 255, 255, .52),
-    inset -18px 0 28px rgba(62, 88, 76, .045),
-    inset 0 14px 28px rgba(255, 255, 255, .28);
+    inset 0 1px 0 rgba(255, 255, 255, .5),
+    inset -18px 0 28px rgba(40, 50, 66, .03);
 }
 
 .transparent,
@@ -200,23 +198,20 @@ body {
   transition: background-color @transition-normal;
   min-width: 0;
   margin: 0 0 14px 0;
+  // 液态玻璃：低透明度中性白面板 + 强模糊/提饱和，让背景图透出来
   background:
-    radial-gradient(circle at 18% 8%, rgba(75, 174, 126, .08), transparent 28%),
-    radial-gradient(circle at 96% 4%, rgba(103, 142, 128, .08), transparent 24%),
-    linear-gradient(180deg, rgba(246, 252, 249, .78), rgba(255, 255, 255, .68) 42%, rgba(248, 253, 250, .82)),
+    radial-gradient(circle at 14% 4%, var(--color-primary-alpha-800), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .04) 44%, rgba(255, 255, 255, .10)),
     var(--color-main-background);
 
   border-radius: @radius-border;
-  border: 1px solid rgba(54, 83, 70, .24);
+  border: 1px solid rgba(40, 50, 66, .12);
   overflow: hidden;
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, .62),
-    inset -1px 0 0 rgba(54, 83, 70, .1),
-    inset 0 1px 0 rgba(54, 83, 70, .08),
-    inset -16px 0 22px rgba(54, 83, 70, .035),
-    inset 0 12px 20px rgba(255, 255, 255, .42),
-    0 14px 38px rgba(31, 45, 39, 0.13);
-  backdrop-filter: blur(18px);
+    inset 0 1px 0 rgba(255, 255, 255, .6),
+    inset 0 0 0 1px rgba(255, 255, 255, .28),
+    0 18px 44px rgba(24, 34, 45, 0.14);
+  backdrop-filter: blur(26px) saturate(1.7);
   box-sizing: border-box;
 
   &:before {
@@ -226,8 +221,8 @@ body {
     z-index: 0;
     pointer-events: none;
     background:
-      linear-gradient(180deg, rgba(235, 248, 242, .32), rgba(255, 255, 255, .14) 34%, rgba(233, 246, 240, .2)),
-      radial-gradient(circle at 56% 34%, rgba(75, 174, 126, .055), transparent 30%);
+      linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .04) 40%, rgba(255, 255, 255, .12)),
+      radial-gradient(circle at 56% 30%, var(--color-primary-alpha-900), transparent 34%);
   }
 
   &:after {
@@ -238,8 +233,8 @@ body {
     pointer-events: none;
     border-radius: inherit;
     box-shadow:
-      inset 0 0 0 1px rgba(54, 83, 70, .1),
-      inset 0 -1px 0 rgba(54, 83, 70, .08);
+      inset 0 0 0 1px rgba(40, 50, 66, .08),
+      inset 0 -1px 0 rgba(40, 50, 66, .06);
   }
 }
 #window-control-btns {
@@ -278,13 +273,13 @@ body {
     height: 76px;
     pointer-events: none;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(238, 249, 244, .66) 40%, rgba(222, 241, 232, .78)),
-      linear-gradient(90deg, rgba(70, 116, 94, .08), rgba(255, 255, 255, .54) 22%, rgba(255, 255, 255, .5) 78%, rgba(70, 116, 94, .12));
-    border-top: 1px solid rgba(54, 83, 70, .1);
+      linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .42) 42%, rgba(255, 255, 255, .58)),
+      var(--color-main-background);
+    border-top: 1px solid rgba(40, 50, 66, .1);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, .72),
-      inset 0 -1px 0 rgba(54, 83, 70, .12);
-    backdrop-filter: blur(18px) saturate(1.12);
+      inset 0 1px 0 rgba(255, 255, 255, .7),
+      inset 0 -1px 0 rgba(40, 50, 66, .08);
+    backdrop-filter: blur(28px) saturate(1.7);
   }
 
   > * {
