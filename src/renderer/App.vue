@@ -27,8 +27,9 @@
 </template>
 
 <script setup>
-import { onMounted } from '@common/utils/vueTools'
+import { onMounted, watch } from '@common/utils/vueTools'
 import { appSetting } from '@renderer/store/setting'
+import { isUrl, encodePath } from '@common/utils/common'
 import { isShowPlayerDetail } from '@renderer/store/player/state'
 // import BubbleCursor from '@common/utils/effects/cursor-effects/bubbleCursor'
 // import '@common/utils/effects/snow.min'
@@ -37,7 +38,25 @@ import WindowControlBtns from './components/layout/WindowControlBtns.vue'
 
 useApp()
 
+// 把「毛玻璃强度 / 模糊 / 自定义背景图」设置实时映射到 CSS 变量
+const buildUserBgUrl = (bg) => {
+  if (!bg) return ''
+  return isUrl(bg) ? `url("${bg}")` : `url("file:///${encodePath(String(bg).replaceAll('\\', '/'))}")`
+}
+const applyGlassSetting = () => {
+  const el = document.documentElement
+  const opacity = appSetting['theme.glassOpacity']
+  const blur = appSetting['theme.glassBlur']
+  el.style.setProperty('--q-glass-opacity', String((typeof opacity == 'number' ? opacity : 22) / 100))
+  el.style.setProperty('--q-glass-blur', `${typeof blur == 'number' ? blur : 20}px`)
+  const bgUrl = buildUserBgUrl(appSetting['theme.customBgImage'])
+  if (bgUrl) el.style.setProperty('--q-user-bg-image', bgUrl)
+  else el.style.removeProperty('--q-user-bg-image')
+}
+watch(() => [appSetting['theme.glassOpacity'], appSetting['theme.glassBlur'], appSetting['theme.customBgImage']], applyGlassSetting)
+
 onMounted(() => {
+  applyGlassSetting()
   document.getElementById('root').style.display = 'block'
 
   // const styles = getComputedStyle(document.documentElement)
@@ -77,7 +96,8 @@ body {
   position: relative;
   overflow: hidden;
   color: var(--color-font);
-  background: var(--background-image) var(--background-image-position) no-repeat;
+  // 用户自定义背景图优先，未设置时回退到主题自带背景
+  background: var(--q-user-bg-image, var(--background-image)) var(--background-image-position) no-repeat;
   background-size: var(--background-image-size);
   transition: background-color @transition-normal;
   background-color: var(--color-content-background);
@@ -198,11 +218,12 @@ body {
   transition: background-color @transition-normal;
   min-width: 0;
   margin: 0 0 14px 0;
-  // 液态玻璃：低透明度中性白面板 + 适度模糊/提饱和，让背景图清晰透出
+  // 液态玻璃：面板透明度与模糊由设置里的滑块控制（--q-glass-opacity / --q-glass-blur）。
+  // 用相对颜色 rgb(from …) 取主题面板底色的 RGB、只替换透明度，浅色/深色主题都通用。
+  background: var(--color-main-background); // 不支持相对颜色时的回退
   background:
     radial-gradient(circle at 14% 4%, var(--color-primary-alpha-900), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02) 44%, rgba(255, 255, 255, .05)),
-    var(--color-main-background);
+    rgb(from var(--color-main-background) r g b / var(--q-glass-opacity, .22));
 
   border-radius: @radius-border;
   border: 1px solid rgba(40, 50, 66, .12);
@@ -211,7 +232,7 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, .55),
     inset 0 0 0 1px rgba(255, 255, 255, .24),
     0 18px 44px rgba(24, 34, 45, 0.16);
-  backdrop-filter: blur(20px) saturate(1.9);
+  backdrop-filter: blur(var(--q-glass-blur, 20px)) saturate(1.9);
   box-sizing: border-box;
 
   &:before {
@@ -272,14 +293,16 @@ body {
     bottom: 0;
     height: 76px;
     pointer-events: none;
+    // 播放栏比内容面板略实一点，保证控件清晰（在滑块透明度基础上 +0.18）
+    background: var(--color-main-background);
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .42) 42%, rgba(255, 255, 255, .58)),
-      var(--color-main-background);
+      linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .12) 42%, rgba(255, 255, 255, .18)),
+      rgb(from var(--color-main-background) r g b / calc(var(--q-glass-opacity, .22) + .18));
     border-top: 1px solid rgba(40, 50, 66, .1);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, .7),
       inset 0 -1px 0 rgba(40, 50, 66, .08);
-    backdrop-filter: blur(28px) saturate(1.7);
+    backdrop-filter: blur(calc(var(--q-glass-blur, 20px) + 8px)) saturate(1.7);
   }
 
   > * {

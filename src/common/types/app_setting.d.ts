@@ -596,6 +596,21 @@ declare global {
       'theme.darkId': string
 
       /**
+       * 毛玻璃面板不透明度（百分比 8-70）
+       */
+      'theme.glassOpacity': number
+
+      /**
+       * 毛玻璃模糊程度（px 0-40）
+       */
+      'theme.glassBlur': number
+
+      /**
+       * 自定义全局背景图（绝对路径或 URL，空为不使用）
+       */
+      'theme.customBgImage': string
+
+      /**
        * 是否显示热门搜索
        */
       'search.isShowHotSearch': boolean

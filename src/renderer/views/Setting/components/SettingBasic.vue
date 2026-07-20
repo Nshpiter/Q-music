@@ -46,6 +46,24 @@ dd
         svg-icon(name="angle-right-solid" :class="$style.activeIcon")
 
 dd
+  h3#basic_glass {{ $t('setting__basic_glass') }}
+  div
+    .gap-top(:class="$style.glassRow")
+      div(:class="$style.glassBg")
+        img(v-if="customBgPreview" loading="lazy" :class="$style.glassBgImg" :src="customBgPreview" alt="")
+        base-btn.btn(min @click="selectBgImage") {{ $t('setting__basic_glass_bg_select') }}
+        base-btn.btn(v-if="appSetting['theme.customBgImage']" min @click="clearBgImage") {{ $t('setting__basic_glass_bg_clear') }}
+      div(:class="$style.glassTip") {{ $t('setting__basic_glass_bg_tip') }}
+    .gap-top(:class="$style.glassSlider")
+      span(:class="$style.glassLabel") {{ $t('setting__basic_glass_opacity') }}
+      slider-bar(:class="$style.slider" :value="appSetting['theme.glassOpacity'] ?? 22" :min="8" :max="70" :step="1" @change="updateSetting({'theme.glassOpacity': $event})")
+      span(:class="$style.glassValue") {{ appSetting['theme.glassOpacity'] ?? 22 }}%
+    .gap-top(:class="$style.glassSlider")
+      span(:class="$style.glassLabel") {{ $t('setting__basic_glass_blur') }}
+      slider-bar(:class="$style.slider" :value="appSetting['theme.glassBlur'] ?? 20" :min="0" :max="40" :step="1" @change="updateSetting({'theme.glassBlur': $event})")
+      span(:class="$style.glassValue") {{ appSetting['theme.glassBlur'] ?? 20 }}px
+
+dd
   h3#basic_source {{ $t('setting__basic_source') }}
   div
     .gap-top(v-for="item in apiSources" :key="item.id")
@@ -125,7 +143,7 @@ user-api-modal(v-model="isShowUserApiModal")
 import { computed, ref, watch, reactive, shallowReactive } from '@common/utils/vueTools'
 import { windowSizeList, userApi, isFullscreen, themeId } from '@renderer/store'
 import { langList, useI18n } from '@root/lang'
-import { getSystemFonts } from '@renderer/utils/ipc'
+import { getSystemFonts, showSelectDialog } from '@renderer/utils/ipc'
 import apiSourceInfo from '@renderer/utils/musicSdk/api-source-info'
 import { useTimeout } from '@renderer/core/player/timeoutStop'
 import { dialog } from '@renderer/plugins/Dialog'
@@ -134,8 +152,10 @@ import ThemeSelectorModal from './ThemeSelectorModal.vue'
 import ThemeEditModal from './ThemeEditModal/index.vue'
 import PlayTimeoutModal from './PlayTimeoutModal.vue'
 import UserApiModal from './UserApiModal.vue'
+import SliderBar from '@renderer/components/base/SliderBar.vue'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import { getThemes, applyTheme, findTheme, buildBgUrl } from '@renderer/store/utils'
+import { isUrl, encodePath } from '@common/utils/common'
 
 export default {
   name: 'SettingBasic',
@@ -144,6 +164,7 @@ export default {
     ThemeEditModal,
     PlayTimeoutModal,
     UserApiModal,
+    SliderBar,
   },
   setup() {
     const t = useI18n()
@@ -263,6 +284,26 @@ export default {
     const isShowPlayTimeoutModal = ref(false)
     const { timeLabel } = useTimeout()
 
+    // 自定义背景图预览
+    const customBgPreview = computed(() => {
+      const bg = appSetting['theme.customBgImage']
+      if (!bg) return ''
+      return isUrl(bg) ? bg : encodePath(String(bg).replaceAll('\\', '/'))
+    })
+    const selectBgImage = async() => {
+      const result = await showSelectDialog({
+        title: t('setting__basic_glass_bg_select'),
+        properties: ['openFile'],
+        filters: [{ name: 'Image', extensions: ['jpg', 'jpeg', 'jfif', 'png', 'apng', 'avif', 'gif', 'webp', 'bmp'] }],
+      })
+      if (result.canceled) return
+      const path = result.filePaths[0]
+      if (path) updateSetting({ 'theme.customBgImage': path })
+    }
+    const clearBgImage = () => {
+      updateSetting({ 'theme.customBgImage': '' })
+    }
+
     const isShowUserApiModal = ref(false)
     const getApiStatus = () => {
       let status
@@ -377,6 +418,9 @@ export default {
       editThemeId,
       handleEditTheme,
       fontSizeList,
+      customBgPreview,
+      selectBgImage,
+      clearBgImage,
     }
   },
 }
@@ -384,6 +428,53 @@ export default {
 
 <style lang="less" module>
 @import '@renderer/assets/styles/layout.less';
+
+.glassRow {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 8px;
+}
+.glassBg {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 10px;
+}
+.glassBgImg {
+  width: 88px;
+  height: 52px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px var(--color-primary-light-100-alpha-300), inset 0 0 0 1px rgba(255, 255, 255, .5);
+}
+.glassTip {
+  font-size: 12px;
+  color: var(--color-font-label);
+  line-height: 1.4;
+}
+.glassSlider {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 12px;
+}
+.glassLabel {
+  flex: none;
+  width: 5.5em;
+  font-size: 13px;
+  color: var(--color-font);
+}
+.slider {
+  width: 180px;
+  flex: none;
+}
+.glassValue {
+  flex: none;
+  font-size: 13px;
+  color: var(--color-primary-font);
+  font-variant-numeric: tabular-nums;
+  min-width: 3.4em;
+}
 
 .theme {
   display: flex;
