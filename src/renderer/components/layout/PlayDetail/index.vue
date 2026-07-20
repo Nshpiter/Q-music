@@ -6,7 +6,7 @@ transition(enter-active-class="q-detail-enter-active" leave-active-class="q-deta
     //- div(:class="$style.bg2")
     ControlBtnsLeftHeader(v-if="appSetting['common.controlBtnPosition'] == 'left'")
     ControlBtnsRightHeader(v-else)
-    div(ref="dom_main" :class="[$style.main, {[$style.showComment]: isCommentLayoutVisible, [$style.commentClosing]: isCommentLayoutClosing, [$style.commentSettling]: isCommentLayoutSettling}]" :style="mainStyle")
+    div(ref="dom_main" :class="[$style.main, {[$style.showComment]: isCommentLayoutVisible, [$style.commentOpening]: isCommentLayoutOpening, [$style.commentGliding]: isCommentLayoutGliding, [$style.commentClosing]: isCommentLayoutClosing, [$style.commentSettling]: isCommentLayoutSettling}]" :style="mainStyle")
       div.left(:class="$style.left")
         div(ref="dom_record" :class="['q-album-stage', $style.albumStage, { [$style.albumStagePlaying]: isPlay }]")
           div(:class="$style.record")
@@ -31,14 +31,16 @@ transition(enter-active-class="q-detail-enter-active" leave-active-class="q-deta
         @mousedown.stop.prevent="handleCommentResizeStart"
         @touchstart.stop.prevent="handleCommentResizeStart"
       )
-      music-comment(:class="$style.comment" :show="isShowPlayComment" :music-info="playMusicInfo.musicInfo" @close="hideComment")
+      //- gliding 期间不置 show，推迟评论拉取与列表渲染到滑动结束后，
+      //- 避免大量评论节点的创建/布局阻塞封面歌词的滑动动画
+      music-comment(:class="$style.comment" :show="isShowPlayComment && !isCommentLayoutGliding" :music-info="playMusicInfo.musicInfo" @close="hideComment")
     transition(enter-active-class="animated-slow fadeIn" leave-active-class="animated-slow fadeOut")
       common-audio-visualizer(v-if="appSetting['player.audioVisualization'] && visibled")
 </template>
 
 
 <script>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from '@common/utils/vueTools'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from '@common/utils/vueTools'
 import { isFullscreen } from '@renderer/store'
 import {
   isShowPlayerDetail,
@@ -71,6 +73,16 @@ const RESIZE_HANDLE_WIDTH = 24
 const COMMENT_LAYOUT_GAP = 18
 const RECORD_SPIN_SECONDS = 18
 const COMMENT_LAYOUT_CLOSE_MS = 500
+const FLIP_DURATION_MS = 560
+const FLIP_EASING = 'cubic-bezier(.22, 1, .36, 1)'
+// 封面/歌词滑动接近结束时再淡入评论面板，略短于 FLIP 时长让两段衔接自然
+const COMMENT_LAYOUT_GLIDE_MS = 470
+// 一帧耗时超过该值判定为「繁重帧」（新布局首次重排/绘制），需等它过去再开始滑动
+const FLIP_HEAVY_FRAME_MS = 40
+// 连续若干正常帧即认为主线程已空闲，可直接开始滑动
+const FLIP_CLEAR_FRAME_STREAK = 3
+// 最长等待，兜底防止始终等不到判定条件
+const FLIP_RELEASE_MAX_WAIT_MS = 320
 
 const getInitialCommentWidth = () => {
   try {
@@ -97,6 +109,8 @@ export default {
     const commentWidth = ref(getInitialCommentWidth())
     const isCommentResizing = ref(false)
     const isCommentLayoutVisible = ref(isShowPlayComment.value)
+    const isCommentLayoutOpening = ref(false)
+    const isCommentLayoutGliding = ref(false)
     const isCommentLayoutClosing = ref(false)
     const isCommentLayoutSettling = ref(false)
     const lastMainWidth = ref(0)
@@ -109,6 +123,7 @@ export default {
     let resizeStartX = 0
     let resizeStartWidth = 0
     let commentLayoutCloseTimer = null
+    let commentLayoutGlideTimer = null
     const detailBgStyle = computed(() => {
       if (!musicInfo.pic) return {}
       return {
@@ -141,6 +156,11 @@ export default {
       window.clearTimeout(commentLayoutCloseTimer)
       commentLayoutCloseTimer = null
     }
+    const clearCommentLayoutGlideTimer = () => {
+      if (!commentLayoutGlideTimer) return
+      window.clearTimeout(commentLayoutGlideTimer)
+      commentLayoutGlideTimer = null
+    }
     const settleCommentLayout = () => {
       isCommentLayoutSettling.value = true
       window.requestAnimationFrame(() => {
@@ -148,6 +168,44 @@ export default {
           isCommentLayoutSettling.value = false
         })
       })
+    }
+
+    let flipCleanups = []
+    const clearFlipAnimations = () => {
+      while (flipCleanups.length) flipCleanups.pop()()
+    }
+    // FLIP：布局瞬间切换后，用 transform 把元素拉回旧位置（First 步，无过渡），
+    // 返回一个「释放」函数；在下一帧调用它才开始过渡，确保旧位置已作为过渡起点提交，
+    // 否则同一 tick 内设置起止值时浏览器可能不识别过渡起点，导致元素卡住后突然跳变。
+    const pinFlipToFirst = (el, firstRect, allowScale = true) => {
+      const lastRect = el.getBoundingClientRect()
+      if (!firstRect.width || !lastRect.width || !lastRect.height) return null
+      const dx = (firstRect.left + firstRect.width / 2) - (lastRect.left + lastRect.width / 2)
+      const dy = (firstRect.top + firstRect.height / 2) - (lastRect.top + lastRect.height / 2)
+      // 文本类元素（歌词/说明）不缩放：内容已按新宽度重排，缩放大段文字会逐帧
+      // 重新栅格化造成卡顿，只做位移即可获得廉价且顺滑的滑动
+      const scale = allowScale ? firstRect.width / lastRect.width : 1
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(scale - 1) < 0.01) return null
+      const computed = window.getComputedStyle(el).transform
+      const baseTransform = computed && computed != 'none' ? computed : ''
+      el.style.transition = 'none'
+      el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${scale}) ${baseTransform}`.trim()
+      el.style.willChange = 'transform'
+      let timer = null
+      const cleanup = () => {
+        if (timer) window.clearTimeout(timer)
+        timer = null
+        el.style.transition = ''
+        el.style.transform = ''
+        el.style.willChange = ''
+      }
+      flipCleanups.push(cleanup)
+      // 释放：Last 步，平滑过渡回元素在新布局中的自然位置
+      return () => {
+        el.style.transition = `transform ${FLIP_DURATION_MS}ms ${FLIP_EASING}`
+        el.style.transform = baseTransform
+        timer = window.setTimeout(cleanup, FLIP_DURATION_MS + 60)
+      }
     }
     const updateRecordSpin = () => {
       const elapsed = (window.performance.now() - recordSpinStartTime) / 1000
@@ -291,8 +349,12 @@ export default {
 
     watch(isShowPlayComment, visible => {
       clearCommentLayoutCloseTimer()
+      clearCommentLayoutGlideTimer()
       if (!visible) {
         stopCommentResize()
+        clearFlipAnimations()
+        isCommentLayoutOpening.value = false
+        isCommentLayoutGliding.value = false
         if (isCommentLayoutVisible.value) {
           isCommentLayoutClosing.value = true
           commentLayoutCloseTimer = window.setTimeout(() => {
@@ -304,10 +366,70 @@ export default {
         }
         return
       }
+      if (isCommentLayoutVisible.value) return
+      clearFlipAnimations()
+      // 布局切换前记录各元素的旧位置，切换后用 FLIP 平滑移动过去。
+      // 封面是小图层，可缩放；歌词/说明是文本，仅位移不缩放。
+      const coverEl = dom_record.value
+      const descriptionEl = dom_main.value?.querySelector('.left .description')
+      const lyricEl = dom_main.value?.querySelector('.right')
+      const firstRects = [
+        { el: coverEl, scale: true },
+        { el: descriptionEl, scale: false },
+        { el: lyricEl, scale: false },
+      ].map(item => item.el ? { el: item.el, scale: item.scale, rect: item.el.getBoundingClientRect() } : null)
       isCommentLayoutVisible.value = true
+      isCommentLayoutOpening.value = true
+      // gliding 期间评论面板保持隐藏（其 backdrop-filter 首次绘制很重），
+      // 等封面/歌词滑动结束后再淡入，避免重绘卡在动画中途
+      isCommentLayoutGliding.value = true
       isCommentLayoutClosing.value = false
       isCommentLayoutSettling.value = false
       setTimeout(updateMainWidth)
+      void nextTick(() => {
+        const releases = firstRects.map(item => item ? pinFlipToFirst(item.el, item.rect, item.scale) : null)
+        // 释放过渡：撤下开场类，封面/歌词从旧位置平滑滑向新位置；
+        // 并让评论面板在滑动尾声淡入
+        const startGlide = () => {
+          isCommentLayoutOpening.value = false
+          for (const release of releases) release && release()
+          clearCommentLayoutGlideTimer()
+          commentLayoutGlideTimer = window.setTimeout(() => {
+            commentLayoutGlideTimer = null
+            isCommentLayoutGliding.value = false
+          }, COMMENT_LAYOUT_GLIDE_MS)
+        }
+        // 切到 grid 后的第一帧要做整套新布局的重排/绘制，很繁重；先让封面/歌词
+        // 钉在旧位置静止不动，等这一帧过去、主线程空闲后再开始滑动，
+        // 把卡顿吸收在静止阶段，保证滑动本身丝滑
+        let prevTs = 0
+        let deadline = 0
+        let sawHeavyFrame = false
+        let normalStreak = 0
+        const waitClearFrame = ts => {
+          if (!deadline) deadline = ts + FLIP_RELEASE_MAX_WAIT_MS
+          if (prevTs) {
+            const dt = ts - prevTs
+            if (dt > FLIP_HEAVY_FRAME_MS) {
+              sawHeavyFrame = true
+              normalStreak = 0
+            } else {
+              normalStreak++
+              if (sawHeavyFrame || normalStreak >= FLIP_CLEAR_FRAME_STREAK) {
+                startGlide()
+                return
+              }
+            }
+          }
+          prevTs = ts
+          if (ts >= deadline) {
+            startGlide()
+            return
+          }
+          window.requestAnimationFrame(waitClearFrame)
+        }
+        window.requestAnimationFrame(waitClearFrame)
+      })
     })
 
     watch(isPlay, playing => {
@@ -332,6 +454,8 @@ export default {
     onBeforeUnmount(() => {
       stopRecordSpin()
       clearCommentLayoutCloseTimer()
+      clearCommentLayoutGlideTimer()
+      clearFlipAnimations()
       stopCommentResize()
       window.removeEventListener('resize', updateMainWidth)
     })
@@ -343,6 +467,8 @@ export default {
       isShowPlayerDetail,
       isShowPlayComment,
       isCommentLayoutVisible,
+      isCommentLayoutOpening,
+      isCommentLayoutGliding,
       isCommentLayoutClosing,
       isCommentLayoutSettling,
       isPlay,
@@ -550,7 +676,6 @@ export default {
       transform: translate3d(0, -50%, 0) scale(.985);
       will-change: transform, width, height;
       backface-visibility: hidden;
-      animation: qCommentCoverEnter .5s @comment-layout-easing both;
     }
 
     .albumStage {
@@ -574,7 +699,10 @@ export default {
       opacity: 1;
       transform: translate3d(0, 0, 0);
       pointer-events: auto;
-      animation: qCommentPanelEnter .56s @comment-layout-easing .1s both;
+      // 面板在封面/歌词滑动结束后（撤下 gliding 时）淡入滑落，避免重绘卡住动画
+      transition:
+        opacity .46s @comment-layout-easing-soft,
+        transform .5s @comment-layout-easing;
     }
 
     .commentResizeHandle {
@@ -591,7 +719,6 @@ export default {
         flex: none;
         max-width: none;
         min-width: 0;
-        animation: qCommentLyricEnter .52s @comment-layout-easing-soft .05s both;
         .lyricSelectContent {
           font-size: 14px;
         }
@@ -683,6 +810,41 @@ export default {
         transition: none !important;
         animation: none !important;
       }
+    }
+  }
+
+  // FLIP 开场帧：布局刚从 flex 切到 grid，让 .main 的栅格/间距瞬间落到终态，
+  // 各元素也不走类过渡（改由 JS 设置的 inline transform 过渡驱动）。
+  // 注意这里不能用 !important —— 否则会盖掉 FLIP 写在 style 上的 transition，
+  // 导致封面/歌词直接跳到终点而非平滑滑入（class !important 优先级高于 inline）。
+  &.commentOpening {
+    transition: none;
+
+    .left,
+    .albumStage,
+    .description,
+    .comment,
+    .commentResizeHandle {
+      transition: none;
+      animation: none;
+    }
+
+    :global {
+      .right {
+        transition: none;
+        animation: none;
+      }
+    }
+  }
+
+  // gliding 阶段：封面/歌词正在滑动，评论面板保持隐藏（visibility 跳过其
+  // backdrop-filter 的昂贵首绘），撤下该类时面板才淡入滑落，衔接下一段。
+  &.commentGliding {
+    .comment {
+      visibility: hidden;
+      opacity: 0;
+      transform: translate3d(30px, 0, 0);
+      transition: none;
     }
   }
 }
@@ -960,61 +1122,6 @@ export default {
 
 // 打开评论时布局是 flex→grid 的瞬时切换，入场动画需要足够的幅度
 // 来重建元素的运动逻辑：封面从中央大图缩小落到左侧、歌词从右半区滑到中列、评论从右缘滑入
-@keyframes qCommentCoverEnter {
-  from {
-    opacity: 0;
-    transform: translate3d(44px, -48%, 0) scale(1.12);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, -50%, 0) scale(.985);
-  }
-}
-
-@keyframes qCommentCoverLeave {
-  from {
-    opacity: 1;
-    transform: translate3d(0, -50%, 0) scale(.985);
-  }
-  to {
-    opacity: .92;
-    transform: translate3d(10px, -50%, 0) scale(1.005);
-  }
-}
-
-@keyframes qCommentLyricEnter {
-  from {
-    opacity: 0;
-    transform: translate3d(64px, 0, 0) scale(.99);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-@keyframes qCommentLyricLeave {
-  from {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    opacity: .88;
-    transform: translate3d(-10px, 0, 0) scale(.996);
-  }
-}
-
-@keyframes qCommentPanelEnter {
-  from {
-    opacity: 0;
-    transform: translate3d(88px, 0, 0) scale(.985);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
 @keyframes qCommentPanelLeave {
   from {
     opacity: 1;

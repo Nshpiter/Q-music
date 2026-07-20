@@ -152,11 +152,13 @@ export default {
         handleScrollLrc(0)
       }, 80)
     }
-    const syncLyricScrollAfterLayout = () => {
+    const syncLyricScrollAfterLayout = (deferForFlip = false) => {
       clearLayoutScrollTimers()
       clearLyricResizeTimer()
       void nextTick(() => {
-        const delays = [60, 180, 360, 760, 1200]
+        // 打开评论时会跑一段 FLIP 位移动画，若在动画途中反复重排歌词滚动
+        // 会阻塞主线程造成卡顿；此时把后续校正滚动推迟到动画结束之后再执行。
+        const delays = deferForFlip ? [820, 1080, 1500] : [60, 180, 360, 760, 1200]
         handleScrollLrc(0, true)
         for (const [index, delay] of delays.entries()) {
           const timer = setTimeout(() => {
@@ -167,7 +169,9 @@ export default {
       })
     }
 
-    watch([isFullscreen, isShowPlayComment], syncLyricScrollAfterLayout)
+    watch([isFullscreen, isShowPlayComment], ([, showComment], [, prevShowComment]) => {
+      syncLyricScrollAfterLayout(showComment && !prevShowComment)
+    })
 
     const lyricMenuVisible = ref(false)
     const lyricMenuXY = reactive({
