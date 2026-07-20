@@ -359,8 +359,8 @@ const handleImgError = () => {
   }
   &:hover {
     opacity: 1;
-    color: rgba(29, 34, 38, .95);
-    background-color: rgba(49, 55, 59, .07);
+    color: var(--color-primary-font);
+    background-color: var(--q-icon-btn-hover-bg);
   }
   &:active {
     opacity: 0.82;
@@ -410,17 +410,17 @@ const handleImgError = () => {
   justify-content: center;
   border: none;
   border-radius: 50%;
-  color: rgba(29, 34, 38, .7);
+  color: var(--color-font);
   background-color: transparent;
   cursor: pointer;
-  opacity: .82;
+  opacity: .76;
   transition: opacity @transition-normal, color @transition-fast, background-color @transition-fast, transform @transition-fast;
 
   &:hover,
   &.active {
     opacity: 1;
     color: var(--color-primary);
-    background-color: var(--color-primary-background-hover);
+    background-color: var(--q-icon-btn-hover-bg);
   }
 
   &:active {

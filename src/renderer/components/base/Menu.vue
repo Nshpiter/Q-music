@@ -91,34 +91,36 @@ export default {
   transform-origin: 0 0 0;
   transition: .14s ease;
   transition-property: transform, opacity;
-  border-radius: @radius-border;
-  background-color: rgba(255, 255, 255, .92);
-  box-shadow: var(--q-shadow-float);
-  backdrop-filter: blur(14px);
+  border-radius: 12px;
+  color: var(--color-font);
+  background-color: var(--color-content-background); // 不支持相对颜色时回退
+  background-color: var(--q-menu-bg);
+  box-shadow: var(--q-menu-border), var(--q-shadow-float);
+  backdrop-filter: blur(var(--q-menu-blur)) saturate(1.7);
   z-index: var(--q-z-float);
   overflow: hidden;
+  padding: 5px;
   // will-change: transform;
 }
 .listItem {
   cursor: pointer;
-  min-width: 96px;
-  line-height: 34px;
-  // color: var(--color-button-font);
+  min-width: 92px;
+  line-height: 32px;
   padding: 0 12px;
   text-align: center;
   outline: none;
+  border-radius: 8px;
   transition: @transition-normal;
-  transition-property: background-color, opacity;
+  transition-property: background-color, color;
   box-sizing: border-box;
   .mixin-ellipsis-1();
-  // background-color: var(--color-primary-light-600-alpha-800);
 
   &:hover {
     color: var(--color-primary-dark-300);
-    background-color: rgba(255, 255, 255, .62);
+    background-color: var(--q-menu-hover-bg);
   }
   &:active {
-    background-color: var(--color-primary-background-active);
+    background-color: var(--q-menu-active-bg);
   }
 
   &[disabled] {

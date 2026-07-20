@@ -78,15 +78,15 @@ export default {
   button {
     width: 36px;
     height: 36px;
-    color: rgba(29, 34, 38, .7);
+    color: var(--color-font);
     border-radius: 50%;
-    opacity: .82;
+    opacity: .74;
     transition: opacity @transition-normal, color @transition-fast, background-color @transition-fast, transform @transition-fast;
 
     &:hover {
       opacity: 1;
-      color: rgba(29, 34, 38, .9);
-      background-color: rgba(29, 34, 38, .06) !important;
+      color: var(--color-primary-font);
+      background-color: var(--q-icon-btn-hover-bg) !important;
     }
 
     &:active {
@@ -132,6 +132,7 @@ export default {
 
   opacity: .72;
   cursor: pointer;
+  color: var(--color-font);
 
   svg {
     width: 22px;
@@ -145,7 +146,8 @@ export default {
   }
   &:hover {
     opacity: 1;
-    background-color: rgba(29, 34, 38, .06);
+    color: var(--color-primary-font);
+    background-color: var(--q-icon-btn-hover-bg);
   }
   &:active {
     opacity: 1;

@@ -297,6 +297,13 @@
   --color-content-background: var(--color-primary-light-1000);
   --q-glass-opacity: .22;
   --q-glass-blur: 20px;
+  // 统一的液态玻璃浮层令牌（菜单/下拉/弹层/模态），用相对颜色取主题面板底色只改透明度，浅深色通用
+  --q-menu-bg: rgb(from var(--color-content-background) r g b / .82);
+  --q-menu-blur: 22px;
+  --q-menu-hover-bg: var(--color-primary-alpha-800);
+  --q-menu-active-bg: var(--color-primary-alpha-600);
+  --q-menu-border: inset 0 0 0 1px rgba(255, 255, 255, .5);
+  --q-icon-btn-hover-bg: var(--color-primary-alpha-800);
   --q-surface: rgba(255, 255, 255, .52);
   --q-surface-strong: rgba(255, 255, 255, .72);
   --q-surface-soft: rgba(255, 255, 255, .36);

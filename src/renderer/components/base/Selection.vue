@@ -233,15 +233,17 @@ export default {
   top: 0;
   left: 0;
   width: var(--selection-width, 300px);
-  background-color: rgba(255, 255, 255, .92);
+  background-color: var(--color-content-background); // 回退
+  background-color: var(--q-menu-bg);
   opacity: 0;
   transform: scaleY(0) translateY(0);
   transform-origin: center top;
   transition: .25s ease;
   transition-property: transform, opacity;
-  border-radius: @form-radius;
-  box-shadow: var(--q-shadow-float);
-  backdrop-filter: blur(14px);
+  border-radius: 12px;
+  padding: 5px;
+  box-shadow: var(--q-menu-border), var(--q-shadow-float);
+  backdrop-filter: blur(var(--q-menu-blur)) saturate(1.7);
   overflow: auto;
   max-height: 200px;
   z-index: var(--q-z-float);
@@ -250,21 +252,23 @@ export default {
   cursor: pointer;
   padding: 0 10px;
   line-height: @selection-height;
-  // color: var(--color-button-font);
   outline: none;
-  transition: background-color @transition-normal;
+  border-radius: 8px;
+  transition: background-color @transition-normal, color @transition-normal;
   background-color: transparent;
   box-sizing: border-box;
   .mixin-ellipsis-1();
 
   &:hover {
-    background-color: var(--color-button-background-hover);
+    color: var(--color-primary-dark-300);
+    background-color: var(--q-menu-hover-bg);
   }
   &:active {
-    background-color: var(--color-button-background-active);
+    background-color: var(--q-menu-active-bg);
   }
   &.active {
-    color: var(--color-button-font);
+    color: var(--color-primary);
+    background-color: var(--color-primary-alpha-900);
   }
 }
 
