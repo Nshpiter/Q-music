@@ -487,15 +487,16 @@ export default {
     flex-flow: column nowrap;
     align-items: center;
     cursor: pointer;
-    // color: var(--color-primary);
-    margin-right: 8px;
-    transition: .3s ease;
-    transition-property: color, opacity;
+    margin-right: 10px;
+    transition: transform .28s ease, opacity .28s ease;
     margin-bottom: 18px;
-    width: 86px;
+    width: 96px;
 
     &:hover {
-      opacity: .7;
+      transform: translateY(-3px);
+      .bg {
+        box-shadow: 0 10px 22px rgba(24, 34, 45, .18), inset 0 0 0 1px rgba(255, 255, 255, .5);
+      }
     }
 
     &:last-child {
@@ -504,35 +505,51 @@ export default {
 
     &.active {
       color: var(--color-primary-font-active);
-      .bg {
-        border-color: var(--color-primary-font-active);
+      .label {
+        font-weight: 700;
       }
-
-      &:hover {
-        opacity: 1;
+      .bg {
+        border-color: var(--color-primary-theme);
+        box-shadow: 0 8px 20px rgba(24, 34, 45, .16), 0 0 0 3px rgb(from var(--color-primary-theme) r g b / .22);
       }
     }
 
+    // 迷你预览卡：主色/背景填充 + 一小片毛玻璃面板，预览「玻璃浮在主色上」
     .bg {
+      position: relative;
       display: block;
-      width: 36px;
-      height: 36px;
-      margin-bottom: 5px;
+      width: 100%;
+      height: 58px;
+      margin-bottom: 7px;
       border: 2Px solid transparent;
       padding: 2Px;
-      transition: border-color .3s ease;
-      border-radius: 5px;
+      transition: border-color .28s ease, box-shadow .28s ease;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(24, 34, 45, .1), inset 0 0 0 1px rgba(255, 255, 255, .38);
       &:after {
         display: block;
         content: ' ';
         width: 100%;
         height: 100%;
-        border-radius: @radius-border;
+        border-radius: 9px;
         background-position: center;
         background-size: cover;
         background-repeat: no-repeat;
         background-color: var(--color-primary-theme);
         background-image: var(--background-image-theme);
+      }
+      &:before {
+        content: '';
+        position: absolute;
+        z-index: 1;
+        left: 9px;
+        right: 9px;
+        bottom: 8px;
+        height: 17px;
+        border-radius: 7px;
+        background: rgba(255, 255, 255, .6);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .7), 0 2px 6px rgba(24, 34, 45, .12);
+        backdrop-filter: blur(3px);
       }
     }
 
@@ -540,6 +557,8 @@ export default {
       width: 100%;
       text-align: center;
       height: 1.2em;
+      font-size: 12.5px;
+      .mixin-ellipsis-1();
     }
 
     &.auto {
@@ -555,12 +574,15 @@ export default {
         &:after {
           content: none;
         }
+        &:before {
+          content: none;
+        }
       }
       .bgContent {
         position: relative;
         height: 100%;
         overflow: hidden;
-        border-radius: 5px;
+        border-radius: 9px;
       }
       .light, .dark {
         position: absolute;
@@ -606,7 +628,11 @@ export default {
 
     &.add {
       >.bg {
+        box-shadow: none;
         &:after {
+          content: none;
+        }
+        &:before {
           content: none;
         }
         .bgContent {
@@ -618,7 +644,7 @@ export default {
           position: relative;
           height: 100%;
           overflow: hidden;
-          border-radius: 5px;
+          border-radius: 9px;
           display: flex;
           align-items: center;
           justify-content: center;
