@@ -28,10 +28,13 @@
           <base-virtualized-list v-if="actionButtonsVisible" ref="listRef" :list="list" key-name="id" :item-height="listItemHeight" container-class="scroll" content-class="list" @contextmenu.capture="handleListRightClick">
             <template #default="{ item, index }">
               <div
-                class="list-item" :class="[{ selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }]"
+                class="list-item" :class="[{ selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }, { playing: item.id === playingId }]"
                 @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
               >
-                <div class="list-item-cell no-select num" style="flex: 0 0 5%;" @click.stop>{{ index + 1 }}</div>
+                <div class="list-item-cell no-select num" style="flex: 0 0 5%;" @click.stop>
+                  <span v-if="item.id === playingId" class="list-eq" aria-hidden="true"><i /><i /><i /></span>
+                  <span v-else>{{ index + 1 }}</span>
+                </div>
                 <div class="list-item-cell auto name">
                   <span class="select name" :aria-label="item.name">{{ item.name }}</span>
                   <span v-if="item.meta._qualitys.flac24bit" class="no-select badge badge-theme-primary">{{ $t('tag__lossless_24bit') }}</span>
@@ -56,10 +59,13 @@
           <base-virtualized-list v-else ref="listRef" :list="list" key-name="id" :item-height="listItemHeight" container-class="scroll" content-class="list" @contextmenu.capture="handleListRightClick">
             <template #default="{ item, index }">
               <div
-                class="list-item" :class="[{ selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }]"
+                class="list-item" :class="[{ selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }, { playing: item.id === playingId }]"
                 @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
               >
-                <div class="list-item-cell no-select num" style="flex: 0 0 5%;" @click.stop>{{ index + 1 }}</div>
+                <div class="list-item-cell no-select num" style="flex: 0 0 5%;" @click.stop>
+                  <span v-if="item.id === playingId" class="list-eq" aria-hidden="true"><i /><i /><i /></span>
+                  <span v-else>{{ index + 1 }}</span>
+                </div>
                 <div class="list-item-cell auto name">
                   <span class="select name" :aria-label="item.name">{{ item.name }}</span>
                   <span v-if="item.meta._qualitys.flac24bit" class="no-select badge badge-theme-primary">{{ $t('tag__lossless_24bit') }}</span>
@@ -101,7 +107,8 @@
 <script>
 import { clipboardWriteText } from '@common/utils/electron'
 import { assertApiSupport } from '@renderer/store/utils'
-import { ref } from '@common/utils/vueTools'
+import { ref, computed } from '@common/utils/vueTools'
+import { playMusicInfo } from '@renderer/store/player/state'
 import useList from './useList'
 import useMenu from './useMenu'
 import usePlay from './usePlay'
@@ -147,6 +154,8 @@ export default {
   setup(props, { emit }) {
     const actionButtonsVisible = appSetting['list.actionButtonsVisible']
     const rightClickSelectedIndex = ref(-1)
+    // 当前正在播放的歌曲 id，用于列表行高亮
+    const playingId = computed(() => playMusicInfo.musicInfo?.id)
     const dom_listContent = ref(null)
     const listRef = ref(null)
 
@@ -252,6 +261,7 @@ export default {
 
     return {
       listItemHeight,
+      playingId,
       handleListItemClick,
       selectedList,
       handleListItemRightClick,

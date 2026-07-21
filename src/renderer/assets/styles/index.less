@@ -522,26 +522,37 @@ table {
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
-    // border-top: 1px solid rgba(0, 0, 0, 0.12);
     transition: 0.2s ease;
-    transition-property: background-color, color, transform;
-    // border-bottom: 1px solid @color-theme_2-line;
+    transition-property: background-color, color, transform, box-shadow;
     box-sizing: border-box;
     font-size: 12px;
+    border-radius: 10px;
+    // 极淡分隔线，给密集列表一点可扫读的结构
+    box-shadow: inset 0 -1px 0 rgb(from var(--color-font) r g b / .05);
 
     &:hover {
-      background-color: var(--color-primary-background-hover);
-      transform: translateX(3px);
-
-      // .list-item-cell-action {
-      //   display: block;
-      // }
+      background-color: rgb(from var(--color-content-background) r g b / .5);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4), 0 6px 16px rgba(24, 34, 45, .08);
+      transform: translateX(2px);
     }
     &.active {
       background-color: var(--color-primary-background-active);
     }
     &.selected {
       background-color: var(--color-primary-background-hover);
+    }
+    // 正在播放行：主色底 + 主色歌名 + 均衡跳动条
+    &.playing {
+      background-color: var(--color-primary-alpha-800);
+      box-shadow: inset 0 0 0 1px var(--color-primary-alpha-700);
+
+      .name {
+        color: var(--color-primary-dark-200);
+        font-weight: 700;
+      }
+      &:hover {
+        background-color: var(--color-primary-alpha-700);
+      }
     }
     &.disabled {
       opacity: .5;
@@ -554,6 +565,8 @@ table {
       line-height: 16px;
       vertical-align: middle;
       box-sizing: border-box;
+      // 主题感知文字微衬底：浅色主题白晕/深色主题暗晕，背景图上也清晰
+      text-shadow: 0 1px 2px rgb(from var(--color-content-background) r g b / .55);
       .mixin-ellipsis-1();
 
       &.auto {
@@ -604,6 +617,39 @@ table {
 .copying {
   .no-select {
     display: none !important;
+  }
+}
+
+// 正在播放行的均衡跳动条
+.list-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  height: 12px;
+  vertical-align: middle;
+
+  i {
+    width: 2.5px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-primary);
+    animation: qListEq .9s ease-in-out infinite;
+
+    &:nth-child(2) {
+      animation-delay: .18s;
+    }
+    &:nth-child(3) {
+      animation-delay: .36s;
+    }
+  }
+}
+@keyframes qListEq {
+  0%, 100% {
+    height: 3px;
+  }
+  50% {
+    height: 12px;
   }
 }
 
