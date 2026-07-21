@@ -24,10 +24,13 @@ div(:class="$style.footerLeftControlBtns")
       path(d="M6.5 6.5h11a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2h-6l-4.2 3v-3h-.8a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2z")
       path(d="M8 10h8")
       path(d="M8 13h5")
+  //- 面板开关 | 播放设置 | 动作 三组之间的细分隔
+  span(:class="$style.toolDivider" aria-hidden="true")
   common-sound-effect-btn
   common-playback-rate-btn
   common-volume-btn
   common-toggle-play-mode-btn
+  span(:class="$style.toolDivider" aria-hidden="true")
   button(
     :class="[$style.footerLeftControlBtn, $style.loveBtn, { [$style.loved]: isLoveMusic, [$style.pending]: isTogglingLove }]"
     :aria-label="isLoveMusic ? $t('setting__hot_key_player_music_unlove') : $t('setting__hot_key_player_music_love')"
@@ -281,6 +284,15 @@ export default {
       background-color: var(--color-primary-alpha-800);
       box-shadow: 0 8px 18px var(--color-primary-alpha-800);
     }
+  }
+
+  .toolDivider {
+    flex: none;
+    width: 1px;
+    height: 14px;
+    margin: 0 4px;
+    border-radius: 1px;
+    background: rgb(from var(--color-font) r g b / .16);
   }
 
   .loveBtn {

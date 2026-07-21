@@ -3,7 +3,9 @@
     <div :class="[$style.progressBar, $style.progressBar2, {[$style.barTransition]: isActiveTransition}]" :style="{ transform: `scaleX(${progress || 0})` }" @transitionend="handleTransitionEnd" />
     <div v-show="dragging" :class="[$style.progressBar, $style.progressBar3]" :style="{ transform: `scaleX(${dragProgress || 0})` }" />
   </div>
-  <div ref="dom_progress" :class="$style.progressMask" @mousedown="handleMsDown" />
+  <div ref="dom_progress" :class="[$style.progressMask, { [$style.dragging]: dragging }]" @mousedown="handleMsDown">
+    <div :class="$style.knob" :style="{ left: `${(dragging ? dragProgress : progress || 0) * 100}%` }" />
+  </div>
 </template>
 
 <script>
@@ -111,6 +113,29 @@ export default {
   width: 100%;
   height: 100%;
   cursor: pointer;
+
+  // 拖拽圆点：平时隐藏，hover/拖拽时弹出，指明进度条可拖
+  .knob {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(0, 0, 0, .05);
+    pointer-events: none;
+    transition: transform .18s ease, left .2s ease-out;
+  }
+
+  &:hover .knob {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  &.dragging .knob {
+    transform: translate(-50%, -50%) scale(1.15);
+    transition: transform .18s ease; // 拖拽时位置跟手，不做 left 过渡
+  }
 }
 .progressBar {
   position: absolute;

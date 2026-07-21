@@ -318,6 +318,12 @@ const handleImgError = () => {
   grid-template-columns: 46px minmax(130px, 1fr) 46px;
   align-items: center;
   gap: 10px;
+
+  // 当前播放时间比总时长略重一档，一眼锁定
+  .timeLabel:first-child {
+    color: var(--color-font);
+    font-weight: 600;
+  }
 }
 
 .playControl {
@@ -327,7 +333,7 @@ const handleImgError = () => {
   justify-content: center;
   align-items: center;
   color: var(--color-font);
-  gap: 18px;
+  gap: 14px;
 }
 .playBtn {
   width: 30px;
