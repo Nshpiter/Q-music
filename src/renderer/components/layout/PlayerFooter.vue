@@ -26,23 +26,23 @@
       <div :class="$style.playControl">
         <button type="button" :class="$style.playBtn" :aria-label="$t('player__prev')" @click="playPrev()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M7 6v12" />
-            <path d="M18 6l-8 6 8 6V6z" />
+            <path d="M7.2 7.2v9.6" fill="none" stroke-width="2.6" />
+            <path d="M17.2 7.5 L10.8 12 l6.4 4.5 z" stroke-width="1.6" />
           </svg>
         </button>
         <button type="button" :class="[$style.playBtn, $style.playBtnPrimary]" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
           <svg v-if="isPlay" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9 7v10" />
-            <path d="M15 7v10" />
+            <path d="M9.2 7.6v8.8" fill="none" stroke-width="3" />
+            <path d="M14.8 7.6v8.8" fill="none" stroke-width="3" />
           </svg>
           <svg v-else viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9 6.5v11l9-5.5-9-5.5z" />
+            <path d="M9.8 7.3 L17.2 12 l-7.4 4.7 z" stroke-width="1.6" />
           </svg>
         </button>
         <button type="button" :class="$style.playBtn" :aria-label="$t('player__next')" @click="playNext()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M17 6v12" />
-            <path d="M6 6l8 6-8 6V6z" />
+            <path d="M16.8 7.2v9.6" fill="none" stroke-width="2.6" />
+            <path d="M6.8 7.5 L13.2 12 l-6.4 4.5 z" stroke-width="1.6" />
           </svg>
         </button>
       </div>
@@ -134,10 +134,11 @@ const handleImgError = () => {
   height: calc(@height-player - 18px);
   overflow: hidden;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(430px, 540px) minmax(336px, 1fr);
+  // 左右两列同样的 minmax 约束 + 对称外边距，保证中间控制簇真正居中
+  grid-template-columns: minmax(336px, 1fr) minmax(430px, 540px) minmax(336px, 1fr);
   column-gap: clamp(18px, 2.3vw, 34px);
   align-items: center;
-  margin: 0 22px 18px clamp(48px, 5vw, 78px);
+  margin: 0 clamp(28px, 3vw, 50px) 18px;
   padding: 8px 16px;
   pointer-events: auto;
   box-sizing: border-box;
@@ -352,16 +353,16 @@ const handleImgError = () => {
   border-radius: 50%;
 
   svg {
-    width: 18px;
-    height: 18px;
+    width: 19px;
+    height: 19px;
     display: block;
     flex: none;
-    fill: none;
+    // 实心圆角图标：填充 + 同色描边圆角连接，让三角/竖杠都带圆角
+    fill: currentColor;
     stroke: currentColor;
-    stroke-width: 2.3;
+    stroke-width: 1.6;
     stroke-linecap: round;
     stroke-linejoin: round;
-    vector-effect: non-scaling-stroke;
   }
   &:hover {
     opacity: 1;
