@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="app_window_background">#313131</color>
+    <color name="app_system_bar_background">#313131</color>
+    <color name="app_legacy_system_bar_background">#313131</color>
+</resources>
