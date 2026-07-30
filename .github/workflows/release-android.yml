@@ -1,0 +1,167 @@
+name: Release Android APKs
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag. Empty means v<Android package.json version>.'
+        required: false
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-android-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  android:
+    name: Android arm64 and universal
+    runs-on: ubuntu-latest
+    env:
+      ORG_GRADLE_PROJECT_MYAPP_UPLOAD_STORE_FILE: q-music-release.keystore
+      ORG_GRADLE_PROJECT_MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ORG_GRADLE_PROJECT_MYAPP_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ORG_GRADLE_PROJECT_MYAPP_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+    steps:
+      - name: Check out Android source branch
+        uses: actions/checkout@v6
+        with:
+          ref: android
+          path: mobile
+
+      - name: Resolve release metadata
+        shell: bash
+        run: |
+          package_version="$(node -p "require('./mobile/package.json').version")"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            tag_name="$GITHUB_REF_NAME"
+          else
+            tag_name="${{ inputs.tag_name }}"
+            if [ -z "$tag_name" ]; then
+              tag_name="v$package_version"
+            fi
+          fi
+
+          expected_tag="v$package_version"
+          if [ "$tag_name" != "$expected_tag" ]; then
+            echo "Release tag '$tag_name' does not match Android package version '$expected_tag'." >&2
+            exit 1
+          fi
+
+          echo "PACKAGE_VERSION=$package_version" >> "$GITHUB_ENV"
+          echo "TAG_NAME=$tag_name" >> "$GITHUB_ENV"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: mobile/.nvmrc
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;26.1.10909125"
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Lint source
+        working-directory: mobile
+        run: npm run lint
+
+      - name: Validate signing secrets
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ORG_GRADLE_PROJECT_MYAPP_UPLOAD_STORE_PASSWORD"
+          test -n "$ORG_GRADLE_PROJECT_MYAPP_UPLOAD_KEY_ALIAS"
+          test -n "$ORG_GRADLE_PROJECT_MYAPP_UPLOAD_KEY_PASSWORD"
+
+      - name: Build signed release APKs
+        working-directory: mobile
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          keystore_path="android/app/q-music-release.keystore"
+          trap 'rm -f "$keystore_path"' EXIT
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
+          npm run pack:android
+
+      - name: Generate Android checksums
+        shell: bash
+        run: |
+          output_dir="mobile/android/app/build/outputs/apk/release"
+          assets=(
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-arm64-v8a.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-universal.apk"
+          )
+          for asset in "${assets[@]}"; do
+            test -f "$asset"
+          done
+          sha256sum "${assets[@]}" | sed 's#mobile/android/app/build/outputs/apk/release/##' \
+            > "$output_dir/SHA256SUMS-android.txt"
+
+      - name: Upload Android build artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: q-music-android-release
+          path: |
+            mobile/android/app/build/outputs/apk/release/Q-music-android-v${{ env.PACKAGE_VERSION }}-arm64-v8a.apk
+            mobile/android/app/build/outputs/apk/release/Q-music-android-v${{ env.PACKAGE_VERSION }}-universal.apk
+            mobile/android/app/build/outputs/apk/release/SHA256SUMS-android.txt
+          if-no-files-found: error
+
+      - name: Upload Android assets to GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          output_dir="mobile/android/app/build/outputs/apk/release"
+          assets=(
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-arm64-v8a.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-universal.apk"
+            "$output_dir/SHA256SUMS-android.txt"
+          )
+
+          for attempt in $(seq 1 12); do
+            if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              gh release upload "$TAG_NAME" "${assets[@]}" \
+                --repo "$GITHUB_REPOSITORY" \
+                --clobber
+              exit $?
+            fi
+
+            if gh release create "$TAG_NAME" "${assets[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Q-music $TAG_NAME" \
+              --generate-notes \
+              --latest; then
+              exit 0
+            fi
+
+            echo "Release is being created by another workflow; retry $attempt/12."
+            sleep 10
+          done
+
+          echo "Unable to create or update release '$TAG_NAME'." >&2
+          exit 1

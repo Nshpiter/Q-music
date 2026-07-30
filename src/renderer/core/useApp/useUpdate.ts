@@ -17,6 +17,7 @@ import { appSetting } from '@renderer/store/setting'
 
 export default () => {
   let isShowedChangeLog = false
+  const isPackageManagerInstall = process.platform === 'linux' && process.env.Q_MUSIC_PACKAGE_TYPE === 'pacman'
 
   // 更新超时定时器
   let updateTimeout: number | null = null
@@ -151,10 +152,10 @@ export default () => {
       desc: info.releaseNotes as string,
     }
     versionInfo.isLatest = false
-    if (appSetting['common.tryAutoUpdate']) {
+    if (appSetting['common.tryAutoUpdate'] && !isPackageManagerInstall) {
       versionInfo.status = 'downloading'
       startUpdateTimeout()
-    }
+    } else versionInfo.status = 'idle'
     void nextTick(() => {
       showUpdateModal()
     })

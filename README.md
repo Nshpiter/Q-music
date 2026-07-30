@@ -13,11 +13,11 @@
 
 <p align="center">基于 Electron 与 Vue 3 的桌面音乐软件，专注于清爽的玻璃质感界面与完整的桌面播放体验。</p>
 
-![Q-music v0.2.0 desktop UI](./doc/images/app.png)
+![Q-music v0.2.1 desktop UI](./doc/images/app.png)
 
 ## 项目说明
 
-Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前 `v0.2.0` 基于 LX Music Desktop `2.12.2`，主要调整了应用品牌、界面风格、播放详情页、音频可视化、播放队列以及打包更新配置。
+Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前 `v0.2.1` 基于 LX Music Desktop `2.12.2`，并提供 Windows、Arch Linux 与 Android 客户端，主要调整了应用品牌、跨端界面风格、播放详情页、音频可视化、播放队列以及打包更新配置。
 
 本仓库不是 LX Music 官方仓库，也不代表原作者对本项目提供支持或背书。完整变更可查看 [更新日志](./publish/changeLog.md) 与 [二次修改说明](./MODIFICATIONS.md)。
 
@@ -31,7 +31,11 @@ Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop)
 - 桌面能力：桌面歌词、全局快捷键、音效设置、数据同步与开放 API。
 - 独立更新：使用 Q-music 的版本检测、发布地址和 `qmusic://` Scheme URL，不与上游安装冲突。
 
-当前主要发布与测试平台为 Windows 10 / 11。软件下载请前往 [GitHub Releases](https://github.com/Nshpiter/Q-music/releases)。
+当前已验证平台为 Windows 10 / 11，目标适配平台增加 Arch Linux x86_64，等待
+Arch 真机回归后再标记为稳定。Windows、Arch Linux 与 Android 客户端统一在
+[当前 Q-music 项目的 GitHub Releases](https://github.com/Nshpiter/Q-music/releases)
+发布；Android 源码维护在同一项目的
+[`android` 分支](https://github.com/Nshpiter/Q-music/tree/android)。
 
 ## 数据存储
 
@@ -42,6 +46,14 @@ Windows 默认数据目录：
 ```
 
 若程序目录中存在 `portable` 文件夹，则使用 `portable/userData` 保存数据。
+
+Linux 默认数据目录：
+
+```text
+$XDG_CONFIG_HOME/q-music
+```
+
+未设置 `XDG_CONFIG_HOME` 时通常为 `~/.config/q-music`。
 
 ## 本地开发
 
@@ -75,6 +87,33 @@ npm run pack
 ```text
 build/Q-music-v<version>-x64-Setup.exe
 ```
+
+## Arch Linux
+
+生成 x86_64 pacman 包：
+
+```bash
+npm ci
+npm run pack:arch
+```
+
+安装本地构建产物：
+
+```bash
+sudo pacman -U ./build/Q-music_0.2.0_x64.pacman
+```
+
+pacman 安装由系统包管理器负责升级；应用内会提示新版本，但不会自行覆盖系统
+软件包。Electron 在 Wayland 下使用原生窗口最大化，并尝试通过桌面环境提供的
+portal 注册全局快捷键。若桌面歌词的位置、置顶或透明效果受合成器限制，可临时
+回退到 XWayland：
+
+```bash
+q-music --ozone-platform=x11
+```
+
+Arch 真机建议至少回归：启动与单实例、在线/本地播放、媒体键、托盘、全局快捷
+键、桌面歌词、`qmusic://` 深链，以及与 Android 端的局域网同步。
 
 ## 问题反馈与贡献
 

@@ -207,6 +207,12 @@ export const minimize = () => {
 }
 export const maximize = () => {
   if (!browserWindow) return
+  if (!isWin) {
+    browserWindow.isMaximized()
+      ? browserWindow.unmaximize()
+      : browserWindow.maximize()
+    return
+  }
   if (isWindowMaximized) {
     unmaximize()
     return
@@ -226,6 +232,10 @@ export const maximize = () => {
 }
 export const unmaximize = () => {
   if (!browserWindow) return
+  if (!isWin) {
+    browserWindow.unmaximize()
+    return
+  }
   if (!isWindowMaximized || !normalBounds) {
     isWindowMaximized = false
     return

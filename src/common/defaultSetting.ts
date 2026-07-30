@@ -19,7 +19,9 @@ const defaultSetting: LX.AppSetting = {
   'common.isAgreePact': false,
   'common.controlBtnPosition': isMac ? 'left' : 'right',
   'common.playBarProgressStyle': 'mini',
-  'common.transparentWindow': !isMac,
+  // Linux 原生 Wayland 下透明、无边框、可缩放窗口的组合不稳定。
+  // 仅在 Windows 默认开启，Linux 用户仍可在设置中主动启用。
+  'common.transparentWindow': isWin,
   'common.isAutoCheckUpdate': true,
   'common.tryAutoUpdate': false,
   'common.showChangeLog': true,

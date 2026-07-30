@@ -5,6 +5,10 @@ export const isLinux = process.platform == 'linux'
 export const isWin = process.platform == 'win32'
 export const isMac = process.platform == 'darwin'
 export const isProd = process.env.NODE_ENV == 'production'
+export const isNativeWayland = isLinux &&
+  (process.env.XDG_SESSION_TYPE === 'wayland' || !!process.env.WAYLAND_DISPLAY) &&
+  process.env.ELECTRON_OZONE_PLATFORM_HINT !== 'x11' &&
+  !process.argv.some(arg => arg === '--ozone-platform=x11')
 
 export const getPlatform = (platform: NodeJS.Platform = process.platform) => {
   switch (platform) {

@@ -1,6 +1,6 @@
 {
   "name": "q-music",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "一个免费的音乐查找助手",
   "main": "./dist/main.js",
   "private": true,
@@ -21,6 +21,7 @@
     "pack:win7:setup:x64": "node build-config/build-pack.js target=win arch=x64 type=win7_setup",
     "pack:win7:7z:x64": "node build-config/build-pack.js target=win arch=x64 type=win7_green",
     "pack:win7:7z:x86": "node build-config/build-pack.js target=win arch=x86 type=win7_green",
+    "pack:arch": "node build-config/pack.js && npm run pack:linux:pacman",
     "pack:linux": "node build-config/pack.js && npm run pack:linux:deb && npm run pack:linux:appImage && npm run pack:linux:rpm && npm run pack:linux:pacman",
     "pack:linux:appImage": "node build-config/build-pack.js target=linux arch=x64 type=appImage",
     "pack:linux:deb": "npm run pack:linux:deb:amd64 && npm run pack:linux:deb:arm64 && npm run pack:linux:deb:armv7l",

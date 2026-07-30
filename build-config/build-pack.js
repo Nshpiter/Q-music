@@ -84,10 +84,11 @@ const winOptions = {
  */
 const linuxOptions = {
   linux: {
-    maintainer: 'lyswhut <lyswhut@qq.com>',
+    maintainer: 'Nshpiter <noreply@github.com>',
     // artifactName: '${productName}-${version}.${env.ARCH}.${ext}',
+    executableName: 'q-music',
     icon: './resources/icons',
-    category: 'Utility;AudioVideo;Audio;Player;Music;',
+    category: 'AudioVideo',
     desktop: {
       // https://www.electron.build/app-builder-lib.interface.linuxdesktopfile
       // https://www.electronjs.org/docs/latest/tutorial/linux-desktop-actions
@@ -99,13 +100,33 @@ const linuxOptions = {
         'Name[zh_TW]': 'Q-music',
         Encoding: 'UTF-8',
         MimeType: 'x-scheme-handler/qmusic',
+        StartupWMClass: 'q-music',
         StartupNotify: 'false',
       },
     },
   },
   appImage: {
     license: './licenses/license_zh.txt',
-    category: 'Utility;AudioVideo;Audio;Player;Music;',
+    category: 'AudioVideo',
+  },
+  pacman: {
+    // electron-builder 26 的默认列表仍包含 Arch 已移除的 http-parser，
+    // 显式声明依赖，避免生成的包无法通过 pacman 安装。
+    depends: [
+      'c-ares',
+      'ffmpeg',
+      'gtk3',
+      'libevent',
+      'libvpx',
+      'libxslt',
+      'libxss',
+      'minizip',
+      'nss',
+      're2',
+      'snappy',
+      'libnotify',
+      'libappindicator-gtk3',
+    ],
   },
 }
 /**

@@ -1,19 +1,25 @@
 import path from 'node:path'
-import { existsSync, mkdirSync, renameSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, renameSync } from 'fs'
 import { app, shell, screen, nativeTheme, dialog } from 'electron'
 import { URL_SCHEME, URL_SCHEME_RXP } from '@common/constants'
+import { isMac, isNativeWayland, log } from '@common/utils'
 import { getProxy, getTheme, initHotKey, initSetting, parseEnvParams } from './utils'
 import { navigationUrlWhiteList } from '@common/config'
 import defaultSetting from '@common/defaultSetting'
 import { isExistWindow as isExistMainWindow, showWindow as showMainWindow } from './modules/winMain'
 import { createAppEvent, createDislikeEvent, createListEvent } from '@main/event'
-import { isMac, log } from '@common/utils'
 import createWorkers from './worker'
 import { migrateDBData } from './utils/migrate'
 import { openDirInExplorer } from '@common/utils/electron'
 import { setProxyByHost } from '@common/utils/request'
 
 export const initGlobalData = () => {
+  if (process.platform === 'linux' && process.env.NODE_ENV === 'production') {
+    try {
+      process.env.Q_MUSIC_PACKAGE_TYPE = readFileSync(path.join(process.resourcesPath, 'package-type'), 'utf8').trim()
+    } catch {}
+  }
+
   const envParams = parseEnvParams()
   // envParams.cmdParams.dt = !!envParams.cmdParams.dt
 
@@ -110,7 +116,11 @@ export const applyElectronEnvParams = () => {
   if (global.envParams.cmdParams.dhmkh) app.commandLine.appendSwitch('disable-features', 'HardwareMediaKeyHandling')
 
   // fix linux transparent fail. https://github.com/electron/electron/issues/25153#issuecomment-843688494
-  if (process.platform == 'linux') app.commandLine.appendSwitch('use-gl', 'desktop')
+  if (process.platform == 'linux') {
+    app.commandLine.appendSwitch('use-gl', 'desktop')
+    // Wayland 下 globalShortcut 需要通过 xdg-desktop-portal 注册。
+    app.commandLine.appendSwitch('enable-features', 'GlobalShortcutsPortal')
+  }
 
   // https://github.com/electron/electron/issues/22691
   app.commandLine.appendSwitch('wm-window-animations-disabled')
@@ -322,7 +332,11 @@ export const initAppSetting = async() => {
     global.lx.appSetting = (await initSetting()).setting
     if (!dbFileExists) await migrateDBData().catch(err => { log.error(err) })
     initTheme()
-    if (envParams.cmdParams.dt == null) envParams.cmdParams.dt = !global.lx.appSetting['common.transparentWindow']
+    if (envParams.cmdParams.dt == null) {
+      // 已有配置也在原生 Wayland 下强制使用非透明主窗口，避免升级后继续
+      // 命中透明、无边框、可缩放窗口组合的合成器兼容问题。
+      envParams.cmdParams.dt = isNativeWayland || !global.lx.appSetting['common.transparentWindow']
+    }
   }
   // global.lx.theme = getTheme()
 

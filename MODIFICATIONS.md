@@ -21,6 +21,10 @@
 ## 构建与打包
 
 - 将 Windows x64 安装包输出名称调整为 Q-music。
+- 增加 Arch Linux x86_64 pacman 包快捷脚本与手动 CI 工作流。
+- 修正 pacman 依赖列表中 Arch 已移除的 `http-parser`。
+- pacman 安装仅保留版本提示，阻止应用内下载或覆盖系统软件包。
+- Linux 默认关闭透明窗口，并为 Wayland 使用原生最大化与 portal 全局快捷键。
 - 将应用 appId 和深链协议调整为 Q-music 独立值，避免与官方 LX Music 冲突。
 - 将 GitHub publish 目标改为通过环境变量显式配置，避免误发到上游仓库。
 - 将上游自动发布 GitHub Actions 调整为手动触发，禁用上游版本信息 dispatch。

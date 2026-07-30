@@ -110,7 +110,11 @@ jobs:
 
       - name: Print installer SHA256
         run: |
-          Get-FileHash "build/Q-music-v$env:PACKAGE_VERSION-x64-Setup.exe" -Algorithm SHA256 | Format-List
+          $installer = "build/Q-music-v$env:PACKAGE_VERSION-x64-Setup.exe"
+          $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $(Split-Path $installer -Leaf)" |
+            Set-Content "build/SHA256SUMS-windows.txt" -Encoding ascii
+          Get-Content "build/SHA256SUMS-windows.txt"
 
       - name: Create or update GitHub Release
         env:
@@ -119,7 +123,8 @@ jobs:
           $assets = @(
             "build/Q-music-v$env:PACKAGE_VERSION-x64-Setup.exe",
             "build/Q-music-v$env:PACKAGE_VERSION-x64-Setup.exe.blockmap",
-            "build/latest.yml"
+            "build/latest.yml",
+            "build/SHA256SUMS-windows.txt"
           )
 
           foreach ($asset in $assets) {
@@ -128,41 +133,51 @@ jobs:
             }
           }
 
-          gh release view $env:TAG_NAME --repo $env:GITHUB_REPOSITORY *> $null
-          if ($LASTEXITCODE -eq 0) {
-            gh release upload $env:TAG_NAME @assets --repo $env:GITHUB_REPOSITORY --clobber
-            if ($LASTEXITCODE -eq 0 -and $env:RELEASE_LATEST -eq 'true' -and $env:RELEASE_DRAFT -ne 'true' -and $env:RELEASE_PRERELEASE -ne 'true') {
-              gh release edit $env:TAG_NAME --repo $env:GITHUB_REPOSITORY --latest
+          for ($attempt = 1; $attempt -le 12; $attempt++) {
+            gh release view $env:TAG_NAME --repo $env:GITHUB_REPOSITORY *> $null
+            if ($LASTEXITCODE -eq 0) {
+              gh release upload $env:TAG_NAME @assets --repo $env:GITHUB_REPOSITORY --clobber
+              if ($LASTEXITCODE -eq 0 -and $env:RELEASE_LATEST -eq 'true' -and $env:RELEASE_DRAFT -ne 'true' -and $env:RELEASE_PRERELEASE -ne 'true') {
+                gh release edit $env:TAG_NAME --repo $env:GITHUB_REPOSITORY --latest
+              }
+              exit $LASTEXITCODE
             }
-            exit $LASTEXITCODE
+
+            $releaseArgs = @(
+              'release',
+              'create',
+              $env:TAG_NAME
+            )
+            $releaseArgs += $assets
+            $releaseArgs += @(
+              '--repo',
+              $env:GITHUB_REPOSITORY,
+              '--target',
+              $env:GITHUB_SHA,
+              '--title',
+              $env:RELEASE_TITLE,
+              '--generate-notes'
+            )
+
+            if ($env:RELEASE_DRAFT -eq 'true') {
+              $releaseArgs += '--draft'
+            }
+            if ($env:RELEASE_PRERELEASE -eq 'true') {
+              $releaseArgs += '--prerelease'
+            }
+            if ($env:RELEASE_LATEST -eq 'true' -and $env:RELEASE_DRAFT -ne 'true' -and $env:RELEASE_PRERELEASE -ne 'true') {
+              $releaseArgs += '--latest'
+            } elseif ($env:RELEASE_LATEST -ne 'true' -and $env:RELEASE_PRERELEASE -ne 'true') {
+              $releaseArgs += '--latest=false'
+            }
+
+            gh @releaseArgs
+            if ($LASTEXITCODE -eq 0) {
+              exit 0
+            }
+
+            Write-Host "Release is being created by another workflow; retry $attempt/12."
+            Start-Sleep -Seconds 10
           }
 
-          $releaseArgs = @(
-            'release',
-            'create',
-            $env:TAG_NAME
-          )
-          $releaseArgs += $assets
-          $releaseArgs += @(
-            '--repo',
-            $env:GITHUB_REPOSITORY,
-            '--target',
-            $env:GITHUB_SHA,
-            '--title',
-            $env:RELEASE_TITLE,
-            '--generate-notes'
-          )
-
-          if ($env:RELEASE_DRAFT -eq 'true') {
-            $releaseArgs += '--draft'
-          }
-          if ($env:RELEASE_PRERELEASE -eq 'true') {
-            $releaseArgs += '--prerelease'
-          }
-          if ($env:RELEASE_LATEST -eq 'true' -and $env:RELEASE_DRAFT -ne 'true' -and $env:RELEASE_PRERELEASE -ne 'true') {
-            $releaseArgs += '--latest'
-          } elseif ($env:RELEASE_LATEST -ne 'true' -and $env:RELEASE_PRERELEASE -ne 'true') {
-            $releaseArgs += '--latest=false'
-          }
-
-          gh @releaseArgs
+          throw "Unable to create or update release '$env:TAG_NAME'."

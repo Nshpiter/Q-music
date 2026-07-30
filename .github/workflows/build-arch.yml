@@ -1,0 +1,133 @@
+name: Build Arch package
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag. Empty means v<package.json version>.'
+        required: false
+        type: string
+      upload_to_release:
+        description: 'Upload the pacman package to the matching GitHub Release.'
+        required: true
+        default: true
+        type: boolean
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-arch-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IS_CI: 'true'
+
+jobs:
+  arch:
+    name: Arch Linux x64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install packaging tools
+        run: sudo apt-get update && sudo apt-get install -y libarchive-tools
+
+      - name: Get npm cache directory
+        shell: bash
+        run: echo "NPM_CACHE=$(npm config get cache)" >> "$GITHUB_ENV"
+
+      - name: Setup Node environment
+        env:
+          NPM_CACHE: ${{ env.NPM_CACHE }}
+        uses: ./.github/actions/setup
+
+      - name: Resolve release metadata
+        shell: bash
+        run: |
+          package_version="$(node -p "require('./package.json').version")"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            tag_name="$GITHUB_REF_NAME"
+            upload_to_release=true
+          else
+            tag_name="${{ inputs.tag_name }}"
+            if [ -z "$tag_name" ]; then
+              tag_name="v$package_version"
+            fi
+            upload_to_release="${{ inputs.upload_to_release }}"
+          fi
+
+          expected_tag="v$package_version"
+          if [ "$tag_name" != "$expected_tag" ]; then
+            echo "Release tag '$tag_name' does not match package.json version '$expected_tag'." >&2
+            exit 1
+          fi
+
+          echo "PACKAGE_VERSION=$package_version" >> "$GITHUB_ENV"
+          echo "TAG_NAME=$tag_name" >> "$GITHUB_ENV"
+          echo "UPLOAD_TO_RELEASE=$upload_to_release" >> "$GITHUB_ENV"
+
+      - name: Lint source
+        run: npm run lint
+
+      - name: Build pacman package
+        run: npm run pack:arch
+
+      - name: Inspect package metadata
+        shell: bash
+        run: |
+          package_path="$(find build -maxdepth 1 -name '*.pacman' -print -quit)"
+          test -n "$package_path"
+          bsdtar -xOf "$package_path" .PKGINFO > package-info.txt
+          ! grep -Fx 'depend = http-parser' package-info.txt
+          package_type_path="$(bsdtar -tf "$package_path" | grep '/resources/package-type$' | head -n 1)"
+          test -n "$package_type_path"
+          test "$(bsdtar -xOf "$package_path" "$package_type_path")" = 'pacman'
+          sha256sum "$package_path" | sed 's#build/##' > build/SHA256SUMS-arch.txt
+
+      - name: Upload package
+        uses: actions/upload-artifact@v6
+        with:
+          name: q-music-arch-x64
+          path: |
+            build/*.pacman
+            build/SHA256SUMS-arch.txt
+          if-no-files-found: error
+
+      - name: Upload package to GitHub Release
+        if: env.UPLOAD_TO_RELEASE == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          package_path="$(find build -maxdepth 1 -name '*.pacman' -print -quit)"
+          test -n "$package_path"
+          assets=("$package_path" "build/SHA256SUMS-arch.txt")
+
+          for attempt in $(seq 1 12); do
+            if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              gh release upload "$TAG_NAME" "${assets[@]}" \
+                --repo "$GITHUB_REPOSITORY" \
+                --clobber
+              exit $?
+            fi
+
+            if gh release create "$TAG_NAME" "${assets[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Q-music $TAG_NAME" \
+              --generate-notes \
+              --latest; then
+              exit 0
+            fi
+
+            echo "Release is being created by another workflow; retry $attempt/12."
+            sleep 10
+          done
+
+          echo "Unable to create or update release '$TAG_NAME'." >&2
+          exit 1

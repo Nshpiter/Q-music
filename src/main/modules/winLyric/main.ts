@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { BrowserWindow } from 'electron'
-import { debounce, getPlatform, isLinux, isWin } from '@common/utils'
+import { debounce, getPlatform, isLinux, isNativeWayland, isWin } from '@common/utils'
 import { initWindowSize, minHeight, minWidth } from './utils'
 import { mainSend } from '@common/mainIpc'
 import { encodePath } from '@common/utils/electron'
@@ -31,6 +31,7 @@ const winEvent = () => {
   })
 
   browserWindow.on('move', () => {
+    if (isNativeWayland) return
     // bounds = browserWindow.getBounds()
     // console.log('move', isWinBoundsUpdateing)
     if (isWinBoundsUpdateing) {
@@ -57,12 +58,17 @@ const winEvent = () => {
     // console.log(bounds)
     isWinBoundsUpdateing = true
     const bounds = browserWindow!.getBounds()
-    saveBoundsConfig({
-      'desktopLyric.x': bounds.x,
-      'desktopLyric.y': bounds.y,
-      'desktopLyric.width': bounds.width,
-      'desktopLyric.height': bounds.height,
-    })
+    saveBoundsConfig(isNativeWayland
+      ? {
+          'desktopLyric.width': bounds.width,
+          'desktopLyric.height': bounds.height,
+        }
+      : {
+          'desktopLyric.x': bounds.x,
+          'desktopLyric.y': bounds.y,
+          'desktopLyric.width': bounds.width,
+          'desktopLyric.height': bounds.height,
+        })
   })
 
   // browserWindow.on('restore', () => {
@@ -98,12 +104,17 @@ export const createWindow = () => {
   let isShowTaskbar = global.lx.appSetting['desktopLyric.isShowTaskbar']
   // let { width: screenWidth, height: screenHeight } = global.envParams.workAreaSize
   const winSize = initWindowSize(x, y, width, height)
-  global.lx.event_app.update_config({
-    'desktopLyric.x': winSize.x,
-    'desktopLyric.y': winSize.y,
-    'desktopLyric.width': winSize.width,
-    'desktopLyric.height': winSize.height,
-  })
+  global.lx.event_app.update_config(isNativeWayland
+    ? {
+        'desktopLyric.width': winSize.width,
+        'desktopLyric.height': winSize.height,
+      }
+    : {
+        'desktopLyric.x': winSize.x,
+        'desktopLyric.y': winSize.y,
+        'desktopLyric.width': winSize.width,
+        'desktopLyric.height': winSize.height,
+      })
 
   const { shouldUseDarkColors, theme } = global.lx.theme
 
@@ -113,8 +124,7 @@ export const createWindow = () => {
   browserWindow = new BrowserWindow({
     height: winSize.height,
     width: winSize.width,
-    x: winSize.x,
-    y: winSize.y,
+    ...(isNativeWayland ? {} : { x: winSize.x, y: winSize.y }),
     minWidth,
     minHeight,
     useContentSize: true,
@@ -123,7 +133,7 @@ export const createWindow = () => {
     hasShadow: false,
     // enableRemoteModule: false,
     // icon: join(global.__static, isWin ? 'icons/256x256.ico' : 'icons/512x512.png'),
-    resizable: isWin,
+    resizable: isWin || isNativeWayland,
     minimizable: false,
     maximizable: false,
     fullscreenable: false,

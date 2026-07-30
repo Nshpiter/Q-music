@@ -49,9 +49,7 @@ module.exports = merge(baseConfig, {
       ],
     }),
     new webpack.DefinePlugin({
-      'process.env': {
-        NODE_ENV: '"production"',
-      },
+      'process.env.NODE_ENV': JSON.stringify('production'),
       // ENVIRONMENT: 'process.env',
       __VUE_OPTIONS_API__: 'true',
       __VUE_PROD_DEVTOOLS__: 'false',

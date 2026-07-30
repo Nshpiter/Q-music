@@ -12,6 +12,10 @@ autoUpdater.autoDownload = false
 // let isFirstCheckedUpdate = true
 let isManualDownloadPending = false
 
+const isPackageManagerInstall = () => {
+  return process.platform === 'linux' && process.env.Q_MUSIC_PACKAGE_TYPE === 'pacman'
+}
+
 log.info('App starting...')
 
 
@@ -84,7 +88,7 @@ export default () => {
   autoUpdater.on('update-available', info => {
     sendStatusToWindow('Update available.')
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_available, info })
-    if (isManualDownloadPending) {
+    if (isManualDownloadPending && !isPackageManagerInstall()) {
       isManualDownloadPending = false
       void autoUpdater.downloadUpdate()
     }
@@ -117,6 +121,7 @@ export default () => {
   })
 
   mainOn(WIN_MAIN_RENDERER_EVENT_NAME.update_download_update, () => {
+    if (isPackageManagerInstall()) return
     if (!autoUpdater.isUpdaterActive()) {
       isManualDownloadPending = true
       checkUpdate(false)
@@ -126,6 +131,7 @@ export default () => {
   })
 
   mainOn(WIN_MAIN_RENDERER_EVENT_NAME.quit_update, () => {
+    if (isPackageManagerInstall()) return
     global.lx.isSkipTrayQuit = true
 
     setTimeout(() => {
@@ -152,7 +158,7 @@ const checkUpdate = (autoDownload = global.lx.appSetting['common.tryAutoUpdate']
   if (isWin && process.arch.includes('arm')) {
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_error, info: 'failed' })
   } else {
-    autoUpdater.autoDownload = autoDownload
+    autoUpdater.autoDownload = autoDownload && !isPackageManagerInstall()
     void autoUpdater.checkForUpdates()
   }
 }

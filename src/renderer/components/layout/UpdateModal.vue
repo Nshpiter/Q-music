@@ -72,7 +72,8 @@ material-modal(:show="versionInfo.showModal" max-width="60%" @close="handleClose
 
     div(:class="$style.footer")
       div(:class="$style.desc")
-        p 发现有新版本啦，你可以选择自动更新或手动更新。
+        p(v-if="isPackageManagerInstall") 当前安装由 pacman 管理，请从发布页下载新版软件包并使用 pacman 安装。
+        p(v-else) 发现有新版本啦，你可以选择自动更新或手动更新。
         p 手动更新可以去&nbsp;
           strong.hover.underline(aria-label="点击打开" @click="handleOpenUrl('https://github.com/Nshpiter/Q-music/releases')") 软件发布页
           | 下载。
@@ -83,7 +84,8 @@ material-modal(:show="versionInfo.showModal" max-width="60%" @close="handleClose
         p(v-else) &nbsp;
       div(:class="$style.btns")
         base-btn(:class="$style.btn2" @click="handleIgnoreClick") {{ isIgnored ? '取消忽略' : '忽略更新该版本' }}
-        base-btn(v-if="versionInfo.status == 'downloading'" :class="$style.btn2" disabled) 下载更新中...
+        base-btn(v-if="isPackageManagerInstall" :class="$style.btn2" @click="handleOpenUrl('https://github.com/Nshpiter/Q-music/releases')") 打开发布页
+        base-btn(v-else-if="versionInfo.status == 'downloading'" :class="$style.btn2" disabled) 下载更新中...
         base-btn(v-else :class="$style.btn2" @click="handleDownloadClick") 下载更新
 </template>
 
@@ -104,6 +106,7 @@ export default {
     return {
       ignoreVersion: null,
       disabledIgnoreFailBtn: true,
+      isPackageManagerInstall: process.platform === 'linux' && process.env.Q_MUSIC_PACKAGE_TYPE === 'pacman',
     }
   },
   computed: {

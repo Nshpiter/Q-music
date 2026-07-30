@@ -1,0 +1,10 @@
+{
+  "version": "0.2.1",
+  "desc": "Q-music Android 0.2.1\n\n- 手机端组件统一为 Q-music Windows 端的玻璃质感与圆角规范。\n- 补回 QQ 音乐、网易云、酷狗与 Spotify 外部歌单导入。\n- 调整为手机优先的单列排版与底部导航。\n- 关于、问题反馈、版本检测和安装包下载统一指向当前 Q-music 项目。",
+  "history": [
+    {
+      "version": "0.2.0",
+      "desc": "Q-music Android 首个适配版本。\n\n- 基于 LX Music Mobile 1.8.4。\n- 使用独立应用 ID，可与 LX Music 共存。\n- 统一 Q-music 品牌与 qmusic:// 深链。\n- 保留后台播放、媒体控制、本地音乐与同步能力。"
+    }
+  ]
+}

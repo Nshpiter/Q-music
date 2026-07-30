@@ -4,7 +4,8 @@ dd
   .gap-top
     base-checkbox(id="setting__update_autoCheck" :model-value="appSetting['common.isAutoCheckUpdate']" :label="$t('setting__update_auto_check')" @update:model-value="updateSetting({'common.isAutoCheckUpdate': $event})")
   .gap-top
-    base-checkbox(id="setting__update_tryAutoUpdate" :disabled="!appSetting['common.isAutoCheckUpdate']" :model-value="appSetting['common.tryAutoUpdate']" :label="$t('setting__update_try_auto_update')" @update:model-value="updateSetting({'common.tryAutoUpdate': $event})")
+    base-checkbox(id="setting__update_tryAutoUpdate" :disabled="isPackageManagerInstall || !appSetting['common.isAutoCheckUpdate']" :model-value="appSetting['common.tryAutoUpdate']" :label="$t('setting__update_try_auto_update')" @update:model-value="updateSetting({'common.tryAutoUpdate': $event})")
+    .p.small.gap-top(v-if="isPackageManagerInstall") Arch/pacman 安装由系统包管理器负责更新，应用内仅检查新版本。
   .gap-top
     base-checkbox(id="setting__update_showChangeLog" :model-value="appSetting['common.showChangeLog']" :label="$t('setting__update_show_change_log')" @update:model-value="updateSetting({'common.showChangeLog': $event})")
   .gap-top
@@ -51,6 +52,7 @@ export default {
     let clickNum = 0
     const commit_id = COMMIT_ID
     const commit_date = dateFormat(COMMIT_DATE)
+    const isPackageManagerInstall = process.platform === 'linux' && process.env.Q_MUSIC_PACKAGE_TYPE === 'pacman'
 
     const t = useI18n()
 
@@ -97,6 +99,7 @@ export default {
       updateSetting,
       commit_id,
       commit_date,
+      isPackageManagerInstall,
     }
   },
 }
