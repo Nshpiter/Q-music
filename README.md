@@ -13,11 +13,11 @@
 
 <p align="center">基于 Electron 与 Vue 3 的桌面音乐软件，专注于清爽的玻璃质感界面与完整的桌面播放体验。</p>
 
-![Q-music v0.2.1 desktop UI](./doc/images/app.png)
+![Q-music v0.2.2 desktop UI](./doc/images/app.png)
 
 ## 项目说明
 
-Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前 `v0.2.1` 基于 LX Music Desktop `2.12.2`，并提供 Windows、Arch Linux 与 Android 客户端，主要调整了应用品牌、跨端界面风格、播放详情页、音频可视化、播放队列以及打包更新配置。
+Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前桌面版 `v0.2.2` 基于 LX Music Desktop `2.12.2`，并提供 Windows、Arch Linux 与 Android 客户端，主要调整了应用品牌、跨端界面风格、播放详情页、音频可视化、播放队列以及打包更新配置。
 
 本仓库不是 LX Music 官方仓库，也不代表原作者对本项目提供支持或背书。完整变更可查看 [更新日志](./publish/changeLog.md) 与 [二次修改说明](./MODIFICATIONS.md)。
 
@@ -100,7 +100,7 @@ npm run pack:arch
 安装本地构建产物：
 
 ```bash
-sudo pacman -U ./build/Q-music_0.2.0_x64.pacman
+sudo pacman -U ./build/Q-music_0.2.2_x64.pacman
 ```
 
 pacman 安装由系统包管理器负责升级；应用内会提示新版本，但不会自行覆盖系统

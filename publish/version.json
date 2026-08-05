@@ -1,7 +1,11 @@
 {
-  "version": "0.2.1",
-  "desc": "Q-music 0.2.1\n\n本版本统一发布 Windows、Arch Linux 与 Android 客户端。\n\n主要变更\n- Android 改为手机优先的单列布局与底部导航，组件视觉对齐 Windows 端的圆角玻璃风格。\n- Android 补回 QQ 音乐、网易云、酷狗与 Spotify 外部歌单导入。\n- Android 关于、问题反馈、版本检测和安装包下载统一指向当前 Q-music 项目。\n- 增加 Arch Linux pacman 包构建与校验。\n- 修正跨端品牌、更新源与发布资产命名。",
+  "version": "0.2.2",
+  "desc": "Q-music 桌面版 0.2.2\n\n主要变更\n- Linux 原生 Wayland 默认改用 ANGLE/EGL 图形路径，避免 NVIDIA 驱动下 desktop GL 初始化失败并回退到软件渲染。\n- X11/XWayland 继续使用 desktop GL。\n- 尊重用户显式传入的 use-gl 与 use-angle 参数，并在日志中记录最终图形后端。\n- 修正 disable-gpu-sandbox 启动参数格式。",
   "history": [
+    {
+      "version": "0.2.1",
+      "desc": "Q-music 0.2.1\n\n本版本统一发布 Windows、Arch Linux 与 Android 客户端。\n\n主要变更\n- Android 改为手机优先的单列布局与底部导航，组件视觉对齐 Windows 端的圆角玻璃风格。\n- Android 补回 QQ 音乐、网易云、酷狗与 Spotify 外部歌单导入。\n- Android 关于、问题反馈、版本检测和安装包下载统一指向当前 Q-music 项目。\n- 增加 Arch Linux pacman 包构建与校验。\n- 修正跨端品牌、更新源与发布资产命名。"
+    },
     {
       "version": "0.2.0",
       "desc": "Q-music 0.2.0\n\n本版本基于 LX Music Desktop 2.12.2 二次修改。\n\n主要变更\n- 界面全面焕新为液态玻璃风格：中性白毛玻璃面板，自定义背景图可真正透出。\n- 新增「背景与毛玻璃」设置：一键选背景图，面板透明/模糊滑块实时调整并记忆。\n- 主题选择器升级为迷你玻璃预览卡；左侧导航与设置侧栏选中态重做，去掉竖线。\n- 右键/下拉菜单统一为主题感知磨砂浮层；SQ/Hi-Res 徽标胶囊化。\n- 播放栏重做：播放簇居中、图标重绘为实心圆角风格、播放键主题色渐变发光、进度条加拖拽圆点、工具图标分组。\n- 列表行优化：正在播放行主色高亮 + 均衡跳动条，hover 磨砂底，文字可读性微衬底。\n- 打开歌曲评论改用 FLIP 连续滑动动画，全程丝滑。\n- 新增「启动时自动检查更新」开关；修复「软件更新」设置节不可见的问题。"

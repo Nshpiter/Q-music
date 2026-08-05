@@ -1,3 +1,12 @@
+Q-music 0.2.2
+
+### Linux Wayland 图形渲染
+
+- 原生 Wayland 默认使用 ANGLE/EGL，避免 NVIDIA 驱动下 desktop GL 初始化失败后回退到软件渲染。
+- X11/XWayland 继续使用 desktop GL，不改变现有兼容路径。
+- 尊重用户显式传入的 `--use-gl` 与 `--use-angle` 参数，并在日志中输出最终图形后端。
+- 修正 `disable-gpu-sandbox` 启动参数格式。
+
 Q-music 0.2.0
 
 本版本基于 LX Music Desktop 2.12.2 二次修改。
