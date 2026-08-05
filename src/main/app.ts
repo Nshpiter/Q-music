@@ -115,17 +115,32 @@ export const applyElectronEnvParams = () => {
   if (global.envParams.cmdParams.dha) app.disableHardwareAcceleration()
   if (global.envParams.cmdParams.dhmkh) app.commandLine.appendSwitch('disable-features', 'HardwareMediaKeyHandling')
 
-  // fix linux transparent fail. https://github.com/electron/electron/issues/25153#issuecomment-843688494
+  // 原生 Wayland 使用 ANGLE/EGL，避免 NVIDIA 驱动初始化 desktop GL 失败后
+  // 回退到软件渲染。X11/XWayland 继续使用 desktop GL，并允许启动参数覆盖默认值。
   if (process.platform == 'linux') {
-    app.commandLine.appendSwitch('use-gl', 'desktop')
+    if (!app.commandLine.hasSwitch('use-gl')) {
+      app.commandLine.appendSwitch('use-gl', isNativeWayland ? 'angle' : 'desktop')
+    }
+    if (
+      isNativeWayland &&
+      app.commandLine.getSwitchValue('use-gl') === 'angle' &&
+      !app.commandLine.hasSwitch('use-angle')
+    ) {
+      app.commandLine.appendSwitch('use-angle', 'gl')
+    }
     // Wayland 下 globalShortcut 需要通过 xdg-desktop-portal 注册。
     app.commandLine.appendSwitch('enable-features', 'GlobalShortcutsPortal')
+    log.info(
+      `[Linux graphics] nativeWayland=${isNativeWayland}, ` +
+      `use-gl=${app.commandLine.getSwitchValue('use-gl') || 'default'}, ` +
+      `use-angle=${app.commandLine.getSwitchValue('use-angle') || 'default'}`,
+    )
   }
 
   // https://github.com/electron/electron/issues/22691
   app.commandLine.appendSwitch('wm-window-animations-disabled')
 
-  app.commandLine.appendSwitch('--disable-gpu-sandbox')
+  app.commandLine.appendSwitch('disable-gpu-sandbox')
 
   // proxy
   if (global.envParams.cmdParams['proxy-server']) {

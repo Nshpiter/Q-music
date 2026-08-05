@@ -104,9 +104,16 @@ sudo pacman -U ./build/Q-music_0.2.0_x64.pacman
 ```
 
 pacman 安装由系统包管理器负责升级；应用内会提示新版本，但不会自行覆盖系统
-软件包。Electron 在 Wayland 下使用原生窗口最大化，并尝试通过桌面环境提供的
-portal 注册全局快捷键。若桌面歌词的位置、置顶或透明效果受合成器限制，可临时
-回退到 XWayland：
+软件包。Electron 在原生 Wayland 下默认使用 ANGLE/EGL（`--use-gl=angle
+--use-angle=gl`）启用 GPU 合成，并尝试通过桌面环境提供的 portal 注册全局快捷
+键；X11/XWayland 仍使用桌面 OpenGL。应用会尊重显式传入的图形后端参数，若需
+排查驱动兼容性可临时改回桌面 OpenGL：
+
+```bash
+q-music --use-gl=desktop
+```
+
+若桌面歌词的位置、置顶或透明效果受合成器限制，可临时回退到 XWayland：
 
 ```bash
 q-music --ozone-platform=x11
