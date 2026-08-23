@@ -16,6 +16,7 @@ const defaultSetting: LX.AppSetting = {
   'common.font': '',
   'common.isShowAnimation': true,
   'common.randomAnimate': true,
+  'common.performanceMode': false,
   'common.isAgreePact': false,
   'common.controlBtnPosition': isMac ? 'left' : 'right',
   'common.playBarProgressStyle': 'mini',

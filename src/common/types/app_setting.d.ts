@@ -54,6 +54,11 @@ declare global {
       'common.randomAnimate': boolean
 
       /**
+       * 流畅模式：关闭实时毛玻璃采样以降低图形渲染开销
+       */
+      'common.performanceMode': boolean
+
+      /**
        * 是否同意软件协议
        */
       'common.isAgreePact': boolean

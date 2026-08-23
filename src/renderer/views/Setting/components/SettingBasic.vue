@@ -7,6 +7,9 @@ dd
     .gap-top
       base-checkbox(id="setting_animate" :disabled="!appSetting['common.isShowAnimation']" :model-value="appSetting['common.randomAnimate']" :label="$t('setting__basic_animation')" @update:model-value="updateSetting({'common.randomAnimate': $event})")
     .gap-top
+      base-checkbox(id="setting_performance_mode" :model-value="appSetting['common.performanceMode']" :label="$t('setting__basic_performance_mode')" @update:model-value="updateSetting({'common.performanceMode': $event})")
+      div(:class="$style.performanceTip") {{ $t('setting__basic_performance_mode_tip') }}
+    .gap-top
       base-checkbox(id="setting_start_in_fullscreen" :model-value="appSetting['common.startInFullscreen']" :label="$t('setting__basic_start_in_fullscreen')" @update:model-value="updateSetting({'common.startInFullscreen': $event})")
     .gap-top(:class="$style.closeAction")
       div(:class="$style.closeActionTitle") {{ $t('setting__basic_close_action') }}
@@ -54,6 +57,13 @@ dd
         base-btn.btn(min @click="selectBgImage") {{ $t('setting__basic_glass_bg_select') }}
         base-btn.btn(v-if="appSetting['theme.customBgImage']" min @click="clearBgImage") {{ $t('setting__basic_glass_bg_clear') }}
       div(:class="$style.glassTip") {{ $t('setting__basic_glass_bg_tip') }}
+    .gap-top(:class="$style.glassPresets")
+      span(:class="$style.glassLabel") {{ $t('setting__basic_glass_preset') }}
+      button(
+        v-for="preset in glassPresets" :key="preset.id" type="button"
+        :class="[$style.glassPreset, { [$style.active]: preset.active }]"
+        @click="applyGlassPreset(preset)"
+      ) {{ preset.label }}
     .gap-top(:class="$style.glassSlider")
       span(:class="$style.glassLabel") {{ $t('setting__basic_glass_opacity') }}
       slider-bar(:class="$style.slider" :value="appSetting['theme.glassOpacity'] ?? 22" :min="8" :max="70" :step="1" @change="updateSetting({'theme.glassOpacity': $event})")
@@ -303,6 +313,21 @@ export default {
     const clearBgImage = () => {
       updateSetting({ 'theme.customBgImage': '' })
     }
+    const glassPresets = computed(() => {
+      const opacity = appSetting['theme.glassOpacity'] ?? 22
+      const blur = appSetting['theme.glassBlur'] ?? 20
+      return [
+        { id: 'clear', label: t('setting__basic_glass_preset_clear'), opacity: 52, blur: 8 },
+        { id: 'balanced', label: t('setting__basic_glass_preset_balanced'), opacity: 30, blur: 18 },
+        { id: 'immersive', label: t('setting__basic_glass_preset_immersive'), opacity: 16, blur: 30 },
+      ].map(preset => ({ ...preset, active: preset.opacity == opacity && preset.blur == blur }))
+    })
+    const applyGlassPreset = (preset) => {
+      updateSetting({
+        'theme.glassOpacity': preset.opacity,
+        'theme.glassBlur': preset.blur,
+      })
+    }
 
     const isShowUserApiModal = ref(false)
     const getApiStatus = () => {
@@ -421,6 +446,8 @@ export default {
       customBgPreview,
       selectBgImage,
       clearBgImage,
+      glassPresets,
+      applyGlassPreset,
     }
   },
 }
@@ -428,6 +455,14 @@ export default {
 
 <style lang="less" module>
 @import '@renderer/assets/styles/layout.less';
+
+.performanceTip {
+  max-width: 560px;
+  margin: 6px 0 0 30px;
+  color: var(--color-font-label);
+  font-size: 12px;
+  line-height: 1.55;
+}
 
 .glassRow {
   display: flex;
@@ -457,6 +492,40 @@ export default {
   flex-flow: row nowrap;
   align-items: center;
   gap: 12px;
+}
+.glassPresets {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 8px;
+}
+.glassPreset {
+  min-width: 66px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid rgba(54, 83, 70, .12);
+  border-radius: 10px;
+  color: var(--color-font-label);
+  background: rgba(255, 255, 255, .34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color @transition-fast, background-color @transition-fast, border-color @transition-fast, transform @transition-fast;
+
+  &:hover {
+    color: var(--color-primary-font);
+    border-color: var(--color-primary-alpha-700);
+    background: var(--color-primary-alpha-900);
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    color: #fff;
+    border-color: transparent;
+    background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary));
+    box-shadow: 0 5px 14px var(--color-primary-alpha-700), inset 0 1px 0 rgba(255, 255, 255, .32);
+  }
 }
 .glassLabel {
   flex: none;

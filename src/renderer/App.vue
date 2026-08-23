@@ -38,12 +38,12 @@ import WindowControlBtns from './components/layout/WindowControlBtns.vue'
 
 useApp()
 
-// 把「毛玻璃强度 / 模糊 / 自定义背景图」设置实时映射到 CSS 变量
+// 把外观设置实时映射到 CSS 变量与根节点状态
 const buildUserBgUrl = (bg) => {
   if (!bg) return ''
   return isUrl(bg) ? `url("${bg}")` : `url("file:///${encodePath(String(bg).replaceAll('\\', '/'))}")`
 }
-const applyGlassSetting = () => {
+const applyAppearanceSetting = () => {
   const el = document.documentElement
   const opacity = appSetting['theme.glassOpacity']
   const blur = appSetting['theme.glassBlur']
@@ -52,11 +52,20 @@ const applyGlassSetting = () => {
   const bgUrl = buildUserBgUrl(appSetting['theme.customBgImage'])
   if (bgUrl) el.style.setProperty('--q-user-bg-image', bgUrl)
   else el.style.removeProperty('--q-user-bg-image')
+  el.classList.toggle('performanceMode', appSetting['common.performanceMode'])
 }
-watch(() => [appSetting['theme.glassOpacity'], appSetting['theme.glassBlur'], appSetting['theme.customBgImage']], applyGlassSetting)
+watch(
+  () => [
+    appSetting['theme.glassOpacity'],
+    appSetting['theme.glassBlur'],
+    appSetting['theme.customBgImage'],
+    appSetting['common.performanceMode'],
+  ],
+  applyAppearanceSetting,
+)
 
 onMounted(() => {
-  applyGlassSetting()
+  applyAppearanceSetting()
   document.getElementById('root').style.display = 'block'
 
   // const styles = getComputedStyle(document.documentElement)
@@ -107,6 +116,27 @@ body {
 .disableAnimation * {
   transition: none !important;
   animation: none !important;
+}
+
+// 流畅模式保留半透明配色和阴影层次，仅关闭昂贵的实时背景采样。
+.performanceMode {
+  #root *,
+  #root *::before,
+  #root *::after {
+    backdrop-filter: none !important;
+  }
+}
+
+// 尊重系统的“减少动态效果”偏好，避免长动画造成眩晕或额外重绘。
+@media (prefers-reduced-motion: reduce) {
+  #root *,
+  #root *::before,
+  #root *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }
 
 .transparent {
@@ -333,4 +363,3 @@ body {
 }
 
 </style>
-
