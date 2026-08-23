@@ -8,12 +8,13 @@ import SonglistList from './SonglistList'
 
 interface ListProps {
   onSearch: (keyword: string) => void
+  onFocusSearch: () => void
 }
 export interface ListType {
   loadList: (text: string, source: MusicSource | SongListSource, type: SearchState['searchType']) => void
 }
 
-export default forwardRef<ListType, ListProps>(({ onSearch }, ref) => {
+export default forwardRef<ListType, ListProps>(({ onSearch, onFocusSearch }, ref) => {
   const [listType, setListType] = useState<SearchState['searchType']>('music')
   const [showBlankView, setShowListView] = useState(true)
   const listRef = useRef<MusicListType>(null)
@@ -39,7 +40,7 @@ export default forwardRef<ListType, ListProps>(({ onSearch }, ref) => {
 
   return (
     showBlankView
-      ? <BlankView ref={blankViewRef} onSearch={onSearch} />
+      ? <BlankView ref={blankViewRef} onSearch={onSearch} onFocusSearch={onFocusSearch} />
       : listType == 'songlist'
         ? <SonglistList ref={listRef} />
         : <MusicList ref={listRef} />

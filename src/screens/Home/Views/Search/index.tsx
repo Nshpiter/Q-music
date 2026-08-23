@@ -99,6 +99,9 @@ export default () => {
       searchTipListRef.current?.show(layoutHeightRef.current)
     }, 500)
   }
+  const handleFocusSearch = () => {
+    headerBarRef.current?.focus()
+  }
 
   return (
     <View style={styles.container}>
@@ -115,7 +118,7 @@ export default () => {
       </View>
       <View style={styles.content} onLayout={handleLayout}>
         <TipList ref={searchTipListRef} onSearch={handleSearch} />
-        <List ref={listRef} onSearch={handleSearch} />
+        <List ref={listRef} onSearch={handleSearch} onFocusSearch={handleFocusSearch} />
       </View>
     </View>
   )

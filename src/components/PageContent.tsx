@@ -8,6 +8,7 @@ import { scaleSizeAbsHR } from '@/utils/pixelRatio'
 import { defaultHeaders } from './common/Image'
 import SizeView from './SizeView'
 import { useBgPic } from '@/store/common/hook'
+import { useSettingValue } from '@/store/setting/hook'
 
 interface Props {
   children: React.ReactNode
@@ -19,6 +20,7 @@ export default ({ children }: Props) => {
   const theme = useTheme()
   const windowSize = useWindowSize()
   const pic = useBgPic()
+  const performanceMode = useSettingValue('theme.performanceMode')
   // const [wh, setWH] = useState<{ width: number | string, height: number | string }>({ width: '100%', height: Dimensions.get('screen').height })
 
   // 固定宽高度 防止弹窗键盘时大小改变导致背景被缩放
@@ -82,7 +84,7 @@ export default ({ children }: Props) => {
   return (
     <>
       <SizeView />
-      {pic ? picComponent : themeComponent}
+      {pic && !performanceMode ? picComponent : themeComponent}
     </>
   )
 }

@@ -79,6 +79,7 @@ const defaultSetting: LX.AppSetting = {
   'theme.hideBgDark': false,
   'theme.dynamicBg': false,
   'theme.fontShadow': false,
+  'theme.performanceMode': false,
 }
 
 

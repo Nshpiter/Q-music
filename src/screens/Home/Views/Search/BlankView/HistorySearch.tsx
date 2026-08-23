@@ -83,7 +83,14 @@ export default forwardRef<HistorySearchType, HistorySearchProps>((props, ref) =>
   return (
     list.length
       ? (
-          <View>
+          <View
+            style={{
+              ...styles.card,
+              ...qSurfaceShadow,
+              backgroundColor: theme['q-surface-raised'],
+              borderColor: theme['q-outline'],
+            }}
+          >
             <View style={styles.titleContent}>
               <Text style={styles.title} color={theme['q-text-primary']} size={14}>{t('search_history_search')}</Text>
               <TouchableOpacity
@@ -106,16 +113,23 @@ export default forwardRef<HistorySearchType, HistorySearchProps>((props, ref) =>
 
 
 const styles = createStyle({
+  card: {
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingLeft: 16,
+    paddingRight: 16,
+    borderWidth: 1,
+    borderRadius: 20,
+  },
   titleContent: {
-    paddingTop: 15,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   title: {
     fontWeight: '700',
   },
   titleBtn: {
-    marginLeft: 8,
     width: 32,
     height: 32,
     borderRadius: 10,

@@ -107,6 +107,11 @@ declare global {
       'theme.fontShadow': boolean
 
       /**
+       * 流畅模式：禁用动态封面模糊背景以降低渲染开销
+       */
+      'theme.performanceMode': boolean
+
+      /**
        * 启动时自动播放歌曲
        */
       'player.startupAutoPlay': boolean

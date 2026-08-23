@@ -1,5 +1,5 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { ScrollView, View } from 'react-native'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { ActivityIndicator, TouchableOpacity, View } from 'react-native'
 import { type Source, type InitState } from '@/store/hotSearch/state'
 import Button from '@/components/common/Button'
 import { getList } from '@/core/hotSearch'
@@ -8,6 +8,8 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { qSurfaceShadow } from '@/theme/ui'
+import hotSearchActions from '@/store/hotSearch/action'
+import { Icon } from '@/components/common/Icon'
 
 
 interface ListProps {
@@ -46,6 +48,9 @@ export default forwardRef<HotSearchType, ListProps>((props, ref) => {
   const [list, setList] = useState<List>([])
   const t = useI18n()
   const theme = useTheme()
+  const [loading, setLoading] = useState(false)
+  const sourceRef = useRef<Source>('kw')
+  const requestIdRef = useRef(0)
 
   const isUnmountedRef = useRef(false)
   useEffect(() => {
@@ -55,36 +60,90 @@ export default forwardRef<HotSearchType, ListProps>((props, ref) => {
     }
   }, [])
 
+  const load = useCallback(async(source: Source, force = false) => {
+    sourceRef.current = source
+    const requestId = ++requestIdRef.current
+    if (force) hotSearchActions.clearList(source)
+    setLoading(true)
+    try {
+      const nextList = await getList(source)
+      if (isUnmountedRef.current || requestId != requestIdRef.current) return
+      setList(nextList)
+    } catch {
+      if (isUnmountedRef.current || requestId != requestIdRef.current) return
+      setList([])
+    } finally {
+      if (!isUnmountedRef.current && requestId == requestIdRef.current) setLoading(false)
+    }
+  }, [])
+
   useImperativeHandle(ref, () => ({
     show(source) {
-      void getList(source).then((list) => {
-        if (isUnmountedRef.current) return
-        setList(list)
-      })
+      void load(source)
     },
-  }), [])
+  }), [load])
 
   return (
-    list.length
-      ? (
-          <ScrollView>
-            <Text style={styles.title} color={theme['q-text-primary']} size={14}>{t('search_hot_search')}</Text>
-            <View style={styles.list}>
-              {
-                list.map(keyword => <ListItem keyword={keyword} key={keyword} onSearch={props.onSearch} />)
-              }
-            </View>
-          </ScrollView>
-        )
-      : null
+    <View
+      style={{
+        ...styles.card,
+        ...qSurfaceShadow,
+        backgroundColor: theme['q-surface-raised'],
+        borderColor: theme['q-outline'],
+      }}
+    >
+      <View style={styles.titleContent}>
+        <Text style={styles.title} color={theme['q-text-primary']} size={14}>{t('search_hot_search')}</Text>
+        <TouchableOpacity style={styles.refreshBtn} onPress={() => { void load(sourceRef.current, true) }} disabled={loading}>
+          <Icon name="available_updates" color={theme['q-text-secondary']} size={14} />
+          <Text color={theme['q-text-secondary']} size={12}>{t('search_hot_search_refresh')}</Text>
+        </TouchableOpacity>
+      </View>
+      {loading && !list.length
+        ? <View style={styles.state}><ActivityIndicator color={theme['q-accent']} /><Text color={theme['q-text-secondary']} size={12}>{t('search_hot_search_loading')}</Text></View>
+        : list.length
+          ? <View style={styles.list}>{list.map(keyword => <ListItem keyword={keyword} key={keyword} onSearch={props.onSearch} />)}</View>
+          : <Text style={styles.empty} color={theme['q-text-secondary']} size={12}>{t('search_hot_search_empty')}</Text>}
+    </View>
   )
 })
 
 
 const styles = createStyle({
+  card: {
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingLeft: 16,
+    paddingRight: 16,
+    borderWidth: 1,
+    borderRadius: 20,
+  },
+  titleContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   title: {
-    paddingTop: 15,
     fontWeight: '700',
+  },
+  refreshBtn: {
+    minHeight: 32,
+    paddingLeft: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  state: {
+    minHeight: 72,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  empty: {
+    minHeight: 72,
+    paddingTop: 26,
+    textAlign: 'center',
   },
   list: {
     flexDirection: 'row',

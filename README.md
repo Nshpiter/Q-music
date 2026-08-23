@@ -6,6 +6,14 @@
 
 <p align="center">Q-music 的 Android 客户端，基于 React Native 与 LX Music Mobile 二次开发。</p>
 
+## Q-music 移动端体验
+
+- 面向手机竖屏优化的单列搜索首页，视觉语言与桌面端保持一致。
+- 热门搜索支持刷新、加载和空状态反馈，搜索历史支持长按移除。
+- 保留歌单导入、设置导入及与桌面端通用的列表备份格式。
+- 新增流畅模式，可关闭动态封面模糊背景，降低移动设备的渲染负担。
+- Windows、Arch Linux 与 Android 的版本统一通过 Q-music 项目维护和发布。
+
 ## 当前范围
 
 - Android 5.0 及以上系统。
