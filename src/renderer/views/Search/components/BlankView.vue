@@ -32,7 +32,7 @@
             </div>
             <div :class="$style.dailyContent">
               <span :class="$style.eyebrow">{{ $t('search__daily_eyebrow') }}</span>
-              <h3>{{ $t('search__daily_recommend') }} · {{ $t('search__daily_count', { count: dailyRecommendList.length || 12 }) }}</h3>
+              <h3>{{ $t('search__daily_recommend') }} · {{ $t('search__daily_count', { count: dailyRecommendList.length || 30 }) }}</h3>
               <p>{{ $t('search__daily_recommend_subtitle') }}</p>
               <ol v-if="dailyRecommendList.length" :class="$style.trackPreview">
                 <li v-for="item in dailyRecommendList.slice(0, 3)" :key="item.id"><strong>{{ item.name }}</strong><span>{{ item.singer }}</span></li>
@@ -226,7 +226,7 @@ const loadDailyRecommend = async(force = false, sourceOverride = accountStatus.v
     if (sourceOverride == 'wy' && accountStatus.value.wy) {
       const ids = await getMusicAccountDaily('wy').catch(() => [])
       if (ids.length) {
-        list = await wyMusicDetail.getList(ids.slice(0, 12)).then(data => data.list).catch(() => [])
+        list = await wyMusicDetail.getList(ids.slice(0, 30)).then(data => data.list).catch(() => [])
       }
     }
     if (!list.length) list = await getDailyRecommend(sourceOverride, force)

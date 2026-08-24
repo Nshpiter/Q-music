@@ -4,8 +4,8 @@ import { getList as getHotSearchList } from '@renderer/store/hotSearch'
 import musicSdk from '@renderer/utils/musicSdk'
 import { toNewMusicInfo } from '@renderer/utils'
 
-const DAILY_COUNT = 12
-const SEARCH_LIMIT = 12
+const DAILY_COUNT = 30
+const SEARCH_LIMIT = 20
 const supportedSources: LX.OnlineSource[] = ['kw', 'kg', 'tx', 'wy', 'mg']
 const fallbackKeywords = ['华语流行', '热门歌曲', '经典歌曲', '新歌', '治愈', '轻音乐']
 

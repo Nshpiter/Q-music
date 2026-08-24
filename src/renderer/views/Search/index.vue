@@ -1,6 +1,6 @@
 <template>
   <div :class="$style.container">
-    <div :class="$style.header">
+    <div v-if="searchText" :class="$style.header">
       <base-tab v-model="searchType" :list="searchTypes" @change="handleTypeChange" />
     </div>
     <div :class="$style.main">

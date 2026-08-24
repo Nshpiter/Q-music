@@ -1,4 +1,4 @@
-import { BrowserWindow, session, shell } from 'electron'
+import { BrowserWindow, session, shell, type Session, type WebContents } from 'electron'
 import { getProxy } from '@main/utils'
 import { constants, createCipheriv, publicEncrypt, randomBytes } from 'node:crypto'
 
@@ -18,14 +18,14 @@ const providerConfig = {
   tx: {
     partition: 'persist:qmusic-account-qq',
     title: 'QQ音乐账号登录',
-    loginUrl: 'https://xui.ptlogin2.qq.com/cgi-bin/xlogin?appid=716027609&daid=383&pt_3rd_aid=100497308&hide_title_bar=1&style=40&s_url=https%3A%2F%2Fgraph.qq.com%2Foauth2.0%2Flogin_jump&target=self&pt_disable_pwd=1',
-    domains: ['qq.com'],
+    loginUrl: 'https://y.qq.com/n/ryqq/profile',
+    domains: ['qq.com', 'weixin.qq.com', 'weixin.com', 'qcloud.com', 'gtimg.com'],
   },
   wy: {
     partition: 'persist:qmusic-account-netease',
     title: '网易云音乐账号登录',
     loginUrl: 'https://music.163.com/#/login',
-    domains: ['163.com', 'netease.com'],
+    domains: ['163.com', '126.com', 'netease.com'],
   },
 } as const
 
@@ -51,6 +51,7 @@ const buildNeteaseWeapiForm = (data: Record<string, unknown>) => {
 }
 
 const isAllowedHost = (provider: MusicAccountProvider, target: string) => {
+  if (target == 'about:blank') return true
   try {
     const hostname = new URL(target).hostname
     return providerConfig[provider].domains.some(domain => hostname == domain || hostname.endsWith(`.${domain}`))
@@ -63,9 +64,57 @@ const hasLoginCookie = async(provider: MusicAccountProvider) => {
   const cookies = await session.fromPartition(providerConfig[provider].partition).cookies.get({})
   const names = new Set(cookies.map(cookie => cookie.name.toLowerCase()))
   if (provider == 'wy') return names.has('music_u') || names.has('music_a')
-  const hasUin = names.has('uin') || names.has('p_uin') || names.has('qqmusic_uin')
-  const hasKey = names.has('skey') || names.has('p_skey') || names.has('qqmusic_key') || names.has('qm_keyst')
-  return hasUin && hasKey
+  const hasIdentifier = names.has('uin') || names.has('qqmusic_uin') || names.has('musicid') || names.has('wxopenid')
+  const hasMusicKey = names.has('qqmusic_key') || names.has('qm_keyst') || names.has('musickey')
+  return hasIdentifier && hasMusicKey
+}
+
+const getCompatibleUserAgent = (userAgent: string) => userAgent
+  .replace(/\sElectron\/[^\s]+/i, '')
+  .replace(/\sq-music\/[^\s]+/i, '')
+
+const configureLoginContents = (
+  contents: WebContents,
+  provider: MusicAccountProvider,
+  accountSession: Session,
+  onChildWindow?: (window: BrowserWindow) => void,
+) => {
+  contents.setUserAgent(getCompatibleUserAgent(contents.getUserAgent()))
+  contents.setWindowOpenHandler(({ url }) => {
+    if (!isAllowedHost(provider, url)) {
+      void shell.openExternal(url)
+      return { action: 'deny' }
+    }
+    return {
+      action: 'allow',
+      overrideBrowserWindowOptions: {
+        width: 520,
+        height: 720,
+        minWidth: 420,
+        minHeight: 560,
+        show: true,
+        autoHideMenuBar: true,
+        backgroundColor: '#f7faf8',
+        webPreferences: {
+          session: accountSession,
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: true,
+          spellcheck: false,
+        },
+      },
+    }
+  })
+  contents.on('will-navigate', (event, url) => {
+    if (isAllowedHost(provider, url)) return
+    event.preventDefault()
+    void shell.openExternal(url)
+  })
+  contents.on('did-create-window', childWindow => {
+    childWindow.setMenuBarVisibility(false)
+    onChildWindow?.(childWindow)
+    configureLoginContents(childWindow.webContents, provider, accountSession, onChildWindow)
+  })
 }
 
 export const getMusicAccountStatus = async(): Promise<MusicAccountStatus> => ({
@@ -134,34 +183,39 @@ export const openMusicAccountLogin = async(provider: MusicAccountProvider): Prom
     loginWindows.set(provider, loginWindow)
 
     let settled = false
+    let checkingLogin = false
+    let cookieTimer: NodeJS.Timeout | undefined
+    const childWindows = new Set<BrowserWindow>()
+    const handleChildWindow = (childWindow: BrowserWindow) => {
+      childWindows.add(childWindow)
+      childWindow.once('closed', () => { childWindows.delete(childWindow) })
+    }
+    const checkLogin = () => {
+      if (settled || checkingLogin) return
+      checkingLogin = true
+      void hasLoginCookie(provider).then(connected => {
+        if (connected) finish('connected')
+      }).finally(() => {
+        checkingLogin = false
+      })
+    }
+    const handleCookieChanged = () => { checkLogin() }
     const finish = (status: MusicAccountLoginResult['status']) => {
       if (settled) return
       settled = true
-      clearInterval(cookieTimer)
+      if (cookieTimer) clearInterval(cookieTimer)
+      accountSession.cookies.off('changed', handleCookieChanged)
       loginWindows.delete(provider)
       resolve({ provider, status })
+      for (const childWindow of childWindows) {
+        if (!childWindow.isDestroyed()) childWindow.close()
+      }
       if (!loginWindow.isDestroyed()) loginWindow.close()
     }
-    const checkLogin = () => {
-      void hasLoginCookie(provider).then(connected => {
-        if (connected) finish('connected')
-      })
-    }
-    const cookieTimer = setInterval(checkLogin, 1200)
 
-    loginWindow.webContents.setWindowOpenHandler(({ url }) => {
-      if (isAllowedHost(provider, url)) {
-        void loginWindow.loadURL(url)
-      } else {
-        void shell.openExternal(url)
-      }
-      return { action: 'deny' }
-    })
-    loginWindow.webContents.on('will-navigate', (event, url) => {
-      if (isAllowedHost(provider, url)) return
-      event.preventDefault()
-      void shell.openExternal(url)
-    })
+    configureLoginContents(loginWindow.webContents, provider, accountSession, handleChildWindow)
+    accountSession.cookies.on('changed', handleCookieChanged)
+    cookieTimer = setInterval(checkLogin, 1200)
     loginWindow.once('ready-to-show', () => { loginWindow.show() })
     loginWindow.on('closed', () => { finish('cancelled') })
     void loginWindow.loadURL(config.loginUrl)
