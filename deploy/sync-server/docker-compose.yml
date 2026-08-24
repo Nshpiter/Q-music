@@ -1,0 +1,16 @@
+services:
+  qmusic-sync:
+    image: lyswhut/lx-music-sync-server:latest
+    container_name: qmusic-sync
+    restart: unless-stopped
+    environment:
+      PORT: "9527"
+      BIND_IP: "0.0.0.0"
+      SERVER_NAME: "Q-music Cloud"
+      MAX_SNAPSHOT_NUM: "20"
+      LX_USER_qmusic: "${QMUSIC_SYNC_PASSWORD}"
+    ports:
+      - "127.0.0.1:9527:9527"
+    volumes:
+      - ./data:/server/data
+      - ./logs:/server/logs

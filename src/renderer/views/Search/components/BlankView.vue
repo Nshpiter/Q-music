@@ -1,7 +1,7 @@
 <template>
   <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
     <div v-show="props.visible" :class="$style.noitem">
-      <div :class="$style.noitemShell">
+      <div class="scroll" :class="$style.noitemShell">
         <section :class="$style.welcomeCard">
           <span :class="$style.welcomeGlow" aria-hidden="true" />
           <div :class="$style.welcomeIcon" aria-hidden="true">
@@ -24,7 +24,29 @@
           </div>
         </section>
 
-        <div v-if="hasDiscoveryContent" class="scroll" :class="$style.noitemListContainer">
+        <section :class="$style.dailyCard">
+          <div :class="$style.dailyHeader">
+            <div>
+              <h3>{{ $t('search__daily_recommend') }}</h3>
+              <p>{{ $t('search__daily_recommend_subtitle') }}</p>
+            </div>
+            <div :class="$style.dailyActions">
+              <button type="button" :disabled="isDailyLoading" @click="loadDailyRecommend(true)">{{ $t('search__daily_recommend_refresh') }}</button>
+              <button type="button" :disabled="!dailyRecommendList.length" @click="playDailyRecommend">{{ $t('search__daily_recommend_play') }}</button>
+            </div>
+          </div>
+          <div v-if="isDailyLoading" :class="$style.dailyLoading">{{ $t('search__daily_recommend_loading') }}</div>
+          <div v-else-if="dailyRecommendList.length" :class="$style.dailyTracks">
+            <button v-for="(item, index) in dailyRecommendList.slice(0, 6)" :key="item.id" type="button" @click="playDailyRecommend(index)">
+              <span>{{ index + 1 }}</span>
+              <strong>{{ item.name }}</strong>
+              <small>{{ item.singer }}</small>
+            </button>
+          </div>
+          <div v-else :class="$style.dailyLoading">{{ $t('search__daily_recommend_empty') }}</div>
+        </section>
+
+        <div v-if="hasDiscoveryContent" :class="$style.noitemListContainer">
           <dl v-if="appSetting['search.isShowHotSearch']" :class="[$style.noitemList, $style.noitemHotSearchList]">
             <dt :class="$style.noitemListTitle">
               <span>{{ $t('search__hot_search') }}</span>
@@ -63,6 +85,10 @@ import { clearList, getList } from '@renderer/store/hotSearch'
 import { appSetting } from '@renderer/store/setting'
 import { useRouter } from '@common/utils/vueRouter'
 import { HOTKEY_COMMON } from '@common/hotKey'
+import { getDailyRecommend } from '@renderer/core/dailyRecommend'
+import { setTempList } from '@renderer/store/list/action'
+import { playList } from '@renderer/core/player/action'
+import { LIST_IDS } from '@common/constants'
 
 const props = defineProps({
   visible: Boolean,
@@ -74,7 +100,10 @@ const props = defineProps({
 
 const hotSearchList = shallowRef([])
 const isHotSearchLoading = shallowRef(false)
+const dailyRecommendList = shallowRef([])
+const isDailyLoading = shallowRef(false)
 let hotSearchRequestId = 0
+let dailyRequestId = 0
 const hasDiscoveryContent = computed(() => {
   return appSetting['search.isShowHotSearch'] ||
     (appSetting['search.isShowHistorySearch'] && historyList.length > 0)
@@ -105,6 +134,32 @@ watch(
   () => { void loadHotSearch() },
   { immediate: true },
 )
+
+const loadDailyRecommend = async(force = false) => {
+  if (!props.visible) return
+  const requestId = ++dailyRequestId
+  isDailyLoading.value = true
+  try {
+    const list = await getDailyRecommend(props.source, force)
+    if (requestId == dailyRequestId) dailyRecommendList.value = list
+  } catch {
+    if (requestId == dailyRequestId) dailyRecommendList.value = []
+  } finally {
+    if (requestId == dailyRequestId) isDailyLoading.value = false
+  }
+}
+
+watch(
+  () => [props.visible, props.source],
+  () => { void loadDailyRecommend() },
+  { immediate: true },
+)
+
+const playDailyRecommend = async(index = 0) => {
+  if (!dailyRecommendList.value.length) return
+  await setTempList(`q_daily_${new Date().toISOString().slice(0, 10)}`, [...dailyRecommendList.value])
+  playList(LIST_IDS.TEMP, index)
+}
 
 watch(
   () => [props.visible, appSetting['search.isShowHistorySearch']],
@@ -153,6 +208,9 @@ const handleSearch = (text) => {
   display: flex;
   flex-flow: column nowrap;
   gap: 18px;
+  overflow-y: auto;
+  padding: 2px 8px 12px;
+  box-sizing: border-box;
 }
 .welcomeCard {
   position: relative;
@@ -238,6 +296,75 @@ const handleSearch = (text) => {
   align-items: center;
   gap: 14px;
 }
+.dailyCard {
+  padding: 18px 20px;
+  border-radius: 22px;
+  color: var(--color-font);
+  background: rgb(from var(--color-main-background) r g b / .52);
+  border: 1px solid rgba(54, 83, 70, .14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .68), 0 14px 34px rgba(35, 54, 46, .09);
+  backdrop-filter: blur(18px) saturate(1.18);
+}
+.dailyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  h3 { margin: 0 0 4px; font-size: 15px; }
+  p { margin: 0; color: var(--color-font-label); font-size: 12px; }
+}
+.dailyActions {
+  display: flex;
+  gap: 8px;
+
+  button {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 10px;
+    color: var(--color-primary-font);
+    background: var(--color-primary-alpha-900);
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    &:last-child { color: #fff; background: var(--color-primary); }
+    &:disabled { cursor: default; opacity: .48; }
+  }
+}
+.dailyTracks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  margin-top: 14px;
+
+  button {
+    min-width: 0;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 10px;
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) minmax(70px, .55fr);
+    align-items: center;
+    gap: 7px;
+    color: var(--color-font);
+    background: rgba(255, 255, 255, .34);
+    cursor: pointer;
+    text-align: left;
+    &:hover { background: var(--color-primary-alpha-900); }
+    span { color: var(--color-font-label); font-size: 11px; }
+    strong, small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    strong { font-size: 12px; font-weight: 600; }
+    small { color: var(--color-font-label); font-size: 11px; }
+  }
+}
+.dailyLoading {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  color: var(--color-font-label);
+  font-size: 12px;
+}
 .searchAction {
   height: 40px;
   padding: 0 18px;
@@ -277,7 +404,6 @@ const handleSearch = (text) => {
 }
 .noitemListContainer {
   min-height: 0;
-  max-height: 310px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
@@ -435,5 +561,6 @@ const handleSearch = (text) => {
   .welcomeActions {
     align-self: start;
   }
+  .dailyTracks button:nth-child(n + 5) { display: none; }
 }
 </style>

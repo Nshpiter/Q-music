@@ -1,7 +1,8 @@
 <template lang="pug">
 dd
-  h3 {{ $t('setting__sync_client_mode') }}
+  h3 {{ $t('setting__sync_cloud_title') }}
   div
+    .p.small {{ $t('setting__sync_cloud_desc') }}
     .p.small {{ $t('setting__sync_client_status', { status: clientStatus }) }}
     .p.small {{ $t('setting__sync_client_address', { address: sync.client.status.address.join(', ') || '' }) }}
     .p
