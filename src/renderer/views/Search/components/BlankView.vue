@@ -31,9 +31,22 @@
               </div>
             </div>
             <div :class="$style.dailyContent">
-              <span :class="$style.eyebrow">{{ $t('search__daily_eyebrow') }}</span>
+              <div :class="$style.dailySourceRow">
+                <span :class="$style.eyebrow">{{ $t('search__daily_eyebrow') }}</span>
+                <div :class="$style.sourceSwitch" role="tablist" :aria-label="$t('search__daily_source')">
+                  <button
+                    v-for="provider in accountProviders" :key="provider.id" type="button" role="tab"
+                    :class="{ [$style.active]: selectedDailyProvider == provider.id }"
+                    :aria-selected="selectedDailyProvider == provider.id"
+                    @click.stop="selectDailyProvider(provider.id)"
+                  >{{ $t(provider.label) }}</button>
+                </div>
+              </div>
               <h3>{{ $t('search__daily_recommend') }} · {{ $t('search__daily_count', { count: dailyRecommendList.length || 30 }) }}</h3>
               <p>{{ $t('search__daily_recommend_subtitle') }}</p>
+              <p :class="[$style.sourceStatus, { [$style.personalized]: dailyRecommendMode == 'personalized' }]">
+                <span />{{ dailySourceText }}
+              </p>
               <ol v-if="dailyRecommendList.length" :class="$style.trackPreview">
                 <li v-for="item in dailyRecommendList.slice(0, 3)" :key="item.id"><strong>{{ item.name }}</strong><span>{{ item.singer }}</span></li>
               </ol>
@@ -85,6 +98,7 @@
             <span :class="$style.eyebrow">{{ $t('search__daily_eyebrow') }}</span>
             <h2>{{ $t('search__daily_recommend') }}</h2>
             <p>{{ todayLabel }} · {{ $t('search__daily_count', { count: dailyRecommendList.length }) }}</p>
+            <p :class="$style.detailSource">{{ dailySourceText }}</p>
           </div>
           <div :class="$style.detailActions">
             <base-btn min :disabled="!dailyRecommendList.length" @click="playDailyRecommend()">{{ $t('search__daily_recommend_play') }}</base-btn>
@@ -119,15 +133,23 @@
         </div>
       </div>
       <div :class="$style.providerList">
-        <button type="button" :disabled="isAccountLoginPending" @click="connectMusicAccount('tx')">
+        <button
+          type="button" :disabled="isAccountLoginPending"
+          :class="{ [$style.selectedProvider]: selectedDailyProvider == 'tx' }"
+          @click="handleProviderAction('tx')"
+        >
           <strong>{{ $t('search__account_qq') }}</strong>
           <span>{{ accountStatus.tx ? $t('search__account_connected') : $t('search__account_qq_tip') }}</span>
-          <em :class="{ [$style.connectedDot]: accountStatus.tx }">{{ accountStatus.tx ? '✓' : '›' }}</em>
+          <em :class="{ [$style.connectedDot]: accountStatus.tx }">{{ selectedDailyProvider == 'tx' ? $t('search__daily_selected') : accountStatus.tx ? '✓' : '›' }}</em>
         </button>
-        <button type="button" :disabled="isAccountLoginPending" @click="connectMusicAccount('wy')">
+        <button
+          type="button" :disabled="isAccountLoginPending"
+          :class="{ [$style.selectedProvider]: selectedDailyProvider == 'wy' }"
+          @click="handleProviderAction('wy')"
+        >
           <strong>{{ $t('search__account_netease') }}</strong>
           <span>{{ accountStatus.wy ? $t('search__account_connected') : $t('search__account_netease_tip') }}</span>
-          <em :class="{ [$style.connectedDot]: accountStatus.wy }">{{ accountStatus.wy ? '✓' : '›' }}</em>
+          <em :class="{ [$style.connectedDot]: accountStatus.wy }">{{ selectedDailyProvider == 'wy' ? $t('search__daily_selected') : accountStatus.wy ? '✓' : '›' }}</em>
         </button>
       </div>
       <p :class="$style.accountTip">{{ isAccountLoginPending ? $t('search__account_waiting') : $t('search__account_tip') }}</p>
@@ -152,6 +174,8 @@ import { getPicPath } from '@renderer/core/music'
 import { LIST_IDS } from '@common/constants'
 import { getMusicAccountDaily, getMusicAccountStatus, loginMusicAccount } from '@renderer/utils/ipc'
 import wyMusicDetail from '@renderer/utils/musicSdk/wy/musicDetail'
+import txMusicInfo from '@renderer/utils/musicSdk/tx/musicInfo'
+import { toNewMusicInfo } from '@renderer/utils'
 
 const props = defineProps({
   visible: Boolean,
@@ -170,6 +194,13 @@ const isShowDailyDetail = ref(false)
 const isShowAccountModal = ref(false)
 const isAccountLoginPending = ref(false)
 const accountStatus = ref({ tx: false, wy: false })
+const accountProviders = [
+  { id: 'tx', label: 'search__account_qq' },
+  { id: 'wy', label: 'search__account_netease' },
+]
+const storedDailyProvider = window.localStorage.getItem('qmusic.dailyRecommend.provider')
+const selectedDailyProvider = ref(storedDailyProvider == 'wy' ? 'wy' : 'tx')
+const dailyRecommendMode = ref('loading')
 let hotSearchRequestId = 0
 let dailyRequestId = 0
 const now = new Date()
@@ -177,6 +208,17 @@ const todayDay = String(now.getDate()).padStart(2, '0')
 const todayMonth = new Intl.DateTimeFormat(window.i18n.locale || 'zh-CN', { month: 'short' }).format(now)
 const todayLabel = new Intl.DateTimeFormat(window.i18n.locale || 'zh-CN', { month: 'long', day: 'numeric' }).format(now)
 const hasMusicAccount = computed(() => accountStatus.value.tx || accountStatus.value.wy)
+const dailySourceText = computed(() => {
+  const provider = selectedDailyProvider.value == 'tx'
+    ? window.i18n.t('search__account_qq')
+    : window.i18n.t('search__account_netease')
+  const mode = dailyRecommendMode.value == 'personalized'
+    ? window.i18n.t('search__daily_source_personalized')
+    : dailyRecommendMode.value == 'loading'
+      ? window.i18n.t('search__daily_source_loading')
+      : window.i18n.t('search__daily_source_fallback')
+  return `${provider} · ${mode}`
+})
 const accountActionText = computed(() => {
   if (accountStatus.value.tx && accountStatus.value.wy) return window.i18n.t('search__account_both_connected')
   if (accountStatus.value.tx) return window.i18n.t('search__account_qq_connected')
@@ -217,19 +259,29 @@ watch(
   { immediate: true },
 )
 
-const loadDailyRecommend = async(force = false, sourceOverride = accountStatus.value.wy ? 'wy' : accountStatus.value.tx ? 'tx' : props.source) => {
+const loadDailyRecommend = async(force = false, sourceOverride = selectedDailyProvider.value) => {
   if (!props.visible) return
   const requestId = ++dailyRequestId
   isDailyLoading.value = true
+  dailyRecommendMode.value = 'loading'
   try {
     let list = []
-    if (sourceOverride == 'wy' && accountStatus.value.wy) {
-      const ids = await getMusicAccountDaily('wy').catch(() => [])
-      if (ids.length) {
-        list = await wyMusicDetail.getList(ids.slice(0, 30)).then(data => data.list).catch(() => [])
+    if (accountStatus.value[sourceOverride]) {
+      const result = await getMusicAccountDaily(sourceOverride).catch(() => null)
+      if (result?.ids.length) {
+        if (sourceOverride == 'wy') {
+          list = await wyMusicDetail.getList(result.ids.slice(0, 30)).then(data => data.list).catch(() => [])
+        } else {
+          const details = await Promise.all(result.ids.slice(0, 30).map(id => txMusicInfo(id).catch(() => null)))
+          list = details.filter(Boolean).map(item => toNewMusicInfo(item))
+        }
       }
+      if (list.length && result?.status == 'personalized') dailyRecommendMode.value = 'personalized'
     }
-    if (!list.length) list = await getDailyRecommend(sourceOverride, force)
+    if (!list.length) {
+      list = await getDailyRecommend(sourceOverride, force)
+      dailyRecommendMode.value = 'fallback'
+    }
     if (requestId != dailyRequestId) return
     dailyRecommendList.value = list
     dailyCoverUrls.value = list.slice(0, 4).map(item => item.meta.picUrl ?? '')
@@ -279,6 +331,18 @@ const closeDailyDetail = () => {
 
 const refreshAccountStatus = async() => {
   accountStatus.value = await getMusicAccountStatus().catch(() => ({ tx: false, wy: false }))
+  if (!accountStatus.value[selectedDailyProvider.value]) {
+    if (accountStatus.value.tx) selectedDailyProvider.value = 'tx'
+    else if (accountStatus.value.wy) selectedDailyProvider.value = 'wy'
+    window.localStorage.setItem('qmusic.dailyRecommend.provider', selectedDailyProvider.value)
+  }
+}
+
+const selectDailyProvider = (provider, force = false) => {
+  if (!force && selectedDailyProvider.value == provider && dailyRecommendList.value.length) return
+  selectedDailyProvider.value = provider
+  window.localStorage.setItem('qmusic.dailyRecommend.provider', provider)
+  void loadDailyRecommend(true, provider)
 }
 
 const openAccountModal = () => {
@@ -298,16 +362,24 @@ const connectMusicAccount = async(provider) => {
     const result = await loginMusicAccount(provider)
     await refreshAccountStatus()
     if (result.status == 'connected') {
-      await loadDailyRecommend(true, provider)
+      selectDailyProvider(provider, true)
     }
   } finally {
     isAccountLoginPending.value = false
   }
 }
 
+const handleProviderAction = (provider) => {
+  if (!accountStatus.value[provider]) {
+    void connectMusicAccount(provider)
+    return
+  }
+  selectDailyProvider(provider)
+  closeAccountModal()
+}
+
 void refreshAccountStatus().then(() => {
-  if (accountStatus.value.wy) void loadDailyRecommend(false, 'wy')
-  else if (accountStatus.value.tx) void loadDailyRecommend(false, 'tx')
+  void loadDailyRecommend(false, selectedDailyProvider.value)
 })
 
 watch(
@@ -479,6 +551,59 @@ const handleSearch = (text) => {
   h3 { margin: 5px 0 7px; font-size: 19px; font-weight: 760; }
   > p { margin: 0; color: var(--color-font-label); font-size: 12px; line-height: 1.55; }
 }
+.dailySourceRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sourceSwitch {
+  margin-left: auto;
+  padding: 3px;
+  display: inline-flex;
+  gap: 3px;
+  border: 1px solid rgba(54, 83, 70, .1);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .52);
+
+  button {
+    min-height: 25px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 8px;
+    color: var(--color-font-label);
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-size: 10px;
+    transition: color @transition-fast, background-color @transition-fast, box-shadow @transition-fast;
+
+    &:hover { color: var(--color-font); }
+    &.active {
+      color: #fff;
+      background: var(--color-primary);
+      box-shadow: 0 5px 12px var(--color-primary-alpha-700);
+    }
+  }
+}
+.dailyContent > .sourceStatus {
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+
+  > span {
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--color-font-label);
+  }
+  &.personalized > span {
+    background: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-alpha-900);
+  }
+}
 .eyebrow {
   color: var(--color-primary-dark-100);
   font-size: 10px;
@@ -618,6 +743,12 @@ const handleSearch = (text) => {
   h2 { margin: 4px 0 5px; color: var(--color-font); font-size: 23px; }
   p { margin: 0; color: var(--color-font-label); font-size: 12px; }
 }
+.detailCopy > .detailSource {
+  margin-top: 5px;
+  color: var(--color-primary-dark-100);
+  font-size: 10px;
+  font-weight: 650;
+}
 .detailActions {
   display: flex;
   gap: 9px;
@@ -740,6 +871,11 @@ const handleSearch = (text) => {
       box-shadow: 0 12px 28px rgba(35, 54, 46, .11);
     }
     &:disabled { cursor: wait; opacity: .65; }
+    &.selectedProvider {
+      border-color: var(--color-primary-alpha-500);
+      background: var(--color-primary-alpha-1000);
+      box-shadow: 0 10px 26px rgba(35, 54, 46, .1), inset 3px 0 0 var(--color-primary);
+    }
   }
   strong { font-size: 14px; }
   span { color: var(--color-font-label); font-size: 11px; }
@@ -752,7 +888,7 @@ const handleSearch = (text) => {
     font-style: normal;
     font-size: 22px;
   }
-  .connectedDot { color: var(--color-primary); font-size: 16px; }
+  .connectedDot { color: var(--color-primary); font-size: 11px; font-weight: 700; }
 }
 .accountTip {
   margin: 14px 2px 0;

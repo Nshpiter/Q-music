@@ -49,6 +49,11 @@ export interface MusicAccountLoginResult {
   provider: MusicAccountProvider
   status: 'connected' | 'cancelled'
 }
+export interface MusicAccountDailyResult {
+  provider: MusicAccountProvider
+  ids: string[]
+  status: 'personalized' | 'login_required' | 'unavailable'
+}
 export const getMusicAccountStatus = async() => {
   return rendererInvoke<MusicAccountStatus>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_status)
 }
@@ -56,7 +61,7 @@ export const loginMusicAccount = async(provider: MusicAccountProvider) => {
   return rendererInvoke<MusicAccountProvider, MusicAccountLoginResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_login, provider)
 }
 export const getMusicAccountDaily = async(provider: MusicAccountProvider) => {
-  return rendererInvoke<MusicAccountProvider, string[]>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_daily, provider)
+  return rendererInvoke<MusicAccountProvider, MusicAccountDailyResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_daily, provider)
 }
 
 // export const updateDislikeInfo = async(dislikeInfo: LX.Dislike.ListItem[]) => {
