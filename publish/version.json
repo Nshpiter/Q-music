@@ -1,7 +1,15 @@
 {
-  "version": "0.2.2",
-  "desc": "Q-music 桌面版 0.2.2\n\n主要变更\n- Linux 原生 Wayland 默认改用 ANGLE/EGL 图形路径，避免 NVIDIA 驱动下 desktop GL 初始化失败并回退到软件渲染。\n- X11/XWayland 继续使用 desktop GL。\n- 尊重用户显式传入的 use-gl 与 use-angle 参数，并在日志中记录最终图形后端。\n- 修正 disable-gpu-sandbox 启动参数格式。",
+  "version": "0.2.4",
+  "desc": "# Q-music 0.2.4\n\n### 首页与搜索\n\n- 首页改为更简洁的推荐卡片布局，移除多余的来源标签与占位图标。\n- 聚合搜索按 **歌名 + 歌手** 合并重复结果，每首歌只显示一个词条。\n- 结果中可直接切换真实音乐源，不再显示容易混淆的来源别称。\n- 修复在歌单与歌曲页面之间切换后内容区可能空白的问题。\n\n### 推荐与同步\n\n- 优化每日推荐入口与卡片信息层级。\n- 补充多端同步的登录入口与状态反馈。\n\n### 更新体验\n\n- 修复更新接口失败时误显示“已是最新版本”和 `0.0.0` 的问题。\n- 更新内容支持 Markdown 标题、列表、强调、链接、引用与代码块。\n- 更新日志中的外部链接使用系统浏览器安全打开。",
   "history": [
+    {
+      "version": "0.2.3",
+      "desc": "Q-music 0.2.3\n\n- 新增每日推荐与多端同步基础能力。\n- 优化首页发现内容和桌面端交互。"
+    },
+    {
+      "version": "0.2.2",
+      "desc": "Q-music 桌面版 0.2.2\n\n- Linux 原生 Wayland 默认使用 ANGLE/EGL，避免 NVIDIA 驱动下 desktop GL 初始化失败后回退到软件渲染。\n- X11/XWayland 继续使用 desktop GL。\n- 尊重用户显式传入的 `--use-gl` 与 `--use-angle` 参数，并在日志中记录最终图形后端。\n- 修正 `disable-gpu-sandbox` 启动参数格式。"
+    },
     {
       "version": "0.2.1",
       "desc": "Q-music 0.2.1\n\n本版本统一发布 Windows、Arch Linux 与 Android 客户端。\n\n主要变更\n- Android 改为手机优先的单列布局与底部导航，组件视觉对齐 Windows 端的圆角玻璃风格。\n- Android 补回 QQ 音乐、网易云、酷狗与 Spotify 外部歌单导入。\n- Android 关于、问题反馈、版本检测和安装包下载统一指向当前 Q-music 项目。\n- 增加 Arch Linux pacman 包构建与校验。\n- 修正跨端品牌、更新源与发布资产命名。"

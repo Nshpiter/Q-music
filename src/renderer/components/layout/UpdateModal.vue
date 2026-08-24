@@ -1,18 +1,6 @@
 <template lang="pug">
 material-modal(:show="versionInfo.showModal" max-width="60%" @close="handleClose")
-  main(v-if="versionInfo.isLatest" :class="$style.main")
-    h2 🎉 已是最新版本 🎉
-    div.scroll.select(:class="$style.info")
-      div(:class="$style.current")
-        h3 最新版本：{{ versionInfo.newVersion?.version }}
-        h3 当前版本：{{ versionInfo.version }}
-        h3 版本变化：
-        pre(:class="$style.desc" v-text="versionInfo.newVersion?.desc")
-    div(:class="$style.footer")
-      div(:class="$style.btns")
-        base-btn(v-if="versionInfo.status == 'checking'" :class="$style.btn" disabled) 检查更新中...
-        base-btn(v-else :class="$style.btn" @click="handleCheckUpdate") 重新检查更新
-  main(v-else-if="versionInfo.isUnknown" :class="$style.main")
+  main(v-if="versionInfo.isUnknown" :class="$style.main")
     h2 ❓ 获取最新版本信息失败 ❓
     div.scroll.select(:class="$style.info")
       div(:class="$style.current")
@@ -31,6 +19,18 @@ material-modal(:show="versionInfo.showModal" max-width="60%" @close="handleClose
         base-btn(v-if="versionInfo.status == 'error'" :class="$style.btn2" @click="handleCheckUpdate") 重新检查更新
         base-btn(v-else :class="$style.btn2" disabled) 检查更新中...
         base-btn(:disabled="disabledIgnoreFailBtn" :class="$style.btn2" @click="handleIgnoreFailTipClick") 一个星期内不再提醒
+  main(v-else-if="versionInfo.isLatest" :class="$style.main")
+    h2 🎉 已是最新版本 🎉
+    div.scroll.select(:class="$style.info")
+      div(:class="$style.current")
+        h3 最新版本：{{ versionInfo.newVersion?.version }}
+        h3 当前版本：{{ versionInfo.version }}
+        h3 版本变化：
+        MarkdownContent(:class="$style.desc" :content="versionInfo.newVersion?.desc")
+    div(:class="$style.footer")
+      div(:class="$style.btns")
+        base-btn(v-if="versionInfo.status == 'checking'" :class="$style.btn" disabled) 检查更新中...
+        base-btn(v-else :class="$style.btn" @click="handleCheckUpdate") 重新检查更新
   main(v-else-if="versionInfo.status == 'downloaded'" :class="$style.main")
     h2 🚀程序更新🚀
 
@@ -39,12 +39,12 @@ material-modal(:show="versionInfo.showModal" max-width="60%" @close="handleClose
         h3 最新版本：{{ versionInfo.newVersion?.version }}
         h3 当前版本：{{ versionInfo.version }}
         h3 版本变化：
-        pre(:class="$style.desc" v-text="versionInfo.newVersion?.desc")
+        MarkdownContent(:class="$style.desc" :content="versionInfo.newVersion?.desc")
       div(v-if="history.length" :class="[$style.history, $style.desc]")
         h3 历史版本：
         div(v-for="(ver, index) in history" :key="index" :class="$style.item")
           h4 v{{ ver.version }}
-          pre(v-text="ver.desc")
+          MarkdownContent(:content="ver.desc")
     div(:class="$style.footer")
       div(:class="$style.desc")
         p 新版本已下载完毕，
@@ -63,12 +63,12 @@ material-modal(:show="versionInfo.showModal" max-width="60%" @close="handleClose
         h3 最新版本：{{ versionInfo.newVersion?.version }}
         h3 当前版本：{{ versionInfo.version }}
         h3 版本变化：
-        pre(:class="$style.desc" v-text="versionInfo.newVersion?.desc")
+        MarkdownContent(:class="$style.desc" :content="versionInfo.newVersion?.desc")
       div(v-if="history.length" :class="[$style.history, $style.desc]")
         h3 历史版本：
         div(v-for="(ver, index) in history" :key="index" :class="$style.item")
           h4 v{{ ver.version }}
-          pre(v-text="ver.desc")
+          MarkdownContent(:content="ver.desc")
 
     div(:class="$style.footer")
       div(:class="$style.desc")
@@ -95,8 +95,12 @@ import { openUrl, clipboardWriteText } from '@common/utils/electron'
 import { dialog } from '@renderer/plugins/Dialog'
 import { versionInfo } from '@renderer/store'
 import { getIgnoreVersion, saveIgnoreVersion, quitUpdate, downloadUpdate, checkUpdate } from '@renderer/utils/ipc'
+import MarkdownContent from '@renderer/components/common/MarkdownContent.vue'
 
 export default {
+  components: {
+    MarkdownContent,
+  },
   setup() {
     return {
       versionInfo,

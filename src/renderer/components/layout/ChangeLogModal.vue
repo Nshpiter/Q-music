@@ -7,12 +7,12 @@ material-modal(:show="isShowChangeLog" max-width="60%" @close="isShowChangeLog =
         h3 当前版本：{{ versionInfo.version }}
         template(v-if="info.desc")
           h3 版本变化：
-          pre(:class="$style.desc" v-text="info.desc")
+          MarkdownContent(:class="$style.desc" :content="info.desc")
       div(v-if="info.history.length" :class="[$style.history, $style.desc]")
         h3 历史版本：
         div(v-for="(ver, index) in info.history" :key="index" :class="$style.item")
           h4 v{{ ver.version }}
-          pre(v-text="ver.desc")
+          MarkdownContent(:content="ver.desc")
 
     div(:class="$style.footer")
       div(:class="$style.desc")
@@ -29,8 +29,12 @@ import { openUrl, clipboardWriteText } from '@common/utils/electron'
 import { versionInfo, isShowChangeLog } from '@renderer/store'
 import { getLastStartInfo } from '@renderer/utils/ipc'
 import { computed, ref } from '@common/utils/vueTools'
+import MarkdownContent from '@renderer/components/common/MarkdownContent.vue'
 
 export default {
+  components: {
+    MarkdownContent,
+  },
   setup() {
     const lastStartVersion = ref(null)
     void getLastStartInfo().then(version => {

@@ -104,6 +104,7 @@ export default () => {
 
       if (result.version == '0.0.0') {
         versionInfo.isUnknown = true
+        versionInfo.isLatest = false
         versionInfo.status = 'error'
         let ignoreFailTipTime = parseInt(localStorage.getItem('update__check_failed_tip') ?? '0')
         if (Date.now() - ignoreFailTipTime > 7 * 86400000) {
@@ -160,13 +161,16 @@ export default () => {
       showUpdateModal()
     })
   })
-  const rUpdateNotAvailable = onUpdateNotAvailable(({ params: info }) => {
+  const rUpdateNotAvailable = onUpdateNotAvailable(() => {
     clearUpdateTimeout()
-    // versionInfo.newVersion = {
-    //   version: info.version,
-    //   desc: info.releaseNotes as string,
-    // }
-    void handleGetVersionInfo().finally(() => {
+    void handleGetVersionInfo().then((result) => {
+      if (result.version == '0.0.0') {
+        versionInfo.isLatest = false
+        versionInfo.isUnknown = true
+        versionInfo.status = 'error'
+        versionInfo.showModal = true
+        return
+      }
       versionInfo.isLatest = true
       versionInfo.isUnknown = false
       versionInfo.status = 'idle'
