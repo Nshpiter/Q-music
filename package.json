@@ -1,7 +1,7 @@
 {
   "name": "q-music-mobile",
-  "version": "0.2.5",
-  "versionCode": 6,
+  "version": "0.2.6",
+  "versionCode": 7,
   "private": true,
   "scripts": {
     "dev": "react-native run-android --active-arch-only",
