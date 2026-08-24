@@ -10,6 +10,7 @@ import HotSearch, { type HotSearchType } from './HotSearch'
 import Button from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { qFloatingShadow } from '@/theme/ui'
+import DailyRecommend, { type DailyRecommendType } from './DailyRecommend'
 
 interface BlankViewProps {
   onSearch: (keyword: string) => void
@@ -25,6 +26,7 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch, onFocusSea
   const [visible, setVisible] = useState(false)
   const hotSearchRef = useRef<HotSearchType>(null)
   const historySearchRef = useRef<HistorySearchType>(null)
+  const dailyRecommendRef = useRef<DailyRecommendType>(null)
   const sourceRef = useRef<Source>('kw')
   const isShowHotSearch = useSettingValue('search.isShowHotSearch')
   const isShowHistorySearch = useSettingValue('search.isShowHistorySearch')
@@ -32,6 +34,7 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch, onFocusSea
   const theme = useTheme()
 
   const handleShow = useCallback(() => {
+    dailyRecommendRef.current?.show(sourceRef.current)
     hotSearchRef.current?.show(sourceRef.current)
     historySearchRef.current?.show()
   }, [])
@@ -76,6 +79,7 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch, onFocusSea
               </Button>
             </View>
             <View style={styles.content}>
+              <DailyRecommend ref={dailyRecommendRef} />
               { isShowHotSearch ? <HotSearch ref={hotSearchRef} onSearch={onSearch} /> : null }
               { isShowHistorySearch ? <HistorySearch ref={historySearchRef} onSearch={onSearch} /> : null }
             </View>

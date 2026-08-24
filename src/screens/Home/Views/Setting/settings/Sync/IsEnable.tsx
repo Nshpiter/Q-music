@@ -155,6 +155,7 @@ export default memo(({ host, setHost }: {
   return (
     <>
       <View style={styles.infoContent}>
+        <Text style={styles.cloudDesc} size={12} color={theme['q-text-secondary']}>{t('setting_sync_cloud_desc')}</Text>
         <CheckBoxItem disabled={!host} check={isEnableSync} label={t('setting_sync_enable')} onChange={handleSetEnableSync} />
         <Text style={styles.textAddr} size={13}>{t('setting_sync_address', { address })}</Text>
         <Text style={styles.text} size={13}>{t('setting_sync_status', { status })}</Text>
@@ -185,6 +186,12 @@ export default memo(({ host, setHost }: {
 const styles = createStyle({
   infoContent: {
     marginTop: 5,
+  },
+  cloudDesc: {
+    marginLeft: 25,
+    marginRight: 18,
+    marginBottom: 8,
+    lineHeight: 18,
   },
   textAddr: {
     marginLeft: 25,

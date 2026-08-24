@@ -10,7 +10,9 @@
 
 - 面向手机竖屏优化的单列搜索首页，视觉语言与桌面端保持一致。
 - 热门搜索支持刷新、加载和空状态反馈，搜索历史支持长按移除。
+- 每日精选会结合收藏歌手与今日热搜生成推荐，支持一键换一批和播放全部。
 - 保留歌单导入、设置导入及与桌面端通用的列表备份格式。
+- 可连接自建 Q-music 同步服务，让 Windows、Arch Linux 与 Android 自动同步歌单和不喜欢列表。
 - 新增流畅模式，可关闭动态封面模糊背景，降低移动设备的渲染负担。
 - Windows、Arch Linux 与 Android 的版本统一通过 Q-music 项目维护和发布。
 
@@ -25,6 +27,8 @@
 
 本工程与 Electron 桌面端分开维护。桌面端继续使用 Vue/Electron，移动端使用
 React Native；两端通过兼容的数据格式与同步协议协作。
+
+多端同步服务可直接使用项目提供的 [Docker 部署配置](https://github.com/Nshpiter/Q-music/tree/master/deploy/sync-server)。服务部署完成后，在各客户端填写同一 HTTPS 地址和连接密码即可。
 
 ## Arch Linux 开发环境
 
