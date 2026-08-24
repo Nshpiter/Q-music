@@ -480,6 +480,8 @@
   "sync__mode_overwrite_label": "Overwrite",
   "sync__mode_overwrite_tip": "Overwrite: ",
   "sync_status_disabled": "not connected",
+  "sync_qr_invalid": "The sync QR code is invalid or expired",
+  "sync_qr_connecting": "Desktop sync details received. Connecting…",
   "theme_black": "Black",
   "theme_blue": "Blue",
   "theme_blue2": "Purple Blue",

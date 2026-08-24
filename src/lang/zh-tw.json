@@ -480,6 +480,8 @@
   "sync__mode_overwrite_label": "覆蓋",
   "sync__mode_overwrite_tip": "覆蓋：",
   "sync_status_disabled": "未連線",
+  "sync_qr_invalid": "同步二維碼無效或已過期",
+  "sync_qr_connecting": "已讀取電腦同步資訊，正在連接",
   "theme_black": "黑燈瞎火",
   "theme_blue": "藍田生玉",
   "theme_blue2": "清熱版藍",
