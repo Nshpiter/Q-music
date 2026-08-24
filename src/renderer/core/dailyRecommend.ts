@@ -2,11 +2,12 @@ import { loveList } from '@renderer/store/list/state'
 import { getListMusics } from '@renderer/store/list/action'
 import { getList as getHotSearchList } from '@renderer/store/hotSearch'
 import musicSdk from '@renderer/utils/musicSdk'
-import { deduplicationList, toNewMusicInfo } from '@renderer/utils'
+import { toNewMusicInfo } from '@renderer/utils'
 
 const DAILY_COUNT = 12
-const SEARCH_LIMIT = 6
+const SEARCH_LIMIT = 12
 const supportedSources: LX.OnlineSource[] = ['kw', 'kg', 'tx', 'wy', 'mg']
+const fallbackKeywords = ['华语流行', '热门歌曲', '经典歌曲', '新歌', '治愈', '轻音乐']
 
 interface SearchResult {
   list: LX.Music.MusicInfo[]
@@ -76,19 +77,36 @@ export const getDailyRecommend = async(requestedSource: LX.OnlineSource | 'all',
   const cached = cache.get(cacheKey)
   if (cached) return cached
 
-  const hotKeywords = await getHotSearchList(source).catch(() => [])
-  const keywords = [...new Set([...getPreferenceKeywords(loved), ...hotKeywords])].slice(0, 8)
-  const results = await Promise.all(keywords.map(async keyword => {
-    const sdk = musicSdk[source]
-    if (!sdk?.musicSearch) return []
-    return (sdk.musicSearch.search(keyword, 1, SEARCH_LIMIT) as Promise<SearchResult>)
-      .then(data => data.list)
-      .catch(() => [])
-  }))
+  const sourceOrder = [source, ...supportedSources.filter(item => item != source)]
+  const preferenceKeywords = getPreferenceKeywords(loved)
   const lovedIds = new Set(loved.map(item => item.id))
-  const candidates = deduplicationList(results.flat().map(item => toNewMusicInfo(item)))
-    .filter(item => !lovedIds.has(item.id))
-  const daily = shuffle(candidates.length ? candidates : loved, cacheKey).slice(0, DAILY_COUNT)
+  const candidateIds = new Set<string>()
+  const candidateNames = new Set<string>()
+  const candidates: LX.Music.MusicInfo[] = []
+
+  for (const currentSource of sourceOrder) {
+    const sdk = musicSdk[currentSource]
+    if (!sdk?.musicSearch) continue
+    const hotKeywords = await getHotSearchList(currentSource).catch(() => [])
+    const keywords = [...new Set([...preferenceKeywords, ...hotKeywords, ...fallbackKeywords])].slice(0, 6)
+    const results = await Promise.all(keywords.map(async keyword => {
+      return (sdk.musicSearch.search(keyword, 1, SEARCH_LIMIT) as Promise<SearchResult>)
+        .then(data => data.list)
+        .catch(() => [])
+    }))
+    for (const rawItem of results.flat()) {
+      const item = toNewMusicInfo(rawItem)
+      const nameKey = `${item.name.trim().toLowerCase()}__${item.singer.trim().toLowerCase()}`
+      if (lovedIds.has(item.id) || candidateIds.has(item.id) || candidateNames.has(nameKey)) continue
+      candidateIds.add(item.id)
+      candidateNames.add(nameKey)
+      candidates.push(item)
+    }
+    if (candidates.length >= DAILY_COUNT * 2) break
+  }
+
+  const onlineLoved = loved.filter(item => item.source != 'local')
+  const daily = shuffle(candidates.length >= DAILY_COUNT ? candidates : [...candidates, ...onlineLoved], cacheKey).slice(0, DAILY_COUNT)
   cache.set(cacheKey, daily)
   return daily
 }

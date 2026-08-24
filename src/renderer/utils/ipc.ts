@@ -40,6 +40,25 @@ export const getOtherSourceCount = async() => {
   return rendererInvoke<number>(WIN_MAIN_RENDERER_EVENT_NAME.get_other_source_count)
 }
 
+export type MusicAccountProvider = 'tx' | 'wy'
+export interface MusicAccountStatus {
+  tx: boolean
+  wy: boolean
+}
+export interface MusicAccountLoginResult {
+  provider: MusicAccountProvider
+  status: 'connected' | 'cancelled'
+}
+export const getMusicAccountStatus = async() => {
+  return rendererInvoke<MusicAccountStatus>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_status)
+}
+export const loginMusicAccount = async(provider: MusicAccountProvider) => {
+  return rendererInvoke<MusicAccountProvider, MusicAccountLoginResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_login, provider)
+}
+export const getMusicAccountDaily = async(provider: MusicAccountProvider) => {
+  return rendererInvoke<MusicAccountProvider, string[]>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_daily, provider)
+}
+
 // export const updateDislikeInfo = async(dislikeInfo: LX.Dislike.ListItem[]) => {
 //   await rendererInvoke<LX.Dislike.ListItem[]>(WIN_MAIN_RENDERER_EVENT_NAME.update_dislike_music_infos, dislikeInfo)
 // }

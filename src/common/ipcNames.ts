@@ -138,6 +138,9 @@ const modules = {
     sync_action: 'sync_action',
     sync_get_server_devices: 'sync_get_server_devices',
     sync_remove_server_device: 'sync_remove_server_device',
+    music_account_login: 'music_account_login',
+    music_account_status: 'music_account_status',
+    music_account_daily: 'music_account_daily',
 
     process_new_desktop_lyric_client: 'process_new_desktop_lyric_client',
 

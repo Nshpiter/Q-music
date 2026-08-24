@@ -1,6 +1,6 @@
 {
   "name": "q-music",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "一个免费的音乐查找助手",
   "main": "./dist/main.js",
   "private": true,
@@ -191,7 +191,6 @@
     "music-metadata": "^11.12.3",
     "needle": "github:lyswhut/needle#93299ac841b7e9a9f82ca7279b88aaaeda404060",
     "node-id3": "^0.2.9",
-    "qrcode": "^1.5.4",
     "sortablejs": "^1.15.7",
     "tunnel": "^0.0.6",
     "undici": "^7.25.0",

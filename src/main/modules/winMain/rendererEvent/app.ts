@@ -25,6 +25,7 @@ import {
 import { quitApp } from '@main/app'
 import { getAllThemes, removeTheme, saveTheme, setPowerSaveBlocker } from '@main/utils'
 import { openDirInExplorer } from '@common/utils/electron'
+import { getMusicAccountDailySongIds, getMusicAccountStatus, openMusicAccountLogin, type MusicAccountLoginResult, type MusicAccountProvider } from '../musicAccount'
 
 export default () => {
   // 设置应用名称
@@ -130,6 +131,15 @@ export default () => {
   })
   mainHandle<string>(WIN_MAIN_RENDERER_EVENT_NAME.remove_theme, async({ params: id }) => {
     removeTheme(id)
+  })
+  mainHandle(WIN_MAIN_RENDERER_EVENT_NAME.music_account_status, async() => {
+    return getMusicAccountStatus()
+  })
+  mainHandle<MusicAccountProvider, MusicAccountLoginResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_login, async({ params: provider }) => {
+    return openMusicAccountLogin(provider)
+  })
+  mainHandle<MusicAccountProvider, string[]>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_daily, async({ params: provider }) => {
+    return getMusicAccountDailySongIds(provider)
   })
 }
 

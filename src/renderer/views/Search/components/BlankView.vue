@@ -8,9 +8,9 @@
             <h2>{{ $t('search__welcome') }}</h2>
             <p>{{ $t('search__welcome_subtitle') }}</p>
           </div>
-          <button type="button" :class="[$style.syncAction, { [$style.connected]: isCloudConnected }]" @click="handleCloudAction">
-            <svg-icon name="phone" />
-            <span>{{ syncActionText }}</span>
+          <button type="button" :class="[$style.syncAction, { [$style.connected]: hasMusicAccount }]" @click="openAccountModal">
+            <svg-icon name="headphones" />
+            <span>{{ accountActionText }}</span>
           </button>
         </header>
 
@@ -92,34 +92,47 @@
           </div>
         </header>
         <div :class="$style.detailList">
-          <material-online-list
-            :page="1" :limit="dailyRecommendList.length || 12" :total="dailyRecommendList.length"
-            :list="dailyRecommendList" :no-item="dailyDetailEmptyText" check-api-source
-            @play-list="playDailyRecommend"
-          />
+          <div :class="$style.detailTableHeader" aria-hidden="true">
+            <span>#</span><span>{{ $t('music_name') }}</span><span>{{ $t('music_singer') }}</span><span>{{ $t('music_album') }}</span><span />
+          </div>
+          <ol v-if="dailyRecommendList.length" class="scroll" :class="$style.detailTracks">
+            <li v-for="(item, index) in dailyRecommendList" :key="`${item.source}_${item.id}`" @dblclick="playDailyRecommend(index)">
+              <span :class="$style.trackNumber">{{ String(index + 1).padStart(2, '0') }}</span>
+              <strong :title="item.name">{{ item.name }}</strong>
+              <span :title="item.singer">{{ item.singer }}</span>
+              <span :title="item.meta.albumName">{{ item.meta.albumName || '—' }}</span>
+              <button type="button" :aria-label="$t('list__play')" @click="playDailyRecommend(index)">▶</button>
+            </li>
+          </ol>
+          <p v-else :class="$style.detailEmpty">{{ dailyDetailEmptyText }}</p>
         </div>
       </div>
     </div>
   </transition>
-  <material-modal :show="isShowSyncQr" :bg-close="false" @close="closeSyncQr">
-    <main :class="$style.qrModal">
+  <material-modal :show="isShowAccountModal" :bg-close="!isAccountLoginPending" @close="closeAccountModal">
+    <main :class="$style.accountModal">
       <div :class="$style.qrHeading">
-        <div :class="$style.qrIcon"><svg-icon name="phone" /></div>
+        <div :class="$style.qrIcon"><svg-icon name="headphones" /></div>
         <div>
-          <h2>{{ $t('search__sync_qr_title') }}</h2>
-          <p>{{ $t('search__sync_qr_desc') }}</p>
+          <h2>{{ $t('search__account_title') }}</h2>
+          <p>{{ $t('search__account_desc') }}</p>
         </div>
       </div>
-      <div :class="$style.qrStage">
-        <img v-if="syncQrImage" :src="syncQrImage" :alt="$t('search__sync_qr_title')">
-        <div v-else :class="$style.qrLoading">{{ syncQrStatusText }}</div>
+      <div :class="$style.providerList">
+        <button type="button" :disabled="isAccountLoginPending" @click="connectMusicAccount('tx')">
+          <strong>{{ $t('search__account_qq') }}</strong>
+          <span>{{ accountStatus.tx ? $t('search__account_connected') : $t('search__account_qq_tip') }}</span>
+          <em :class="{ [$style.connectedDot]: accountStatus.tx }">{{ accountStatus.tx ? '✓' : '›' }}</em>
+        </button>
+        <button type="button" :disabled="isAccountLoginPending" @click="connectMusicAccount('wy')">
+          <strong>{{ $t('search__account_netease') }}</strong>
+          <span>{{ accountStatus.wy ? $t('search__account_connected') : $t('search__account_netease_tip') }}</span>
+          <em :class="{ [$style.connectedDot]: accountStatus.wy }">{{ accountStatus.wy ? '✓' : '›' }}</em>
+        </button>
       </div>
-      <p :class="$style.qrTip">{{ $t('search__sync_qr_tip') }}</p>
-      <p v-if="syncQrHost" :class="$style.qrAddress">{{ syncQrHost }}</p>
+      <p :class="$style.accountTip">{{ isAccountLoginPending ? $t('search__account_waiting') : $t('search__account_tip') }}</p>
       <div :class="$style.loginFooter">
-        <base-btn min @click="openSyncSettings">{{ $t('search__cloud_manage') }}</base-btn>
-        <base-btn min :disabled="!sync.server.status.status" @click="refreshSyncCode">{{ $t('setting__sync_server_refresh_code') }}</base-btn>
-        <base-btn min @click="closeSyncQr">{{ $t('btn_close') }}</base-btn>
+        <base-btn min :disabled="isAccountLoginPending" @click="closeAccountModal">{{ $t('btn_close') }}</base-btn>
       </div>
     </main>
   </material-modal>
@@ -130,16 +143,15 @@ import { computed, watch, shallowRef, ref } from '@common/utils/vueTools'
 import { historyList } from '@renderer/store/search/state'
 import { getHistoryList, removeHistoryWord, clearHistoryList } from '@renderer/store/search/action'
 import { clearList, getList } from '@renderer/store/hotSearch'
-import { appSetting, updateSetting } from '@renderer/store/setting'
+import { appSetting } from '@renderer/store/setting'
 import { useRouter } from '@common/utils/vueRouter'
 import { getDailyRecommend } from '@renderer/core/dailyRecommend'
 import { setTempList } from '@renderer/store/list/action'
 import { playList } from '@renderer/core/player/action'
 import { getPicPath } from '@renderer/core/music'
 import { LIST_IDS } from '@common/constants'
-import { sync } from '@renderer/store'
-import { sendSyncAction } from '@renderer/utils/ipc'
-import QRCode from 'qrcode'
+import { getMusicAccountDaily, getMusicAccountStatus, loginMusicAccount } from '@renderer/utils/ipc'
+import wyMusicDetail from '@renderer/utils/musicSdk/wy/musicDetail'
 
 const props = defineProps({
   visible: Boolean,
@@ -155,41 +167,22 @@ const dailyRecommendList = shallowRef([])
 const dailyCoverUrls = shallowRef([])
 const isDailyLoading = shallowRef(false)
 const isShowDailyDetail = ref(false)
-const isShowSyncQr = ref(false)
-const syncQrImage = ref('')
+const isShowAccountModal = ref(false)
+const isAccountLoginPending = ref(false)
+const accountStatus = ref({ tx: false, wy: false })
 let hotSearchRequestId = 0
 let dailyRequestId = 0
-let qrRequestId = 0
 const now = new Date()
 const todayDay = String(now.getDate()).padStart(2, '0')
 const todayMonth = new Intl.DateTimeFormat(window.i18n.locale || 'zh-CN', { month: 'short' }).format(now)
 const todayLabel = new Intl.DateTimeFormat(window.i18n.locale || 'zh-CN', { month: 'long', day: 'numeric' }).format(now)
-const isCloudConnected = computed(() => sync.enable && (
-  (sync.mode == 'server' && sync.server.status.devices.length > 0) ||
-  (sync.mode == 'client' && sync.client.status.status)
-))
-const syncActionText = computed(() => {
-  if (sync.mode == 'server' && sync.server.status.devices.length) {
-    return window.i18n.t('search__sync_connected_devices', { count: sync.server.status.devices.length })
-  }
-  if (sync.mode == 'client' && sync.client.status.status) return window.i18n.t('search__cloud_connected')
-  return window.i18n.t('search__sync_scan')
+const hasMusicAccount = computed(() => accountStatus.value.tx || accountStatus.value.wy)
+const accountActionText = computed(() => {
+  if (accountStatus.value.tx && accountStatus.value.wy) return window.i18n.t('search__account_both_connected')
+  if (accountStatus.value.tx) return window.i18n.t('search__account_qq_connected')
+  if (accountStatus.value.wy) return window.i18n.t('search__account_netease_connected')
+  return window.i18n.t('search__account_login')
 })
-const syncQrHost = computed(() => {
-  const addresses = sync.server.status.address
-  const address = addresses.find(ip => /^(?:10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(ip)) ?? addresses[0]
-  if (!address) return ''
-  return `http://${address}:${appSetting['sync.server.port']}`
-})
-const syncQrPayload = computed(() => {
-  if (!syncQrHost.value || !sync.server.status.code) return ''
-  const data = encodeURIComponent(JSON.stringify({
-    host: syncQrHost.value,
-    authCode: sync.server.status.code,
-  }))
-  return `qmusic://sync/connect?data=${data}`
-})
-const syncQrStatusText = computed(() => sync.server.status.message || window.i18n.t('search__sync_qr_preparing'))
 const dailyDetailEmptyText = computed(() => isDailyLoading.value
   ? window.i18n.t('search__daily_recommend_loading')
   : window.i18n.t('search__daily_recommend_empty'))
@@ -224,12 +217,19 @@ watch(
   { immediate: true },
 )
 
-const loadDailyRecommend = async(force = false) => {
+const loadDailyRecommend = async(force = false, sourceOverride = accountStatus.value.wy ? 'wy' : accountStatus.value.tx ? 'tx' : props.source) => {
   if (!props.visible) return
   const requestId = ++dailyRequestId
   isDailyLoading.value = true
   try {
-    const list = await getDailyRecommend(props.source, force)
+    let list = []
+    if (sourceOverride == 'wy' && accountStatus.value.wy) {
+      const ids = await getMusicAccountDaily('wy').catch(() => [])
+      if (ids.length) {
+        list = await wyMusicDetail.getList(ids.slice(0, 12)).then(data => data.list).catch(() => [])
+      }
+    }
+    if (!list.length) list = await getDailyRecommend(sourceOverride, force)
     if (requestId != dailyRequestId) return
     dailyRecommendList.value = list
     dailyCoverUrls.value = list.slice(0, 4).map(item => item.meta.picUrl ?? '')
@@ -277,64 +277,38 @@ const closeDailyDetail = () => {
   isShowDailyDetail.value = false
 }
 
-watch(syncQrPayload, async(payload) => {
-  const requestId = ++qrRequestId
-  syncQrImage.value = ''
-  if (!payload) return
+const refreshAccountStatus = async() => {
+  accountStatus.value = await getMusicAccountStatus().catch(() => ({ tx: false, wy: false }))
+}
+
+const openAccountModal = () => {
+  isShowAccountModal.value = true
+  void refreshAccountStatus()
+}
+
+const closeAccountModal = () => {
+  if (isAccountLoginPending.value) return
+  isShowAccountModal.value = false
+}
+
+const connectMusicAccount = async(provider) => {
+  if (isAccountLoginPending.value) return
+  isAccountLoginPending.value = true
   try {
-    const image = await QRCode.toDataURL(payload, {
-      width: 240,
-      margin: 1,
-      errorCorrectionLevel: 'M',
-      color: { dark: '#242726', light: '#ffffff' },
-    })
-    if (requestId == qrRequestId) syncQrImage.value = image
-  } catch {
-    if (requestId == qrRequestId) syncQrImage.value = ''
-  }
-}, { immediate: true })
-
-const prepareSyncServer = async() => {
-  if (sync.mode == 'client' && sync.enable) {
-    await sendSyncAction({ action: 'enable_client', data: { enable: false, host: sync.client.host } })
-  }
-  sync.enable = true
-  sync.mode = 'server'
-  sync.server.port = appSetting['sync.server.port']
-  updateSetting({
-    'sync.enable': true,
-    'sync.mode': 'server',
-  })
-  if (!sync.server.status.status) {
-    await sendSyncAction({
-      action: 'enable_server',
-      data: { enable: true, port: appSetting['sync.server.port'] },
-    })
+    const result = await loginMusicAccount(provider)
+    await refreshAccountStatus()
+    if (result.status == 'connected') {
+      await loadDailyRecommend(true, provider)
+    }
+  } finally {
+    isAccountLoginPending.value = false
   }
 }
 
-const handleCloudAction = () => {
-  if (isCloudConnected.value) {
-    openSyncSettings()
-    return
-  }
-  isShowSyncQr.value = true
-  void prepareSyncServer()
-}
-
-const closeSyncQr = () => {
-  isShowSyncQr.value = false
-}
-
-const refreshSyncCode = () => {
-  syncQrImage.value = ''
-  void sendSyncAction({ action: 'generate_code' })
-}
-
-const openSyncSettings = () => {
-  closeSyncQr()
-  void router.push({ name: 'Setting', query: { name: 'SettingSync' } })
-}
+void refreshAccountStatus().then(() => {
+  if (accountStatus.value.wy) void loadDailyRecommend(false, 'wy')
+  else if (accountStatus.value.tx) void loadDailyRecommend(false, 'tx')
+})
 
 watch(
   () => [props.visible, appSetting['search.isShowHistorySearch']],
@@ -652,13 +626,66 @@ const handleSearch = (text) => {
   min-height: 0;
   flex: 1;
   overflow: hidden;
+  display: flex;
+  flex-flow: column nowrap;
   border: 1px solid rgba(54, 83, 70, .11);
   border-radius: 22px;
   background: rgb(from var(--color-main-background) r g b / .46);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .68), 0 14px 36px rgba(35, 54, 46, .08);
   backdrop-filter: blur(18px) saturate(1.12);
 }
-.qrModal {
+.detailTableHeader, .detailTracks li {
+  display: grid;
+  grid-template-columns: 42px minmax(180px, 1.5fr) minmax(120px, .8fr) minmax(130px, 1fr) 42px;
+  align-items: center;
+  gap: 12px;
+}
+.detailTableHeader {
+  flex: none;
+  min-height: 42px;
+  padding: 0 16px;
+  color: var(--color-font-label);
+  border-bottom: 1px solid rgba(54, 83, 70, .09);
+  font-size: 11px;
+}
+.detailTracks {
+  min-height: 0;
+  flex: 1;
+  margin: 0;
+  padding: 7px 8px 12px;
+  list-style: none;
+
+  li {
+    min-height: 48px;
+    padding: 0 8px;
+    border-radius: 13px;
+    color: var(--color-font);
+    font-size: 12px;
+    transition: background-color @transition-fast;
+
+    &:hover { background: var(--color-primary-alpha-1000); }
+    > strong, > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    > strong { font-weight: 650; }
+    > span:not(.trackNumber) { color: var(--color-font-label); }
+    > button {
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: 10px;
+      color: var(--color-primary);
+      background: var(--color-primary-alpha-900);
+      cursor: pointer;
+      font-size: 10px;
+    }
+  }
+}
+.trackNumber { color: var(--color-font-label); font-variant-numeric: tabular-nums; }
+.detailEmpty {
+  margin: auto;
+  color: var(--color-font-label);
+  font-size: 12px;
+}
+.accountModal {
   width: min(410px, 76vw);
   padding: 25px;
   box-sizing: border-box;
@@ -685,39 +712,53 @@ const handleSearch = (text) => {
 
   :global(.svg-icon) { width: 19px; height: 19px; }
 }
-.qrStage {
-  width: 250px;
-  height: 250px;
-  margin: 22px auto 13px;
-  padding: 5px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 16px 38px rgba(35, 54, 46, .14);
+.providerList {
+  display: grid;
+  gap: 11px;
+  margin-top: 22px;
 
-  img { width: 240px; height: 240px; border-radius: 17px; }
+  button {
+    position: relative;
+    min-height: 76px;
+    padding: 15px 50px 15px 17px;
+    border: 1px solid rgba(54, 83, 70, .13);
+    border-radius: 17px;
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: flex-start;
+    gap: 6px;
+    color: var(--color-font);
+    background: rgba(255, 255, 255, .62);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    transition: transform @transition-fast, border-color @transition-fast, box-shadow @transition-fast;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: var(--color-primary-alpha-700);
+      box-shadow: 0 12px 28px rgba(35, 54, 46, .11);
+    }
+    &:disabled { cursor: wait; opacity: .65; }
+  }
+  strong { font-size: 14px; }
+  span { color: var(--color-font-label); font-size: 11px; }
+  em {
+    position: absolute;
+    top: 50%;
+    right: 18px;
+    transform: translateY(-50%);
+    color: var(--color-font-label);
+    font-style: normal;
+    font-size: 22px;
+  }
+  .connectedDot { color: var(--color-primary); font-size: 16px; }
 }
-.qrLoading {
-  width: 180px;
-  color: #777;
-  font-size: 12px;
-  line-height: 1.6;
-  text-align: center;
-}
-.qrTip, .qrAddress {
-  margin: 0;
-  text-align: center;
+.accountTip {
+  margin: 14px 2px 0;
+  color: var(--color-font-label);
   font-size: 11px;
   line-height: 1.6;
-}
-.qrTip { color: var(--color-font-label); }
-.qrAddress {
-  margin-top: 4px;
-  color: var(--color-primary-dark-100);
-  word-break: break-all;
 }
 .loginFooter {
   margin-top: 22px;
