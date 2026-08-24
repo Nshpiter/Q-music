@@ -141,6 +141,11 @@ const modules = {
     music_account_login: 'music_account_login',
     music_account_status: 'music_account_status',
     music_account_daily: 'music_account_daily',
+    music_account_playlists: 'music_account_playlists',
+    music_account_playlist_detail: 'music_account_playlist_detail',
+    music_account_qq_daily_key_status: 'music_account_qq_daily_key_status',
+    music_account_qq_daily_key_save: 'music_account_qq_daily_key_save',
+    music_account_qq_daily_key_page: 'music_account_qq_daily_key_page',
 
     process_new_desktop_lyric_client: 'process_new_desktop_lyric_client',
 

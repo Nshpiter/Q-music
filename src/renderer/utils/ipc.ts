@@ -53,6 +53,33 @@ export interface MusicAccountDailyResult {
   provider: MusicAccountProvider
   ids: string[]
   status: 'personalized' | 'login_required' | 'unavailable'
+  kind?: 'official_daily' | 'radar' | 'netease_daily'
+}
+export interface QQDailyKeyStatus {
+  configured: boolean
+  encryptionAvailable: boolean
+}
+export interface QQDailyKeySaveResult extends QQDailyKeyStatus {
+  status: 'saved' | 'invalid' | 'unavailable' | 'cancelled'
+  songCount: number
+}
+export interface MusicAccountPlaylist {
+  id: string
+  name: string
+  cover: string
+  trackCount: number
+  creator: string
+}
+export interface MusicAccountPlaylistsResult {
+  provider: MusicAccountProvider
+  playlists: MusicAccountPlaylist[]
+  status: 'available' | 'login_required' | 'unavailable'
+}
+export interface MusicAccountPlaylistDetailResult {
+  provider: MusicAccountProvider
+  id: string
+  ids: string[]
+  status: 'available' | 'login_required' | 'unavailable'
 }
 export const getMusicAccountStatus = async() => {
   return rendererInvoke<MusicAccountStatus>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_status)
@@ -63,6 +90,15 @@ export const loginMusicAccount = async(provider: MusicAccountProvider) => {
 export const getMusicAccountDaily = async(provider: MusicAccountProvider) => {
   return rendererInvoke<MusicAccountProvider, MusicAccountDailyResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_daily, provider)
 }
+export const getMusicAccountPlaylists = async(provider: MusicAccountProvider) => {
+  return rendererInvoke<MusicAccountProvider, MusicAccountPlaylistsResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playlists, provider)
+}
+export const getMusicAccountPlaylistDetail = async(provider: MusicAccountProvider, id: string) => {
+  return rendererInvoke<{ provider: MusicAccountProvider, id: string }, MusicAccountPlaylistDetailResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playlist_detail, { provider, id })
+}
+export const getQQDailyKeyStatus = async() => rendererInvoke<QQDailyKeyStatus>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_daily_key_status)
+export const saveQQDailyApiKey = async(apiKey: string) => rendererInvoke<string, QQDailyKeySaveResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_daily_key_save, apiKey)
+export const openQQDailyKeyPage = async() => rendererInvoke<QQDailyKeySaveResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_daily_key_page)
 
 // export const updateDislikeInfo = async(dislikeInfo: LX.Dislike.ListItem[]) => {
 //   await rendererInvoke<LX.Dislike.ListItem[]>(WIN_MAIN_RENDERER_EVENT_NAME.update_dislike_music_infos, dislikeInfo)

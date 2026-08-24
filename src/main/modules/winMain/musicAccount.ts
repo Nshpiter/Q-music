@@ -1,5 +1,6 @@
-import { BrowserWindow, session, shell, type Session, type WebContents } from 'electron'
+import { BrowserWindow, safeStorage, session, shell, type Session, type WebContents } from 'electron'
 import { getProxy } from '@main/utils'
+import getStore from '@main/utils/store'
 import { constants, createCipheriv, publicEncrypt, randomBytes } from 'node:crypto'
 
 export type MusicAccountProvider = 'tx' | 'wy'
@@ -18,6 +19,38 @@ export interface MusicAccountDailyResult {
   provider: MusicAccountProvider
   ids: string[]
   status: 'personalized' | 'login_required' | 'unavailable'
+  kind?: 'official_daily' | 'radar' | 'netease_daily'
+}
+
+export interface QQDailyKeyStatus {
+  configured: boolean
+  encryptionAvailable: boolean
+}
+
+export interface QQDailyKeySaveResult extends QQDailyKeyStatus {
+  status: 'saved' | 'invalid' | 'unavailable' | 'cancelled'
+  songCount: number
+}
+
+export interface MusicAccountPlaylist {
+  id: string
+  name: string
+  cover: string
+  trackCount: number
+  creator: string
+}
+
+export interface MusicAccountPlaylistsResult {
+  provider: MusicAccountProvider
+  playlists: MusicAccountPlaylist[]
+  status: 'available' | 'login_required' | 'unavailable'
+}
+
+export interface MusicAccountPlaylistDetailResult {
+  provider: MusicAccountProvider
+  id: string
+  ids: string[]
+  status: 'available' | 'login_required' | 'unavailable'
 }
 
 const providerConfig = {
@@ -36,6 +69,11 @@ const providerConfig = {
 } as const
 
 const loginWindows = new Map<MusicAccountProvider, Electron.BrowserWindow>()
+let qqDailyKeyWindow: BrowserWindow | null = null
+let qqDailyKeyTask: Promise<QQDailyKeySaveResult> | null = null
+const qqDailyKeyStoreName = 'music_account_credentials'
+const qqDailyKeyStoreField = 'qqDailyApiKey'
+const qqDailyKeyPage = 'https://y.qq.com/n/ryqq_v2/qqmusic_skills'
 const neteaseIv = Buffer.from('0102030405060708')
 const neteasePresetKey = Buffer.from('0CoJUm6Qyw8W8jud')
 const neteaseBase62 = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -128,6 +166,174 @@ export const getMusicAccountStatus = async(): Promise<MusicAccountStatus> => ({
   wy: await hasLoginCookie('wy'),
 })
 
+const readQQDailyApiKey = (): string => {
+  if (!safeStorage.isEncryptionAvailable()) return ''
+  const encrypted = getStore(qqDailyKeyStoreName).get<string>(qqDailyKeyStoreField)
+  if (!encrypted) return ''
+  try {
+    return safeStorage.decryptString(Buffer.from(encrypted, 'base64'))
+  } catch (error) {
+    console.warn('[musicAccount] QQ daily API key could not be decrypted', error)
+    return ''
+  }
+}
+
+export const getQQDailyKeyStatus = (): QQDailyKeyStatus => ({
+  configured: !!readQQDailyApiKey(),
+  encryptionAvailable: safeStorage.isEncryptionAvailable(),
+})
+
+const requestQQOfficialDailySongIds = async(apiKey: string): Promise<string[]> => {
+  const response = await session.fromPartition(providerConfig.tx.partition).fetch('https://a.y.qq.com/discover/daily-mix', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ params: {}, comm: { skill_version: '0.0.3' } }),
+  })
+  if (!response.ok) throw new Error(`QQ official daily recommendations failed: ${response.status}`)
+  const result = await response.json() as {
+    ret?: number
+    sub_ret?: number
+    songlist?: Array<{ songMid?: string }>
+  }
+  if ((result.ret != null && result.ret != 0) || (result.sub_ret != null && result.sub_ret != 0)) return []
+  return (result.songlist ?? []).map(item => item.songMid ?? '').filter(Boolean).slice(0, 30)
+}
+
+export const saveQQDailyApiKey = async(value: string): Promise<QQDailyKeySaveResult> => {
+  const apiKey = value.trim()
+  if (!/^qmk-[A-Za-z0-9_-]+$/.test(apiKey)) {
+    return { configured: getQQDailyKeyStatus().configured, encryptionAvailable: safeStorage.isEncryptionAvailable(), status: 'invalid', songCount: 0 }
+  }
+  if (!safeStorage.isEncryptionAvailable()) {
+    return { configured: false, encryptionAvailable: false, status: 'unavailable', songCount: 0 }
+  }
+  try {
+    const ids = await requestQQOfficialDailySongIds(apiKey)
+    if (!ids.length) return { configured: getQQDailyKeyStatus().configured, encryptionAvailable: true, status: 'invalid', songCount: 0 }
+    const encrypted = safeStorage.encryptString(apiKey).toString('base64')
+    getStore(qqDailyKeyStoreName).set(qqDailyKeyStoreField, encrypted)
+    return { configured: true, encryptionAvailable: true, status: 'saved', songCount: ids.length }
+  } catch (error) {
+    console.warn('[musicAccount] QQ daily API key validation failed', error)
+    return { configured: getQQDailyKeyStatus().configured, encryptionAvailable: true, status: 'invalid', songCount: 0 }
+  }
+}
+
+const detectQQDailyApiKey = async(contents: WebContents): Promise<string> => {
+  if (contents.isDestroyed() || contents.getURL() == '' || !isAllowedHost('tx', contents.getURL())) return ''
+  const detectionScript = `(() => {
+    const values = [document.body?.innerText ?? '', ...Array.from(document.querySelectorAll('input, textarea')).map(element => element.value ?? '')]
+    return values.join('\\n').match(/qmk-[A-Za-z0-9_-]{12,1024}/)?.[0] ?? ''
+  })()`
+  for (const frame of contents.mainFrame.framesInSubtree) {
+    if (!isAllowedHost('tx', frame.url)) continue
+    try {
+      const apiKey = await frame.executeJavaScript(detectionScript, true) as string
+      if (apiKey) return apiKey
+    } catch {
+      continue
+    }
+  }
+  return ''
+}
+
+export const openQQDailyKeyPage = async(): Promise<QQDailyKeySaveResult> => {
+  if (qqDailyKeyWindow && !qqDailyKeyWindow.isDestroyed() && qqDailyKeyTask) {
+    qqDailyKeyWindow.show()
+    qqDailyKeyWindow.focus()
+    return qqDailyKeyTask
+  }
+  if (!safeStorage.isEncryptionAvailable()) {
+    return { configured: false, encryptionAvailable: false, status: 'unavailable', songCount: 0 }
+  }
+
+  const task = (async() => {
+    const accountSession = session.fromPartition(providerConfig.tx.partition)
+    const proxy = getProxy()
+    await accountSession.setProxy(proxy?.host
+      ? { mode: 'fixed_servers', proxyRules: `http://${proxy.host}:${proxy.port}` }
+      : { mode: 'direct' })
+
+    return new Promise<QQDailyKeySaveResult>(resolve => {
+      const parent = BrowserWindow.getFocusedWindow() ?? undefined
+      const authorizationWindow = new BrowserWindow({
+        parent,
+        modal: !!parent,
+        width: 940,
+        height: 760,
+        minWidth: 720,
+        minHeight: 560,
+        show: false,
+        autoHideMenuBar: true,
+        title: 'QQ音乐官方每日30首授权',
+        backgroundColor: '#f7faf8',
+        webPreferences: {
+          session: accountSession,
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: true,
+          spellcheck: false,
+        },
+      })
+      qqDailyKeyWindow = authorizationWindow
+
+      let settled = false
+      let detecting = false
+      let detectTimer: NodeJS.Timeout | undefined
+      const childWindows = new Set<BrowserWindow>()
+      const finish = (result: QQDailyKeySaveResult) => {
+        if (settled) return
+        settled = true
+        if (detectTimer) clearInterval(detectTimer)
+        qqDailyKeyWindow = null
+        qqDailyKeyTask = null
+        resolve(result)
+        for (const childWindow of childWindows) {
+          if (!childWindow.isDestroyed()) childWindow.close()
+        }
+        if (!authorizationWindow.isDestroyed()) authorizationWindow.close()
+      }
+      const detectAndSave = async() => {
+        if (settled || detecting) return
+        detecting = true
+        try {
+          const contentsList = [authorizationWindow.webContents, ...Array.from(childWindows, window => window.webContents)]
+          for (const contents of contentsList) {
+            const apiKey = await detectQQDailyApiKey(contents)
+            if (!apiKey) continue
+            const result = await saveQQDailyApiKey(apiKey)
+            if (result.status == 'saved') {
+              finish(result)
+              return
+            }
+          }
+        } finally {
+          detecting = false
+        }
+      }
+      const handleChildWindow = (childWindow: BrowserWindow) => {
+        childWindows.add(childWindow)
+        childWindow.once('closed', () => { childWindows.delete(childWindow) })
+        childWindow.webContents.on('did-finish-load', () => { void detectAndSave() })
+      }
+
+      configureLoginContents(authorizationWindow.webContents, 'tx', accountSession, handleChildWindow)
+      authorizationWindow.webContents.on('did-finish-load', () => { void detectAndSave() })
+      detectTimer = setInterval(() => { void detectAndSave() }, 1000)
+      authorizationWindow.once('ready-to-show', () => { authorizationWindow.show() })
+      authorizationWindow.on('closed', () => {
+        finish({ configured: getQQDailyKeyStatus().configured, encryptionAvailable: true, status: 'cancelled', songCount: 0 })
+      })
+      void authorizationWindow.loadURL(qqDailyKeyPage)
+    })
+  })()
+  qqDailyKeyTask = task
+  return task
+}
+
 const getQQDailySongIds = async(): Promise<string[]> => {
   const accountSession = session.fromPartition(providerConfig.tx.partition)
   const cookies = await accountSession.cookies.get({})
@@ -137,7 +343,7 @@ const getQQDailySongIds = async(): Promise<string[]> => {
   const authst = cookieMap.get('qm_keyst') ?? cookieMap.get('qqmusic_key') ?? cookieMap.get('musickey') ?? ''
   const ids = new Set<string>()
 
-  for (let index = 0; index < 6 && ids.size < 30; index++) {
+  for (let page = 1; page <= 4 && ids.size < 30; page++) {
     const response = await accountSession.fetch('https://u.y.qq.com/cgi-bin/musicu.fcg', {
       method: 'POST',
       headers: {
@@ -148,9 +354,9 @@ const getQQDailySongIds = async(): Promise<string[]> => {
       body: JSON.stringify({
         comm: { uin, format: 'json', ct: 19, cv: 0, authst },
         radio: {
-          module: 'music.radioProxy.MbTrackRadioSvr',
-          method: 'get_radio_track',
-          param: {},
+          module: 'music.recommend.TrackRelationServer',
+          method: 'GetRadarSong',
+          param: { Page: page },
         },
       }),
     })
@@ -160,7 +366,7 @@ const getQQDailySongIds = async(): Promise<string[]> => {
     }
     if (result.radio?.code != 0) break
     const data = result.radio.data ?? {}
-    const candidates = [data.tracks, data.track, data.songList, data.vec_song]
+    const candidates = [data.VecSongs, data.tracks, data.track, data.songList, data.vec_song, data.List]
       .find(value => Array.isArray(value)) as Array<Record<string, unknown>> | undefined
     if (!candidates?.length) break
     for (const candidate of candidates) {
@@ -173,30 +379,108 @@ const getQQDailySongIds = async(): Promise<string[]> => {
   return [...ids]
 }
 
-const getNeteaseDailySongIds = async(): Promise<string[]> => {
-  const accountSession = session.fromPartition(providerConfig.wy.partition)
+const getNeteaseCsrfToken = async(accountSession: Session) => {
   const cookies = await accountSession.cookies.get({ url: 'https://music.163.com' })
-  const csrfToken = cookies.find(cookie => cookie.name == '__csrf')?.value ?? ''
-  const response = await accountSession.fetch('https://music.163.com/weapi/v3/discovery/recommend/songs', {
+  return cookies.find(cookie => cookie.name == '__csrf')?.value ?? ''
+}
+
+const requestNeteaseWeapi = async<T>(path: string, data: Record<string, unknown>): Promise<T> => {
+  const accountSession = session.fromPartition(providerConfig.wy.partition)
+  const csrfToken = await getNeteaseCsrfToken(accountSession)
+  const response = await accountSession.fetch(`https://music.163.com${path}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       Origin: 'https://music.163.com',
       Referer: 'https://music.163.com/',
     },
-    body: buildNeteaseWeapiForm({ offset: 0, total: true, limit: 30, csrf_token: csrfToken }),
+    body: buildNeteaseWeapiForm({ ...data, csrf_token: csrfToken }),
   })
-  if (!response.ok) throw new Error(`NetEase daily recommendations failed: ${response.status}`)
-  const result = await response.json() as { code?: number, data?: { dailySongs?: Array<{ id?: string | number }> } }
+  if (!response.ok) throw new Error(`NetEase request failed (${path}): ${response.status}`)
+  return response.json() as Promise<T>
+}
+
+const getNeteaseDailySongIds = async(): Promise<string[]> => {
+  const result = await requestNeteaseWeapi<{ code?: number, data?: { dailySongs?: Array<{ id?: string | number }> } }>(
+    '/weapi/v3/discovery/recommend/songs',
+    { offset: 0, total: true, limit: 30 },
+  )
   if (result.code != 200) return []
   return (result.data?.dailySongs ?? []).map(item => String(item.id ?? '')).filter(Boolean)
+}
+
+const getNeteaseUserId = async(): Promise<string> => {
+  const result = await requestNeteaseWeapi<{
+    code?: number
+    profile?: { userId?: string | number }
+    account?: { id?: string | number }
+  }>('/weapi/w/nuser/account/get', {})
+  return String(result.profile?.userId ?? result.account?.id ?? '')
+}
+
+export const getMusicAccountPlaylists = async(provider: MusicAccountProvider): Promise<MusicAccountPlaylistsResult> => {
+  if (!await hasLoginCookie(provider)) return { provider, playlists: [], status: 'login_required' }
+  if (provider != 'wy') return { provider, playlists: [], status: 'unavailable' }
+  try {
+    const uid = await getNeteaseUserId()
+    if (!uid) return { provider, playlists: [], status: 'unavailable' }
+    const result = await requestNeteaseWeapi<{
+      code?: number
+      playlist?: Array<{
+        id?: string | number
+        name?: string
+        coverImgUrl?: string
+        trackCount?: number
+        creator?: { nickname?: string }
+      }>
+    }>('/weapi/user/playlist', { uid, offset: 0, limit: 100, includeVideo: true })
+    const playlists = (result.playlist ?? []).map(item => ({
+      id: String(item.id ?? ''),
+      name: item.name ?? '',
+      cover: item.coverImgUrl ?? '',
+      trackCount: item.trackCount ?? 0,
+      creator: item.creator?.nickname ?? '',
+    })).filter(item => item.id && item.name)
+    return { provider, playlists, status: playlists.length ? 'available' : 'unavailable' }
+  } catch (error) {
+    console.warn('[musicAccount] NetEase playlists unavailable', error)
+    return { provider, playlists: [], status: 'unavailable' }
+  }
+}
+
+export const getMusicAccountPlaylistDetail = async(
+  provider: MusicAccountProvider,
+  id: string,
+): Promise<MusicAccountPlaylistDetailResult> => {
+  if (!await hasLoginCookie(provider)) return { provider, id, ids: [], status: 'login_required' }
+  if (provider != 'wy') return { provider, id, ids: [], status: 'unavailable' }
+  try {
+    const result = await requestNeteaseWeapi<{
+      code?: number
+      playlist?: { trackIds?: Array<{ id?: string | number }> }
+    }>('/weapi/v6/playlist/detail', { id, n: 100000, s: 8 })
+    const ids = (result.playlist?.trackIds ?? []).map(item => String(item.id ?? '')).filter(Boolean)
+    return { provider, id, ids, status: ids.length ? 'available' : 'unavailable' }
+  } catch (error) {
+    console.warn('[musicAccount] NetEase playlist detail unavailable', error)
+    return { provider, id, ids: [], status: 'unavailable' }
+  }
 }
 
 export const getMusicAccountDailySongIds = async(provider: MusicAccountProvider): Promise<MusicAccountDailyResult> => {
   if (!await hasLoginCookie(provider)) return { provider, ids: [], status: 'login_required' }
   try {
-    const ids = provider == 'tx' ? await getQQDailySongIds() : await getNeteaseDailySongIds()
-    return { provider, ids, status: ids.length ? 'personalized' : 'unavailable' }
+    if (provider == 'tx') {
+      const apiKey = readQQDailyApiKey()
+      if (apiKey) {
+        const ids = await requestQQOfficialDailySongIds(apiKey).catch(() => [])
+        if (ids.length) return { provider, ids, status: 'personalized', kind: 'official_daily' }
+      }
+      const ids = await getQQDailySongIds()
+      return { provider, ids, status: ids.length ? 'personalized' : 'unavailable', kind: 'radar' }
+    }
+    const ids = await getNeteaseDailySongIds()
+    return { provider, ids, status: ids.length ? 'personalized' : 'unavailable', kind: 'netease_daily' }
   } catch (error) {
     console.warn(`[musicAccount] ${provider} personalized recommendations unavailable`, error)
     return { provider, ids: [], status: 'unavailable' }

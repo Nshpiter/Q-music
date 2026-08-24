@@ -25,7 +25,7 @@ import {
 import { quitApp } from '@main/app'
 import { getAllThemes, removeTheme, saveTheme, setPowerSaveBlocker } from '@main/utils'
 import { openDirInExplorer } from '@common/utils/electron'
-import { getMusicAccountDailySongIds, getMusicAccountStatus, openMusicAccountLogin, type MusicAccountDailyResult, type MusicAccountLoginResult, type MusicAccountProvider } from '../musicAccount'
+import { getMusicAccountDailySongIds, getMusicAccountPlaylistDetail, getMusicAccountPlaylists, getMusicAccountStatus, getQQDailyKeyStatus, openMusicAccountLogin, openQQDailyKeyPage, saveQQDailyApiKey, type MusicAccountDailyResult, type MusicAccountLoginResult, type MusicAccountPlaylistDetailResult, type MusicAccountPlaylistsResult, type MusicAccountProvider, type QQDailyKeySaveResult } from '../musicAccount'
 
 export default () => {
   // 设置应用名称
@@ -141,6 +141,15 @@ export default () => {
   mainHandle<MusicAccountProvider, MusicAccountDailyResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_daily, async({ params: provider }) => {
     return getMusicAccountDailySongIds(provider)
   })
+  mainHandle<MusicAccountProvider, MusicAccountPlaylistsResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playlists, async({ params: provider }) => {
+    return getMusicAccountPlaylists(provider)
+  })
+  mainHandle<{ provider: MusicAccountProvider, id: string }, MusicAccountPlaylistDetailResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playlist_detail, async({ params }) => {
+    return getMusicAccountPlaylistDetail(params.provider, params.id)
+  })
+  mainHandle(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_daily_key_status, async() => getQQDailyKeyStatus())
+  mainHandle<string, QQDailyKeySaveResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_daily_key_save, async({ params }) => saveQQDailyApiKey(params))
+  mainHandle<QQDailyKeySaveResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_daily_key_page, async() => openQQDailyKeyPage())
 }
 
 export const sendFocus = () => {
