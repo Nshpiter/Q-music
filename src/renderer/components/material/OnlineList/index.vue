@@ -40,7 +40,14 @@
                   <span v-if="item.meta._qualitys.flac24bit" class="no-select badge badge-theme-primary">{{ $t('tag__lossless_24bit') }}</span>
                   <span v-else-if="item.meta._qualitys.ape || item.meta._qualitys.flac || item.meta._qualitys.wav" class="no-select badge badge-theme-primary">{{ $t('tag__lossless') }}</span>
                   <span v-else-if="item.meta._qualitys['320k']" class="no-select badge badge-theme-secondary">{{ $t('tag__high_quality') }}</span>
-                  <span v-if="sourceTag" class="no-select badge badge-theme-tertiary">{{ item.source }}</span>
+                  <select
+                    v-if="sourceSelector && sourceOptions(item).length > 1" :class="$style.sourceSelect" :value="item.source"
+                    :aria-label="$t('search__source_select')" @click.stop @change.stop="handleSourceChange($event, index)"
+                  >
+                    <option v-for="source in sourceOptions(item)" :key="source" :value="source">{{ sourceName(source) }}</option>
+                  </select>
+                  <span v-else-if="sourceSelector" :class="$style.sourceSingle">{{ sourceName(item.source) }}</span>
+                  <span v-else-if="sourceTag" class="no-select badge badge-theme-tertiary">{{ item.source }}</span>
                 </div>
                 <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
@@ -71,7 +78,14 @@
                   <span v-if="item.meta._qualitys.flac24bit" class="no-select badge badge-theme-primary">{{ $t('tag__lossless_24bit') }}</span>
                   <span v-else-if="item.meta._qualitys.ape || item.meta._qualitys.flac || item.meta._qualitys.wav" class="no-select badge badge-theme-primary">{{ $t('tag__lossless') }}</span>
                   <span v-else-if="item.meta._qualitys['320k']" class="no-select badge badge-theme-secondary">{{ $t('tag__high_quality') }}</span>
-                  <span v-if="sourceTag" class="no-select badge badge-theme-tertiary">{{ item.source }}</span>
+                  <select
+                    v-if="sourceSelector && sourceOptions(item).length > 1" :class="$style.sourceSelect" :value="item.source"
+                    :aria-label="$t('search__source_select')" @click.stop @change.stop="handleSourceChange($event, index)"
+                  >
+                    <option v-for="source in sourceOptions(item)" :key="source" :value="source">{{ sourceName(source) }}</option>
+                  </select>
+                  <span v-else-if="sourceSelector" :class="$style.sourceSingle">{{ sourceName(item.source) }}</span>
+                  <span v-else-if="sourceTag" class="no-select badge badge-theme-tertiary">{{ item.source }}</span>
                 </div>
                 <div class="list-item-cell" style="flex: 0 0 24%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 27%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
@@ -141,6 +155,18 @@ export default {
       type: Boolean,
       default: false,
     },
+    sourceSelector: {
+      type: Boolean,
+      default: false,
+    },
+    sourceOptions: {
+      type: Function,
+      default: item => [item.source],
+    },
+    sourceName: {
+      type: Function,
+      default: source => source,
+    },
     noItem: {
       type: String,
       default: '',
@@ -150,7 +176,7 @@ export default {
       default: false,
     },
   },
-  emits: ['show-menu', 'play-list', 'togglePage'],
+  emits: ['show-menu', 'play-list', 'togglePage', 'source-change'],
   setup(props, { emit }) {
     const actionButtonsVisible = appSetting['list.actionButtonsVisible']
     const rightClickSelectedIndex = ref(-1)
@@ -255,6 +281,9 @@ export default {
           break
       }
     }
+    const handleSourceChange = (event, index) => {
+      emit('source-change', { index, source: event.target.value })
+    }
     const scrollToTop = () => {
       listRef.value.scrollTo(0, true)
     }
@@ -267,6 +296,7 @@ export default {
       handleListItemRightClick,
       removeAllSelect,
       handleListBtnClick,
+      handleSourceChange,
       rightClickSelectedIndex,
       dom_listContent,
       listRef,
@@ -345,6 +375,28 @@ export default {
     font-size: 24px;
     color: var(--color-font-label);
   }
+}
+.sourceSelect {
+  max-width: 92px;
+  height: 24px;
+  margin-left: 7px;
+  padding: 0 22px 0 8px;
+  border: 1px solid var(--color-primary-alpha-700);
+  border-radius: 8px;
+  outline: none;
+  color: var(--color-primary-dark-100);
+  background-color: var(--color-primary-alpha-900);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+}
+.sourceSingle {
+  margin-left: 7px;
+  padding: 4px 7px;
+  border-radius: 7px;
+  color: var(--color-font-label);
+  background: var(--color-primary-alpha-900);
+  font-size: 10px;
 }
 
 </style>

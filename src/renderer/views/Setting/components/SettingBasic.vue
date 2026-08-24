@@ -119,12 +119,6 @@ dd
       need :model-value="appSetting['common.langId']" :value="item.locale" :label="item.name" @update:model-value="updateSetting({'common.langId': $event})")
 
 dd
-  h3#basic_sourcename {{ $t('setting__basic_sourcename') }}
-  div
-    base-checkbox.gap-left(
-      v-for="item in sourceNameTypes" :id="`setting_abasic_sourcename_${item.id}`" :key="item.id"
-      name="setting_basic_sourcename" need :model-value="appSetting['common.sourceNameType']" :value="item.id" :label="item.label" @update:model-value="updateSetting({'common.sourceNameType': $event})")
-dd
   h3#basic_control_btn_position {{ $t('setting__basic_control_btn_position') }}
   div
     base-checkbox.gap-left(
@@ -359,14 +353,6 @@ export default {
       ]
     })
 
-    const sourceNameTypes = computed(() => {
-      return [
-        { id: 'real', label: t('setting__basic_sourcename_real') },
-        { id: 'alias', label: t('setting__basic_sourcename_alias') },
-      ]
-    })
-
-
     const controlBtnPositionList = computed(() => {
       return [
         { id: 'left', name: t('setting__basic_control_btn_position_left') },
@@ -433,7 +419,6 @@ export default {
       isShowUserApiModal,
       windowSizeList,
       langList,
-      sourceNameTypes,
       controlBtnPositionList,
       fontList,
       isFullscreen,

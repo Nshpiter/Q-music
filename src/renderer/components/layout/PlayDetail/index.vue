@@ -11,7 +11,8 @@ transition(enter-active-class="q-detail-enter-active" leave-active-class="q-deta
         div(ref="dom_record" :class="['q-album-stage', $style.albumStage, { [$style.albumStagePlaying]: isPlay }]")
           div(:class="$style.record")
             img(v-if="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
-            div(v-else :class="$style.emptyCover") Q
+            div(v-else :class="$style.emptyCover")
+              svg-icon(name="music")
           div(:class="$style.toneArm" aria-hidden="true")
             span(:class="$style.toneArmBase")
             span(:class="$style.toneArmRod")
@@ -986,13 +987,16 @@ export default {
   justify-content: center;
   border-radius: 50%;
   color: #fff;
-  font-size: 34px;
-  font-weight: 700;
   background: linear-gradient(135deg, #6374ff, var(--color-primary));
   box-shadow: 0 10px 28px rgba(22, 28, 34, .24);
   transform-origin: center;
   transform: rotate(var(--q-record-rotation, 0deg));
   will-change: transform;
+
+  :global(.svg-icon) {
+    width: 36%;
+    height: 36%;
+  }
 }
 .toneArm {
   position: absolute;

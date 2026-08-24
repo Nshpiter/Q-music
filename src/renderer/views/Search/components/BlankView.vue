@@ -2,49 +2,61 @@
   <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
     <div v-show="props.visible" :class="$style.noitem">
       <div class="scroll" :class="$style.noitemShell">
-        <section :class="$style.welcomeCard">
-          <span :class="$style.welcomeGlow" aria-hidden="true" />
-          <div :class="$style.welcomeIcon" aria-hidden="true">
-            <svg viewBox="0 0 425.2 425.2">
-              <use xlink:href="#icon-search-2" />
-            </svg>
-          </div>
+        <header :class="$style.welcomeBar">
           <div :class="$style.welcomeCopy">
+            <span :class="$style.greetingTag">{{ $t('search__home_eyebrow') }}</span>
             <h2>{{ $t('search__welcome') }}</h2>
             <p>{{ $t('search__welcome_subtitle') }}</p>
           </div>
-          <div :class="$style.welcomeActions">
-            <button type="button" :class="$style.searchAction" @click="focusSearch">
-              <svg viewBox="0 0 425.2 425.2" aria-hidden="true">
-                <use xlink:href="#icon-search-2" />
-              </svg>
-              <span>{{ $t('search__welcome_action') }}</span>
-            </button>
-            <span :class="$style.shortcutHint">{{ $t('search__welcome_shortcut') }}</span>
-          </div>
-        </section>
+          <button type="button" :class="$style.searchAction" @click="focusSearch">
+            <svg viewBox="0 0 425.2 425.2" aria-hidden="true">
+              <use xlink:href="#icon-search-2" />
+            </svg>
+            <span>{{ $t('search__welcome_action') }}</span>
+          </button>
+        </header>
 
-        <section :class="$style.dailyCard">
-          <div :class="$style.dailyHeader">
-            <div>
-              <h3>{{ $t('search__daily_recommend') }}</h3>
+        <div :class="$style.featureGrid">
+          <section :class="$style.dailyCard">
+            <div :class="$style.dailyCover" aria-hidden="true">
+              <div v-for="index in 4" :key="index" :class="$style.coverTile">
+                <img v-if="dailyCoverUrls[index - 1]" :src="dailyCoverUrls[index - 1]" alt="" @error="handleDailyCoverError(index - 1)">
+                <svg-icon v-else name="music" />
+              </div>
+              <div :class="$style.dateBadge">
+                <strong>{{ todayDay }}</strong>
+                <span>{{ todayMonth }}</span>
+              </div>
+            </div>
+            <div :class="$style.dailyContent">
+              <span :class="$style.eyebrow">{{ $t('search__daily_eyebrow') }}</span>
+              <h3>{{ $t('search__daily_recommend') }} · {{ $t('search__daily_count', { count: dailyRecommendList.length || 12 }) }}</h3>
               <p>{{ $t('search__daily_recommend_subtitle') }}</p>
+              <ol v-if="dailyRecommendList.length" :class="$style.trackPreview">
+                <li v-for="item in dailyRecommendList.slice(0, 3)" :key="item.id"><strong>{{ item.name }}</strong><span>{{ item.singer }}</span></li>
+              </ol>
+              <div v-else :class="$style.dailyLoading">{{ isDailyLoading ? $t('search__daily_recommend_loading') : $t('search__daily_recommend_empty') }}</div>
+              <div :class="$style.dailyActions">
+                <button type="button" :disabled="!dailyRecommendList.length" @click="playDailyRecommend">{{ $t('search__daily_recommend_play') }}</button>
+                <button type="button" :disabled="isDailyLoading" @click="loadDailyRecommend(true)">{{ $t('search__daily_recommend_refresh') }}</button>
+              </div>
             </div>
-            <div :class="$style.dailyActions">
-              <button type="button" :disabled="isDailyLoading" @click="loadDailyRecommend(true)">{{ $t('search__daily_recommend_refresh') }}</button>
-              <button type="button" :disabled="!dailyRecommendList.length" @click="playDailyRecommend">{{ $t('search__daily_recommend_play') }}</button>
+          </section>
+
+          <section :class="$style.cloudCard">
+            <div :class="[$style.cloudIcon, { [$style.connected]: isCloudConnected }]">
+              <svg-icon name="share" />
             </div>
-          </div>
-          <div v-if="isDailyLoading" :class="$style.dailyLoading">{{ $t('search__daily_recommend_loading') }}</div>
-          <div v-else-if="dailyRecommendList.length" :class="$style.dailyTracks">
-            <button v-for="(item, index) in dailyRecommendList.slice(0, 6)" :key="item.id" type="button" @click="playDailyRecommend(index)">
-              <span>{{ index + 1 }}</span>
-              <strong>{{ item.name }}</strong>
-              <small>{{ item.singer }}</small>
+            <span :class="[$style.statusPill, { [$style.connected]: isCloudConnected }]">
+              {{ isCloudConnected ? $t('search__cloud_connected') : $t('search__cloud_disconnected') }}
+            </span>
+            <h3>{{ $t('search__cloud_account') }}</h3>
+            <p>{{ isCloudConnected ? sync.client.host : $t('search__cloud_desc') }}</p>
+            <button type="button" :class="$style.cloudAction" @click="handleCloudAction">
+              {{ isCloudConnected ? $t('search__cloud_manage') : $t('search__cloud_login') }}
             </button>
-          </div>
-          <div v-else :class="$style.dailyLoading">{{ $t('search__daily_recommend_empty') }}</div>
-        </section>
+          </section>
+        </div>
 
         <div v-if="hasDiscoveryContent" :class="$style.noitemListContainer">
           <dl v-if="appSetting['search.isShowHotSearch']" :class="[$style.noitemList, $style.noitemHotSearchList]">
@@ -75,20 +87,42 @@
       </div>
     </div>
   </transition>
+  <material-modal :show="isShowCloudLogin" :bg-close="false" @close="closeCloudLogin" @after-enter="focusCloudHost">
+    <main :class="$style.loginModal">
+      <div :class="$style.loginIcon"><svg-icon name="share" /></div>
+      <h2>{{ $t('search__cloud_login_title') }}</h2>
+      <p>{{ $t('search__cloud_login_desc') }}</p>
+      <label>
+        <span>{{ $t('search__cloud_host') }}</span>
+        <base-input ref="cloudHostInput" v-model="cloudHost" :placeholder="$t('setting__sync_client_host_tip')" />
+      </label>
+      <label>
+        <span>{{ $t('search__cloud_code') }}</span>
+        <base-input v-model="cloudCode" type="password" :placeholder="$t('sync__auth_code_input_tip')" @submit="submitCloudLogin" />
+      </label>
+      <div :class="$style.loginFooter">
+        <base-btn min @click="closeCloudLogin">{{ $t('btn_cancel') }}</base-btn>
+        <base-btn min :disabled="!isCloudLoginValid" @click="submitCloudLogin">{{ $t('search__cloud_login') }}</base-btn>
+      </div>
+    </main>
+  </material-modal>
 </template>
 
 <script setup>
-import { computed, watch, shallowRef } from '@common/utils/vueTools'
+import { computed, watch, shallowRef, ref } from '@common/utils/vueTools'
 import { historyList } from '@renderer/store/search/state'
 import { getHistoryList, removeHistoryWord, clearHistoryList } from '@renderer/store/search/action'
 import { clearList, getList } from '@renderer/store/hotSearch'
-import { appSetting } from '@renderer/store/setting'
+import { appSetting, updateSetting } from '@renderer/store/setting'
 import { useRouter } from '@common/utils/vueRouter'
 import { HOTKEY_COMMON } from '@common/hotKey'
 import { getDailyRecommend } from '@renderer/core/dailyRecommend'
 import { setTempList } from '@renderer/store/list/action'
 import { playList } from '@renderer/core/player/action'
+import { getPicPath } from '@renderer/core/music'
 import { LIST_IDS } from '@common/constants'
+import { sync } from '@renderer/store'
+import { sendSyncAction } from '@renderer/utils/ipc'
 
 const props = defineProps({
   visible: Boolean,
@@ -101,9 +135,19 @@ const props = defineProps({
 const hotSearchList = shallowRef([])
 const isHotSearchLoading = shallowRef(false)
 const dailyRecommendList = shallowRef([])
+const dailyCoverUrls = shallowRef([])
 const isDailyLoading = shallowRef(false)
+const isShowCloudLogin = ref(false)
+const cloudHost = ref('')
+const cloudCode = ref('')
+const cloudHostInput = ref(null)
 let hotSearchRequestId = 0
 let dailyRequestId = 0
+const now = new Date()
+const todayDay = String(now.getDate()).padStart(2, '0')
+const todayMonth = new Intl.DateTimeFormat(window.i18n.locale || 'zh-CN', { month: 'short' }).format(now)
+const isCloudConnected = computed(() => sync.enable && sync.mode == 'client' && sync.client.status.status)
+const isCloudLoginValid = computed(() => /^https?:\/\/\S+$/i.test(cloudHost.value.trim()) && cloudCode.value.trim().length > 0)
 const hasDiscoveryContent = computed(() => {
   return appSetting['search.isShowHotSearch'] ||
     (appSetting['search.isShowHistorySearch'] && historyList.length > 0)
@@ -141,12 +185,28 @@ const loadDailyRecommend = async(force = false) => {
   isDailyLoading.value = true
   try {
     const list = await getDailyRecommend(props.source, force)
-    if (requestId == dailyRequestId) dailyRecommendList.value = list
+    if (requestId != dailyRequestId) return
+    dailyRecommendList.value = list
+    dailyCoverUrls.value = list.slice(0, 4).map(item => item.meta.picUrl ?? '')
+    const coverUrls = await Promise.all(list.slice(0, 4).map(async item => {
+      if (item.meta.picUrl) return item.meta.picUrl
+      return getPicPath({ musicInfo: item }).catch(() => '')
+    }))
+    if (requestId == dailyRequestId) dailyCoverUrls.value = coverUrls
   } catch {
-    if (requestId == dailyRequestId) dailyRecommendList.value = []
+    if (requestId == dailyRequestId) {
+      dailyRecommendList.value = []
+      dailyCoverUrls.value = []
+    }
   } finally {
     if (requestId == dailyRequestId) isDailyLoading.value = false
   }
+}
+
+const handleDailyCoverError = (index) => {
+  const urls = [...dailyCoverUrls.value]
+  urls[index] = ''
+  dailyCoverUrls.value = urls
 }
 
 watch(
@@ -159,6 +219,43 @@ const playDailyRecommend = async(index = 0) => {
   if (!dailyRecommendList.value.length) return
   await setTempList(`q_daily_${new Date().toISOString().slice(0, 10)}`, [...dailyRecommendList.value])
   playList(LIST_IDS.TEMP, index)
+}
+
+const closeCloudLogin = () => {
+  isShowCloudLogin.value = false
+  cloudCode.value = ''
+}
+
+const focusCloudHost = () => {
+  cloudHostInput.value?.focus()
+}
+
+const handleCloudAction = () => {
+  if (isCloudConnected.value) {
+    void router.push({ name: 'Setting', query: { name: 'SettingSync' } })
+    return
+  }
+  cloudHost.value = appSetting['sync.client.host'] || ''
+  isShowCloudLogin.value = true
+}
+
+const submitCloudLogin = () => {
+  if (!isCloudLoginValid.value) return
+  const host = cloudHost.value.trim().replace(/\/$/, '')
+  const authCode = cloudCode.value.trim()
+  sync.enable = true
+  sync.mode = 'client'
+  sync.client.host = host
+  updateSetting({
+    'sync.enable': true,
+    'sync.mode': 'client',
+    'sync.client.host': host,
+  })
+  void sendSyncAction({
+    action: 'enable_client',
+    data: { enable: true, host, authCode },
+  })
+  closeCloudLogin()
 }
 
 watch(
@@ -212,157 +309,213 @@ const handleSearch = (text) => {
   padding: 2px 8px 12px;
   box-sizing: border-box;
 }
-.welcomeCard {
-  position: relative;
-  min-height: 220px;
-  overflow: hidden;
-  box-sizing: border-box;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-areas:
-    'icon copy'
-    'actions actions';
-  align-items: center;
-  column-gap: 20px;
-  row-gap: 24px;
-  padding: 34px 38px 30px;
-  border-radius: 28px;
-  color: var(--color-font);
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, .72), rgba(244, 251, 248, .42)),
-    rgb(from var(--color-main-background) r g b / .56);
-  border: 1px solid rgba(54, 83, 70, .16);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .82),
-    inset 0 -1px 0 rgba(54, 83, 70, .08),
-    0 24px 60px rgba(35, 54, 46, .14);
-  backdrop-filter: blur(24px) saturate(1.25);
-}
-.welcomeGlow {
-  position: absolute;
-  width: 260px;
-  height: 260px;
-  right: -90px;
-  top: -130px;
-  border-radius: 50%;
-  pointer-events: none;
-  background: radial-gradient(circle, var(--color-primary-alpha-700), transparent 68%);
-}
-.welcomeIcon {
-  grid-area: icon;
-  position: relative;
-  width: 66px;
-  height: 66px;
+.welcomeBar {
+  min-height: 92px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 22px;
-  color: #fff;
-  background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary));
-  box-shadow: 0 14px 30px var(--color-primary-alpha-700), inset 0 1px 0 rgba(255, 255, 255, .42);
-
-  svg {
-    width: 28px;
-    height: 28px;
-    fill: currentColor;
-  }
+  gap: 20px;
+  padding: 0 8px;
+  color: var(--color-font);
 }
 .welcomeCopy {
-  grid-area: copy;
-  position: relative;
+  flex: 1;
   min-width: 0;
 
   h2 {
-    margin: 0 0 8px;
-    font-size: clamp(24px, 2.2vw, 31px);
+    margin: 5px 0 6px;
+    font-size: 27px;
     line-height: 1.2;
-    font-weight: 720;
+    font-weight: 750;
     letter-spacing: -.02em;
     color: var(--color-font);
   }
 
   p {
     margin: 0;
-    max-width: 520px;
     color: var(--color-font-label);
-    font-size: 14px;
-    line-height: 1.7;
+    font-size: 12px;
+    line-height: 1.5;
   }
 }
-.welcomeActions {
-  grid-area: actions;
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 14px;
+.greetingTag {
+  color: var(--color-primary-dark-100);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.featureGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 2.25fr) minmax(220px, .75fr);
+  gap: 18px;
 }
 .dailyCard {
-  padding: 18px 20px;
-  border-radius: 22px;
+  min-width: 0;
+  min-height: 260px;
+  overflow: hidden;
+  display: flex;
+  gap: 22px;
+  padding: 26px;
+  box-sizing: border-box;
+  border-radius: 24px;
   color: var(--color-font);
-  background: rgb(from var(--color-main-background) r g b / .52);
+  background:
+    radial-gradient(circle at 8% 8%, var(--color-primary-alpha-700), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, .9), rgba(241, 250, 246, .7));
   border: 1px solid rgba(54, 83, 70, .14);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .68), 0 14px 34px rgba(35, 54, 46, .09);
-  backdrop-filter: blur(18px) saturate(1.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .86), 0 20px 48px rgba(35, 54, 46, .12);
+  backdrop-filter: blur(22px) saturate(1.2);
 }
-.dailyHeader {
+.dailyCover {
+  position: relative;
+  width: 194px;
+  height: 194px;
+  flex: none;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 3px;
+  border-radius: 22px;
+  background: var(--color-primary-alpha-900);
+  box-shadow: 0 18px 38px rgba(35, 54, 46, .18), inset 0 0 0 1px rgba(255, 255, 255, .45);
+}
+.coverTile {
+  min-width: 0;
+  overflow: hidden;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
+  justify-content: center;
+  color: var(--color-primary);
+  background: linear-gradient(145deg, var(--color-primary-alpha-900), rgba(255, 255, 255, .72));
 
-  h3 { margin: 0 0 4px; font-size: 15px; }
-  p { margin: 0; color: var(--color-font-label); font-size: 12px; }
+  img { width: 100%; height: 100%; object-fit: cover; }
+  :global(.svg-icon) { width: 24px; height: 24px; }
+}
+.dateBadge {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 58px;
+  height: 58px;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  color: var(--color-font);
+  background: rgba(255, 255, 255, .88);
+  box-shadow: 0 10px 28px rgba(35, 54, 46, .2), inset 0 0 0 1px rgba(255, 255, 255, .8);
+  backdrop-filter: blur(16px);
+
+  strong { font-size: 20px; line-height: 1; }
+  span { margin-top: 4px; color: var(--color-font-label); font-size: 9px; text-transform: uppercase; }
+}
+.dailyContent {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: center;
+
+  h3 { margin: 5px 0 7px; font-size: 19px; font-weight: 760; }
+  > p { margin: 0; color: var(--color-font-label); font-size: 12px; line-height: 1.55; }
+}
+.eyebrow {
+  color: var(--color-primary-dark-100);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .12em;
+}
+.trackPreview {
+  min-width: 0;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li { min-width: 0; display: flex; gap: 8px; padding: 3px 0; font-size: 11px; }
+  strong, span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  strong { max-width: 58%; font-weight: 620; }
+  span { flex: 1; color: var(--color-font-label); }
 }
 .dailyActions {
   display: flex;
-  gap: 8px;
+  gap: 9px;
+  margin-top: 13px;
 
   button {
-    min-height: 32px;
-    padding: 0 12px;
+    min-height: 34px;
+    padding: 0 14px;
     border: 0;
-    border-radius: 10px;
+    border-radius: 12px;
     color: var(--color-primary-font);
     background: var(--color-primary-alpha-900);
     cursor: pointer;
     font: inherit;
     font-size: 12px;
-    &:last-child { color: #fff; background: var(--color-primary); }
+    &:first-child { color: #fff; background: var(--color-primary); box-shadow: 0 8px 18px var(--color-primary-alpha-700); }
     &:disabled { cursor: default; opacity: .48; }
   }
 }
-.dailyTracks {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px 12px;
-  margin-top: 14px;
-
-  button {
-    min-width: 0;
-    padding: 8px 10px;
-    border: 0;
-    border-radius: 10px;
-    display: grid;
-    grid-template-columns: 22px minmax(0, 1fr) minmax(70px, .55fr);
-    align-items: center;
-    gap: 7px;
-    color: var(--color-font);
-    background: rgba(255, 255, 255, .34);
-    cursor: pointer;
-    text-align: left;
-    &:hover { background: var(--color-primary-alpha-900); }
-    span { color: var(--color-font-label); font-size: 11px; }
-    strong, small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    strong { font-size: 12px; font-weight: 600; }
-    small { color: var(--color-font-label); font-size: 11px; }
-  }
-}
 .dailyLoading {
-  min-height: 46px;
+  min-height: 42px;
   display: flex;
   align-items: center;
   color: var(--color-font-label);
+  font-size: 12px;
+}
+.cloudCard {
+  min-width: 0;
+  padding: 24px;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: flex-start;
+  border-radius: 24px;
+  color: var(--color-font);
+  background: rgba(255, 255, 255, .76);
+  border: 1px solid rgba(54, 83, 70, .13);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .82), 0 18px 42px rgba(35, 54, 46, .09);
+  backdrop-filter: blur(20px) saturate(1.15);
+
+  h3 { margin: 17px 0 7px; font-size: 16px; }
+  p { min-height: 40px; margin: 0; color: var(--color-font-label); font-size: 11px; line-height: 1.55; word-break: break-all; }
+}
+.cloudIcon, .loginIcon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  color: var(--color-font-label);
+  background: rgba(255, 255, 255, .65);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .74);
+
+  &.connected { color: #fff; background: var(--color-primary); }
+  :global(.svg-icon) { width: 19px; height: 19px; }
+}
+.statusPill {
+  align-self: flex-end;
+  margin-top: -36px;
+  padding: 5px 8px;
+  border-radius: 9px;
+  color: var(--color-font-label);
+  background: rgba(255, 255, 255, .55);
+  font-size: 9px;
+
+  &.connected { color: var(--color-primary-dark-100); background: var(--color-primary-alpha-900); }
+}
+.cloudAction {
+  width: 100%;
+  min-height: 35px;
+  margin-top: auto;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #fff;
+  background: var(--color-primary);
+  box-shadow: 0 9px 20px var(--color-primary-alpha-700);
+  font: inherit;
   font-size: 12px;
 }
 .searchAction {
@@ -398,9 +551,24 @@ const handleSearch = (text) => {
     opacity: .86;
   }
 }
-.shortcutHint {
-  color: var(--color-font-label);
-  font-size: 12px;
+.loginModal {
+  width: min(420px, 72vw);
+  padding: 25px;
+  box-sizing: border-box;
+  color: var(--color-font);
+
+  .loginIcon { color: #fff; background: var(--color-primary); }
+  h2 { margin: 15px 0 6px; font-size: 18px; }
+  > p { margin: 0 0 20px; color: var(--color-font-label); font-size: 12px; line-height: 1.6; }
+  label { display: block; margin-top: 13px; }
+  label > span { display: block; margin-bottom: 6px; color: var(--color-font-label); font-size: 11px; }
+  label :global(input) { width: 100%; box-sizing: border-box; }
+}
+.loginFooter {
+  margin-top: 22px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
 }
 .noitemListContainer {
   min-height: 0;
@@ -537,12 +705,14 @@ const handleSearch = (text) => {
     padding-left: 28px;
     padding-right: 28px;
   }
-  .welcomeCard {
-    padding: 28px;
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+  .cloudCard {
+    min-height: 170px;
   }
   .noitemListContainer {
     grid-template-columns: 1fr;
-    max-height: 270px;
   }
 }
 
@@ -551,16 +721,14 @@ const handleSearch = (text) => {
     align-items: flex-start;
     padding-top: 24px;
   }
-  .welcomeCard {
-    min-height: 168px;
-    grid-template-areas: 'icon copy' 'icon actions';
-    grid-template-columns: auto 1fr;
-    row-gap: 12px;
-    padding: 24px 28px;
+  .welcomeBar {
+    min-height: 58px;
   }
-  .welcomeActions {
-    align-self: start;
+  .dailyCard {
+    min-height: 208px;
+    padding: 18px;
   }
-  .dailyTracks button:nth-child(n + 5) { display: none; }
+  .dailyCover { width: 168px; height: 168px; }
+  .trackPreview li:nth-child(n + 3) { display: none; }
 }
 </style>

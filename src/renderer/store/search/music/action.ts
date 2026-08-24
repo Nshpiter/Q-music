@@ -2,6 +2,7 @@ import { markRaw } from '@common/utils/vueTools'
 import music from '@renderer/utils/musicSdk'
 import { deduplicationList, toNewMusicInfo } from '@renderer/utils'
 import { sortInsert, similar } from '@common/utils/common'
+import { assertApiSupport } from '@renderer/store/utils'
 
 import { sources, maxPages, listInfos } from './state'
 
@@ -11,6 +12,50 @@ interface SearchResult {
   limit: number
   total: number
   source: LX.OnlineSource
+}
+
+const aggregateSources = new WeakMap<LX.Music.MusicInfo, LX.Music.MusicInfo[]>()
+
+const normalizeText = (text: string) => text
+  .normalize('NFKC')
+  .toLocaleLowerCase()
+  .replace(/[^\p{L}\p{N}]+/gu, '')
+
+const normalizeSinger = (singer: string) => singer
+  .split(/[、,&/]+/)
+  .map(normalizeText)
+  .filter(Boolean)
+  .sort()
+  .join('')
+
+const getAggregateKey = (musicInfo: LX.Music.MusicInfo) => {
+  return `${normalizeText(musicInfo.name)}__${normalizeSinger(musicInfo.singer)}`
+}
+
+const mergeSourceResults = (list: LX.Music.MusicInfo[]) => {
+  const groups = new Map<string, LX.Music.MusicInfo[]>()
+  for (const item of deduplicationList(list)) {
+    const key = getAggregateKey(item)
+    const group = groups.get(key)
+    if (group) group.push(item)
+    else groups.set(key, [item])
+  }
+  return [...groups.values()].map(group => {
+    const selected = group.find(item => assertApiSupport(item.source)) ?? group[0]
+    for (const item of group) aggregateSources.set(item, group)
+    return selected
+  })
+}
+
+export const getAggregateSources = (musicInfo: LX.Music.MusicInfo) => {
+  return aggregateSources.get(musicInfo) ?? [musicInfo]
+}
+
+export const selectAggregateSource = (index: number, source: LX.OnlineSource) => {
+  const listInfo = listInfos.all
+  const current = listInfo.list[index]
+  const target = current && getAggregateSources(current).find(item => item.source == source)
+  if (target) listInfo.list[index] = target
 }
 
 
@@ -45,7 +90,7 @@ const setLists = (results: SearchResult[], page: number, text: string): LX.Music
     pages.push(source.allPage)
     totals.push(source.total)
   }
-  list = deduplicationList(list.map(s => markRaw(toNewMusicInfo(s))))
+  list = mergeSourceResults(list.map(s => markRaw(toNewMusicInfo(s))))
   let listInfo = listInfos.all
   listInfo.maxPage = Math.max(0, ...pages)
   const total = Math.max(0, ...totals)

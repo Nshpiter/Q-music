@@ -7,10 +7,13 @@
       :total="listInfo.total"
       :list="listInfo.list"
       :no-item="listInfo.noItemLabel"
-      :source-tag="sourceId == 'all'"
+      :source-selector="sourceId == 'all'"
+      :source-options="getSourceOptions"
+      :source-name="getSourceName"
       check-api-source
       @toggle-page="handleTogglePage"
       @play-list="handlePlayList"
+      @source-change="handleSourceChange"
     />
   </div>
 </template>
@@ -35,6 +38,9 @@ const {
   listInfo,
   search,
   handlePlayList,
+  getSourceOptions,
+  getSourceName,
+  handleSourceChange,
 } = useList()
 
 watch(() => [props.sourceId, props.page], ([sourceId, page]) => {

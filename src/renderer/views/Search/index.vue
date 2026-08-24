@@ -1,12 +1,11 @@
 <template>
   <div :class="$style.container">
     <div :class="$style.header">
-      <base-tab v-model="source" :list="sources" @change="handleSourceChange" />
       <base-tab v-model="searchType" :list="searchTypes" @change="handleTypeChange" />
     </div>
     <div :class="$style.main">
-      <song-list-list v-if="searchType == 'songlist'" v-show="searchText" :page="page" :source-id="source" />
-      <music-list v-else v-show="searchText" :page="page" :source-id="source" />
+      <song-list-list v-show="searchText && searchType == 'songlist'" :page="page" :source-id="source" />
+      <music-list v-show="searchText && searchType == 'music'" :page="page" :source-id="source" />
       <blank-view :visible="!searchText" :source="source" />
     </div>
   </div>
@@ -17,26 +16,23 @@ import { useRoute, useRouter } from '@common/utils/vueRouter'
 import { DEFAULT_SETTING } from '@common/constants'
 import { searchText } from '@renderer/store/search/state'
 import { getSearchSetting, setSearchSetting } from '@renderer/utils/data'
-import { sources as _sources } from '@renderer/store/search/music'
 
 import MusicList from './MusicList/index.vue'
 import SongListList from './SongListList/index.vue'
 import BlankView from './components/BlankView.vue'
 import { computed, ref } from '@common/utils/vueTools'
-import { sourceNames } from '@renderer/store'
 
-const source = ref('kw')
+const source = ref('all')
 const searchType = ref(null)
 const page = ref(1)
 
 const verifyQueryParams = async(to, from, next) => {
-  let _source = to.query.source
+  const _source = 'all'
   let _type = to.query.type
   let _page = to.query.page
 
-  if (_source == null || _type == null) {
+  if (to.query.source != _source || _type == null) {
     const setting = await getSearchSetting().catch(() => ({ ...DEFAULT_SETTING.search }))
-    _source ??= setting.source
     _type ??= setting.type
 
     next({
@@ -50,8 +46,8 @@ const verifyQueryParams = async(to, from, next) => {
 
   if (_page) page.value = parseInt(_page)
 
+  searchText.value = to.query.text ?? ''
   if (to.query.text != null) {
-    searchText.value = to.query.text
     if (!_page) page.value = 1
   }
   next()
@@ -70,23 +66,6 @@ export default {
     const route = useRoute()
     const router = useRouter()
 
-    const sources = _sources.map(id => {
-      return {
-        id,
-        label: sourceNames.value[id],
-      }
-    })
-    const handleSourceChange = (id) => {
-      void router.replace({
-        path: route.path,
-        query: {
-          ...route.query,
-          source: id,
-          page: 1,
-        },
-      })
-    }
-
     const searchTypes = computed(() => {
       return [
         { label: window.i18n.t('search__type_music'), id: 'music' },
@@ -94,6 +73,7 @@ export default {
       ]
     })
     const handleTypeChange = (type) => {
+      searchType.value = type
       void router.replace({
         path: route.path,
         query: {
@@ -106,9 +86,7 @@ export default {
 
 
     return {
-      sources,
       source,
-      handleSourceChange,
       searchTypes,
       searchType,
       handleTypeChange,
@@ -123,21 +101,24 @@ export default {
 
 <style lang="less" module>
 .container {
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-flow: column nowrap;
 }
 
 .header {
-  // padding: 5px 0;
   flex: none;
   display: flex;
   flex-flow: row nowrap;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .main {
   position: relative;
   flex: auto;
-  // min-height: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 </style>

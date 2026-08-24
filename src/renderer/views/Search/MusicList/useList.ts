@@ -5,7 +5,7 @@ import { getListMusics, addListMusics } from '@renderer/store/list/action'
 import { addHistoryWord } from '@renderer/store/search/action'
 // import { useI18n } from '@renderer/plugins/i18n'
 // import { } from '@renderer/store/search/state'
-import { search as searchMusic, listInfos, type ListInfo } from '@renderer/store/search/music'
+import { search as searchMusic, listInfos, getAggregateSources, selectAggregateSource, type ListInfo } from '@renderer/store/search/music'
 import { assertApiSupport } from '@renderer/store/utils'
 
 export type SearchSource = LX.OnlineSource | 'all'
@@ -48,10 +48,23 @@ export default () => {
     if (targetIndex > -1) playList(LIST_IDS.DEFAULT, targetIndex)
   }
 
+  const getSourceOptions = (musicInfo: LX.Music.MusicInfo) => {
+    return getAggregateSources(musicInfo).map(item => item.source)
+  }
+
+  const getSourceName = (source: LX.OnlineSource) => window.i18n.t(`source_${source}` as any)
+
+  const handleSourceChange = ({ index, source }: { index: number, source: LX.OnlineSource }) => {
+    selectAggregateSource(index, source)
+  }
+
   return {
     listRef,
     listInfo,
     search,
     handlePlayList,
+    getSourceOptions,
+    getSourceName,
+    handleSourceChange,
   }
 }

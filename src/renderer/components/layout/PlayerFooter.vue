@@ -10,7 +10,7 @@
         @click.stop="toggleDetail"
       >
         <img v-if="musicInfo.pic" :src="musicInfo.pic" decoding="async" @error="handleImgError">
-        <span v-else>Q</span>
+        <svg-icon v-else name="music" :class="$style.coverPlaceholder" />
         <span :class="[$style.coverHint, { [$style.coverHintFlip]: props.detail }]" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M6 14l6-6 6 6" />
@@ -205,11 +205,6 @@ const handleImgError = () => {
     object-fit: cover;
   }
 
-  span {
-    font-size: 16px;
-    font-weight: 700;
-  }
-
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 14px 28px rgba(50, 63, 82, .18);
@@ -223,6 +218,11 @@ const handleImgError = () => {
     transform: scale(.96);
     opacity: .88;
   }
+}
+.coverPlaceholder {
+  width: 21px;
+  height: 21px;
+  opacity: .9;
 }
 .coverHint {
   position: absolute;
