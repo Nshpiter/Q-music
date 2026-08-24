@@ -1,23 +1,25 @@
 <template>
   <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
     <div v-show="props.visible" :class="$style.noitem">
-      <div class="scroll" :class="$style.noitemShell">
+      <div v-if="!isShowDailyDetail" class="scroll" :class="$style.noitemShell">
         <header :class="$style.welcomeBar">
           <div :class="$style.welcomeCopy">
             <span :class="$style.greetingTag">{{ $t('search__home_eyebrow') }}</span>
             <h2>{{ $t('search__welcome') }}</h2>
             <p>{{ $t('search__welcome_subtitle') }}</p>
           </div>
-          <button type="button" :class="$style.searchAction" @click="focusSearch">
-            <svg viewBox="0 0 425.2 425.2" aria-hidden="true">
-              <use xlink:href="#icon-search-2" />
-            </svg>
-            <span>{{ $t('search__welcome_action') }}</span>
+          <button type="button" :class="[$style.syncAction, { [$style.connected]: isCloudConnected }]" @click="handleCloudAction">
+            <svg-icon name="phone" />
+            <span>{{ syncActionText }}</span>
           </button>
         </header>
 
         <div :class="$style.featureGrid">
-          <section :class="$style.dailyCard">
+          <section
+            :class="$style.dailyCard" role="button" tabindex="0"
+            :aria-label="$t('search__daily_open')" @click="openDailyDetail"
+            @keydown.enter="openDailyDetail" @keydown.space.prevent="openDailyDetail"
+          >
             <div :class="$style.dailyCover" aria-hidden="true">
               <div v-for="index in 4" :key="index" :class="$style.coverTile">
                 <img v-if="dailyCoverUrls[index - 1]" :src="dailyCoverUrls[index - 1]" alt="" @error="handleDailyCoverError(index - 1)">
@@ -37,24 +39,11 @@
               </ol>
               <div v-else :class="$style.dailyLoading">{{ isDailyLoading ? $t('search__daily_recommend_loading') : $t('search__daily_recommend_empty') }}</div>
               <div :class="$style.dailyActions">
-                <button type="button" :disabled="!dailyRecommendList.length" @click="playDailyRecommend">{{ $t('search__daily_recommend_play') }}</button>
-                <button type="button" :disabled="isDailyLoading" @click="loadDailyRecommend(true)">{{ $t('search__daily_recommend_refresh') }}</button>
+                <button type="button" :disabled="!dailyRecommendList.length" @click.stop="playDailyRecommend()">{{ $t('search__daily_recommend_play') }}</button>
+                <button type="button" :disabled="isDailyLoading" @click.stop="loadDailyRecommend(true)">{{ $t('search__daily_recommend_refresh') }}</button>
+                <span :class="$style.openHint">{{ $t('search__daily_open') }} ›</span>
               </div>
             </div>
-          </section>
-
-          <section :class="$style.cloudCard">
-            <div :class="[$style.cloudIcon, { [$style.connected]: isCloudConnected }]">
-              <svg-icon name="share" />
-            </div>
-            <span :class="[$style.statusPill, { [$style.connected]: isCloudConnected }]">
-              {{ isCloudConnected ? $t('search__cloud_connected') : $t('search__cloud_disconnected') }}
-            </span>
-            <h3>{{ $t('search__cloud_account') }}</h3>
-            <p>{{ isCloudConnected ? sync.client.host : $t('search__cloud_desc') }}</p>
-            <button type="button" :class="$style.cloudAction" @click="handleCloudAction">
-              {{ isCloudConnected ? $t('search__cloud_manage') : $t('search__cloud_login') }}
-            </button>
           </section>
         </div>
 
@@ -85,24 +74,52 @@
           </dl>
         </div>
       </div>
+      <div v-else :class="$style.dailyDetail">
+        <header :class="$style.detailHeader">
+          <button type="button" :class="$style.backButton" :aria-label="$t('back')" @click="closeDailyDetail">‹</button>
+          <div :class="$style.detailCover" aria-hidden="true">
+            <img v-if="dailyCoverUrls[0]" :src="dailyCoverUrls[0]" alt="" @error="handleDailyCoverError(0)">
+            <svg-icon v-else name="music" />
+          </div>
+          <div :class="$style.detailCopy">
+            <span :class="$style.eyebrow">{{ $t('search__daily_eyebrow') }}</span>
+            <h2>{{ $t('search__daily_recommend') }}</h2>
+            <p>{{ todayLabel }} · {{ $t('search__daily_count', { count: dailyRecommendList.length }) }}</p>
+          </div>
+          <div :class="$style.detailActions">
+            <base-btn min :disabled="!dailyRecommendList.length" @click="playDailyRecommend()">{{ $t('search__daily_recommend_play') }}</base-btn>
+            <base-btn min :disabled="isDailyLoading" @click="loadDailyRecommend(true)">{{ $t('search__daily_recommend_refresh') }}</base-btn>
+          </div>
+        </header>
+        <div :class="$style.detailList">
+          <material-online-list
+            :page="1" :limit="dailyRecommendList.length || 12" :total="dailyRecommendList.length"
+            :list="dailyRecommendList" :no-item="dailyDetailEmptyText" check-api-source
+            @play-list="playDailyRecommend"
+          />
+        </div>
+      </div>
     </div>
   </transition>
-  <material-modal :show="isShowCloudLogin" :bg-close="false" @close="closeCloudLogin" @after-enter="focusCloudHost">
-    <main :class="$style.loginModal">
-      <div :class="$style.loginIcon"><svg-icon name="share" /></div>
-      <h2>{{ $t('search__cloud_login_title') }}</h2>
-      <p>{{ $t('search__cloud_login_desc') }}</p>
-      <label>
-        <span>{{ $t('search__cloud_host') }}</span>
-        <base-input ref="cloudHostInput" v-model="cloudHost" :placeholder="$t('setting__sync_client_host_tip')" />
-      </label>
-      <label>
-        <span>{{ $t('search__cloud_code') }}</span>
-        <base-input v-model="cloudCode" type="password" :placeholder="$t('sync__auth_code_input_tip')" @submit="submitCloudLogin" />
-      </label>
+  <material-modal :show="isShowSyncQr" :bg-close="false" @close="closeSyncQr">
+    <main :class="$style.qrModal">
+      <div :class="$style.qrHeading">
+        <div :class="$style.qrIcon"><svg-icon name="phone" /></div>
+        <div>
+          <h2>{{ $t('search__sync_qr_title') }}</h2>
+          <p>{{ $t('search__sync_qr_desc') }}</p>
+        </div>
+      </div>
+      <div :class="$style.qrStage">
+        <img v-if="syncQrImage" :src="syncQrImage" :alt="$t('search__sync_qr_title')">
+        <div v-else :class="$style.qrLoading">{{ syncQrStatusText }}</div>
+      </div>
+      <p :class="$style.qrTip">{{ $t('search__sync_qr_tip') }}</p>
+      <p v-if="syncQrHost" :class="$style.qrAddress">{{ syncQrHost }}</p>
       <div :class="$style.loginFooter">
-        <base-btn min @click="closeCloudLogin">{{ $t('btn_cancel') }}</base-btn>
-        <base-btn min :disabled="!isCloudLoginValid" @click="submitCloudLogin">{{ $t('search__cloud_login') }}</base-btn>
+        <base-btn min @click="openSyncSettings">{{ $t('search__cloud_manage') }}</base-btn>
+        <base-btn min :disabled="!sync.server.status.status" @click="refreshSyncCode">{{ $t('setting__sync_server_refresh_code') }}</base-btn>
+        <base-btn min @click="closeSyncQr">{{ $t('btn_close') }}</base-btn>
       </div>
     </main>
   </material-modal>
@@ -115,7 +132,6 @@ import { getHistoryList, removeHistoryWord, clearHistoryList } from '@renderer/s
 import { clearList, getList } from '@renderer/store/hotSearch'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import { useRouter } from '@common/utils/vueRouter'
-import { HOTKEY_COMMON } from '@common/hotKey'
 import { getDailyRecommend } from '@renderer/core/dailyRecommend'
 import { setTempList } from '@renderer/store/list/action'
 import { playList } from '@renderer/core/player/action'
@@ -123,6 +139,7 @@ import { getPicPath } from '@renderer/core/music'
 import { LIST_IDS } from '@common/constants'
 import { sync } from '@renderer/store'
 import { sendSyncAction } from '@renderer/utils/ipc'
+import QRCode from 'qrcode'
 
 const props = defineProps({
   visible: Boolean,
@@ -137,17 +154,45 @@ const isHotSearchLoading = shallowRef(false)
 const dailyRecommendList = shallowRef([])
 const dailyCoverUrls = shallowRef([])
 const isDailyLoading = shallowRef(false)
-const isShowCloudLogin = ref(false)
-const cloudHost = ref('')
-const cloudCode = ref('')
-const cloudHostInput = ref(null)
+const isShowDailyDetail = ref(false)
+const isShowSyncQr = ref(false)
+const syncQrImage = ref('')
 let hotSearchRequestId = 0
 let dailyRequestId = 0
+let qrRequestId = 0
 const now = new Date()
 const todayDay = String(now.getDate()).padStart(2, '0')
 const todayMonth = new Intl.DateTimeFormat(window.i18n.locale || 'zh-CN', { month: 'short' }).format(now)
-const isCloudConnected = computed(() => sync.enable && sync.mode == 'client' && sync.client.status.status)
-const isCloudLoginValid = computed(() => /^https?:\/\/\S+$/i.test(cloudHost.value.trim()) && cloudCode.value.trim().length > 0)
+const todayLabel = new Intl.DateTimeFormat(window.i18n.locale || 'zh-CN', { month: 'long', day: 'numeric' }).format(now)
+const isCloudConnected = computed(() => sync.enable && (
+  (sync.mode == 'server' && sync.server.status.devices.length > 0) ||
+  (sync.mode == 'client' && sync.client.status.status)
+))
+const syncActionText = computed(() => {
+  if (sync.mode == 'server' && sync.server.status.devices.length) {
+    return window.i18n.t('search__sync_connected_devices', { count: sync.server.status.devices.length })
+  }
+  if (sync.mode == 'client' && sync.client.status.status) return window.i18n.t('search__cloud_connected')
+  return window.i18n.t('search__sync_scan')
+})
+const syncQrHost = computed(() => {
+  const addresses = sync.server.status.address
+  const address = addresses.find(ip => /^(?:10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(ip)) ?? addresses[0]
+  if (!address) return ''
+  return `http://${address}:${appSetting['sync.server.port']}`
+})
+const syncQrPayload = computed(() => {
+  if (!syncQrHost.value || !sync.server.status.code) return ''
+  const data = encodeURIComponent(JSON.stringify({
+    host: syncQrHost.value,
+    authCode: sync.server.status.code,
+  }))
+  return `qmusic://sync/connect?data=${data}`
+})
+const syncQrStatusText = computed(() => sync.server.status.message || window.i18n.t('search__sync_qr_preparing'))
+const dailyDetailEmptyText = computed(() => isDailyLoading.value
+  ? window.i18n.t('search__daily_recommend_loading')
+  : window.i18n.t('search__daily_recommend_empty'))
 const hasDiscoveryContent = computed(() => {
   return appSetting['search.isShowHotSearch'] ||
     (appSetting['search.isShowHistorySearch'] && historyList.length > 0)
@@ -211,7 +256,10 @@ const handleDailyCoverError = (index) => {
 
 watch(
   () => [props.visible, props.source],
-  () => { void loadDailyRecommend() },
+  ([visible]) => {
+    if (!visible) isShowDailyDetail.value = false
+    void loadDailyRecommend()
+  },
   { immediate: true },
 )
 
@@ -221,41 +269,71 @@ const playDailyRecommend = async(index = 0) => {
   playList(LIST_IDS.TEMP, index)
 }
 
-const closeCloudLogin = () => {
-  isShowCloudLogin.value = false
-  cloudCode.value = ''
+const openDailyDetail = () => {
+  isShowDailyDetail.value = true
 }
 
-const focusCloudHost = () => {
-  cloudHostInput.value?.focus()
+const closeDailyDetail = () => {
+  isShowDailyDetail.value = false
+}
+
+watch(syncQrPayload, async(payload) => {
+  const requestId = ++qrRequestId
+  syncQrImage.value = ''
+  if (!payload) return
+  try {
+    const image = await QRCode.toDataURL(payload, {
+      width: 240,
+      margin: 1,
+      errorCorrectionLevel: 'M',
+      color: { dark: '#242726', light: '#ffffff' },
+    })
+    if (requestId == qrRequestId) syncQrImage.value = image
+  } catch {
+    if (requestId == qrRequestId) syncQrImage.value = ''
+  }
+}, { immediate: true })
+
+const prepareSyncServer = async() => {
+  if (sync.mode == 'client' && sync.enable) {
+    await sendSyncAction({ action: 'enable_client', data: { enable: false, host: sync.client.host } })
+  }
+  sync.enable = true
+  sync.mode = 'server'
+  sync.server.port = appSetting['sync.server.port']
+  updateSetting({
+    'sync.enable': true,
+    'sync.mode': 'server',
+  })
+  if (!sync.server.status.status) {
+    await sendSyncAction({
+      action: 'enable_server',
+      data: { enable: true, port: appSetting['sync.server.port'] },
+    })
+  }
 }
 
 const handleCloudAction = () => {
   if (isCloudConnected.value) {
-    void router.push({ name: 'Setting', query: { name: 'SettingSync' } })
+    openSyncSettings()
     return
   }
-  cloudHost.value = appSetting['sync.client.host'] || ''
-  isShowCloudLogin.value = true
+  isShowSyncQr.value = true
+  void prepareSyncServer()
 }
 
-const submitCloudLogin = () => {
-  if (!isCloudLoginValid.value) return
-  const host = cloudHost.value.trim().replace(/\/$/, '')
-  const authCode = cloudCode.value.trim()
-  sync.enable = true
-  sync.mode = 'client'
-  sync.client.host = host
-  updateSetting({
-    'sync.enable': true,
-    'sync.mode': 'client',
-    'sync.client.host': host,
-  })
-  void sendSyncAction({
-    action: 'enable_client',
-    data: { enable: true, host, authCode },
-  })
-  closeCloudLogin()
+const closeSyncQr = () => {
+  isShowSyncQr.value = false
+}
+
+const refreshSyncCode = () => {
+  syncQrImage.value = ''
+  void sendSyncAction({ action: 'generate_code' })
+}
+
+const openSyncSettings = () => {
+  closeSyncQr()
+  void router.push({ name: 'Setting', query: { name: 'SettingSync' } })
 }
 
 watch(
@@ -271,9 +349,6 @@ const refreshHotSearch = () => {
 }
 
 const router = useRouter()
-const focusSearch = () => {
-  window.key_event.emit(HOTKEY_COMMON.focusSearchInput.action)
-}
 const handleSearch = (text) => {
   void router.replace({
     path: '/search',
@@ -345,9 +420,7 @@ const handleSearch = (text) => {
   text-transform: uppercase;
 }
 .featureGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 2.25fr) minmax(220px, .75fr);
-  gap: 18px;
+  display: block;
 }
 .dailyCard {
   min-width: 0;
@@ -365,6 +438,17 @@ const handleSearch = (text) => {
   border: 1px solid rgba(54, 83, 70, .14);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .86), 0 20px 48px rgba(35, 54, 46, .12);
   backdrop-filter: blur(22px) saturate(1.2);
+  cursor: pointer;
+  outline: none;
+  transition: transform @transition-fast, box-shadow @transition-fast, border-color @transition-fast;
+
+  &:hover, &:focus-visible {
+    transform: translateY(-2px);
+    border-color: var(--color-primary-alpha-700);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 24px 54px rgba(35, 54, 46, .16);
+  }
+
+  &:active { transform: scale(.995); }
 }
 .dailyCover {
   position: relative;
@@ -457,6 +541,14 @@ const handleSearch = (text) => {
     &:disabled { cursor: default; opacity: .48; }
   }
 }
+.openHint {
+  margin-left: auto;
+  align-self: center;
+  color: var(--color-primary-dark-100);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
 .dailyLoading {
   min-height: 42px;
   display: flex;
@@ -464,105 +556,168 @@ const handleSearch = (text) => {
   color: var(--color-font-label);
   font-size: 12px;
 }
-.cloudCard {
-  min-width: 0;
-  padding: 24px;
-  display: flex;
-  flex-flow: column nowrap;
-  align-items: flex-start;
-  border-radius: 24px;
-  color: var(--color-font);
-  background: rgba(255, 255, 255, .76);
-  border: 1px solid rgba(54, 83, 70, .13);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .82), 0 18px 42px rgba(35, 54, 46, .09);
-  backdrop-filter: blur(20px) saturate(1.15);
-
-  h3 { margin: 17px 0 7px; font-size: 16px; }
-  p { min-height: 40px; margin: 0; color: var(--color-font-label); font-size: 11px; line-height: 1.55; word-break: break-all; }
-}
-.cloudIcon, .loginIcon {
-  width: 42px;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 14px;
-  color: var(--color-font-label);
-  background: rgba(255, 255, 255, .65);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .74);
-
-  &.connected { color: #fff; background: var(--color-primary); }
-  :global(.svg-icon) { width: 19px; height: 19px; }
-}
-.statusPill {
-  align-self: flex-end;
-  margin-top: -36px;
-  padding: 5px 8px;
-  border-radius: 9px;
-  color: var(--color-font-label);
-  background: rgba(255, 255, 255, .55);
-  font-size: 9px;
-
-  &.connected { color: var(--color-primary-dark-100); background: var(--color-primary-alpha-900); }
-}
-.cloudAction {
-  width: 100%;
-  min-height: 35px;
-  margin-top: auto;
-  border: 0;
-  border-radius: 12px;
-  cursor: pointer;
-  color: #fff;
-  background: var(--color-primary);
-  box-shadow: 0 9px 20px var(--color-primary-alpha-700);
-  font: inherit;
-  font-size: 12px;
-}
-.searchAction {
+.syncAction {
   height: 40px;
-  padding: 0 18px;
-  border: 0;
+  padding: 0 15px;
+  border: 1px solid rgba(54, 83, 70, .12);
   border-radius: 14px;
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   cursor: pointer;
-  color: #fff;
+  color: var(--color-primary-dark-100);
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 650;
-  background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary));
-  box-shadow: 0 10px 24px var(--color-primary-alpha-700), inset 0 1px 0 rgba(255, 255, 255, .35);
+  background: rgba(255, 255, 255, .62);
+  box-shadow: 0 8px 22px rgba(35, 54, 46, .08), inset 0 1px 0 rgba(255, 255, 255, .72);
   transition: transform @transition-fast, box-shadow @transition-fast, opacity @transition-fast;
 
-  svg {
-    width: 16px;
-    height: 16px;
-    fill: currentColor;
-  }
+  :global(.svg-icon) { width: 16px; height: 16px; }
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 14px 28px var(--color-primary-alpha-600), inset 0 1px 0 rgba(255, 255, 255, .42);
+    box-shadow: 0 12px 26px rgba(35, 54, 46, .13), inset 0 1px 0 rgba(255, 255, 255, .8);
   }
 
   &:active {
     transform: scale(.97);
     opacity: .86;
   }
+
+  &.connected {
+    color: #fff;
+    border-color: transparent;
+    background: var(--color-primary);
+  }
 }
-.loginModal {
-  width: min(420px, 72vw);
+.dailyDetail {
+  width: min(980px, 100%);
+  height: 100%;
+  min-height: 0;
+  padding: 4px 8px 12px;
+  box-sizing: border-box;
+  display: flex;
+  flex-flow: column nowrap;
+}
+.detailHeader {
+  flex: none;
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px 18px;
+}
+.backButton {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border: 1px solid rgba(54, 83, 70, .12);
+  border-radius: 13px;
+  color: var(--color-font);
+  background: rgba(255, 255, 255, .58);
+  cursor: pointer;
+  font: inherit;
+  font-size: 29px;
+  line-height: 1;
+}
+.detailCover {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  color: var(--color-primary);
+  background: var(--color-primary-alpha-900);
+  box-shadow: 0 10px 26px rgba(35, 54, 46, .14);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  :global(.svg-icon) { width: 25px; height: 25px; }
+}
+.detailCopy {
+  min-width: 0;
+  flex: 1;
+
+  h2 { margin: 4px 0 5px; color: var(--color-font); font-size: 23px; }
+  p { margin: 0; color: var(--color-font-label); font-size: 12px; }
+}
+.detailActions {
+  display: flex;
+  gap: 9px;
+}
+.detailList {
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid rgba(54, 83, 70, .11);
+  border-radius: 22px;
+  background: rgb(from var(--color-main-background) r g b / .46);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .68), 0 14px 36px rgba(35, 54, 46, .08);
+  backdrop-filter: blur(18px) saturate(1.12);
+}
+.qrModal {
+  width: min(410px, 76vw);
   padding: 25px;
   box-sizing: border-box;
   color: var(--color-font);
+}
+.qrHeading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
 
-  .loginIcon { color: #fff; background: var(--color-primary); }
-  h2 { margin: 15px 0 6px; font-size: 18px; }
-  > p { margin: 0 0 20px; color: var(--color-font-label); font-size: 12px; line-height: 1.6; }
-  label { display: block; margin-top: 13px; }
-  label > span { display: block; margin-bottom: 6px; color: var(--color-font-label); font-size: 11px; }
-  label :global(input) { width: 100%; box-sizing: border-box; }
+  h2 { margin: 0 0 5px; font-size: 18px; }
+  p { margin: 0; color: var(--color-font-label); font-size: 11px; line-height: 1.5; }
+}
+.qrIcon {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  color: #fff;
+  background: var(--color-primary);
+
+  :global(.svg-icon) { width: 19px; height: 19px; }
+}
+.qrStage {
+  width: 250px;
+  height: 250px;
+  margin: 22px auto 13px;
+  padding: 5px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 16px 38px rgba(35, 54, 46, .14);
+
+  img { width: 240px; height: 240px; border-radius: 17px; }
+}
+.qrLoading {
+  width: 180px;
+  color: #777;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+.qrTip, .qrAddress {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.qrTip { color: var(--color-font-label); }
+.qrAddress {
+  margin-top: 4px;
+  color: var(--color-primary-dark-100);
+  word-break: break-all;
 }
 .loginFooter {
   margin-top: 22px;
@@ -705,15 +860,11 @@ const handleSearch = (text) => {
     padding-left: 28px;
     padding-right: 28px;
   }
-  .featureGrid {
-    grid-template-columns: 1fr;
-  }
-  .cloudCard {
-    min-height: 170px;
-  }
   .noitemListContainer {
     grid-template-columns: 1fr;
   }
+  .detailHeader { flex-wrap: wrap; }
+  .detailActions { width: 100%; padding-left: 54px; }
 }
 
 @media (max-height: 680px) {
