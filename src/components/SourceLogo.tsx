@@ -1,0 +1,34 @@
+import { Image, StyleSheet, View } from 'react-native'
+import { useTheme } from '@/store/theme/hook'
+
+const SOURCES: Record<string, { label: string, uri: string }> = {
+  tx: { label: 'QQ音乐', uri: 'https://y.qq.com/mediastyle/yqq/img/logo.png?max_age=2592000' },
+  wy: { label: '网易云音乐', uri: 'https://s2.music.126.net/style/web2/img/logo.png?564bc3a5ff72eb9d555a7f46bf934203' },
+  kg: { label: '酷狗音乐', uri: 'https://www.kugou.com/common/images/icon_logo_v20.png' },
+  spotify: { label: 'Spotify', uri: 'https://open.spotifycdn.com/cdn/images/favicon32.b64ecc03.png' },
+}
+
+export default ({ source, size = 24 }: { source: string, size?: number }) => {
+  const theme = useTheme()
+  const item = SOURCES[source]
+
+  if (!item) return null
+  return (
+    <View
+      accessibilityRole="image"
+      accessibilityLabel={item.label}
+      style={[styles.container, { width: size, height: size, borderRadius: size * 0.28, backgroundColor: theme['q-surface-base'] }]}
+    >
+      <Image source={{ uri: item.uri }} style={{ width: size, height: size }} resizeMode="contain" />
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexShrink: 0,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+})

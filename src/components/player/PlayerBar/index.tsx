@@ -56,13 +56,13 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 96,
-    paddingTop: 8,
+    minHeight: 104,
+    paddingTop: 10,
     paddingBottom: 8,
-    paddingHorizontal: 10,
-    marginLeft: 12,
-    marginRight: 12,
-    marginBottom: 10,
+    paddingHorizontal: 12,
+    marginLeft: 10,
+    marginRight: 10,
+    marginBottom: 8,
     borderRadius: Q_UI.radius.player,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',

@@ -9,6 +9,7 @@ import type { Message } from '@/lang'
 import listState from '@/store/list/state'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle, toast } from '@/utils/tools'
+import SourceLogo from '@/components/SourceLogo'
 import {
   ExternalImportError,
   getDefaultImportListName,
@@ -237,6 +238,7 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
                   },
                 ]}
               >
+                <SourceLogo source={item.id} size={25} />
                 <Text
                   size={12}
                   color={active ? theme['q-accent-text'] : theme['q-text-secondary']}
@@ -459,12 +461,14 @@ const styles = createStyle({
     gap: 7,
   },
   sourceButton: {
+    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     flex: 1,
     height: 38,
     borderRadius: 11,
     borderWidth: StyleSheet.hairlineWidth,
-    justifyContent: 'center',
-    alignItems: 'center',
     paddingHorizontal: 3,
   },
   targetList: {

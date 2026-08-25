@@ -9,7 +9,8 @@ import { useTheme } from '@/store/theme/hook'
 import { qSurfaceShadow } from '@/theme/ui'
 import { createStyle } from '@/utils/tools'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { ActivityIndicator, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Image, TouchableOpacity, View } from 'react-native'
+import { Icon } from '@/components/common/Icon'
 
 type Source = LX.OnlineSource | 'all'
 
@@ -85,12 +86,19 @@ export default forwardRef<DailyRecommendType>((_, ref) => {
       {loading
         ? <View style={styles.state}><ActivityIndicator color={theme['q-accent']} /><Text size={12} color={theme['q-text-secondary']}>{t('search_daily_recommend_loading')}</Text></View>
         : list.length
-          ? list.slice(0, 5).map((item, index) => (
+          ? list.slice(0, 8).map((item, index) => (
               <TouchableOpacity key={item.id} style={styles.item} activeOpacity={0.65} onPress={() => { void handlePlay(index) }}>
-                <Text style={styles.index} size={12} color={theme['q-accent-text']}>{String(index + 1).padStart(2, '0')}</Text>
+                <View style={{ ...styles.cover, backgroundColor: theme['q-surface-tint'] }}>
+                  {item.meta.picUrl
+                    ? <Image source={{ uri: item.meta.picUrl }} style={styles.coverImage} />
+                    : <Icon name="album" color={theme['q-accent-text']} rawSize={18} />}
+                </View>
                 <View style={styles.musicInfo}>
                   <Text numberOfLines={1} size={14} color={theme['q-text-primary']}>{item.name}</Text>
                   <Text numberOfLines={1} size={11} color={theme['q-text-secondary']}>{item.singer}</Text>
+                </View>
+                <View style={{ ...styles.playFace, backgroundColor: theme['q-surface-tint'] }}>
+                  <Icon name="play" color={theme['q-accent-text']} rawSize={13} />
                 </View>
               </TouchableOpacity>
           ))
@@ -102,7 +110,7 @@ export default forwardRef<DailyRecommendType>((_, ref) => {
 const styles = createStyle({
   container: {
     paddingTop: 18,
-    paddingBottom: 12,
+    paddingBottom: 14,
     paddingLeft: 16,
     paddingRight: 16,
     borderWidth: 1,
@@ -136,17 +144,34 @@ const styles = createStyle({
     overflow: 'hidden',
   },
   item: {
-    minHeight: 48,
+    minHeight: 62,
     flexDirection: 'row',
     alignItems: 'center',
+    borderRadius: 14,
   },
-  index: {
-    width: 30,
-    fontWeight: '700',
+  cover: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverImage: {
+    width: 46,
+    height: 46,
   },
   musicInfo: {
     flex: 1,
+    paddingLeft: 11,
     gap: 2,
+  },
+  playFace: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   state: {
     minHeight: 82,

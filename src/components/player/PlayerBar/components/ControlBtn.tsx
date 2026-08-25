@@ -6,9 +6,9 @@ import { playNext, playPrev, togglePlay } from '@/core/player/player'
 import { qSoftShadow } from '@/theme/ui'
 import { useWindowSize } from '@/utils/hooks'
 
-const SECONDARY_FACE_SIZE = 30
-const PRIMARY_FACE_SIZE = 40
-const TOUCH_SIZE = 44
+const SECONDARY_FACE_SIZE = 32
+const PRIMARY_FACE_SIZE = 44
+const TOUCH_SIZE = 46
 
 const TransportButton = ({ icon, primary = false, onPress }: {
   icon: string
@@ -29,7 +29,7 @@ const TransportButton = ({ icon, primary = false, onPress }: {
           primary
             ? {
                 ...qSoftShadow,
-                backgroundColor: theme['c-primary-light-100'],
+                backgroundColor: theme.isDark ? '#f4f6f5' : '#252827',
                 borderColor: theme.isDark ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.68)',
               }
             : null,
@@ -37,7 +37,7 @@ const TransportButton = ({ icon, primary = false, onPress }: {
       >
         <Icon
           name={icon}
-          color={primary ? '#fff' : theme['q-text-primary']}
+          color={primary ? (theme.isDark ? '#252827' : '#fff') : theme['q-text-primary']}
           size={primary ? 20 : 18}
         />
       </View>
@@ -75,6 +75,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 1,
   },
   touchTarget: {
     width: TOUCH_SIZE,

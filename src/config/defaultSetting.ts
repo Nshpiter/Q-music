@@ -3,7 +3,7 @@ const defaultSetting: LX.AppSetting = {
   'common.isAutoTheme': false,
   'common.langId': null,
   'common.apiSource': '',
-  'common.sourceNameType': 'alias',
+  'common.sourceNameType': 'real',
   'common.shareType': 'system',
   'common.isAgreePact': false,
   'common.autoHidePlayBar': true,

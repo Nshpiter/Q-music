@@ -11,6 +11,7 @@ import Button from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { qFloatingShadow } from '@/theme/ui'
 import DailyRecommend, { type DailyRecommendType } from './DailyRecommend'
+import AccountConnect from './AccountConnect'
 
 interface BlankViewProps {
   onSearch: (keyword: string) => void
@@ -27,7 +28,7 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch, onFocusSea
   const hotSearchRef = useRef<HotSearchType>(null)
   const historySearchRef = useRef<HistorySearchType>(null)
   const dailyRecommendRef = useRef<DailyRecommendType>(null)
-  const sourceRef = useRef<Source>('kw')
+  const sourceRef = useRef<Source>('all')
   const isShowHotSearch = useSettingValue('search.isShowHotSearch')
   const isShowHistorySearch = useSettingValue('search.isShowHistorySearch')
   const t = useI18n()
@@ -65,20 +66,17 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch, onFocusSea
                 borderColor: theme['q-outline'],
               }}
             >
-              <View style={{ ...styles.welcomeIcon, backgroundColor: theme['q-accent'] }}>
-                <Icon name="search-2" color={theme['q-on-accent']} rawSize={25} />
+              <View style={styles.welcomeCopy}>
+                <Text style={styles.eyebrow} size={10} color={theme['q-accent-text']}>FOR YOU</Text>
+                <Text style={styles.welcomeTitle} size={25} color={theme['q-text-primary']}>{t('search__welcome')}</Text>
+                <Text style={styles.welcomeSubtitle} size={13} color={theme['q-text-secondary']}>{t('search_welcome_subtitle')}</Text>
               </View>
-              <Text style={styles.welcomeTitle} size={24} color={theme['q-text-primary']}>{t('search__welcome')}</Text>
-              <Text style={styles.welcomeSubtitle} size={13} color={theme['q-text-secondary']}>{t('search_welcome_subtitle')}</Text>
-              <Button
-                style={{ ...styles.searchAction, backgroundColor: theme['q-accent'] }}
-                onPress={onFocusSearch}
-              >
-                <Icon name="search-2" color={theme['q-on-accent']} rawSize={16} />
-                <Text size={13} color={theme['q-on-accent']}>{t('search_welcome_action')}</Text>
+              <Button style={{ ...styles.searchAction, backgroundColor: theme['q-accent'] }} onPress={onFocusSearch}>
+                <Icon name="search-2" color={theme['q-on-accent']} rawSize={18} />
               </Button>
             </View>
             <View style={styles.content}>
+              <AccountConnect />
               <DailyRecommend ref={dailyRecommendRef} />
               { isShowHotSearch ? <HotSearch ref={hotSearchRef} onSearch={onSearch} /> : null }
               { isShowHistorySearch ? <HistorySearch ref={historySearchRef} onSearch={onSearch} /> : null }
@@ -93,52 +91,46 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch, onFocusSea
 
 const styles = createStyle({
   scrollContent: {
-    paddingTop: 18,
-    paddingBottom: 28,
-    paddingLeft: 14,
-    paddingRight: 14,
+    paddingTop: 14,
+    paddingBottom: 32,
+    paddingLeft: 16,
+    paddingRight: 16,
   },
   content: {
     gap: 12,
   },
   welcomeCard: {
-    paddingTop: 26,
-    paddingBottom: 24,
-    paddingLeft: 22,
-    paddingRight: 22,
+    minHeight: 126,
+    paddingVertical: 22,
+    paddingHorizontal: 20,
     marginBottom: 14,
+    flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 24,
+    borderRadius: 26,
   },
-  welcomeIcon: {
-    width: 58,
-    height: 58,
-    marginBottom: 16,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
+  welcomeCopy: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  eyebrow: {
+    marginBottom: 6,
+    fontWeight: '800',
+    letterSpacing: 1.4,
   },
   welcomeTitle: {
     fontWeight: '700',
-    textAlign: 'center',
   },
   welcomeSubtitle: {
-    maxWidth: 300,
-    marginTop: 8,
+    marginTop: 7,
     lineHeight: 20,
-    textAlign: 'center',
   },
   searchAction: {
-    minHeight: 40,
-    marginTop: 20,
-    paddingLeft: 18,
-    paddingRight: 18,
-    borderRadius: 14,
-    flexDirection: 'row',
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
     overflow: 'hidden',
   },
 })
