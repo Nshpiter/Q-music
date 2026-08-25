@@ -22,7 +22,7 @@
               :class="[$style.accountProvider, { [$style.active]: accountProvider == item.id, [$style.connected]: accountStatus[item.id] }]"
               :disabled="isLoading || isAccountLoading" @click="handleAccountProvider(item.id)"
             >
-              <span :class="$style.providerMark">{{ item.mark }}</span>
+              <span :class="$style.providerMark"><source-icon :source="item.id" :size="30" :label="$t(item.name)" /></span>
               <span>
                 <strong>{{ $t(item.name) }}</strong>
                 <small>{{ accountStatus[item.id] ? $t('playlist_import_modal__account_connected') : $t('playlist_import_modal__account_login') }}</small>
@@ -73,10 +73,12 @@
             <button
               v-for="item in sourceOptions" :key="item.id" type="button"
               :class="[$style.sourceBtn, { [$style.active]: source == item.id }]"
+              :aria-label="item.name" :title="item.name"
               :disabled="isLoading"
               @click="source = item.id"
             >
-              {{ item.name }}
+              <source-icon v-if="item.id == 'tx' || item.id == 'wy'" :source="item.id" :size="19" :label="item.name" />
+              <span v-else>{{ item.name }}</span>
             </button>
           </div>
         </section>
@@ -158,6 +160,7 @@ import { defaultList, loveList, userLists } from '@renderer/store/list/state'
 import { dialog } from '@renderer/plugins/Dialog'
 import { getMusicAccountPlaylists, getMusicAccountStatus, loginMusicAccount } from '@renderer/utils/ipc'
 import { ExternalImportError, importAccountPlaylist, importExternalPlaylist } from '../importPlaylist'
+import SourceIcon from '@renderer/components/common/SourceIcon.vue'
 
 const sourceOptions = [
   { id: 'tx', name: 'QQ音乐' },
@@ -174,11 +177,12 @@ const sourceNames = {
 }
 
 const accountProviderOptions = [
-  { id: 'tx', name: 'source_tx', mark: 'QQ' },
-  { id: 'wy', name: 'source_wy', mark: '云' },
+  { id: 'tx', name: 'source_tx' },
+  { id: 'wy', name: 'source_wy' },
 ]
 
 export default {
+  components: { SourceIcon },
   props: {
     visible: {
       type: Boolean,
@@ -599,10 +603,8 @@ export default {
   width: 38px;
   height: 38px;
   border-radius: 11px;
-  background: var(--color-primary-background);
-  color: var(--color-primary);
-  font-size: 13px;
-  font-weight: 700;
+  background: rgba(255, 255, 255, .46);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .58);
 }
 
 .accountPlaylistHeader {
@@ -760,6 +762,9 @@ export default {
   transition: @transition-fast;
   transition-property: background-color, color, box-shadow, opacity;
   font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     color: var(--color-primary-dark-300);

@@ -33,19 +33,11 @@
             <div :class="$style.dailyContent">
               <div :class="$style.dailySourceRow">
                 <span :class="$style.eyebrow">{{ $t('search__daily_eyebrow') }}</span>
-                <div :class="$style.sourceSwitch" role="tablist" :aria-label="$t('search__daily_source')">
-                  <button
-                    v-for="provider in accountProviders" :key="provider.id" type="button" role="tab"
-                    :class="{ [$style.active]: selectedDailyProvider == provider.id }"
-                    :aria-selected="selectedDailyProvider == provider.id"
-                    @click.stop="selectDailyProvider(provider.id)"
-                  >{{ $t(provider.label) }}</button>
-                </div>
               </div>
               <h3>{{ dailyTitle }}</h3>
               <p>{{ $t('search__daily_recommend_subtitle') }}</p>
               <p :class="[$style.sourceStatus, { [$style.personalized]: dailyRecommendMode == 'personalized' }]">
-                <span />{{ dailySourceText }}
+                <source-icon :source="selectedDailyProvider" :size="15" />{{ dailySourceText }}
               </p>
               <ol v-if="dailyRecommendList.length" :class="$style.trackPreview">
                 <li v-for="item in dailyRecommendList.slice(0, 3)" :key="item.id"><strong>{{ item.name }}</strong><span>{{ item.singer }}</span></li>
@@ -142,7 +134,10 @@
             <span :class="$style.eyebrow">{{ detailEyebrow }}</span>
             <h2>{{ detailTitle }}</h2>
             <p>{{ detailSubtitle }}</p>
-            <p :class="$style.detailSource">{{ detailSourceText }}</p>
+            <p :class="$style.detailSource">
+              <source-icon :source="detailProvider" :size="15" />
+              <span v-if="detailSourceText">{{ detailSourceText }}</span>
+            </p>
           </div>
           <div :class="$style.detailActions">
             <base-btn min :disabled="!detailMusicList.length" @click="playDetailList()">{{ $t('search__daily_recommend_play') }}</base-btn>
@@ -179,19 +174,25 @@
       </div>
       <div :class="$style.providerList">
         <button
-          type="button" :disabled="isAccountLoginPending"
+          type="button" :class="{ [$style.activeProvider]: selectedDailyProvider == 'tx' }" :disabled="isAccountLoginPending"
           @click="handleProviderAction('tx')"
         >
-          <strong>{{ $t('search__account_qq') }}</strong>
-          <span>{{ accountStatus.tx ? $t('search__account_connected') : $t('search__account_qq_tip') }}</span>
+          <source-icon source="tx" :size="38" :label="$t('search__account_qq')" />
+          <div>
+            <strong>{{ $t('search__account_qq') }}</strong>
+            <span>{{ accountStatus.tx ? $t('search__account_connected') : $t('search__account_qq_tip') }}</span>
+          </div>
           <em :class="{ [$style.connectedDot]: accountStatus.tx }">{{ accountStatus.tx ? '✓' : '›' }}</em>
         </button>
         <button
-          type="button" :disabled="isAccountLoginPending"
+          type="button" :class="{ [$style.activeProvider]: selectedDailyProvider == 'wy' }" :disabled="isAccountLoginPending"
           @click="handleProviderAction('wy')"
         >
-          <strong>{{ $t('search__account_netease') }}</strong>
-          <span>{{ accountStatus.wy ? $t('search__account_connected') : $t('search__account_netease_tip') }}</span>
+          <source-icon source="wy" :size="38" :label="$t('search__account_netease')" />
+          <div>
+            <strong>{{ $t('search__account_netease') }}</strong>
+            <span>{{ accountStatus.wy ? $t('search__account_connected') : $t('search__account_netease_tip') }}</span>
+          </div>
           <em :class="{ [$style.connectedDot]: accountStatus.wy }">{{ accountStatus.wy ? '✓' : '›' }}</em>
         </button>
       </div>
@@ -245,6 +246,7 @@ import { getMusicAccountDaily, getMusicAccountPlaylistDetail, getMusicAccountPla
 import wyMusicDetail from '@renderer/utils/musicSdk/wy/musicDetail'
 import txMusicInfo from '@renderer/utils/musicSdk/tx/musicInfo'
 import { toNewMusicInfo } from '@renderer/utils'
+import SourceIcon from '@renderer/components/common/SourceIcon.vue'
 
 const props = defineProps({
   visible: Boolean,
@@ -275,10 +277,6 @@ const qqDailyKeyStatus = ref({ configured: false, encryptionAvailable: true })
 const qqDailyKeySaveState = ref('idle')
 const isQQDailyKeySaving = ref(false)
 const accountStatus = ref({ tx: false, wy: false })
-const accountProviders = [
-  { id: 'tx', label: 'search__account_qq' },
-  { id: 'wy', label: 'search__account_netease' },
-]
 const storedDailyProvider = window.localStorage.getItem('qmusic.dailyRecommend.provider')
 const selectedDailyProvider = ref(storedDailyProvider == 'wy' ? 'wy' : 'tx')
 const dailyRecommendMode = ref('loading')
@@ -306,15 +304,12 @@ const qqDailyKeyStatusText = computed(() => {
     : window.i18n.t('search__qq_daily_not_configured')
 })
 const dailySourceText = computed(() => {
-  const provider = selectedDailyProvider.value == 'tx'
-    ? window.i18n.t('search__account_qq')
-    : window.i18n.t('search__account_netease')
   const mode = dailyRecommendMode.value == 'personalized'
     ? window.i18n.t('search__daily_source_personalized')
     : dailyRecommendMode.value == 'loading'
       ? window.i18n.t('search__daily_source_loading')
       : window.i18n.t('search__daily_source_fallback')
-  return `${provider} · ${mode}`
+  return mode
 })
 const accountActionText = computed(() => {
   if (accountStatus.value.tx && accountStatus.value.wy) return window.i18n.t('search__account_both_connected')
@@ -334,9 +329,8 @@ const detailEyebrow = computed(() => detailKind.value == 'playlist'
 const detailSubtitle = computed(() => detailKind.value == 'playlist'
   ? window.i18n.t('search__daily_count', { count: detailMusicList.value.length })
   : `${todayLabel} · ${window.i18n.t('search__daily_count', { count: detailMusicList.value.length })}`)
-const detailSourceText = computed(() => detailKind.value == 'playlist'
-  ? `${window.i18n.t(selectedAccountPlaylistProvider.value == 'tx' ? 'search__account_qq' : 'search__account_netease')} · ${selectedAccountPlaylist.value?.creator ?? ''}`
-  : dailySourceText.value)
+const detailProvider = computed(() => detailKind.value == 'playlist' ? selectedAccountPlaylistProvider.value : selectedDailyProvider.value)
+const detailSourceText = computed(() => detailKind.value == 'playlist' ? selectedAccountPlaylist.value?.creator?.trim() ?? '' : dailySourceText.value)
 const detailEmptyText = computed(() => detailKind.value == 'playlist'
   ? isPlaylistDetailLoading.value ? window.i18n.t('search__account_playlist_loading') : window.i18n.t('search__account_playlist_empty')
   : dailyDetailEmptyText.value)
@@ -579,7 +573,9 @@ const connectMusicAccount = async(provider) => {
 const handleProviderAction = (provider) => {
   if (!accountStatus.value[provider]) {
     void connectMusicAccount(provider)
+    return
   }
+  selectDailyProvider(provider)
 }
 
 void refreshAccountStatus().then(() => {
@@ -757,35 +753,6 @@ const handleSearch = (text) => {
   align-items: center;
   gap: 12px;
 }
-.sourceSwitch {
-  margin-left: auto;
-  padding: 3px;
-  display: inline-flex;
-  gap: 3px;
-  border: 1px solid rgba(54, 83, 70, .1);
-  border-radius: 11px;
-  background: rgba(255, 255, 255, .52);
-
-  button {
-    min-height: 25px;
-    padding: 0 10px;
-    border: 0;
-    border-radius: 8px;
-    color: var(--color-font-label);
-    background: transparent;
-    cursor: pointer;
-    font: inherit;
-    font-size: 10px;
-    transition: color @transition-fast, background-color @transition-fast, box-shadow @transition-fast;
-
-    &:hover { color: var(--color-font); }
-    &.active {
-      color: #fff;
-      background: var(--color-primary);
-      box-shadow: 0 5px 12px var(--color-primary-alpha-700);
-    }
-  }
-}
 .dailyContent > .sourceStatus {
   margin-top: 7px;
   display: flex;
@@ -793,17 +760,7 @@ const handleSearch = (text) => {
   gap: 6px;
   font-size: 10px;
 
-  > span {
-    width: 6px;
-    height: 6px;
-    flex: none;
-    border-radius: 50%;
-    background: var(--color-font-label);
-  }
-  &.personalized > span {
-    background: var(--color-primary);
-    box-shadow: 0 0 0 3px var(--color-primary-alpha-900);
-  }
+  &.personalized { color: var(--color-primary-dark-100); }
 }
 .eyebrow {
   color: var(--color-primary-dark-100);
@@ -1036,6 +993,9 @@ const handleSearch = (text) => {
 }
 .detailCopy > .detailSource {
   margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--color-primary-dark-100);
   font-size: 10px;
   font-weight: 650;
@@ -1143,13 +1103,13 @@ const handleSearch = (text) => {
   button {
     position: relative;
     min-height: 76px;
-    padding: 15px 50px 15px 17px;
+    padding: 15px 50px 15px 15px;
     border: 1px solid rgba(54, 83, 70, .13);
     border-radius: 17px;
-    display: flex;
-    flex-flow: column nowrap;
-    align-items: flex-start;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
     color: var(--color-font);
     background: rgba(255, 255, 255, .62);
     cursor: pointer;
@@ -1162,10 +1122,17 @@ const handleSearch = (text) => {
       border-color: var(--color-primary-alpha-700);
       box-shadow: 0 12px 28px rgba(35, 54, 46, .11);
     }
+    &.activeProvider {
+      border-color: var(--color-primary-alpha-500);
+      background: var(--color-primary-alpha-1000);
+      box-shadow: inset 0 0 0 1px var(--color-primary-alpha-900);
+    }
     &:disabled { cursor: wait; opacity: .65; }
   }
+  button > div { min-width: 0; }
   strong { font-size: 14px; }
-  span { color: var(--color-font-label); font-size: 11px; }
+  strong, button > div span { display: block; .mixin-ellipsis-1(); }
+  button > div span { margin-top: 6px; color: var(--color-font-label); font-size: 11px; }
   em {
     position: absolute;
     top: 50%;

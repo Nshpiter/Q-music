@@ -126,6 +126,23 @@ const getQQAccountCredentials = async() => {
   }
 }
 
+const getQQEncryptedUin = async() => {
+  const { accountSession, uin } = await getQQAccountCredentials()
+  if (uin == '0') return ''
+  try {
+    const url = new URL('https://c6.y.qq.com/rsc/fcgi-bin/fcg_get_profile_homepage.fcg')
+    url.search = new URLSearchParams({ ct: '20', cv: '4747474', cid: '205360838', userid: uin }).toString()
+    const response = await accountSession.fetch(url.toString(), {
+      headers: { Referer: 'https://y.qq.com/' },
+    })
+    if (!response.ok) return ''
+    const result = await response.json() as { data?: { creator?: { encrypt_uin?: string } } }
+    return result.data?.creator?.encrypt_uin ?? ''
+  } catch {
+    return ''
+  }
+}
+
 const requestQQMusicU = async<T>(requests: Record<string, unknown>): Promise<T> => {
   const { accountSession, uin, authst } = await getQQAccountCredentials()
   const response = await accountSession.fetch('https://u.y.qq.com/cgi-bin/musicu.fcg', {
@@ -469,14 +486,20 @@ export const getMusicAccountPlaylists = async(provider: MusicAccountProvider): P
           param: { uin, page: 1, size: 100 },
         },
       })
-      const normalize = (items: Array<Record<string, unknown>>, kind: MusicAccountPlaylist['kind']) => items.map(item => ({
-        id: String(item.tid ?? item.dirId ?? item.id ?? item.dissid ?? ''),
-        name: String(item.dirName ?? item.title ?? item.dissname ?? item.name ?? ''),
-        cover: String(item.picUrl ?? item.bigpicUrl ?? item.picurl ?? ''),
-        trackCount: Number(item.songNum ?? item.song_cnt ?? item.songnum ?? 0),
-        creator: '',
-        kind,
-      })).filter(item => item.id && item.name)
+      const normalize = (items: Array<Record<string, unknown>>, kind: MusicAccountPlaylist['kind']) => items.map(item => {
+        const dissId = [item.tid, item.id, item.dissid]
+          .map(value => String(value ?? ''))
+          .find(value => value && value != '0') ?? ''
+        const dirId = String(item.dirId ?? '')
+        return {
+          id: dissId && dissId != '0' ? dissId : dirId ? `dir:${dirId}` : '',
+          name: String(item.dirName ?? item.title ?? item.dissname ?? item.name ?? ''),
+          cover: String(item.picUrl ?? item.bigpicUrl ?? item.picurl ?? ''),
+          trackCount: Number(item.songNum ?? item.song_cnt ?? item.songnum ?? 0),
+          creator: '',
+          kind,
+        }
+      }).filter(item => item.id && item.name)
       const created = normalize(result.created?.data?.v_playlist ?? [], 'created')
       const favorite = normalize(result.favorite?.data?.v_list ?? result.favorite?.data?.v_playlist ?? [], 'favorite')
       const playlistMap = new Map([...created, ...favorite].map(item => [item.id, item]))
@@ -521,8 +544,11 @@ export const getMusicAccountPlaylistDetail = async(
   if (!await hasLoginCookie(provider)) return { provider, id, ids: [], status: 'login_required' }
   try {
     if (provider == 'tx') {
-      const apiKey = readQQDailyApiKey()
-      if (apiKey) {
+      const dirMatch = /^dir:(\d+)$/.exec(id)
+      const dirId = dirMatch ? Number(dirMatch[1]) : id == '0' ? 201 : 0
+      const dissId = dirId ? 0 : Number(id)
+      const apiKey = dirId ? '' : readQQDailyApiKey()
+      if (apiKey && Number.isFinite(dissId)) {
         const ids: string[] = []
         for (let page = 0; page < 100; page++) {
           const response = await session.fromPartition(providerConfig.tx.partition).fetch('https://a.y.qq.com/playlists/detail', {
@@ -531,7 +557,7 @@ export const getMusicAccountPlaylistDetail = async(
               Authorization: `Bearer ${apiKey}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ params: { dissId: Number(id), page }, comm: { skill_version: '0.0.3' } }),
+            body: JSON.stringify({ params: { dissId, page }, comm: { skill_version: '0.0.3' } }),
           })
           if (!response.ok) break
           const result = await response.json() as {
@@ -547,16 +573,47 @@ export const getMusicAccountPlaylistDetail = async(
         if (ids.length) return { provider, id, ids: [...new Set(ids)], status: 'available' }
       }
 
-      const result = await requestQQMusicU<{
-        detail?: { code?: number, data?: { songlist?: Array<Record<string, unknown>> } }
-      }>({
-        detail: {
-          module: 'music.srfDissInfo.aiDissInfo.DissInfo',
-          method: 'GetDissInfo',
-          param: { disstid: Number(id), song_begin: 0, song_num: 10000 },
-        },
-      })
-      const ids = (result.detail?.data?.songlist ?? []).map(item => String(item.mid ?? item.songmid ?? '')).filter(Boolean)
+      if (!dirId && !Number.isFinite(dissId)) return { provider, id, ids: [], status: 'unavailable' }
+      const encryptedUin = dirId ? await getQQEncryptedUin() : ''
+      const ids: string[] = []
+      const pageSize = 500
+      for (let offset = 0; offset < 100000; offset += pageSize) {
+        const result = await requestQQMusicU<{
+          detail?: {
+            code?: number
+            data?: {
+              songlist?: Array<Record<string, unknown>>
+              total_song_num?: number
+              songnum?: number
+              totalnum?: number
+              hasmore?: number
+            }
+          }
+        }>({
+          detail: {
+            module: 'music.srfDissInfo.DissInfo',
+            method: 'CgiGetDiss',
+            param: {
+              disstid: dissId,
+              dirid: dirId,
+              tag: 1,
+              song_begin: offset,
+              song_num: pageSize,
+              userinfo: 1,
+              orderlist: 1,
+              ...(encryptedUin ? { enc_host_uin: encryptedUin } : {}),
+            },
+          },
+        })
+        const data = result.detail?.data
+        const songs = data?.songlist ?? []
+        ids.push(...songs.map(item => {
+          const track = (item.track_info ?? item) as Record<string, unknown>
+          return String(track.mid ?? track.songmid ?? '')
+        }).filter(Boolean))
+        const total = Number(data?.total_song_num ?? data?.songnum ?? data?.totalnum ?? 0)
+        if (!songs.length || data?.hasmore == 0 || (total > 0 && offset + songs.length >= total)) break
+      }
       return { provider, id, ids: [...new Set(ids)], status: ids.length ? 'available' : 'unavailable' }
     }
 

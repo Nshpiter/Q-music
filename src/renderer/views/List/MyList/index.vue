@@ -266,7 +266,7 @@ export default {
 @lists-item-height: 36px;
 .lists {
   flex: none;
-  width: 16%;
+  width: clamp(210px, 19%, 236px);
   display: flex;
   flex-flow: column nowrap;
 }
@@ -274,6 +274,10 @@ export default {
   position: relative;
   display: flex;
   flex-flow: row nowrap;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 8px;
+  box-sizing: border-box;
   border-bottom: var(--color-list-header-border-bottom);
   &:hover {
     .listsAdd {
@@ -283,20 +287,24 @@ export default {
 }
 .listsTitle {
   flex: auto;
-  font-size: 12px;
-  line-height: 38px;
-  padding: 0 10px;
+  min-width: 58px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.2;
+  padding: 0 5px 0 2px;
+  font-weight: 650;
   .mixin-ellipsis-1();
 }
 .headerBtns {
   flex: none;
   display: flex;
   align-items: center;
+  gap: 2px;
 }
 .listsAdd {
   // position: absolute;
   // right: 0;
-  margin-top: 6px;
+  margin-top: 0;
   background: none;
   width: 26px;
   height: 30px;
@@ -326,8 +334,8 @@ export default {
   gap: 5px;
   width: auto;
   height: 28px;
-  margin: 6px 2px 0;
-  padding: 0 9px;
+  margin: 0;
+  padding: 0 8px;
   color: var(--color-primary);
   background-color: var(--color-primary-background-hover);
   box-shadow: inset 0 0 0 1px var(--color-primary-alpha-600);

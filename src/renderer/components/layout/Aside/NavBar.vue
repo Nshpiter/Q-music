@@ -141,6 +141,7 @@ export default {
   // height: 70%;
   // display: block;
   box-sizing: border-box;
+  text-decoration: none;
   // text-decoration: none;
   // border-radius: 20%;
 
@@ -181,6 +182,7 @@ export default {
     min-width: 0;
     font-size: 14px;
     font-weight: 600;
+    text-decoration: none;
     .mixin-ellipsis-1();
   }
 

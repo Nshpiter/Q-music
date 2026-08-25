@@ -10,7 +10,11 @@
         @click.stop="toggleDetail"
       >
         <img v-if="musicInfo.pic" :src="musicInfo.pic" decoding="async" @error="handleImgError">
-        <svg-icon v-else name="music" :class="$style.coverPlaceholder" />
+        <svg v-else :class="$style.coverPlaceholder" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.1" />
+          <circle cx="12" cy="12" r="2.15" />
+          <path d="M12 3.9a8.1 8.1 0 0 1 7.6 5.3" />
+        </svg>
         <span :class="[$style.coverHint, { [$style.coverHintFlip]: props.detail }]" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M6 14l6-6 6 6" />
@@ -191,12 +195,15 @@ const handleImgError = () => {
   overflow: hidden;
   border: none;
   border-radius: 14px;
-  color: #fff;
+  color: rgba(45, 54, 50, .72);
   cursor: pointer;
   pointer-events: auto;
   -webkit-app-region: no-drag;
-  background: linear-gradient(135deg, #6573ff, #48ba94);
-  box-shadow: 0 10px 22px rgba(50, 63, 82, .14);
+  background: rgba(250, 252, 251, .78);
+  border: 1px solid rgba(54, 83, 70, .14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .84),
+    0 8px 18px rgba(50, 63, 82, .1);
   transition: transform @transition-fast, box-shadow @transition-fast, opacity @transition-fast;
 
   img {
@@ -220,9 +227,18 @@ const handleImgError = () => {
   }
 }
 .coverPlaceholder {
-  width: 21px;
-  height: 21px;
-  opacity: .9;
+  width: 27px;
+  height: 27px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.45;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  circle:nth-child(2) {
+    fill: currentColor;
+    stroke: none;
+  }
 }
 .coverHint {
   position: absolute;

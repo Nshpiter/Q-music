@@ -46,8 +46,8 @@
                   >
                     <option v-for="source in sourceOptions(item)" :key="source" :value="source">{{ sourceName(source) }}</option>
                   </select>
-                  <span v-else-if="sourceSelector" :class="$style.sourceSingle">{{ sourceName(item.source) }}</span>
-                  <span v-else-if="sourceTag" class="no-select badge badge-theme-tertiary">{{ item.source }}</span>
+                  <source-icon v-else-if="sourceSelector" :class="$style.sourceSingle" :source="item.source" :size="15" :label="sourceName(item.source)" />
+                  <source-icon v-else-if="sourceTag" class="no-select" :source="item.source" :size="15" />
                 </div>
                 <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
@@ -84,8 +84,8 @@
                   >
                     <option v-for="source in sourceOptions(item)" :key="source" :value="source">{{ sourceName(source) }}</option>
                   </select>
-                  <span v-else-if="sourceSelector" :class="$style.sourceSingle">{{ sourceName(item.source) }}</span>
-                  <span v-else-if="sourceTag" class="no-select badge badge-theme-tertiary">{{ item.source }}</span>
+                  <source-icon v-else-if="sourceSelector" :class="$style.sourceSingle" :source="item.source" :size="15" :label="sourceName(item.source)" />
+                  <source-icon v-else-if="sourceTag" class="no-select" :source="item.source" :size="15" />
                 </div>
                 <div class="list-item-cell" style="flex: 0 0 24%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 27%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
@@ -130,8 +130,10 @@ import useMusicDownload from './useMusicDownload'
 import useMusicAdd from './useMusicAdd'
 import useMusicActions from './useMusicActions'
 import { appSetting } from '@renderer/store/setting'
+import SourceIcon from '@renderer/components/common/SourceIcon.vue'
 export default {
   name: 'MaterialOnlineList',
+  components: { SourceIcon },
   props: {
     list: {
       type: Array,

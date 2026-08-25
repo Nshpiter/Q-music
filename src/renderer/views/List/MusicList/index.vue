@@ -43,7 +43,7 @@
           </div>
           <div class="list-item-cell auto name" :aria-label="item.name">
             <span class="select name">{{ item.name }}</span>
-            <span v-if="isShowSource" class="no-select label-source">{{ item.source }}</span>
+            <source-icon v-if="isShowSource" class="no-select label-source" :source="item.source" :size="14" />
           </div>
           <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
@@ -75,7 +75,7 @@
           </div>
           <div class="list-item-cell auto name">
             <span class="select name" :aria-label="item.name">{{ item.name }}</span>
-            <span v-if="isShowSource" class="no-select label-source">{{ item.source }}</span>
+            <source-icon v-if="isShowSource" class="no-select label-source" :source="item.source" :size="14" />
           </div>
           <div class="list-item-cell" style="flex: 0 0 25%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 28%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
@@ -107,6 +107,7 @@
 import { clipboardWriteText } from '@common/utils/electron'
 import { assertApiSupport } from '@renderer/store/utils'
 import SearchList from './components/SearchList.vue'
+import SourceIcon from '@renderer/components/common/SourceIcon.vue'
 import MusicSortModal from './components/MusicSortModal.vue'
 import MusicToggleModal from './components/MusicToggleModal.vue'
 import useListInfo from './useListInfo'
@@ -124,6 +125,7 @@ import { appSetting } from '@renderer/store/setting'
 export default {
   name: 'MusicList',
   components: {
+    SourceIcon,
     SearchList,
     MusicSortModal,
     MusicToggleModal,
@@ -377,12 +379,8 @@ export default {
   }
   :global {
     .label-source {
-      color: var(--color-primary);
-      padding: 5px;
-      font-size: .8em;
-      line-height: 1.2;
-      opacity: .75;
-      display: inline-block;
+      margin-left: 6px;
+      opacity: .9;
     }
   }
 }
