@@ -1,10 +1,10 @@
 <template>
-  <div id="container" :class="['view-container', { 'control-btn-right': appSetting['common.controlBtnPosition'] == 'right' }]">
+  <div id="container" :class="['view-container', { 'control-btn-right': appSetting['common.controlBtnPosition'] == 'right', 'show-player-detail': isShowPlayerDetail && appSetting['playDetail.style.layout'] == 'immersive' }]">
     <div id="window-drag-bar" aria-hidden="true" />
     <WindowControlBtns
       v-if="appSetting['common.controlBtnPosition'] == 'right'"
       id="window-control-btns"
-      :detail-action="isShowPlayerDetail ? 'hide' : 'show'"
+      :detail-action="isShowPlayerDetail && appSetting['playDetail.style.layout'] == 'immersive' ? 'none' : isShowPlayerDetail ? 'hide' : 'show'"
       fullscreen-exit-enabled
     />
     <layout-aside id="left" />
@@ -339,6 +339,20 @@ body {
     position: relative;
     z-index: 1;
     pointer-events: auto;
+  }
+}
+
+#container.show-player-detail #player {
+  height: 132px;
+
+  &:before {
+    display: none;
+  }
+
+  > .q-player-footer {
+    position: fixed;
+    inset: auto 0 0;
+    margin: 0;
   }
 }
 #view {

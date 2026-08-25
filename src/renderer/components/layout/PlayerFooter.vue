@@ -1,5 +1,5 @@
 <template>
-  <div :class="['q-player-footer', $style.footer]">
+  <div :class="['q-player-footer', $style.footer, { [$style.detailFooter]: isImmersiveDetail, [$style.commentVisible]: isImmersiveDetail && isShowPlayComment }]">
     <div :class="$style.trackInfo">
       <button
         type="button"
@@ -60,7 +60,7 @@
       </div>
     </div>
     <div :class="$style.toolArea">
-      <control-btns :class="$style.tools" />
+      <control-btns :class="$style.tools" :detail="isImmersiveDetail" />
       <button
         type="button"
         :class="[$style.queueBtn, { [$style.active]: isShowPlayQueue }]"
@@ -85,9 +85,10 @@
 <script setup>
 import { playNext, playPrev, togglePlay } from '@renderer/core/player'
 import { computed } from '@common/utils/vueTools'
-import { status, isPlay, isShowPlayQueue, musicInfo, tempPlayList } from '@renderer/store/player/state'
+import { status, isPlay, isShowPlayComment, isShowPlayQueue, musicInfo, tempPlayList } from '@renderer/store/player/state'
 import { setMusicInfo, setShowPlayerDetail, setShowPlayQueue } from '@renderer/store/player/action'
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
+import { appSetting } from '@renderer/store/setting'
 
 import ControlBtns from './PlayDetail/components/ControlBtns.vue'
 import EmptyCoverMark from '@renderer/components/common/EmptyCoverMark.vue'
@@ -111,6 +112,7 @@ const {
 const title = computed(() => musicInfo.name || '')
 const artist = computed(() => musicInfo.singer || status.value || '')
 const queueBadgeText = computed(() => tempPlayList.length > 99 ? '99+' : String(tempPlayList.length))
+const isImmersiveDetail = computed(() => props.detail && appSetting['playDetail.style.layout'] == 'immersive')
 
 const toggleDetail = () => {
   setShowPlayerDetail(!props.detail)
@@ -480,6 +482,151 @@ const handleImgError = () => {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
+}
+
+.detailFooter {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 12;
+  display: block;
+  width: 100%;
+  height: 132px;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  color: rgba(255, 255, 255, .94);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  pointer-events: none;
+
+  &:before {
+    display: none;
+  }
+
+  .trackInfo {
+    display: none;
+  }
+
+  .centerControl {
+    position: fixed;
+    left: clamp(76px, 8vw, 132px);
+    bottom: 28px;
+    width: clamp(410px, 34vw, 570px);
+    height: 94px;
+    padding: 0;
+    box-sizing: border-box;
+    border: none;
+    border-radius: 0;
+    color: rgba(255, 255, 255, .94);
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    pointer-events: auto;
+  }
+
+  .playControl {
+    height: 48px;
+    gap: clamp(24px, 2.5vw, 38px);
+    color: rgba(255, 255, 255, .94);
+  }
+
+  .playBtn {
+    width: 38px;
+    height: 38px;
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    &:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, .12);
+    }
+  }
+
+  .playBtnPrimary {
+    width: 50px;
+    height: 50px;
+    color: rgba(22, 27, 30, .96);
+    background: rgba(255, 255, 255, .92);
+    border: 1px solid rgba(255, 255, 255, .24);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .24), inset 0 1px 0 #fff;
+
+    &:hover {
+      color: rgba(12, 16, 18, 1);
+      background: #fff;
+      box-shadow: 0 17px 38px rgba(0, 0, 0, .3), inset 0 1px 0 #fff;
+    }
+  }
+
+  .progressRow {
+    grid-template-columns: 38px minmax(130px, 1fr) 38px;
+    gap: 9px;
+    margin-top: 7px;
+  }
+
+  .timeLabel,
+  .progressRow .timeLabel:first-child {
+    color: rgba(255, 255, 255, .62);
+  }
+
+  .progress {
+    --q-progress-track-color: rgba(255, 255, 255, .24);
+    --q-progress-bar-color: rgba(255, 255, 255, .94);
+    --q-progress-drag-color: #fff;
+    box-shadow: none;
+  }
+
+  .toolArea {
+    position: fixed;
+    right: clamp(34px, 4.4vw, 68px);
+    bottom: 34px;
+    width: auto;
+    max-width: min(48vw, 620px);
+    height: 48px;
+    padding: 0 9px;
+    box-sizing: border-box;
+    gap: 1px;
+    border: 1px solid rgba(255, 255, 255, .11);
+    border-radius: 24px;
+    color: rgba(255, 255, 255, .86);
+    background: rgba(18, 23, 27, .3);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 18px 44px rgba(0, 0, 0, .16);
+    backdrop-filter: blur(22px) saturate(1.16);
+    pointer-events: auto;
+  }
+
+  .tools {
+    flex: none;
+  }
+
+  .queueBtn {
+    color: rgba(255, 255, 255, .86);
+
+    &:hover,
+    &.active {
+      color: #fff;
+      background: rgba(255, 255, 255, .12);
+    }
+  }
+
+  .queueBadge {
+    border-color: rgba(18, 22, 25, .82);
+  }
+}
+
+.detailFooter.commentVisible {
+  .toolArea {
+    display: none;
+  }
+
+  .centerControl {
+    width: clamp(300px, 30vw, 430px);
+  }
 }
 
 @media (max-width: 1280px) {

@@ -1,5 +1,5 @@
 <template lang="pug">
-div(:class="$style.footerLeftControlBtns")
+div(:class="[$style.footerLeftControlBtns, { [$style.detail]: detail }]")
   button(:class="[$style.footerLeftControlBtn, $style.lrcBtn, { [$style.active]: appSetting['desktopLyric.enable'] }]" :aria-label="toggleDesktopLyricBtnTitle" @click="toggleDesktopLyric" @contextmenu="toggleLockDesktopLyric")
     svg(viewBox="0 0 24 24" aria-hidden="true")
       path(d="M5 6h14")
@@ -71,6 +71,9 @@ import { addListMusics, checkListExistMusic, removeListMusics } from '@renderer/
 import { loveList } from '@renderer/store/list/state'
 
 export default {
+  props: {
+    detail: Boolean,
+  },
   setup() {
     const t = useI18n()
     // const setting = useRefGetter('setting')
@@ -327,6 +330,33 @@ export default {
     .popup-btn {
       height: var(--q-footer-tool-size);
     }
+  }
+}
+
+.detail {
+  height: 46px;
+  padding: 0;
+  gap: 2px;
+
+  button {
+    width: 32px;
+    height: 32px;
+    color: rgba(255, 255, 255, .74);
+
+    &:hover {
+      color: #fff;
+      background-color: rgba(255, 255, 255, .12) !important;
+    }
+  }
+
+  .footerLeftControlBtn.active {
+    color: #fff;
+    background-color: rgba(255, 255, 255, .14);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .16);
+  }
+
+  .toolDivider {
+    background: rgba(255, 255, 255, .18);
   }
 }
 

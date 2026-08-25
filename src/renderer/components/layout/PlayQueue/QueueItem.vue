@@ -188,4 +188,44 @@ const displayInfo = computed(() => {
     stroke-linecap: round;
   }
 }
+
+:global(.q-play-queue-immersive) {
+  .row {
+    border-color: rgba(255, 255, 255, .07);
+
+    &:hover,
+    &:focus-within {
+      background-color: rgba(255, 255, 255, .07);
+    }
+
+    &.active {
+      color: rgba(255, 255, 255, .98);
+      background-color: rgba(255, 255, 255, .12);
+
+      &:before {
+        background-color: rgba(255, 255, 255, .9);
+      }
+    }
+  }
+
+  .index,
+  .singer,
+  .duration {
+    color: rgba(255, 255, 255, .46);
+  }
+
+  .name {
+    color: rgba(255, 255, 255, .88);
+  }
+
+  .remove {
+    color: rgba(255, 255, 255, .52);
+
+    &:hover,
+    &:focus-visible {
+      color: #ff879d;
+      background-color: rgba(255, 135, 157, .12);
+    }
+  }
+}
 </style>

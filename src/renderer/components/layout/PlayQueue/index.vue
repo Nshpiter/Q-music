@@ -1,6 +1,6 @@
 <template>
   <transition enter-active-class="q-play-queue-enter-active" leave-active-class="q-play-queue-leave-active">
-    <div v-if="isShowPlayQueue" :class="$style.layer">
+    <div v-if="isShowPlayQueue" :class="[$style.layer, { [$style.immersive]: isImmersiveDetail, 'q-play-queue-immersive': isImmersiveDetail }]">
       <aside
         ref="panelRef"
         :class="$style.panel"
@@ -140,6 +140,7 @@ import { getListMusics } from '@renderer/store/list/action'
 import { defaultList, loveList, userLists } from '@renderer/store/list/state'
 import { downloadList } from '@renderer/store/download/state'
 import {
+  isShowPlayerDetail,
   isShowPlayQueue,
   musicInfo,
   playInfo,
@@ -151,6 +152,7 @@ import {
   removeTempPlayList,
   setShowPlayQueue,
 } from '@renderer/store/player/action'
+import { appSetting } from '@renderer/store/setting'
 import QueueItem from './QueueItem.vue'
 
 // 列表元信息区（header + tabs + meta bar）的总高度，滚动定位时用于让当前歌曲露出在可视区顶部下方
@@ -163,6 +165,10 @@ const isListLoading = ref(false)
 const listRef = ref(null)
 const panelRef = ref(null)
 let loadId = 0
+
+const isImmersiveDetail = computed(() => {
+  return isShowPlayerDetail.value && appSetting['playDetail.style.layout'] == 'immersive'
+})
 
 const currentTrackText = computed(() => {
   if (!musicInfo.name) return ''
@@ -316,6 +322,117 @@ onBeforeUnmount(() => {
   outline: none;
   pointer-events: auto;
   -webkit-app-region: no-drag;
+}
+
+.immersive {
+  .panel {
+    right: clamp(30px, 4.4vw, 68px);
+    bottom: 108px;
+    width: min(400px, calc(100vw - 48px));
+    height: clamp(360px, 60vh, 640px);
+    max-height: calc(100vh - 156px);
+    border-color: rgba(255, 255, 255, .15);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, .9);
+    background:
+      linear-gradient(145deg, rgba(35, 41, 46, .9), rgba(17, 22, 26, .84)),
+      rgba(18, 22, 26, .88);
+    box-shadow:
+      0 28px 76px rgba(0, 0, 0, .44),
+      inset 0 1px 0 rgba(255, 255, 255, .12);
+    backdrop-filter: blur(30px) saturate(1.22);
+  }
+
+  .header,
+  .tabs,
+  .listMeta {
+    border-color: rgba(255, 255, 255, .08);
+  }
+
+  .heading {
+    h2 {
+      color: rgba(255, 255, 255, .96);
+    }
+
+    p {
+      color: rgba(255, 255, 255, .48);
+
+      span {
+        color: rgba(255, 255, 255, .86);
+      }
+    }
+  }
+
+  .closeBtn,
+  .clearBtn {
+    color: rgba(255, 255, 255, .58);
+
+    &:hover {
+      color: #fff;
+      background-color: rgba(255, 255, 255, .1);
+    }
+  }
+
+  .tabs {
+    margin: 0 12px;
+    padding: 4px;
+    height: 42px;
+    gap: 3px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .06);
+
+    button {
+      border-radius: 9px;
+      color: rgba(255, 255, 255, .48);
+      transition: color @transition-fast, background-color @transition-fast;
+
+      &:after {
+        display: none;
+      }
+    }
+
+    .activeTab {
+      color: rgba(255, 255, 255, .96);
+      background: rgba(255, 255, 255, .12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+    }
+  }
+
+  .listMeta {
+    margin-top: 5px;
+    color: rgba(255, 255, 255, .4);
+
+    strong {
+      color: rgba(255, 255, 255, .62);
+    }
+  }
+
+  .empty {
+    color: rgba(255, 255, 255, .36);
+  }
+
+  .panel :global(.scroll) {
+    &::-webkit-scrollbar {
+      width: 7px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border: 2px solid transparent;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .22);
+      background-clip: padding-box;
+
+      &:hover {
+        background: rgba(255, 255, 255, .34);
+        background-clip: padding-box;
+      }
+    }
+  }
 }
 
 .header {

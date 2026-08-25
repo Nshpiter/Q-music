@@ -170,5 +170,39 @@ export default {
   background-color: rgba(72, 186, 148, .08);
 }
 
+:global(body:has(#container.show-player-detail)) .container {
+  .listItem {
+    border-bottom-color: rgba(255, 255, 255, .08);
+  }
+
+  .content {
+    color: rgba(255, 255, 255, .82);
+  }
+
+  .avatar {
+    border: 1px solid rgba(255, 255, 255, .12);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .2);
+  }
+
+  .info,
+  .label {
+    color: rgba(255, 255, 255, .42);
+  }
+
+  .name {
+    color: rgba(255, 255, 255, .7);
+  }
+
+  .likes,
+  .likesIcon {
+    color: rgba(255, 255, 255, .48);
+  }
+
+  .reply_floor {
+    border: 1px solid rgba(255, 255, 255, .06);
+    background: rgba(255, 255, 255, .045);
+  }
+}
+
 
 </style>

@@ -398,4 +398,52 @@ export default {
   color: var(--color-font-label);
 }
 
+:global(body:has(#container.show-player-detail)) .comment {
+  color: rgba(255, 255, 255, .9);
+
+  .commentHeaderBtns {
+    color: rgba(255, 255, 255, .66);
+  }
+
+  .commentHeaderBtn {
+    border-radius: 50%;
+    transition: color @transition-fast, background-color @transition-fast, transform @transition-fast;
+
+    &:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, .1);
+      opacity: 1;
+    }
+
+    &:active {
+      transform: scale(.94);
+    }
+  }
+
+  .commentMain {
+    border: 1px solid rgba(255, 255, 255, .12);
+    color: rgba(255, 255, 255, .84);
+    background: rgba(25, 30, 34, .72);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 24px 56px rgba(0, 0, 0, .3);
+    backdrop-filter: blur(28px) saturate(1.12);
+  }
+
+  .tab_header {
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+  }
+
+  .commentType {
+    color: rgba(255, 255, 255, .58);
+
+    &.active {
+      color: rgba(255, 255, 255, .96);
+    }
+  }
+
+  .commentLabel,
+  .unavailable {
+    color: rgba(255, 255, 255, .48);
+  }
+}
+
 </style>

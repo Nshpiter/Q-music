@@ -1,19 +1,22 @@
 <template lang="pug">
 transition(enter-active-class="q-detail-enter-active" leave-active-class="q-detail-leave-active" @after-enter="handleAfterEnter" @after-leave="handleAfterLeave")
-  div(v-if="isShowPlayerDetail" :class="[$style.container, { fullscreen: isFullscreen }]" @contextmenu="handleContextMenu")
+  div(v-if="isShowPlayerDetail" :class="[$style.container, appSetting['playDetail.style.layout'] == 'immersive' ? $style.immersive : $style.classic, { fullscreen: isFullscreen }]" @contextmenu="handleContextMenu")
     div(:class="$style.bg" :style="detailBgStyle")
     //- div(:class="$style.bg" :style="bgStyle")
     //- div(:class="$style.bg2")
-    ControlBtnsLeftHeader(v-if="appSetting['common.controlBtnPosition'] == 'left'")
+    ControlBtnsLeftHeader(v-if="appSetting['common.controlBtnPosition'] == 'left'" :detail-action-enabled="appSetting['playDetail.style.layout'] != 'immersive'")
     ControlBtnsRightHeader(v-else)
+    button(type="button" :class="$style.detailBackBtn" :aria-label="$t('player__hide_detail_tip')" :title="$t('player__hide_detail_tip')" @click="hide")
+      svg(viewBox="0 0 24 24" aria-hidden="true")
+        path(d="M6.5 9.5 12 15l5.5-5.5")
     div(ref="dom_main" :class="[$style.main, {[$style.showComment]: isCommentLayoutVisible, [$style.commentOpening]: isCommentLayoutOpening, [$style.commentGliding]: isCommentLayoutGliding, [$style.commentClosing]: isCommentLayoutClosing, [$style.commentSettling]: isCommentLayoutSettling}]" :style="mainStyle")
       div.left(:class="$style.left")
-        div(ref="dom_record" :class="['q-album-stage', $style.albumStage, { [$style.albumStagePlaying]: isPlay }]")
+        div(ref="dom_record" :class="['q-album-stage', $style.albumStage]")
           div(:class="$style.record")
             img(v-if="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
             div(v-else :class="$style.emptyCover")
               EmptyCoverMark(:class="$style.emptyCoverMark")
-          div(:class="$style.toneArm" aria-hidden="true")
+          div(v-if="appSetting['playDetail.style.layout'] == 'classic'" :class="$style.toneArm" aria-hidden="true")
             span(:class="$style.toneArmBase")
             span(:class="$style.toneArmRod")
             span(:class="$style.toneArmHead")
@@ -46,11 +49,9 @@ import { isFullscreen } from '@renderer/store'
 import {
   isShowPlayerDetail,
   isShowPlayComment,
-  isPlay,
   musicInfo,
   playMusicInfo,
 } from '@renderer/store/player/state'
-import { playProgress } from '@renderer/store/player/playProgress'
 import {
   setShowPlayerDetail,
   setShowPlayComment,
@@ -73,7 +74,6 @@ const COVER_MAX_WIDTH = 330
 const LYRIC_MIN_WIDTH = 300
 const RESIZE_HANDLE_WIDTH = 24
 const COMMENT_LAYOUT_GAP = 18
-const RECORD_SPIN_SECONDS = 18
 const COMMENT_LAYOUT_CLOSE_MS = 500
 const FLIP_DURATION_MS = 560
 const FLIP_EASING = 'cubic-bezier(.22, 1, .36, 1)'
@@ -117,9 +117,6 @@ export default {
     const isCommentLayoutClosing = ref(false)
     const isCommentLayoutSettling = ref(false)
     const lastMainWidth = ref(0)
-    let recordAnimationFrameId = null
-    let recordSpinStartTime = 0
-    let recordSpinStartPlayTime = 0
     let activePointerId = null
     let activeResizeType = null
     let resizeHandleElement = null
@@ -142,18 +139,6 @@ export default {
         : {}
     })
 
-    const getRecordRotation = time => (time % RECORD_SPIN_SECONDS) / RECORD_SPIN_SECONDS * 360
-    const setRecordRotation = rotation => {
-      dom_record.value?.style.setProperty('--q-record-rotation', `${rotation}deg`)
-    }
-    const syncRecordRotation = () => {
-      setRecordRotation(getRecordRotation(playProgress.nowPlayTime))
-    }
-    const stopRecordSpin = () => {
-      if (!recordAnimationFrameId) return
-      window.cancelAnimationFrame(recordAnimationFrameId)
-      recordAnimationFrameId = null
-    }
     const clearCommentLayoutCloseTimer = () => {
       if (!commentLayoutCloseTimer) return
       window.clearTimeout(commentLayoutCloseTimer)
@@ -210,19 +195,6 @@ export default {
         timer = window.setTimeout(cleanup, FLIP_DURATION_MS + 60)
       }
     }
-    const updateRecordSpin = () => {
-      const elapsed = (window.performance.now() - recordSpinStartTime) / 1000
-      setRecordRotation(getRecordRotation(recordSpinStartPlayTime + elapsed))
-      recordAnimationFrameId = window.requestAnimationFrame(updateRecordSpin)
-    }
-    const startRecordSpin = () => {
-      stopRecordSpin()
-      recordSpinStartTime = window.performance.now()
-      recordSpinStartPlayTime = playProgress.nowPlayTime
-      syncRecordRotation()
-      recordAnimationFrameId = window.requestAnimationFrame(updateRecordSpin)
-    }
-
     const getCommentMaxWidth = width => {
       if (!width) return COMMENT_MAX_WIDTH
       const layoutReserve = getCoverWidth(width) + LYRIC_MIN_WIDTH + RESIZE_HANDLE_WIDTH + COMMENT_LAYOUT_GAP * 3
@@ -435,27 +407,11 @@ export default {
       })
     })
 
-    watch(isPlay, playing => {
-      playing ? startRecordSpin() : stopRecordSpin()
-    })
-
-    watch(() => playProgress.nowPlayTime, () => {
-      if (!isPlay.value) {
-        syncRecordRotation()
-        return
-      }
-      const elapsed = (window.performance.now() - recordSpinStartTime) / 1000
-      if (Math.abs(playProgress.nowPlayTime - (recordSpinStartPlayTime + elapsed)) > 1.2) startRecordSpin()
-    })
-
     onMounted(() => {
-      syncRecordRotation()
-      if (isPlay.value) startRecordSpin()
       window.addEventListener('resize', updateMainWidth)
     })
 
     onBeforeUnmount(() => {
-      stopRecordSpin()
       clearCommentLayoutCloseTimer()
       clearCommentLayoutGlideTimer()
       clearFlipAnimations()
@@ -474,7 +430,6 @@ export default {
       isCommentLayoutGliding,
       isCommentLayoutClosing,
       isCommentLayoutSettling,
-      isPlay,
       musicInfo,
       dom_main,
       dom_record,
@@ -529,12 +484,12 @@ export default {
   height: 100%;
   top: 0;
   left: 0;
-  background-color: #fbfcf7;
+  background-color: #161a1d;
   z-index: 10;
   // -webkit-app-region: drag;
   overflow: hidden;
   border-radius: @radius-border;
-  color: var(--color-font);
+  color: rgba(255, 255, 255, .94);
   // border-left: 12px solid var(--color-primary-alpha-900);
   -webkit-app-region: no-drag;
   contain: strict;
@@ -544,6 +499,44 @@ export default {
 
   * {
     box-sizing: border-box;
+  }
+}
+
+.detailBackBtn {
+  position: absolute;
+  top: 17px;
+  left: clamp(58px, 4.8vw, 82px);
+  z-index: 20;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, .78);
+  background: rgba(18, 23, 27, .28);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .12);
+  backdrop-filter: blur(14px);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: color .2s ease, background .2s ease, transform .2s ease;
+
+  svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  &:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, .14);
+    transform: translateY(2px);
   }
 }
 
@@ -587,12 +580,11 @@ export default {
   left: 0;
   --play-detail-cover: var(--background-image);
   background:
-    linear-gradient(110deg, rgba(211, 225, 255, .86) 0%, rgba(245, 252, 242, .9) 48%, rgba(255, 249, 222, .86) 100%),
     var(--play-detail-cover) center / cover no-repeat,
     var(--background-image) var(--background-image-position) / var(--background-image-size) no-repeat;
-  filter: blur(42px) saturate(1.18);
-  transform: scale(1.08);
-  opacity: .58;
+  filter: blur(76px) saturate(1.42) brightness(.76);
+  transform: scale(1.2);
+  opacity: .88;
   z-index: -1;
   &:before {
     position: absolute;
@@ -603,9 +595,9 @@ export default {
     width: 100%;
     height: 100%;
     background:
-      radial-gradient(circle at 24% 62%, rgba(111, 139, 255, .26), transparent 36%),
-      radial-gradient(circle at 72% 42%, rgba(252, 238, 174, .34), transparent 36%),
-      linear-gradient(135deg, rgba(250, 253, 255, .72), rgba(255, 255, 248, .86));
+      radial-gradient(circle at 24% 48%, rgba(255, 255, 255, .12), transparent 34%),
+      radial-gradient(circle at 72% 38%, rgba(255, 255, 255, .08), transparent 38%),
+      linear-gradient(120deg, rgba(8, 12, 16, .2), rgba(15, 20, 24, .48));
   }
   &:after {
     position: absolute;
@@ -615,7 +607,9 @@ export default {
     display: block;
     width: 100%;
     height: 100%;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .36), rgba(255, 255, 255, .68) 58%, rgba(255, 255, 248, .92));
+    background:
+      linear-gradient(90deg, rgba(10, 14, 17, .18), rgba(10, 14, 17, .04) 46%, rgba(10, 14, 17, .28)),
+      linear-gradient(180deg, rgba(11, 14, 17, .16), rgba(11, 15, 18, .34) 58%, rgba(11, 15, 18, .66));
   }
 }
 // .bg2 {
@@ -631,7 +625,7 @@ export default {
 .main {
   --comment-width: clamp(420px, 36vw, 560px);
   --cover-width: 360px;
-  --normal-gap: clamp(48px, 7vw, 116px);
+  --normal-gap: clamp(52px, 7vw, 112px);
   --normal-left-width: min(42%, 520px);
   --normal-right-width: min(690px, calc(100% - var(--normal-left-width) - var(--normal-gap)));
   --normal-content-left: max(0px, calc((100% - var(--normal-left-width) - var(--normal-right-width) - var(--normal-gap)) / 2));
@@ -883,44 +877,27 @@ export default {
   &:before {
     content: '';
     position: absolute;
-    left: 10%;
-    right: 10%;
-    bottom: 3%;
+    left: 7%;
+    right: 7%;
+    bottom: -2%;
     z-index: 0;
-    height: 22%;
+    height: 20%;
     border-radius: 50%;
     pointer-events: none;
-    background: radial-gradient(ellipse at center, rgba(78, 96, 118, .14), rgba(78, 96, 118, .06) 44%, transparent 72%);
-    filter: blur(24px);
-    opacity: .62;
-    transform: translateY(18px);
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, .56), rgba(0, 0, 0, .2) 48%, transparent 74%);
+    filter: blur(28px);
+    opacity: .78;
+    transform: translateY(20px);
     transition: opacity .32s ease, transform @comment-layout-duration @comment-layout-easing;
   }
 
   &:hover {
-    filter: saturate(1.04) brightness(1.01);
-    transform: translate3d(0, -4px, 0) scale(1.01);
+    filter: saturate(1.06) brightness(1.03);
+    transform: translate3d(0, -5px, 0) scale(1.012);
 
     &:before {
-      opacity: .72;
-      transform: translateY(20px) scale(1.02);
-    }
-  }
-
-  &.albumStagePlaying {
-    .record {
-      &:before {
-        will-change: transform;
-      }
-    }
-
-    .img,
-    .emptyCover {
-      will-change: transform;
-    }
-
-    .toneArm {
-      transform: rotate(8deg);
+      opacity: .9;
+      transform: translateY(23px) scale(1.04);
     }
   }
 }
@@ -933,89 +910,63 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 34px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, .94), rgba(245, 248, 250, .8)),
-    rgba(255, 255, 255, .86);
-  border: 1px solid rgba(255, 255, 255, .62);
-  box-shadow: 0 18px 44px rgba(76, 93, 122, .08), inset 0 1px 0 rgba(255, 255, 255, .9);
+  border-radius: clamp(22px, 2.2vw, 32px);
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .2);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, .34),
+    0 8px 24px rgba(0, 0, 0, .22),
+    inset 0 1px 0 rgba(255, 255, 255, .24);
 
   &:before {
     content: '';
     position: absolute;
-    width: 78%;
-    height: 78%;
-    border-radius: 50%;
-    background:
-      radial-gradient(circle at center, rgba(33, 39, 35, .95) 0 18%, rgba(73, 79, 75, .72) 19% 20%, transparent 21%),
-      conic-gradient(from 0deg, rgba(255, 255, 255, .14), transparent 8%, rgba(255, 255, 255, .08) 18%, transparent 31%, rgba(0, 0, 0, .12) 45%, transparent 62%, rgba(255, 255, 255, .1) 78%, transparent),
-      repeating-radial-gradient(circle, rgba(255, 255, 255, .2) 0 1px, rgba(0, 0, 0, .08) 2px 4px),
-      radial-gradient(circle, #8f9490, #545956 72%, #2f3532);
-    box-shadow: inset 0 0 34px rgba(255, 255, 255, .2), 0 18px 38px rgba(47, 60, 72, .18);
-    transform-origin: center;
-    transform: rotate(var(--q-record-rotation, 0deg));
-    will-change: transform;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .16), transparent 32%, transparent 68%, rgba(255, 255, 255, .05));
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
   }
 
-  &:after {
-    content: '';
-    position: absolute;
-    width: 44%;
-    height: 44%;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 255, 255, .96), rgba(232, 238, 232, .76));
-    box-shadow: inset 0 0 0 10px rgba(19, 26, 22, .82);
-  }
 }
 .img {
   position: relative;
   z-index: 2;
-  width: 40%;
-  height: 40%;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 50%;
-  box-shadow: 0 10px 28px rgba(22, 28, 34, .26);
-  transform-origin: center;
-  transform: rotate(var(--q-record-rotation, 0deg));
-  will-change: transform;
+  border-radius: inherit;
 }
 .emptyCover {
   position: relative;
   z-index: 2;
-  width: 40%;
-  height: 40%;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  color: rgba(38, 47, 43, .76);
+  border-radius: inherit;
+  color: rgba(255, 255, 255, .74);
   background:
-    radial-gradient(circle at center, transparent 0 8%, rgba(48, 60, 54, .16) 9% 10%, transparent 11%),
-    linear-gradient(145deg, rgba(255, 255, 252, .98), rgba(225, 233, 228, .94));
-  border: 1px solid rgba(255, 255, 255, .72);
-  box-shadow:
-    inset 0 0 0 1px rgba(45, 61, 53, .08),
-    0 10px 28px rgba(22, 28, 34, .2);
-  transform-origin: center;
-  transform: rotate(var(--q-record-rotation, 0deg));
-  will-change: transform;
-
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, .16), transparent 36%),
+    linear-gradient(145deg, rgba(75, 87, 94, .9), rgba(28, 34, 39, .96));
 }
 .emptyCoverMark {
-  width: 42%;
-  height: 42%;
+  width: 16%;
+  height: 16%;
 }
+
 .toneArm {
   position: absolute;
-  z-index: 3;
-  right: 12%;
-  top: -4%;
+  z-index: 4;
+  right: 10%;
+  top: -3%;
   width: 30%;
   height: 60%;
-  transform: rotate(-11deg);
+  transform: rotate(-10deg);
   transform-origin: 80% 12%;
   pointer-events: none;
-  transition: transform .48s cubic-bezier(.16, 1, .3, 1);
   filter: drop-shadow(8px 12px 16px rgba(42, 50, 56, .2));
 }
 
@@ -1023,68 +974,35 @@ export default {
   position: absolute;
   right: 10%;
   top: 2%;
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(114, 129, 126, .22);
-  background:
-    radial-gradient(circle at 42% 38%, rgba(255, 255, 255, .96), rgba(230, 237, 234, .9) 38%, rgba(176, 190, 185, .84) 72%),
-    #dce6e1;
-  box-shadow:
-    inset 0 0 0 8px rgba(224, 232, 229, .84),
-    inset 0 -8px 14px rgba(74, 88, 86, .16),
-    0 12px 28px rgba(48, 58, 66, .18);
+  background: radial-gradient(circle at 40% 36%, #fff, #d8e0dc 56%, #aebbb6);
+  box-shadow: inset 0 0 0 8px rgba(230, 236, 233, .72), 0 10px 24px rgba(48, 58, 66, .18);
 }
 
 .toneArmRod {
   position: absolute;
-  right: 28%;
+  right: 29%;
   top: 15%;
-  width: 10px;
+  width: 9px;
   height: 77%;
   border-radius: 999px;
   transform: rotate(13deg);
   transform-origin: 50% 8%;
-  background:
-    linear-gradient(90deg, rgba(118, 132, 132, .7), rgba(248, 251, 250, .96) 24%, rgba(151, 164, 164, .94) 50%, rgba(236, 241, 239, .92) 78%, rgba(91, 105, 106, .62)),
-    #c8d2cf;
-  box-shadow:
-    inset 1px 0 0 rgba(255, 255, 255, .78),
-    inset -2px 0 0 rgba(66, 78, 80, .22),
-    5px 10px 18px rgba(46, 56, 64, .18);
+  background: linear-gradient(90deg, #84918e, #f3f7f5 32%, #9eaaa7 64%, #e9efec);
 }
 
 .toneArmHead {
   position: absolute;
   right: 43%;
   bottom: 5%;
-  width: 34px;
-  height: 24px;
-  border-radius: 10px 10px 12px 12px;
-  border: 1px solid rgba(103, 116, 116, .24);
+  width: 32px;
+  height: 23px;
+  border-radius: 9px;
   transform: rotate(25deg);
-  transform-origin: 70% 20%;
-  background:
-    linear-gradient(160deg, rgba(247, 250, 249, .95), rgba(178, 190, 189, .86)),
-    #cfdad6;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .82),
-    inset 0 -5px 9px rgba(65, 82, 82, .18),
-    5px 8px 16px rgba(38, 48, 56, .2);
-
-  &:after {
-    content: '';
-    position: absolute;
-    left: 7px;
-    bottom: -9px;
-    width: 0;
-    height: 0;
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-top: 11px solid rgba(51, 60, 62, .82);
-    transform: rotate(-8deg);
-    filter: drop-shadow(2px 3px 3px rgba(38, 48, 56, .28));
-  }
+  background: linear-gradient(160deg, #f4f8f6, #aebbb8);
+  box-shadow: 4px 7px 14px rgba(38, 48, 56, .2);
 }
 
 .description {
@@ -1092,8 +1010,8 @@ export default {
   max-height: 92px;
   margin-top: 22px;
   padding: 0 8px;
-  text-align: center;
-  color: var(--color-font-label);
+  text-align: left;
+  color: rgba(255, 255, 255, .58);
   transition:
     width @comment-layout-duration @comment-layout-easing,
     margin-top @comment-layout-duration @comment-layout-easing,
@@ -1103,12 +1021,12 @@ export default {
     line-height: 1.55;
     font-size: 14px;
     overflow-wrap: break-word;
-    color: var(--color-font-label);
+    color: rgba(255, 255, 255, .58);
     .mixin-ellipsis-1();
 
     &:first-child {
-      color: var(--color-font);
-      font-size: 17px;
+      color: rgba(255, 255, 255, .94);
+      font-size: 20px;
       font-weight: 700;
     }
   }
@@ -1218,6 +1136,109 @@ export default {
   :global(.right),
   :global(.comment) {
     transition: none !important;
+  }
+}
+
+.classic {
+  color: var(--color-font);
+  background-color: #fbfcf7;
+
+  .bg {
+    background:
+      linear-gradient(110deg, rgba(211, 225, 255, .86) 0%, rgba(245, 252, 242, .9) 48%, rgba(255, 249, 222, .86) 100%),
+      var(--play-detail-cover) center / cover no-repeat,
+      var(--background-image) var(--background-image-position) / var(--background-image-size) no-repeat;
+    filter: blur(42px) saturate(1.18);
+    transform: scale(1.08);
+    opacity: .58;
+
+    &:before {
+      background:
+        radial-gradient(circle at 24% 62%, rgba(111, 139, 255, .26), transparent 36%),
+        radial-gradient(circle at 72% 42%, rgba(252, 238, 174, .34), transparent 36%),
+        linear-gradient(135deg, rgba(250, 253, 255, .72), rgba(255, 255, 248, .86));
+    }
+
+    &:after {
+      background: linear-gradient(180deg, rgba(255, 255, 255, .36), rgba(255, 255, 255, .68) 58%, rgba(255, 255, 248, .92));
+    }
+  }
+
+  .detailBackBtn {
+    color: rgba(54, 58, 60, .72);
+    border-color: rgba(54, 58, 60, .1);
+    background: rgba(255, 255, 255, .56);
+
+    &:hover {
+      color: var(--color-font);
+      background: rgba(255, 255, 255, .86);
+    }
+  }
+
+  .albumStage {
+    &:before {
+      background: radial-gradient(ellipse at center, rgba(78, 96, 118, .14), rgba(78, 96, 118, .06) 44%, transparent 72%);
+      opacity: .62;
+    }
+  }
+
+  .record {
+    overflow: visible;
+    border: none;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at center, rgba(33, 39, 35, .96) 0 18%, rgba(73, 79, 75, .76) 19% 20%, transparent 21%),
+      repeating-radial-gradient(circle, rgba(255, 255, 255, .16) 0 1px, rgba(0, 0, 0, .08) 2px 4px),
+      radial-gradient(circle, #8f9490, #545956 72%, #2f3532);
+    box-shadow: inset 0 0 34px rgba(255, 255, 255, .2), 0 18px 38px rgba(47, 60, 72, .18);
+
+    &:before {
+      display: none;
+    }
+
+    &:after {
+      content: '';
+      position: absolute;
+      z-index: 1;
+      width: 44%;
+      height: 44%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, .96), rgba(232, 238, 232, .76));
+      box-shadow: inset 0 0 0 10px rgba(19, 26, 22, .82);
+    }
+  }
+
+  .img,
+  .emptyCover {
+    z-index: 2;
+    width: 40%;
+    height: 40%;
+    border-radius: 50%;
+    box-shadow: 0 10px 28px rgba(22, 28, 34, .24);
+  }
+
+  .emptyCover {
+    color: rgba(38, 47, 43, .76);
+    background: linear-gradient(145deg, rgba(255, 255, 252, .98), rgba(225, 233, 228, .94));
+  }
+
+  .emptyCoverMark {
+    width: 42%;
+    height: 42%;
+  }
+
+  .description {
+    text-align: center;
+    color: var(--color-font-label);
+
+    p {
+      color: var(--color-font-label);
+
+      &:first-child {
+        color: var(--color-font);
+        font-size: 17px;
+      }
+    }
   }
 }
 

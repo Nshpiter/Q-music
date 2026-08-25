@@ -9,6 +9,12 @@ dd
     base-checkbox(id="setting_play_detail_lyric_progress_enable" :model-value="appSetting['playDetail.isShowLyricProgressSetting']" :label="$t('setting__play_detail_lyric_progress')" @update:model-value="updateSetting({'playDetail.isShowLyricProgressSetting': $event})")
 
 dd
+  h3#play_detail_layout {{ $t('setting__play_detail_layout') }}
+  div
+    base-checkbox.gap-left(id="setting_play_detail_layout_classic" :model-value="appSetting['playDetail.style.layout']" need value="classic" :label="$t('setting__play_detail_layout_classic')" @update:model-value="updateSetting({ 'playDetail.style.layout': $event })")
+    base-checkbox.gap-left(id="setting_play_detail_layout_immersive" :model-value="appSetting['playDetail.style.layout']" need value="immersive" :label="$t('setting__play_detail_layout_immersive')" @update:model-value="updateSetting({ 'playDetail.style.layout': $event })")
+
+dd
   h3#play_detail_align {{ $t('setting__play_detail_align') }}
   div
     base-checkbox.gap-left(id="setting_play_detail_align_left" :model-value="appSetting['playDetail.style.align']" need value="left" :label="$t('setting__play_detail_align_left')" @update:model-value="updateSetting({ 'playDetail.style.align': $event })")

@@ -1,7 +1,7 @@
 <template lang="pug">
 div(:class="$style.header")
   div(ref="dom_btns" :class="$style.controBtn")
-    button(type="button" :class="$style.hide" :aria-label="$t('player__hide_detail_tip')" ignore-tip :title="$t('player__hide_detail_tip')" @click="hide")
+    button(v-if="detailActionEnabled" type="button" :class="$style.hide" :aria-label="$t('player__hide_detail_tip')" ignore-tip :title="$t('player__hide_detail_tip')" @click="hide")
       svg(:class="$style.controBtnIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="80%" viewBox="0 0 30.727 30.727" space="preserve")
         use(xlink:href="#icon-window-hide")
     button(type="button" :class="$style.fullscreenExit" :aria-label="$t('fullscreen_exit')" ignore-tip :title="$t('fullscreen_exit')" @click="fullscreenExit")
@@ -24,6 +24,13 @@ import { ref, onMounted, onBeforeUnmount, useCssModule } from '@common/utils/vue
 import { isFullscreen } from '@renderer/store'
 import { setShowPlayerDetail } from '@renderer/store/player/action'
 import { closeWindow, maxWindow, minWindow, setFullScreen } from '@renderer/utils/ipc'
+
+defineProps({
+  detailActionEnabled: {
+    type: Boolean,
+    default: true,
+  },
+})
 
 const dom_btns = ref()
 

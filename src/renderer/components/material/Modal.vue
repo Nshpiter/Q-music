@@ -380,4 +380,36 @@ export default {
   }
 }
 
+// 弹窗在沉浸播放页内沿用同一组深色材质与交互层级；离开详情页后仍使用原主题。
+:global(body:has(#container.show-player-detail)) .modal {
+  color: rgba(255, 255, 255, .9);
+
+  &.filter {
+    background: rgba(9, 13, 16, .36);
+    backdrop-filter: blur(18px) saturate(.92);
+  }
+}
+
+:global(body:has(#container.show-player-detail)) .content {
+  color: rgba(255, 255, 255, .9);
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(25, 30, 34, .9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 28px 70px rgba(0, 0, 0, .42);
+  backdrop-filter: blur(28px) saturate(1.12);
+}
+
+:global(body:has(#container.show-player-detail)) .header {
+  background: rgba(255, 255, 255, .035);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .08);
+
+  button {
+    color: rgba(255, 255, 255, .62);
+
+    &:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, .1);
+    }
+  }
+}
+
 </style>

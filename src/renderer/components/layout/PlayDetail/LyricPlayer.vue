@@ -1,5 +1,5 @@
 <template>
-  <div :class="['right', $style.right, { [$style.commentMode]: isCommentLayoutVisible, [$style.layoutSettling]: commentLayoutSettling }]" :style="lrcFontSize">
+  <div :class="['right', $style.right, appSetting['playDetail.style.layout'] == 'immersive' ? $style.immersive : $style.classic, { [$style.commentMode]: isCommentLayoutVisible, [$style.layoutSettling]: commentLayoutSettling }]" :style="lrcFontSize">
     <div v-show="playerMusicInfo.name" :class="$style.trackHeader">
       <div :class="$style.trackName">{{ playerMusicInfo.name }}</div>
       <div :class="$style.trackArtist">{{ playerMusicInfo.singer }}</div>
@@ -221,11 +221,18 @@ export default {
     const lrcFontSize = computed(() => {
       let size = appSetting['playDetail.style.fontSize'] / 100
       if (isFullscreen.value) size = size *= 1.4
+      const immersive = appSetting['playDetail.style.layout'] == 'immersive'
       return {
-        '--playDetail-lrc-font-size': (isCommentLayoutVisible.value ? size * 0.82 : size) + 'rem',
-        '--playDetail-lrc-space-top-height': isCommentLayoutVisible.value ? '8%' : '58%',
-        '--playDetail-lrc-space-bottom-height': isCommentLayoutVisible.value ? '92%' : '58%',
+        '--playDetail-lrc-font-size': (isCommentLayoutVisible.value ? size * 0.82 : immersive ? size * 1.08 : size) + 'rem',
+        '--playDetail-lrc-space-top-height': isCommentLayoutVisible.value ? (immersive ? '0%' : '8%') : immersive ? '44%' : '58%',
+        '--playDetail-lrc-space-bottom-height': isCommentLayoutVisible.value ? (immersive ? '100%' : '92%') : immersive ? '44%' : '58%',
+        '--playDetail-lrc-color': immersive ? 'rgba(255, 255, 255, .86)' : 'rgba(54, 58, 60, .72)',
+        '--playDetail-lrc-active-color': immersive ? 'rgba(255, 255, 255, .98)' : '#6374ff',
       }
+    })
+
+    watch(() => appSetting['playDetail.style.layout'], () => {
+      syncLyricScrollAfterLayout()
     })
 
     onMounted(() => {
@@ -246,6 +253,7 @@ export default {
     })
 
     return {
+      appSetting,
       isShowNoLyric,
       dom_lyric,
       dom_lyric_text,
@@ -301,8 +309,8 @@ export default {
 .right {
   flex: 1 1 0;
   height: 100%;
-  max-width: 690px;
-  padding: clamp(12px, 2.8vh, 32px) 0;
+  max-width: 720px;
+  padding: clamp(12px, 2.8vh, 32px) clamp(6px, 1vw, 14px);
   position: relative;
   display: flex;
   flex-flow: column nowrap;
@@ -329,14 +337,19 @@ export default {
   position: relative;
   z-index: 2;
   flex: none;
-  margin-bottom: clamp(8px, 2vh, 18px);
-  text-align: center;
-  color: var(--color-font);
-  transition: margin-bottom .5s cubic-bezier(.22, 1, .36, 1), opacity .28s ease, transform .5s cubic-bezier(.22, 1, .36, 1);
+  max-height: 0;
+  margin-bottom: 0;
+  padding-left: clamp(10px, 1.4vw, 22px);
+  text-align: left;
+  color: rgba(255, 255, 255, .96);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: max-height .5s cubic-bezier(.22, 1, .36, 1), margin-bottom .5s cubic-bezier(.22, 1, .36, 1), opacity .28s ease, transform .5s cubic-bezier(.22, 1, .36, 1);
 }
 .trackName {
   max-width: 100%;
-  font-size: clamp(20px, 2.1vw, 30px);
+  font-size: clamp(22px, 2.2vw, 32px);
   line-height: 1.28;
   font-weight: 700;
   .mixin-ellipsis-1();
@@ -345,7 +358,7 @@ export default {
   margin-top: 6px;
   font-size: 16px;
   line-height: 1.3;
-  color: rgba(54, 58, 60, .66);
+  color: rgba(255, 255, 255, .58);
   .mixin-ellipsis-1();
 }
 .lyric {
@@ -357,7 +370,7 @@ export default {
   height: auto;
   overflow: hidden;
   font-size: var(--playDetail-lrc-font-size, 16px);
-  -webkit-mask-image: linear-gradient(transparent 0%, #fff 16%,  #fff 78%, transparent 100%);
+  -webkit-mask-image: linear-gradient(transparent 0%, #fff 13%, #fff 82%, transparent 100%);
   cursor: grab;
   transition: opacity .28s ease, transform .5s cubic-bezier(.22, 1, .36, 1), -webkit-mask-image .5s ease;
   &.draging {
@@ -365,16 +378,17 @@ export default {
   }
   :global {
     .font-lrc {
-      color: rgba(54, 58, 60, .72);
+      color: var(--playDetail-lrc-color, rgba(255, 255, 255, .86));
     }
     .line-content {
-      line-height: 1.26;
-      padding: calc(var(--playDetail-lrc-font-size, 16px) / 2.15) 1px;
+      line-height: 1.2;
+      padding: calc(var(--playDetail-lrc-font-size, 16px) / 1.85) clamp(10px, 1.4vw, 22px);
       overflow-wrap: break-word;
-      color: rgba(54, 58, 60, .72);
+      color: var(--playDetail-lrc-color, rgba(255, 255, 255, .86));
       transition: @transition-normal;
       transition-property: color, padding, transform, opacity, text-shadow;
-      opacity: .68;
+      opacity: .56;
+      font-weight: 620;
 
       .extended {
         font-size: 0.8em;
@@ -387,12 +401,13 @@ export default {
         }
       }
       &.line-mode.active .font-lrc, &.font-mode.played .font-lrc {
-        color: #6374ff;
-        text-shadow: 0 12px 34px rgba(99, 116, 255, .18);
+        color: var(--playDetail-lrc-active-color, rgba(255, 255, 255, .98));
+        text-shadow: 0 12px 34px rgba(0, 0, 0, .28);
       }
       &.line-mode.active {
-        transform: scale(1.02);
+        transform: scale(1.035);
         opacity: 1;
+        font-weight: 760;
       }
       &.font-mode .extended .font-lrc {
         transition: @transition-slow;
@@ -405,8 +420,8 @@ export default {
           transition-property: font-size;
           font-size: 1em;
           background-repeat: no-repeat;
-          background-color: rgba(54, 58, 60, .52);
-          background-image: -webkit-linear-gradient(top, #6374ff, #6374ff);
+          background-color: var(--playDetail-lrc-color, rgba(255, 255, 255, .72));
+          background-image: -webkit-linear-gradient(top, var(--playDetail-lrc-active-color, rgba(255, 255, 255, .98)), var(--playDetail-lrc-active-color, rgba(255, 255, 255, .98)));
           -webkit-text-fill-color: transparent;
           -webkit-background-clip: text;
           background-size: 0 100%;
@@ -442,13 +457,24 @@ export default {
 }
 .commentMode {
   .trackHeader {
+    max-height: 86px;
     margin-bottom: clamp(6px, 1.6vh, 14px);
-    transform: translateY(-2px);
+    opacity: 1;
+    transform: translateY(0);
   }
 
   .lyric {
     -webkit-mask-image: linear-gradient(transparent 0%, #fff 10%,  #fff 84%, transparent 100%);
     transform: translateY(-2px);
+  }
+}
+
+.immersive.commentMode {
+  .trackHeader {
+    max-height: 0;
+    margin-bottom: 0;
+    opacity: 0;
+    transform: translateY(-8px);
   }
 }
 .layoutSettling {
@@ -522,11 +548,11 @@ export default {
   width: 82px;
   height: 32px;
   padding: 0 10px 0 9px;
-  border: 1px solid rgba(54, 58, 60, .12);
+  border: 1px solid rgba(255, 255, 255, .16);
   border-radius: 999px;
-  color: rgba(54, 58, 60, .86);
-  background: rgba(255, 255, 255, .72);
-  box-shadow: 0 10px 24px rgba(76, 90, 110, .12);
+  color: rgba(255, 255, 255, .9);
+  background: rgba(18, 23, 27, .54);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .2);
   backdrop-filter: blur(10px);
   transform: translateY(-50%);
   cursor: pointer;
@@ -555,7 +581,7 @@ export default {
   }
 
   &:hover {
-    background: rgba(255, 255, 255, .88);
+    background: rgba(30, 36, 41, .78);
     transform: translateY(-50%) translateX(2px);
     box-shadow: 0 14px 30px rgba(76, 90, 110, .16);
   }
@@ -645,6 +671,74 @@ export default {
 }
 .lyricSpaceBottom {
   height: var(--playDetail-lrc-space-bottom-height, 58%);
+}
+
+.classic {
+  .trackHeader {
+    color: rgba(54, 58, 60, .94);
+  }
+
+  .trackArtist {
+    color: rgba(54, 58, 60, .58);
+  }
+
+  .lyric {
+    :global {
+      .font-lrc,
+      .line-content {
+        color: rgba(54, 58, 60, .72) !important;
+      }
+
+      .line-content {
+        font-weight: 400;
+        opacity: .72;
+      }
+
+      .line-content.line-mode.active .font-lrc,
+      .line-content.font-mode.played .font-lrc {
+        color: #6374ff !important;
+        text-shadow: 0 12px 34px rgba(99, 116, 255, .18);
+      }
+
+      .line-content.line-mode.active {
+        transform: scale(1.02);
+        font-weight: 400;
+      }
+    }
+  }
+
+  .noLyric {
+    color: rgba(54, 58, 60, .38);
+  }
+
+  .lyricSelectContent {
+    color: rgba(54, 58, 60, .72);
+    background: rgba(255, 255, 255, .34);
+  }
+}
+
+.immersive {
+  .lyricSelectContent {
+    color: rgba(255, 255, 255, .62);
+    border: 1px solid rgba(255, 255, 255, .1);
+    background: rgba(22, 27, 31, .46);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 22px 48px rgba(0, 0, 0, .18);
+    backdrop-filter: blur(22px) saturate(1.08);
+
+    .lyricSelectline {
+      transition: color @transition-fast, background-color @transition-fast !important;
+
+      &:hover {
+        color: rgba(255, 255, 255, .88);
+        background: rgba(255, 255, 255, .055);
+      }
+    }
+
+    .lrcActive {
+      color: #fff;
+      background: rgba(255, 255, 255, .1);
+    }
+  }
 }
 
 </style>

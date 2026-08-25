@@ -310,6 +310,11 @@ declare global {
       'playDetail.isShowLyricProgressSetting': boolean
 
       /**
+       * 播放详情页-布局风格
+       */
+      'playDetail.style.layout': 'classic' | 'immersive'
+
+      /**
        * 播放详情页-歌词字体大小
        */
       'playDetail.style.fontSize': number

@@ -169,4 +169,28 @@ onBeforeUnmount(() => {
   // box-shadow: 0 0 4px rgba(0, 0, 0, .2);
 }
 
+// 沉浸歌词页中的工具浮层统一使用深色磨砂外观。基础组件负责容器质感，
+// 各业务按钮只负责内容，避免倍速、音量、播放模式各自维护一套皮肤。
+:global(body:has(#container.show-player-detail)) .popup {
+  color: rgba(255, 255, 255, .9);
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 16px;
+  background: rgba(25, 30, 34, .88);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 18px 42px rgba(0, 0, 0, .34);
+  backdrop-filter: blur(24px) saturate(1.16);
+  filter: none;
+
+  &:before {
+    border-bottom-color: rgba(25, 30, 34, .92);
+  }
+
+  &.top {
+    filter: none;
+
+    &:before {
+      border-top-color: rgba(25, 30, 34, .92);
+    }
+  }
+}
+
 </style>

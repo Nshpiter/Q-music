@@ -71,6 +71,7 @@ const defaultSetting: LX.AppSetting = {
 
   'playDetail.isZoomActiveLrc': false,
   'playDetail.isShowLyricProgressSetting': false,
+  'playDetail.style.layout': 'immersive',
   'playDetail.style.fontSize': 140,
   'playDetail.style.align': 'center',
   'playDetail.isDelayScroll': true,
