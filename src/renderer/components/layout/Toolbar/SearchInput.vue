@@ -1,5 +1,7 @@
 <template>
-  <material-search-input v-model="searchText" :placeholder="$t('search')" :list="tipList" :visible-list="visibleList" @event="handleEvent" />
+  <div :class="[$style.searchSlot, { [$style.focused]: isFocused }]">
+    <material-search-input v-model="searchText" :placeholder="$t('search')" :list="tipList" :visible-list="visibleList" @event="handleEvent" />
+  </div>
 </template>
 
 <script>
@@ -22,7 +24,7 @@ export default {
     const searchText = ref('')
     const visibleList = ref(false)
     const tipList = ref([])
-    let isFocused = false
+    const isFocused = ref(false)
 
     const route = useRoute()
     const router = useRouter()
@@ -61,7 +63,7 @@ export default {
     }, 50)
 
     const handleTipSearch = () => {
-      if (!visibleList.value && isFocused) visibleList.value = true
+      if (!visibleList.value && isFocused.value) visibleList.value = true
       tipSearch()
     }
 
@@ -84,12 +86,12 @@ export default {
     const handleEvent = ({ action, data }) => {
       switch (action) {
         case 'focus':
-          isFocused = true
+          isFocused.value = true
           visibleList.value ||= true
           if (searchText.value) handleTipSearch()
           break
         case 'blur':
-          isFocused = false
+          isFocused.value = false
           setTimeout(() => {
             visibleList.value &&= false
           }, 50)
@@ -108,8 +110,36 @@ export default {
       visibleList,
       tipList,
       handleEvent,
+      isFocused,
     }
   },
 }
 
 </script>
+
+<style lang="less" module>
+.searchSlot {
+  width: min(560px, 58vw);
+  min-width: 300px;
+  transition: width .32s cubic-bezier(.2, .75, .25, 1), transform .32s cubic-bezier(.2, .75, .25, 1);
+  will-change: width, transform;
+
+  &.focused {
+    width: min(640px, 64vw);
+    transform: translateY(-1px);
+  }
+
+  > :global(div) {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 940px) {
+  .searchSlot,
+  .searchSlot.focused {
+    width: min(430px, 52vw);
+    min-width: 240px;
+  }
+}
+</style>

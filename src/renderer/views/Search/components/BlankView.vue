@@ -9,8 +9,13 @@
             <p>{{ $t('search__welcome_subtitle') }}</p>
           </div>
           <button type="button" :class="[$style.syncAction, { [$style.connected]: hasMusicAccount }]" @click="openAccountModal">
-            <svg-icon name="headphones" />
+            <span :class="$style.accountIcons">
+              <source-icon v-if="accountStatus.tx" source="tx" :size="20" />
+              <source-icon v-if="accountStatus.wy" source="wy" :size="20" />
+              <svg-icon v-if="!hasMusicAccount" name="headphones" />
+            </span>
             <span>{{ accountActionText }}</span>
+            <b aria-hidden="true">›</b>
           </button>
         </header>
 
@@ -59,8 +64,8 @@
               <p>{{ $t('search__today_discovery_desc') }}</p>
             </div>
           </header>
-          <div :class="$style.playlistRail">
-            <button v-for="(item, index) in dailyRecommendList.slice(0, 5)" :key="`${item.source}_${item.id}`" type="button" @click="playDailyRecommend(index)">
+          <div :class="[$style.playlistRail, $style.discoveryGrid]">
+            <button v-for="(item, index) in dailyRecommendList.slice(0, 9)" :key="`${item.source}_${item.id}`" type="button" @click="playDailyRecommend(index)">
               <span :class="$style.playlistCover">
                 <img v-if="dailyCoverUrls[index] || item.meta.picUrl" :src="dailyCoverUrls[index] || item.meta.picUrl" alt="">
                 <svg-icon v-else name="music" />
@@ -860,6 +865,37 @@ const handleSearch = (text) => {
     small { margin-top: 4px; color: var(--color-font-label); font-size: 10px; }
   }
 }
+.discoveryGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 18px;
+
+  > button {
+    display: grid;
+    grid-template-columns: 78px minmax(0, 1fr);
+    grid-template-rows: 1fr 1fr;
+    column-gap: 12px;
+    align-items: center;
+    padding: 8px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .38);
+    transition: background-color @transition-fast, transform @transition-fast, box-shadow @transition-fast;
+
+    &:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, .68);
+      box-shadow: 0 12px 26px rgba(35, 54, 46, .1);
+    }
+
+    .playlistCover {
+      grid-row: 1 / 3;
+      width: 78px;
+      height: 78px;
+    }
+
+    strong { margin-top: auto; align-self: end; font-size: 12.5px; }
+    small { margin-bottom: auto; align-self: start; }
+  }
+}
 .playlistCover {
   position: relative;
   aspect-ratio: 1;
@@ -905,7 +941,7 @@ const handleSearch = (text) => {
 }
 .syncAction {
   height: 40px;
-  padding: 0 15px;
+  padding: 0 10px 0 8px;
   border: 1px solid rgba(54, 83, 70, .12);
   border-radius: 14px;
   display: inline-flex;
@@ -920,7 +956,8 @@ const handleSearch = (text) => {
   box-shadow: 0 8px 22px rgba(35, 54, 46, .08), inset 0 1px 0 rgba(255, 255, 255, .72);
   transition: transform @transition-fast, box-shadow @transition-fast, opacity @transition-fast;
 
-  :global(.svg-icon) { width: 16px; height: 16px; }
+  :global(.svg-icon) { width: 17px; height: 17px; }
+  b { margin-left: 1px; font-size: 17px; font-weight: 500; opacity: .72; }
 
   &:hover {
     transform: translateY(-2px);
@@ -937,6 +974,23 @@ const handleSearch = (text) => {
     border-color: transparent;
     background: var(--color-primary);
   }
+}
+.accountIcons {
+  display: flex;
+  align-items: center;
+
+  > * {
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, .88);
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  > * + * { margin-left: -6px; }
+}
+
+@media (max-width: 980px) {
+  .discoveryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .dailyDetail {
   width: min(1160px, 100%);

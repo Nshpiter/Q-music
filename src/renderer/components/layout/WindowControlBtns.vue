@@ -4,7 +4,7 @@
       v-if="detailAction != 'none'"
       ref="dom_detail_btn"
       type="button"
-      :class="$style.hide"
+      :class="[$style.hide, { [$style.detailCollapsed]: detailAction == 'show' }]"
       :aria-label="$t(detailAction == 'hide' ? 'player__hide_detail_tip' : 'player__pic_tip')"
       ignore-tip
       :title="$t(detailAction == 'hide' ? 'player__hide_detail_tip' : 'player__pic_tip')"
@@ -149,6 +149,15 @@ onBeforeUnmount(() => {
     transition: background-color 0.2s ease-in-out;
     pointer-events: auto;
     -webkit-app-region: no-drag !important;
+
+    &.hide svg {
+      transform: rotate(0deg);
+      transition: transform .28s cubic-bezier(.2, .75, .25, 1);
+    }
+
+    &.detailCollapsed svg {
+      transform: rotate(180deg);
+    }
 
     &.hover {
       background-color: var(--color-button-background-hover);

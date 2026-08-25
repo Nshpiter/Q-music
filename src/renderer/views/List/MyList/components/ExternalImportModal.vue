@@ -77,8 +77,7 @@
               :disabled="isLoading"
               @click="source = item.id"
             >
-              <source-icon v-if="item.id == 'tx' || item.id == 'wy'" :source="item.id" :size="19" :label="item.name" />
-              <span v-else>{{ item.name }}</span>
+              <source-icon :source="item.id" :size="22" :label="item.name" />
             </button>
           </div>
         </section>

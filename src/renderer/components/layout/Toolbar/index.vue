@@ -24,8 +24,8 @@ import SearchInput from './SearchInput.vue'
   display: flex;
   height: @height-toolbar;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 18px;
+  justify-content: center;
+  padding: 0 calc(@window-control-width + 18px) 0 18px;
   -webkit-app-region: no-drag;
   z-index: 2;
   background:
@@ -68,11 +68,14 @@ import SearchInput from './SearchInput.vue'
     }
   }
   &.controlBtnRight {
-    justify-content: space-between;
-
     .dragArea {
       right: @window-control-width;
     }
+  }
+
+  &.controlBtnLeft {
+    padding-right: 18px;
+    padding-left: calc(@window-control-width + 18px);
   }
 }
 
