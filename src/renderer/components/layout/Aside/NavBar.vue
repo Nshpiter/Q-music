@@ -31,9 +31,9 @@ export default {
       return [
         {
           to: '/search',
-          tips: t('search'),
-          icon: '#icon-search-2',
-          iconSize: '0 0 425.2 425.2',
+          tips: t('nav_home'),
+          icon: '#icon-home',
+          iconSize: '0 0 24 24',
           size,
           name: 'Search',
           enable: true,
@@ -111,7 +111,7 @@ export default {
   -webkit-app-region: no-drag;
   display: flex;
   flex-flow: column nowrap;
-  gap: 6px;
+  gap: 8px;
   // margin-bottom: 15px;
   &:last-child {
     margin-bottom: 0;
@@ -134,7 +134,7 @@ export default {
   left: auto;
   top: auto;
   width: 100%;
-  height: 46px;
+  height: 50px;
   // left: 15%;
   // top: 15%;
   // width: 70%;
@@ -147,9 +147,9 @@ export default {
   // padding: 18px 3px;
   // margin: 5px 0;
   // border-left: 5px solid transparent;
-  padding: 0 12px;
-  gap: 12px;
-  border-radius: @radius-border;
+  padding: 0 13px;
+  gap: 13px;
+  border-radius: 14px;
   transition: @transition-fast;
   transition-property: background-color, color, opacity, box-shadow, transform;
   color: var(--color-nav-font);
@@ -166,10 +166,10 @@ export default {
 
   svg {
     flex: none;
-    width: 18px;
-    height: 18px;
-    padding: 6px;
-    border-radius: 11px;
+    width: 20px;
+    height: 20px;
+    padding: 7px;
+    border-radius: 12px;
     color: var(--color-nav-font);
     background: rgba(255, 255, 255, .4);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55);
@@ -179,25 +179,25 @@ export default {
 
   span {
     min-width: 0;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     .mixin-ellipsis-1();
   }
 
   // 选中态：主色实心图标胶囊 + 柔和玻璃底，取代原来的左侧竖线
   &.active {
-    color: var(--color-primary-dark-300);
-    background-color: var(--color-primary-alpha-900);
-    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800);
+    color: var(--color-font);
+    background: rgba(38, 40, 39, .1);
+    box-shadow: inset 0 0 0 1px rgba(38, 40, 39, .16), 0 8px 20px rgba(35, 38, 36, .07);
 
     svg {
       color: #fff;
-      background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary));
-      box-shadow: 0 6px 14px var(--color-primary-alpha-700), inset 0 1px 0 rgba(255, 255, 255, .4);
+      background: linear-gradient(145deg, #555957, #242625);
+      box-shadow: 0 7px 16px rgba(22, 24, 23, .24), inset 0 1px 0 rgba(255, 255, 255, .28);
     }
 
     &:hover {
-      background-color: var(--color-primary-alpha-800);
+      background: rgba(38, 40, 39, .14);
     }
   }
 

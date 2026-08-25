@@ -80,7 +80,7 @@
           </div>
         </section>
 
-        <section v-if="selectedDailyProvider == 'wy' && accountStatus.wy" :class="$style.playlistShelf">
+        <section v-if="accountStatus[selectedDailyProvider]" :class="$style.playlistShelf">
           <header>
             <div>
               <h3>{{ $t('search__account_playlists') }}</h3>
@@ -151,7 +151,7 @@
         </header>
         <div :class="$style.detailList">
           <div :class="$style.detailTableHeader" aria-hidden="true">
-            <span>#</span><span>{{ $t('music_name') }}</span><span>{{ $t('music_singer') }}</span><span>{{ $t('music_album') }}</span><span />
+            <span>#</span><span>{{ $t('music_name') }}</span><span>{{ $t('music_singer') }}</span><span>{{ $t('music_album') }}</span><span>{{ $t('music_time') }}</span><span />
           </div>
           <ol v-if="detailMusicList.length" class="scroll" :class="$style.detailTracks">
             <li v-for="(item, index) in detailMusicList" :key="`${item.source}_${item.id}`" @dblclick="playDetailList(index)">
@@ -159,6 +159,7 @@
               <strong :title="item.name">{{ item.name }}</strong>
               <span :title="item.singer">{{ item.singer }}</span>
               <span :title="item.meta.albumName">{{ item.meta.albumName || '—' }}</span>
+              <span :class="$style.trackDuration">{{ item.interval || '—' }}</span>
               <button type="button" :aria-label="$t('list__play')" @click="playDetailList(index)">▶</button>
             </li>
           </ol>
@@ -179,21 +180,19 @@
       <div :class="$style.providerList">
         <button
           type="button" :disabled="isAccountLoginPending"
-          :class="{ [$style.selectedProvider]: selectedDailyProvider == 'tx' }"
           @click="handleProviderAction('tx')"
         >
           <strong>{{ $t('search__account_qq') }}</strong>
           <span>{{ accountStatus.tx ? $t('search__account_connected') : $t('search__account_qq_tip') }}</span>
-          <em :class="{ [$style.connectedDot]: accountStatus.tx }">{{ selectedDailyProvider == 'tx' ? $t('search__daily_selected') : accountStatus.tx ? '✓' : '›' }}</em>
+          <em :class="{ [$style.connectedDot]: accountStatus.tx }">{{ accountStatus.tx ? '✓' : '›' }}</em>
         </button>
         <button
           type="button" :disabled="isAccountLoginPending"
-          :class="{ [$style.selectedProvider]: selectedDailyProvider == 'wy' }"
           @click="handleProviderAction('wy')"
         >
           <strong>{{ $t('search__account_netease') }}</strong>
           <span>{{ accountStatus.wy ? $t('search__account_connected') : $t('search__account_netease_tip') }}</span>
-          <em :class="{ [$style.connectedDot]: accountStatus.wy }">{{ selectedDailyProvider == 'wy' ? $t('search__daily_selected') : accountStatus.wy ? '✓' : '›' }}</em>
+          <em :class="{ [$style.connectedDot]: accountStatus.wy }">{{ accountStatus.wy ? '✓' : '›' }}</em>
         </button>
       </div>
       <section v-if="selectedDailyProvider == 'tx' || accountStatus.tx" :class="$style.officialDailySetup">
@@ -263,8 +262,10 @@ const isDailyLoading = shallowRef(false)
 const isShowDailyDetail = ref(false)
 const detailKind = ref('daily')
 const selectedAccountPlaylist = ref(null)
+const selectedAccountPlaylistProvider = ref('wy')
 const playlistDetailList = shallowRef([])
 const accountPlaylists = shallowRef([])
+const accountPlaylistsProvider = ref('')
 const isPlaylistsLoading = shallowRef(false)
 const isPlaylistDetailLoading = shallowRef(false)
 const isShowAccountModal = ref(false)
@@ -334,7 +335,7 @@ const detailSubtitle = computed(() => detailKind.value == 'playlist'
   ? window.i18n.t('search__daily_count', { count: detailMusicList.value.length })
   : `${todayLabel} · ${window.i18n.t('search__daily_count', { count: detailMusicList.value.length })}`)
 const detailSourceText = computed(() => detailKind.value == 'playlist'
-  ? `${window.i18n.t('search__account_netease')} · ${selectedAccountPlaylist.value?.creator ?? ''}`
+  ? `${window.i18n.t(selectedAccountPlaylistProvider.value == 'tx' ? 'search__account_qq' : 'search__account_netease')} · ${selectedAccountPlaylist.value?.creator ?? ''}`
   : dailySourceText.value)
 const detailEmptyText = computed(() => detailKind.value == 'playlist'
   ? isPlaylistDetailLoading.value ? window.i18n.t('search__account_playlist_loading') : window.i18n.t('search__account_playlist_empty')
@@ -444,28 +445,43 @@ const closeDailyDetail = () => {
   isShowDailyDetail.value = false
 }
 
-const loadAccountPlaylists = async(force = false) => {
-  if (!accountStatus.value.wy || (accountPlaylists.value.length && !force)) return
+const loadAccountPlaylists = async(force = false, provider = selectedDailyProvider.value) => {
+  if (!accountStatus.value[provider] || (accountPlaylistsProvider.value == provider && accountPlaylists.value.length && !force)) return
   isPlaylistsLoading.value = true
+  accountPlaylistsProvider.value = provider
+  accountPlaylists.value = []
   try {
-    const result = await getMusicAccountPlaylists('wy')
-    accountPlaylists.value = result.status == 'available' ? result.playlists : []
+    const result = await getMusicAccountPlaylists(provider)
+    if (accountPlaylistsProvider.value == provider) accountPlaylists.value = result.status == 'available' ? result.playlists : []
   } catch {
-    accountPlaylists.value = []
+    if (accountPlaylistsProvider.value == provider) accountPlaylists.value = []
   } finally {
     isPlaylistsLoading.value = false
   }
 }
 
 const openAccountPlaylist = async(playlist) => {
+  const provider = selectedDailyProvider.value
   selectedAccountPlaylist.value = playlist
+  selectedAccountPlaylistProvider.value = provider
   playlistDetailList.value = []
   detailKind.value = 'playlist'
   isShowDailyDetail.value = true
   isPlaylistDetailLoading.value = true
   try {
-    const result = await getMusicAccountPlaylistDetail('wy', playlist.id)
-    if (result.ids.length) playlistDetailList.value = await wyMusicDetail.getList(result.ids).then(data => data.list.map(item => toNewMusicInfo(item))).catch(() => [])
+    const result = await getMusicAccountPlaylistDetail(provider, playlist.id)
+    if (result.ids.length) {
+      if (provider == 'wy') {
+        playlistDetailList.value = await wyMusicDetail.getList(result.ids).then(data => data.list.map(item => toNewMusicInfo(item))).catch(() => [])
+      } else {
+        const list = []
+        for (let index = 0; index < result.ids.length; index += 30) {
+          const items = await Promise.all(result.ids.slice(index, index + 30).map(id => txMusicInfo(id).catch(() => null)))
+          list.push(...items.filter(Boolean).map(item => toNewMusicInfo(item)))
+        }
+        playlistDetailList.value = list
+      }
+    }
   } finally {
     isPlaylistDetailLoading.value = false
   }
@@ -474,7 +490,7 @@ const openAccountPlaylist = async(playlist) => {
 const playDetailList = async(index = 0) => {
   const list = detailMusicList.value
   if (!list.length) return
-  const listId = detailKind.value == 'playlist' ? `q_playlist_wy_${selectedAccountPlaylist.value?.id ?? 'unknown'}` : `q_daily_${new Date().toISOString().slice(0, 10)}`
+  const listId = detailKind.value == 'playlist' ? `q_playlist_${selectedAccountPlaylistProvider.value}_${selectedAccountPlaylist.value?.id ?? 'unknown'}` : `q_daily_${new Date().toISOString().slice(0, 10)}`
   await setTempList(listId, [...list])
   playList(LIST_IDS.TEMP, index)
 }
@@ -486,7 +502,7 @@ const refreshAccountStatus = async() => {
     else if (accountStatus.value.wy) selectedDailyProvider.value = 'wy'
     window.localStorage.setItem('qmusic.dailyRecommend.provider', selectedDailyProvider.value)
   }
-  if (accountStatus.value.wy) void loadAccountPlaylists()
+  if (accountStatus.value[selectedDailyProvider.value]) void loadAccountPlaylists(false, selectedDailyProvider.value)
 }
 
 const selectDailyProvider = (provider, force = false) => {
@@ -494,7 +510,7 @@ const selectDailyProvider = (provider, force = false) => {
   selectedDailyProvider.value = provider
   window.localStorage.setItem('qmusic.dailyRecommend.provider', provider)
   void loadDailyRecommend(true, provider)
-  if (provider == 'wy') void loadAccountPlaylists()
+  if (accountStatus.value[provider]) void loadAccountPlaylists(false, provider)
 }
 
 const openAccountModal = () => {
@@ -552,7 +568,8 @@ const connectMusicAccount = async(provider) => {
     const result = await loginMusicAccount(provider)
     await refreshAccountStatus()
     if (result.status == 'connected') {
-      selectDailyProvider(provider, true)
+      if (selectedDailyProvider.value == provider) void loadDailyRecommend(true, provider)
+      void loadAccountPlaylists(true, provider)
     }
   } finally {
     isAccountLoginPending.value = false
@@ -562,10 +579,7 @@ const connectMusicAccount = async(provider) => {
 const handleProviderAction = (provider) => {
   if (!accountStatus.value[provider]) {
     void connectMusicAccount(provider)
-    return
   }
-  selectDailyProvider(provider)
-  closeAccountModal()
 }
 
 void refreshAccountStatus().then(() => {
@@ -611,7 +625,7 @@ const handleSearch = (text) => {
 }
 .noitemShell {
   position: relative;
-  width: min(1080px, 100%);
+  width: min(1180px, 100%);
   max-height: 100%;
   display: flex;
   flex-flow: column nowrap;
@@ -660,11 +674,11 @@ const handleSearch = (text) => {
 }
 .dailyCard {
   min-width: 0;
-  min-height: 260px;
+  min-height: 282px;
   overflow: hidden;
   display: flex;
-  gap: 22px;
-  padding: 26px;
+  gap: 26px;
+  padding: 30px;
   box-sizing: border-box;
   border-radius: 16px;
   color: var(--color-font);
@@ -685,8 +699,8 @@ const handleSearch = (text) => {
 }
 .dailyCover {
   position: relative;
-  width: 194px;
-  height: 194px;
+  width: 210px;
+  height: 210px;
   flex: none;
   overflow: hidden;
   display: grid;
@@ -968,7 +982,7 @@ const handleSearch = (text) => {
   }
 }
 .dailyDetail {
-  width: min(980px, 100%);
+  width: min(1160px, 100%);
   height: 100%;
   min-height: 0;
   padding: 4px 8px 12px;
@@ -978,11 +992,11 @@ const handleSearch = (text) => {
 }
 .detailHeader {
   flex: none;
-  min-height: 92px;
+  min-height: 112px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 10px 14px 18px;
+  gap: 18px;
+  padding: 10px 14px 20px;
 }
 .backButton {
   width: 38px;
@@ -998,14 +1012,14 @@ const handleSearch = (text) => {
   line-height: 1;
 }
 .detailCover {
-  width: 72px;
-  height: 72px;
+  width: 86px;
+  height: 86px;
   flex: none;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 18px;
+  border-radius: 21px;
   color: var(--color-primary);
   background: var(--color-primary-alpha-900);
   box-shadow: 0 10px 26px rgba(35, 54, 46, .14);
@@ -1017,8 +1031,8 @@ const handleSearch = (text) => {
   min-width: 0;
   flex: 1;
 
-  h2 { margin: 4px 0 5px; color: var(--color-font); font-size: 23px; }
-  p { margin: 0; color: var(--color-font-label); font-size: 12px; }
+  h2 { margin: 4px 0 5px; color: var(--color-font); font-size: 27px; }
+  p { margin: 0; color: var(--color-font-label); font-size: 13px; }
 }
 .detailCopy > .detailSource {
   margin-top: 5px;
@@ -1044,17 +1058,17 @@ const handleSearch = (text) => {
 }
 .detailTableHeader, .detailTracks li {
   display: grid;
-  grid-template-columns: 42px minmax(180px, 1.5fr) minmax(120px, .8fr) minmax(130px, 1fr) 42px;
+  grid-template-columns: 42px minmax(210px, 1.55fr) minmax(130px, .82fr) minmax(160px, 1fr) 58px 42px;
   align-items: center;
   gap: 12px;
 }
 .detailTableHeader {
   flex: none;
-  min-height: 42px;
+  min-height: 46px;
   padding: 0 16px;
   color: var(--color-font-label);
   border-bottom: 1px solid rgba(54, 83, 70, .09);
-  font-size: 11px;
+  font-size: 12px;
 }
 .detailTracks {
   min-height: 0;
@@ -1064,11 +1078,11 @@ const handleSearch = (text) => {
   list-style: none;
 
   li {
-    min-height: 48px;
+    min-height: 56px;
     padding: 0 8px;
     border-radius: 13px;
     color: var(--color-font);
-    font-size: 12px;
+    font-size: 13px;
     transition: background-color @transition-fast;
 
     &:hover { background: var(--color-primary-alpha-1000); }
@@ -1076,8 +1090,8 @@ const handleSearch = (text) => {
     > strong { font-weight: 650; }
     > span:not(.trackNumber) { color: var(--color-font-label); }
     > button {
-      width: 30px;
-      height: 30px;
+      width: 34px;
+      height: 34px;
       border: 0;
       border-radius: 10px;
       color: var(--color-primary);
@@ -1088,6 +1102,7 @@ const handleSearch = (text) => {
   }
 }
 .trackNumber { color: var(--color-font-label); font-variant-numeric: tabular-nums; }
+.trackDuration { font-variant-numeric: tabular-nums; }
 .detailEmpty {
   margin: auto;
   color: var(--color-font-label);
@@ -1148,11 +1163,6 @@ const handleSearch = (text) => {
       box-shadow: 0 12px 28px rgba(35, 54, 46, .11);
     }
     &:disabled { cursor: wait; opacity: .65; }
-    &.selectedProvider {
-      border-color: var(--color-primary-alpha-500);
-      background: var(--color-primary-alpha-1000);
-      box-shadow: 0 10px 26px rgba(35, 54, 46, .1), inset 3px 0 0 var(--color-primary);
-    }
   }
   strong { font-size: 14px; }
   span { color: var(--color-font-label); font-size: 11px; }
@@ -1394,6 +1404,11 @@ const handleSearch = (text) => {
   }
   .detailHeader { flex-wrap: wrap; }
   .detailActions { width: 100%; padding-left: 54px; }
+  .detailTableHeader, .detailTracks li {
+    grid-template-columns: 38px minmax(160px, 1.4fr) minmax(110px, .8fr) 54px 40px;
+
+    > :nth-child(4) { display: none; }
+  }
   .playlistRail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 

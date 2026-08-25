@@ -69,6 +69,7 @@ export interface MusicAccountPlaylist {
   cover: string
   trackCount: number
   creator: string
+  kind?: 'created' | 'favorite'
 }
 export interface MusicAccountPlaylistsResult {
   provider: MusicAccountProvider

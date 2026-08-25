@@ -3,12 +3,16 @@ import { filterMusicList, formatPlayTime, toNewMusicInfo } from '@renderer/utils
 import { httpFetch } from '@renderer/utils/request'
 import musicSdk from '@renderer/utils/musicSdk'
 import { getListDetail } from '@renderer/store/songList/action'
-import { addListMusics, createUserList } from '@renderer/store/list/action'
+import { addListMusics, createUserList, overwriteListMusics } from '@renderer/store/list/action'
+import { userLists } from '@renderer/store/list/state'
+import { getMusicAccountPlaylistDetail, type MusicAccountPlaylist, type MusicAccountProvider } from '@renderer/utils/ipc'
+import wyMusicDetail from '@renderer/utils/musicSdk/wy/musicDetail'
+import txMusicInfo from '@renderer/utils/musicSdk/tx/musicInfo'
 
 export type ExternalImportSource = 'tx' | 'wy' | 'kg' | 'spotify'
 export type ExternalImportTarget = 'new' | 'current' | 'love'
 
-export type ExternalImportErrorCode = 'missing_token' | 'invalid_link' | 'no_match' | 'cancelled'
+export type ExternalImportErrorCode = 'missing_token' | 'invalid_link' | 'no_match' | 'account_unavailable' | 'cancelled'
 
 export class ExternalImportError extends Error {
   code: ExternalImportErrorCode
@@ -44,6 +48,13 @@ export interface ExternalImportResult {
   imported: number
   unmatched: number
   listName: string
+}
+
+export interface AccountPlaylistImportParams {
+  provider: MusicAccountProvider
+  playlist: MusicAccountPlaylist
+  target: ExternalImportTarget
+  currentListId: string
 }
 
 interface SpotifyTrack {
@@ -323,6 +334,73 @@ const writeMusicList = async(params: ExternalImportParams, list: LX.Music.MusicI
   })
 
   return musicInfos.length
+}
+
+const loadAccountPlaylistMusic = async(
+  provider: MusicAccountProvider,
+  playlistId: string,
+  onProgress?: (progress: ExternalImportProgress) => void,
+  shouldCancel?: ShouldCancel,
+) => {
+  const result = await getMusicAccountPlaylistDetail(provider, playlistId)
+  if (result.status != 'available' || !result.ids.length) throw new ExternalImportError('account_unavailable')
+
+  const list: LX.Music.MusicInfo[] = []
+  const chunkSize = provider == 'wy' ? 200 : 16
+  for (let index = 0; index < result.ids.length; index += chunkSize) {
+    assertNotCancelled(shouldCancel)
+    const ids = result.ids.slice(index, index + chunkSize)
+    if (provider == 'wy') {
+      const data = await wyMusicDetail.getList(ids)
+      list.push(...data.list.map((item: LX.Music.MusicInfoOnline) => toNewMusicInfo(item)))
+    } else {
+      const items = await Promise.all(ids.map(id => txMusicInfo(id).catch(() => null)))
+      list.push(...items.flatMap((item: LX.Music.MusicInfoOnline | null) => item == null ? [] : [toNewMusicInfo(item)]))
+    }
+    onProgress?.({
+      stage: 'fetch',
+      current: Math.min(index + ids.length, result.ids.length),
+      total: result.ids.length,
+    })
+  }
+  return filterMusicList(list)
+}
+
+export const importAccountPlaylist = async(
+  params: AccountPlaylistImportParams,
+  onProgress?: (progress: ExternalImportProgress) => void,
+  shouldCancel?: ShouldCancel,
+): Promise<ExternalImportResult> => {
+  const list = await loadAccountPlaylistMusic(params.provider, params.playlist.id, onProgress, shouldCancel)
+  if (!list.length) throw new ExternalImportError('no_match')
+  assertNotCancelled(shouldCancel)
+  onProgress?.({ stage: 'save', current: 0, total: list.length })
+
+  if (params.target == 'new') {
+    const existing = userLists.find(item => item.source == params.provider && item.sourceListId == params.playlist.id)
+    if (existing) {
+      await overwriteListMusics({ listId: existing.id, musicInfos: list })
+    } else {
+      await createUserList({
+        name: params.playlist.name,
+        list,
+        source: params.provider,
+        sourceListId: params.playlist.id,
+      })
+    }
+  } else {
+    await addListMusics(params.target == 'love' ? LIST_IDS.LOVE : params.currentListId, list)
+  }
+
+  onProgress?.({ stage: 'save', current: list.length, total: list.length })
+  const sourceTotal = params.playlist.trackCount > 0 ? params.playlist.trackCount : list.length
+  return {
+    total: list.length,
+    sourceTotal,
+    imported: list.length,
+    unmatched: Math.max(0, sourceTotal - list.length),
+    listName: params.playlist.name,
+  }
 }
 
 export const importExternalPlaylist = async(params: ExternalImportParams, onProgress?: (progress: ExternalImportProgress) => void, shouldCancel?: ShouldCancel): Promise<ExternalImportResult> => {

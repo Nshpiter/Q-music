@@ -38,6 +38,7 @@ export interface MusicAccountPlaylist {
   cover: string
   trackCount: number
   creator: string
+  kind?: 'created' | 'favorite'
 }
 
 export interface MusicAccountPlaylistsResult {
@@ -111,6 +112,36 @@ const hasLoginCookie = async(provider: MusicAccountProvider) => {
   const hasIdentifier = names.has('uin') || names.has('qqmusic_uin') || names.has('musicid') || names.has('wxopenid')
   const hasMusicKey = names.has('qqmusic_key') || names.has('qm_keyst') || names.has('musickey')
   return hasIdentifier && hasMusicKey
+}
+
+const getQQAccountCredentials = async() => {
+  const accountSession = session.fromPartition(providerConfig.tx.partition)
+  const cookies = await accountSession.cookies.get({})
+  const cookieMap = new Map(cookies.map(cookie => [cookie.name.toLowerCase(), cookie.value]))
+  const rawUin = cookieMap.get('uin') ?? cookieMap.get('qqmusic_uin') ?? cookieMap.get('musicid') ?? ''
+  return {
+    accountSession,
+    uin: rawUin.replace(/\D/g, '').replace(/^0+/, '') || '0',
+    authst: cookieMap.get('qm_keyst') ?? cookieMap.get('qqmusic_key') ?? cookieMap.get('musickey') ?? '',
+  }
+}
+
+const requestQQMusicU = async<T>(requests: Record<string, unknown>): Promise<T> => {
+  const { accountSession, uin, authst } = await getQQAccountCredentials()
+  const response = await accountSession.fetch('https://u.y.qq.com/cgi-bin/musicu.fcg', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json;charset=UTF-8',
+      Origin: 'https://y.qq.com',
+      Referer: 'https://y.qq.com/',
+    },
+    body: JSON.stringify({
+      comm: { uin, format: 'json', ct: 24, cv: 0, authst },
+      ...requests,
+    }),
+  })
+  if (!response.ok) throw new Error(`QQ Music account request failed: ${response.status}`)
+  return response.json() as Promise<T>
 }
 
 const getCompatibleUserAgent = (userAgent: string) => userAgent
@@ -420,8 +451,39 @@ const getNeteaseUserId = async(): Promise<string> => {
 
 export const getMusicAccountPlaylists = async(provider: MusicAccountProvider): Promise<MusicAccountPlaylistsResult> => {
   if (!await hasLoginCookie(provider)) return { provider, playlists: [], status: 'login_required' }
-  if (provider != 'wy') return { provider, playlists: [], status: 'unavailable' }
   try {
+    if (provider == 'tx') {
+      const { uin } = await getQQAccountCredentials()
+      const result = await requestQQMusicU<{
+        created?: { code?: number, data?: { v_playlist?: Array<Record<string, unknown>> } }
+        favorite?: { code?: number, data?: { v_list?: Array<Record<string, unknown>>, v_playlist?: Array<Record<string, unknown>> } }
+      }>({
+        created: {
+          module: 'music.musicasset.PlaylistBaseRead',
+          method: 'GetPlaylistByUin',
+          param: { uin },
+        },
+        favorite: {
+          module: 'music.musicasset.PlaylistBaseRead',
+          method: 'GetFavPlaylistByUin',
+          param: { uin, page: 1, size: 100 },
+        },
+      })
+      const normalize = (items: Array<Record<string, unknown>>, kind: MusicAccountPlaylist['kind']) => items.map(item => ({
+        id: String(item.tid ?? item.dirId ?? item.id ?? item.dissid ?? ''),
+        name: String(item.dirName ?? item.title ?? item.dissname ?? item.name ?? ''),
+        cover: String(item.picUrl ?? item.bigpicUrl ?? item.picurl ?? ''),
+        trackCount: Number(item.songNum ?? item.song_cnt ?? item.songnum ?? 0),
+        creator: '',
+        kind,
+      })).filter(item => item.id && item.name)
+      const created = normalize(result.created?.data?.v_playlist ?? [], 'created')
+      const favorite = normalize(result.favorite?.data?.v_list ?? result.favorite?.data?.v_playlist ?? [], 'favorite')
+      const playlistMap = new Map([...created, ...favorite].map(item => [item.id, item]))
+      const playlists = [...playlistMap.values()]
+      return { provider, playlists, status: playlists.length ? 'available' : 'unavailable' }
+    }
+
     const uid = await getNeteaseUserId()
     if (!uid) return { provider, playlists: [], status: 'unavailable' }
     const result = await requestNeteaseWeapi<{
@@ -431,19 +493,23 @@ export const getMusicAccountPlaylists = async(provider: MusicAccountProvider): P
         name?: string
         coverImgUrl?: string
         trackCount?: number
-        creator?: { nickname?: string }
+        subscribed?: boolean
+        creator?: { nickname?: string, userId?: string | number }
       }>
-    }>('/weapi/user/playlist', { uid, offset: 0, limit: 100, includeVideo: true })
+    }>('/weapi/user/playlist', { uid, offset: 0, limit: 1000, includeVideo: true })
     const playlists = (result.playlist ?? []).map(item => ({
       id: String(item.id ?? ''),
       name: item.name ?? '',
       cover: item.coverImgUrl ?? '',
       trackCount: item.trackCount ?? 0,
       creator: item.creator?.nickname ?? '',
+      kind: item.subscribed == true
+        ? 'favorite' as const
+        : String(item.creator?.userId ?? '') != uid ? 'favorite' as const : 'created' as const,
     })).filter(item => item.id && item.name)
     return { provider, playlists, status: playlists.length ? 'available' : 'unavailable' }
   } catch (error) {
-    console.warn('[musicAccount] NetEase playlists unavailable', error)
+    console.warn(`[musicAccount] ${provider} playlists unavailable`, error)
     return { provider, playlists: [], status: 'unavailable' }
   }
 }
@@ -453,8 +519,47 @@ export const getMusicAccountPlaylistDetail = async(
   id: string,
 ): Promise<MusicAccountPlaylistDetailResult> => {
   if (!await hasLoginCookie(provider)) return { provider, id, ids: [], status: 'login_required' }
-  if (provider != 'wy') return { provider, id, ids: [], status: 'unavailable' }
   try {
+    if (provider == 'tx') {
+      const apiKey = readQQDailyApiKey()
+      if (apiKey) {
+        const ids: string[] = []
+        for (let page = 0; page < 100; page++) {
+          const response = await session.fromPartition(providerConfig.tx.partition).fetch('https://a.y.qq.com/playlists/detail', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ params: { dissId: Number(id), page }, comm: { skill_version: '0.0.3' } }),
+          })
+          if (!response.ok) break
+          const result = await response.json() as {
+            ret?: number
+            sub_ret?: number
+            trackList?: Array<{ songMid?: string }>
+            hasMore?: boolean
+          }
+          if ((result.ret != null && result.ret != 0) || (result.sub_ret != null && result.sub_ret != 0)) break
+          ids.push(...(result.trackList ?? []).map(item => item.songMid ?? '').filter(Boolean))
+          if (!result.hasMore || !result.trackList?.length) break
+        }
+        if (ids.length) return { provider, id, ids: [...new Set(ids)], status: 'available' }
+      }
+
+      const result = await requestQQMusicU<{
+        detail?: { code?: number, data?: { songlist?: Array<Record<string, unknown>> } }
+      }>({
+        detail: {
+          module: 'music.srfDissInfo.aiDissInfo.DissInfo',
+          method: 'GetDissInfo',
+          param: { disstid: Number(id), song_begin: 0, song_num: 10000 },
+        },
+      })
+      const ids = (result.detail?.data?.songlist ?? []).map(item => String(item.mid ?? item.songmid ?? '')).filter(Boolean)
+      return { provider, id, ids: [...new Set(ids)], status: ids.length ? 'available' : 'unavailable' }
+    }
+
     const result = await requestNeteaseWeapi<{
       code?: number
       playlist?: { trackIds?: Array<{ id?: string | number }> }
@@ -462,7 +567,7 @@ export const getMusicAccountPlaylistDetail = async(
     const ids = (result.playlist?.trackIds ?? []).map(item => String(item.id ?? '')).filter(Boolean)
     return { provider, id, ids, status: ids.length ? 'available' : 'unavailable' }
   } catch (error) {
-    console.warn('[musicAccount] NetEase playlist detail unavailable', error)
+    console.warn(`[musicAccount] ${provider} playlist detail unavailable`, error)
     return { provider, id, ids: [], status: 'unavailable' }
   }
 }

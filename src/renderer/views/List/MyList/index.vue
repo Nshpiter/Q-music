@@ -12,6 +12,7 @@
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve">
             <use xlink:href="#icon-download-2" />
           </svg>
+          <span>{{ $t('playlist_import_modal__entry') }}</span>
         </button>
         <button :class="$style.listsAdd" :aria-label="$t('list_update_modal__title')" @click="isShowListUpdateModal = true">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="transform: rotate(45deg);" height="70%" viewBox="0 0 24 24" space="preserve">
@@ -290,6 +291,7 @@ export default {
 .headerBtns {
   flex: none;
   display: flex;
+  align-items: center;
 }
 .listsAdd {
   // position: absolute;
@@ -317,20 +319,30 @@ export default {
   }
 }
 .importBtn {
-  opacity: .9;
+  opacity: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  margin-top: 8px;
-  padding: 0;
+  gap: 5px;
+  width: auto;
+  height: 28px;
+  margin: 6px 2px 0;
+  padding: 0 9px;
   color: var(--color-primary);
   background-color: var(--color-primary-background-hover);
+  box-shadow: inset 0 0 0 1px var(--color-primary-alpha-600);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
   svg {
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
     flex: none;
+  }
+
+  &:hover {
+    opacity: 1 !important;
+    color: var(--color-primary-dark-300);
   }
 }
 .listsContent {
