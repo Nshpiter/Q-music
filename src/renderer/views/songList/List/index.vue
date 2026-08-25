@@ -20,7 +20,7 @@ import TagList from './components/TagList.vue'
 import SortTab from './components/SortTab.vue'
 import OpenListModal from './components/OpenListModal.vue'
 import ListView from './ListView.vue'
-import { sources, listInfo, isVisibleListDetail } from '@renderer/store/songList/state'
+import { sources, sortList, listInfo, isVisibleListDetail } from '@renderer/store/songList/state'
 import { sourceNames } from '@renderer/store'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
 
@@ -94,11 +94,14 @@ export default {
     const route = useRoute()
     const handleToggleSource = (id: LX.OnlineSource) => {
       if (id == source.value) return
+      const defaultSortId = sortList[id]?.[0]?.id ?? ''
       void router.replace({
         path: route.path,
         query: {
           source: id,
           tagId: '',
+          sortId: defaultSortId,
+          page: 1,
         },
       })
     }

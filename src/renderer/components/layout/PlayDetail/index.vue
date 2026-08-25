@@ -12,7 +12,7 @@ transition(enter-active-class="q-detail-enter-active" leave-active-class="q-deta
           div(:class="$style.record")
             img(v-if="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
             div(v-else :class="$style.emptyCover")
-              svg-icon(name="music")
+              EmptyCoverMark(:class="$style.emptyCoverMark")
           div(:class="$style.toneArm" aria-hidden="true")
             span(:class="$style.toneArmBase")
             span(:class="$style.toneArmRod")
@@ -60,6 +60,7 @@ import LyricPlayer from './LyricPlayer.vue'
 import MusicComment from './components/MusicComment/index.vue'
 import ControlBtnsLeftHeader from './ControlBtnsLeftHeader.vue'
 import ControlBtnsRightHeader from './ControlBtnsRightHeader.vue'
+import EmptyCoverMark from '@renderer/components/common/EmptyCoverMark.vue'
 import { registerAutoHideMounse, unregisterAutoHideMounse } from './autoHideMounse'
 import { appSetting } from '@renderer/store/setting'
 import { closeWindow, maxWindow, minWindow, setFullScreen } from '@renderer/utils/ipc'
@@ -100,6 +101,7 @@ export default {
   components: {
     ControlBtnsLeftHeader,
     ControlBtnsRightHeader,
+    EmptyCoverMark,
     LyricPlayer,
     MusicComment,
   },
@@ -986,17 +988,22 @@ export default {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  color: #fff;
-  background: linear-gradient(135deg, #6374ff, var(--color-primary));
-  box-shadow: 0 10px 28px rgba(22, 28, 34, .24);
+  color: rgba(38, 47, 43, .76);
+  background:
+    radial-gradient(circle at center, transparent 0 8%, rgba(48, 60, 54, .16) 9% 10%, transparent 11%),
+    linear-gradient(145deg, rgba(255, 255, 252, .98), rgba(225, 233, 228, .94));
+  border: 1px solid rgba(255, 255, 255, .72);
+  box-shadow:
+    inset 0 0 0 1px rgba(45, 61, 53, .08),
+    0 10px 28px rgba(22, 28, 34, .2);
   transform-origin: center;
   transform: rotate(var(--q-record-rotation, 0deg));
   will-change: transform;
 
-  :global(.svg-icon) {
-    width: 36%;
-    height: 36%;
-  }
+}
+.emptyCoverMark {
+  width: 42%;
+  height: 42%;
 }
 .toneArm {
   position: absolute;

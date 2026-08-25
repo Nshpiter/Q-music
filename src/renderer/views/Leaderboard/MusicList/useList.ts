@@ -17,7 +17,7 @@ export default () => {
       setTimeout(() => {
         if (listRef.value) listRef.value.scrollToTop()
       })
-    })
+    }).catch(() => {})
   }
 
   return {

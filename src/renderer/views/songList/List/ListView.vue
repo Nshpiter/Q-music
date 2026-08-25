@@ -36,7 +36,7 @@ const getListData = async(source: LX.OnlineSource, tabId: string, sortId: string
         list_ref.value.scrollTo(0)
       })
     }
-  })
+  }).catch(() => {})
 }
 
 const togglePage = (page: number) => {

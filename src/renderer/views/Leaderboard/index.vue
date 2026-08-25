@@ -17,7 +17,8 @@ import { computed, ref } from '@common/utils/vueTools'
 import { getLeaderboardSetting, setLeaderboardSetting } from '@renderer/utils/data'
 import BoardList from './BoardList/index.vue'
 import MusicList from './MusicList/index.vue'
-import { sources } from '@renderer/store/leaderboard/state'
+import { sources, boards } from '@renderer/store/leaderboard/state'
+import { getBoardsList, setBoard } from '@renderer/store/leaderboard/action'
 import { sourceNames } from '@renderer/store'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
 
@@ -63,11 +64,19 @@ export default {
     })
     const router = useRouter()
     const route = useRoute()
-    const handleToggleSource = (id) => {
+    const handleToggleSource = async(id) => {
+      if (id == source.value) return
+      let boardList = boards[id]
+      try {
+        if (boardList == null) setBoard(boardList = await getBoardsList(id), id)
+      } catch (error) {
+        console.warn(`Failed to prepare leaderboard source: ${id}`, error)
+      }
       void router.replace({
         path: route.path,
         query: {
           source: id,
+          boardId: boardList?.list[0]?.id,
         },
       })
     }

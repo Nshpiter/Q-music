@@ -10,11 +10,7 @@
         @click.stop="toggleDetail"
       >
         <img v-if="musicInfo.pic" :src="musicInfo.pic" decoding="async" @error="handleImgError">
-        <svg v-else :class="$style.coverPlaceholder" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="8.1" />
-          <circle cx="12" cy="12" r="2.15" />
-          <path d="M12 3.9a8.1 8.1 0 0 1 7.6 5.3" />
-        </svg>
+        <empty-cover-mark v-else :class="$style.coverPlaceholder" />
         <span :class="[$style.coverHint, { [$style.coverHintFlip]: props.detail }]" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M6 14l6-6 6 6" />
@@ -94,6 +90,7 @@ import { setMusicInfo, setShowPlayerDetail, setShowPlayQueue } from '@renderer/s
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
 
 import ControlBtns from './PlayDetail/components/ControlBtns.vue'
+import EmptyCoverMark from '@renderer/components/common/EmptyCoverMark.vue'
 
 const props = defineProps({
   detail: {
@@ -227,18 +224,9 @@ const handleImgError = () => {
   }
 }
 .coverPlaceholder {
-  width: 27px;
-  height: 27px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.45;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-
-  circle:nth-child(2) {
-    fill: currentColor;
-    stroke: none;
-  }
+  width: 30px;
+  height: 30px;
+  color: rgba(42, 55, 49, .7);
 }
 .coverHint {
   position: absolute;

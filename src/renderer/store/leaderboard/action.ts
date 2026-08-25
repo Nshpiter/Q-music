@@ -5,6 +5,8 @@ import { markRaw, markRawList } from '@common/utils/vueTools'
 import { boards, type Board, listDetailInfo, type ListDetailInfo } from './state'
 
 const cache = new Map<string, any>()
+const boardRequests = new Map<LX.OnlineSource, Promise<Board>>()
+const detailRequests = new Map<string, Promise<ListDetailInfo>>()
 
 export const setBoard = (board: Board, source: LX.OnlineSource) => {
   boards[source] = markRaw(board)
@@ -34,8 +36,18 @@ export const clearListDetail = () => {
 }
 
 export const getBoardsList = async(source: LX.OnlineSource) => {
-  // const source = (await getLeaderboardSetting()).source as LX.OnlineSource
-  return musicSdk[source]?.leaderboard.getBoards() as Promise<Board>
+  const pendingRequest = boardRequests.get(source)
+  if (pendingRequest) return pendingRequest
+
+  const request = musicSdk[source]?.leaderboard.getBoards() as Promise<Board> | undefined
+  if (!request) throw new Error(`Leaderboard source not found: ${source}`)
+
+  boardRequests.set(source, request)
+  try {
+    return await request
+  } finally {
+    if (boardRequests.get(source) === request) boardRequests.delete(source)
+  }
 }
 
 /**
@@ -53,11 +65,23 @@ export const getListDetail = async(id: string, page: number, isRefresh = false):
 
   const [source, bangId] = id.split('__') as [LX.OnlineSource, string]
 
-  return musicSdk[source]?.leaderboard?.getList(bangId, page).then((result: ListDetailInfo) => {
+  const pendingRequest = detailRequests.get(key)
+  if (pendingRequest) return pendingRequest
+
+  const sourceRequest = musicSdk[source]?.leaderboard?.getList(bangId, page) as Promise<ListDetailInfo> | undefined
+  if (!sourceRequest) throw new Error(`Leaderboard source not found: ${source}`)
+
+  const request = sourceRequest.then((result: ListDetailInfo) => {
     result.list = markRawList(deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[]))
     cache.set(key, result)
     return result
   })
+  detailRequests.set(key, request)
+  try {
+    return await request
+  } finally {
+    if (detailRequests.get(key) === request) detailRequests.delete(key)
+  }
 }
 
 
@@ -118,6 +142,7 @@ export const getAndSetListDetail = async(id: string, page: number, isRefresh = f
     if (key != listDetailInfo.key) return
     setListDetail(result, id, page)
   }).catch((error: any) => {
+    if (key != listDetailInfo.key) return
     clearListDetail()
     listDetailInfo.noItemLabel = window.i18n.t('list__load_failed')
     console.log(error)

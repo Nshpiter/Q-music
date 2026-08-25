@@ -224,19 +224,16 @@ export default {
   getList(bangid, page, retryNum = 0) {
     if (++retryNum > 3) return Promise.reject(new Error('try max num'))
     bangid = parseInt(bangid)
-    let info = this.periods[bangid]
-    let p = info ? Promise.resolve(info.period) : this.getPeriods(bangid)
-    return p.then(period => {
-      return this.listDetailRequest(bangid, period, this.limit).then(resp => {
-        if (resp.body.code !== 0) return this.getList(bangid, page, retryNum)
-        return {
-          total: resp.body.toplist.data.songInfoList.length,
-          list: this.filterData(resp.body.toplist.data.songInfoList),
-          limit: this.limit,
-          page: 1,
-          source: 'tx',
-        }
-      })
+    return this.listDetailRequest(bangid, '', this.limit).then(resp => {
+      const data = resp.body.toplist?.data
+      if (resp.body.code !== 0 || resp.body.toplist?.code !== 0 || !data?.songInfoList) return this.getList(bangid, page, retryNum)
+      return {
+        total: data.songInfoList.length,
+        list: this.filterData(data.songInfoList),
+        limit: this.limit,
+        page: 1,
+        source: 'tx',
+      }
     })
   },
 

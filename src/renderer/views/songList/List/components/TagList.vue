@@ -47,6 +47,7 @@ const route = useRoute()
 const t = useI18n()
 
 const list = shallowReactive([])
+let requestId = 0
 const handleToggleTag = (id) => {
   void router.replace({
     path: route.path,
@@ -60,10 +61,18 @@ const handleToggleTag = (id) => {
 }
 watch(() => props.source, async(source) => {
   if (!source) return
+  const currentRequestId = ++requestId
   // const source = (await getLeaderboardSetting()).source as LX.OnlineSource
   let tagInfo = tags[source]
   // console.log(await getTags(source))
-  if (tagInfo == null) setTags(tagInfo = await getTags(source), source)
+  try {
+    if (tagInfo == null) setTags(tagInfo = await getTags(source), source)
+  } catch (error) {
+    if (currentRequestId == requestId) list.splice(0, list.length)
+    console.warn(`Failed to load song list tags: ${source}`, error)
+    return
+  }
+  if (currentRequestId != requestId || source != props.source) return
 
   list.splice(0, list.length, ...[{ name: window.i18n.t('songlist__tag_info_hot_tag'), list: [...tagInfo.hotTag] }, ...tagInfo.tags])
 }, {

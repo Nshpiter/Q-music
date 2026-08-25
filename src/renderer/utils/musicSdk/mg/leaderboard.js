@@ -156,7 +156,13 @@ export default {
     return this.requestBoardsObj.promise
   },
   getData(url) {
-    const requestObj = httpFetch(url)
+    const requestObj = httpFetch(url, {
+      headers: {
+        Referer: 'https://app.c.nf.migu.cn/',
+        channel: '0146921',
+        'User-Agent': 'Mozilla/5.0',
+      },
+    })
     return requestObj.promise
   },
   // filterBoardsData(listData, list = [], ids = new Set()) {

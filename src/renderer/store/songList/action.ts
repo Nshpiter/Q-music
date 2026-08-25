@@ -18,6 +18,7 @@ import type {
 } from './state'
 
 const cache = new Map<string, any>()
+const tagRequests = new Map<LX.OnlineSource, Promise<TagInfo>>()
 
 export const setTags = (tagInfo: TagInfo, source: LX.OnlineSource) => {
   tags[source] = markRaw(tagInfo)
@@ -78,7 +79,18 @@ export const clearListDetail = () => {
 }
 
 export const getTags = async<T extends LX.OnlineSource>(source: T) => {
-  return musicSdk[source]?.songList.getTags() as Promise<TagInfo<T>>
+  const pendingRequest = tagRequests.get(source)
+  if (pendingRequest) return pendingRequest as Promise<TagInfo<T>>
+
+  const request = musicSdk[source]?.songList.getTags() as Promise<TagInfo<T>> | undefined
+  if (!request) throw new Error(`Song list source not found: ${source}`)
+
+  tagRequests.set(source, request)
+  try {
+    return await request
+  } finally {
+    if (tagRequests.get(source) === request) tagRequests.delete(source)
+  }
 }
 
 
@@ -114,6 +126,7 @@ export const getAndSetList = async(source: LX.OnlineSource, tabId: string, sortI
     if (key != listInfo.key) return
     setList(result, tabId, sortId, page)
   }).catch((error: any) => {
+    if (key != listInfo.key) return
     clearList()
     listInfo.noItemLabel = window.i18n.t('list__load_failed')
     console.log(error)
@@ -196,6 +209,7 @@ export const getAndSetListDetail = async(id: string, source: LX.OnlineSource, pa
     if (key != listDetailInfo.key) return
     setListDetail(result, id, page)
   }).catch((error: any) => {
+    if (key != listDetailInfo.key) return
     clearListDetail()
     listDetailInfo.noItemLabel = window.i18n.t('list__load_failed')
     console.log(error)

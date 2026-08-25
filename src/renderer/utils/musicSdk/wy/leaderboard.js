@@ -116,13 +116,11 @@ export default {
     return this._requestBoardsObj.promise
   },
   getData(id) {
-    const requestBoardsDetailObj = httpFetch('https://music.163.com/weapi/v3/playlist/detail', {
-      method: 'post',
-      form: weapi({
-        id,
-        n: 100000,
-        p: 1,
-      }),
+    const requestBoardsDetailObj = httpFetch(`https://music.163.com/api/v3/playlist/detail?id=${id}&n=1000&s=0`, {
+      headers: {
+        Referer: 'https://music.163.com/',
+        'User-Agent': 'Mozilla/5.0',
+      },
     })
     return requestBoardsDetailObj.promise
   },
@@ -180,21 +178,13 @@ export default {
     }
     if (resp.statusCode !== 200 || resp.body.code !== 200) return this.getList(bangid, page, retryNum)
     // console.log(resp.body)
-    let musicDetail
-    try {
-      musicDetail = await musicDetailApi.getList(resp.body.playlist.trackIds.map(trackId => trackId.id))
-    } catch (err) {
-      console.log(err)
-      if (err.message == 'try max num') {
-        throw err
-      } else {
-        return this.getList(bangid, page, retryNum)
-      }
-    }
-    // console.log(musicDetail)
+    const tracks = resp.body.playlist?.tracks
+    const privileges = resp.body.privileges
+    if (!Array.isArray(tracks) || !Array.isArray(privileges)) return this.getList(bangid, page, retryNum)
+    const list = musicDetailApi.filterList({ songs: tracks, privileges })
     return {
-      total: musicDetail.list.length,
-      list: musicDetail.list,
+      total: list.length,
+      list,
       limit: this.limit,
       page,
       source: 'wy',

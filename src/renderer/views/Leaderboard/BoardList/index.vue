@@ -47,6 +47,7 @@ const route = useRoute()
 
 const list = shallowReactive([])
 const rightClickItemIndex = ref(-1)
+let requestId = 0
 
 const handleToggleList = (id) => {
   void router.replace({
@@ -79,9 +80,17 @@ const handleMenuClick = (action) => {
 
 
 watch(() => props.source, async(source) => {
+  const currentRequestId = ++requestId
   // const source = (await getLeaderboardSetting()).source as LX.OnlineSource
   let boardList = boards[source]
-  if (boardList == null) setBoard(boardList = await getBoardsList(source), source)
+  try {
+    if (boardList == null) setBoard(boardList = await getBoardsList(source), source)
+  } catch (error) {
+    if (currentRequestId == requestId) list.splice(0, list.length)
+    console.warn(`Failed to load leaderboard boards: ${source}`, error)
+    return
+  }
+  if (currentRequestId != requestId || source != props.source) return
   list.splice(0, list.length, ...boardList.list)
   if (!props.boardId && boardList.list.length) handleToggleList(boardList.list[0].id)
 }, {
