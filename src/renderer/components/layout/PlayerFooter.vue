@@ -516,19 +516,40 @@ const handleImgError = () => {
     bottom: 28px;
     width: clamp(410px, 34vw, 570px);
     height: 94px;
-    padding: 0;
+    padding: 8px 20px 10px;
     box-sizing: border-box;
-    border: none;
-    border-radius: 0;
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 32px;
     color: rgba(255, 255, 255, .94);
-    background: transparent;
-    box-shadow: none;
-    backdrop-filter: none;
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .035) 48%, rgba(7, 12, 16, .18)),
+      rgba(19, 24, 28, .22);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .2),
+      inset 0 -1px 0 rgba(255, 255, 255, .045),
+      0 20px 52px rgba(0, 0, 0, .2);
+    backdrop-filter: blur(30px) saturate(1.45) brightness(1.08);
     pointer-events: auto;
     transition: opacity .36s ease, transform .46s cubic-bezier(.22, 1, .36, 1);
+
+    &:before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      border-radius: inherit;
+      background:
+        radial-gradient(130% 100% at 12% -12%, rgba(255, 255, 255, .2), transparent 44%),
+        radial-gradient(80% 90% at 92% 118%, rgba(133, 205, 191, .11), transparent 58%);
+      pointer-events: none;
+    }
   }
 
   .playControl {
+    position: relative;
+    z-index: 1;
     height: 48px;
     gap: clamp(24px, 2.5vw, 38px);
     color: rgba(255, 255, 255, .94);
@@ -565,6 +586,8 @@ const handleImgError = () => {
   }
 
   .progressRow {
+    position: relative;
+    z-index: 1;
     grid-template-columns: 38px minmax(130px, 1fr) 38px;
     gap: 9px;
     margin-top: 7px;
@@ -592,14 +615,33 @@ const handleImgError = () => {
     padding: 0 9px;
     box-sizing: border-box;
     gap: 1px;
-    border: 1px solid rgba(255, 255, 255, .11);
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid rgba(255, 255, 255, .16);
     border-radius: 24px;
     color: rgba(255, 255, 255, .86);
-    background: rgba(18, 23, 27, .3);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 18px 44px rgba(0, 0, 0, .16);
-    backdrop-filter: blur(22px) saturate(1.16);
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .035) 52%, rgba(7, 12, 16, .18)),
+      rgba(18, 23, 27, .22);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .2),
+      inset 0 -1px 0 rgba(255, 255, 255, .045),
+      0 18px 48px rgba(0, 0, 0, .2);
+    backdrop-filter: blur(30px) saturate(1.45) brightness(1.08);
     pointer-events: auto;
     transition: opacity .36s ease, transform .46s cubic-bezier(.22, 1, .36, 1);
+
+    &:before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      border-radius: inherit;
+      background:
+        radial-gradient(110% 130% at 8% -35%, rgba(255, 255, 255, .22), transparent 48%),
+        radial-gradient(100% 120% at 100% 135%, rgba(133, 205, 191, .1), transparent 56%);
+      pointer-events: none;
+    }
   }
 
   .tools {
@@ -621,12 +663,17 @@ const handleImgError = () => {
   }
 }
 
-:global(#container.immersive-controls-hidden) .detailFooter {
+:global(body.immersive-controls-hidden) .detailFooter {
   .centerControl,
   .toolArea {
     opacity: 0;
-    transform: translateY(18px);
+    visibility: hidden;
+    transform: translateY(22px) scale(.98);
     pointer-events: none;
+    transition:
+      opacity .3s ease,
+      visibility 0s linear .3s,
+      transform .42s cubic-bezier(.22, 1, .36, 1);
   }
 }
 

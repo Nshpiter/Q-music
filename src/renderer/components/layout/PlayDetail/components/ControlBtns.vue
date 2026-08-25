@@ -341,18 +341,24 @@ export default {
   button {
     width: 32px;
     height: 32px;
-    color: rgba(255, 255, 255, .74);
+    color: rgba(255, 255, 255, .82);
 
     &:hover {
       color: #fff;
-      background-color: rgba(255, 255, 255, .12) !important;
+      background-color: rgba(255, 255, 255, .2) !important;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, .18);
     }
   }
 
   .footerLeftControlBtn.active {
-    color: #fff;
-    background-color: rgba(255, 255, 255, .14);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, .16);
+    color: rgba(20, 24, 27, .96);
+    background-color: rgba(255, 255, 255, .94);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .24), inset 0 1px 0 #fff;
+
+    &:hover {
+      color: rgba(10, 14, 17, 1);
+      background-color: #fff !important;
+    }
   }
 
   .toolDivider {

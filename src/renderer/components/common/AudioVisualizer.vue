@@ -107,7 +107,9 @@ export default {
         return
       }
       analyser.fftSize = FFT_SIZE
-      analyser.smoothingTimeConstant = 0.84
+      analyser.smoothingTimeConstant = 0.72
+      analyser.minDecibels = -92
+      analyser.maxDecibels = -18
       if (dataArray?.length != analyser.frequencyBinCount) dataArray = new Uint8Array(analyser.frequencyBinCount)
     }
 
@@ -212,9 +214,16 @@ export default {
 
     const updateEnergy = () => {
       if (isPlaying && analyser && dataArray) analyser.getByteFrequencyData(dataArray)
-      const bass = isPlaying ? sampleBand(0.006, 0.055) : 0
-      const mid = isPlaying ? sampleBand(0.055, 0.24) : 0
-      const treble = isPlaying ? sampleBand(0.24, 0.58) : 0
+      let bass = isPlaying ? sampleBand(0.006, 0.055) : 0
+      let mid = isPlaying ? sampleBand(0.055, 0.24) : 0
+      let treble = isPlaying ? sampleBand(0.24, 0.58) : 0
+      // 某些第三方音频链路无法暴露频谱数据时，保留与播放状态同步的呼吸动画，
+      // 避免开关已启用但页面完全静止。
+      if (isPlaying && bass + mid + treble < 0.018) {
+        bass = 0.2 + Math.sin(phase * 1.7) * 0.08
+        mid = 0.16 + Math.sin(phase * 2.1 + 1.2) * 0.06
+        treble = 0.12 + Math.sin(phase * 2.8 + 2.4) * 0.04
+      }
       bassEnergy = bassEnergy * 0.8 + bass * 0.2
       midEnergy = midEnergy * 0.82 + mid * 0.18
       trebleEnergy = trebleEnergy * 0.86 + treble * 0.14
@@ -262,6 +271,35 @@ export default {
       ctx.restore()
     }
 
+    const drawSpectrumRibbon = () => {
+      const bandCount = 42
+      const centerY = height * 0.58
+      const maxAmplitude = Math.min(height * 0.16, width * 0.09)
+      const spacing = width / (bandCount - 1)
+      ctx.save()
+      ctx.globalCompositeOperation = 'screen'
+      ctx.lineCap = 'round'
+      for (let index = 0; index < bandCount; index++) {
+        const ratio = index / (bandCount - 1)
+        const dataIndex = dataArray?.length
+          ? clamp(Math.floor(Math.pow(ratio, 1.7) * dataArray.length * 0.58), 0, dataArray.length - 1)
+          : 0
+        const analyserValue = dataArray?.length ? dataArray[dataIndex] / 255 : 0
+        const fallbackValue = 0.22 + Math.sin(phase * 2.2 + index * 0.48) * 0.12
+        const value = isPlaying ? Math.max(analyserValue, fallbackValue) : 0.08
+        const envelope = Math.sin(Math.PI * ratio)
+        const amplitude = (8 * dpr + maxAmplitude * value * envelope) * (0.82 + bassEnergy * 0.34)
+        const color = mixColor(palette[0], palette[index % 2 ? 1 : 2], ratio)
+        ctx.strokeStyle = rgba(color, 0.12 + value * 0.26)
+        ctx.lineWidth = Math.max(1.5 * dpr, spacing * 0.16)
+        ctx.beginPath()
+        ctx.moveTo(index * spacing, centerY - amplitude)
+        ctx.lineTo(index * spacing, centerY + amplitude)
+        ctx.stroke()
+      }
+      ctx.restore()
+    }
+
     const renderFrame = timestamp => {
       animationFrameId = window.requestAnimationFrame(renderFrame)
       if (timestamp - lastDrawTime < FRAME_INTERVAL) return
@@ -274,6 +312,7 @@ export default {
       updateEnergy()
       ctx.clearRect(0, 0, width, height)
       drawAmbientField()
+      drawSpectrumRibbon()
       if (!isPlaying && energy < ENERGY_REST_THRESHOLD) {
         window.cancelAnimationFrame(animationFrameId)
         animationFrameId = null
@@ -343,7 +382,7 @@ export default {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 3;
+  z-index: 1;
   overflow: hidden;
 }
 .canvas {
