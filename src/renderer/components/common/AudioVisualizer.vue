@@ -240,20 +240,21 @@ export default {
 
     const drawAmbientField = () => {
       const longestSide = Math.max(width, height)
-      const activeBoost = isPlaying ? 1 : 0.42
-      const baseAlpha = (0.055 + energy * 0.13) * activeBoost
+      const activeBoost = isPlaying ? 1 : 0.58
+      const baseAlpha = (0.1 + energy * 0.2) * activeBoost
       ctx.save()
       ctx.globalCompositeOperation = 'screen'
-      drawGlow(width * (0.18 + Math.sin(phase * 0.42) * 0.055), height * (0.28 + Math.cos(phase * 0.31) * 0.07), longestSide * 0.48 * (1 + bassEnergy * 0.24), palette[0], baseAlpha * 1.24, 1.18, 0.86)
-      drawGlow(width * (0.78 + Math.cos(phase * 0.34) * 0.07), height * (0.34 + Math.sin(phase * 0.27) * 0.08), longestSide * 0.43 * (1 + midEnergy * 0.18), palette[1], baseAlpha, 1.04, 0.92)
-      drawGlow(width * (0.56 + Math.sin(phase * 0.25 + 1.8) * 0.1), height * (0.82 + Math.cos(phase * 0.38) * 0.05), longestSide * 0.4 * (1 + trebleEnergy * 0.12), palette[2], baseAlpha * 0.92, 1.28, 0.68)
+      drawGlow(width * (0.18 + Math.sin(phase * 0.42) * 0.055), height * (0.28 + Math.cos(phase * 0.31) * 0.07), longestSide * 0.52 * (1 + bassEnergy * 0.28), palette[0], baseAlpha * 1.28, 1.18, 0.86)
+      drawGlow(width * (0.78 + Math.cos(phase * 0.34) * 0.07), height * (0.34 + Math.sin(phase * 0.27) * 0.08), longestSide * 0.47 * (1 + midEnergy * 0.22), palette[1], baseAlpha * 1.08, 1.04, 0.92)
+      drawGlow(width * (0.56 + Math.sin(phase * 0.25 + 1.8) * 0.1), height * (0.82 + Math.cos(phase * 0.38) * 0.05), longestSide * 0.44 * (1 + trebleEnergy * 0.16), palette[2], baseAlpha, 1.28, 0.68)
+      drawGlow(width * (0.53 + Math.cos(phase * 0.2) * 0.08), height * (0.48 + Math.sin(phase * 0.24) * 0.06), longestSide * 0.58, mixColor(palette[0], palette[1], 0.5), baseAlpha * 0.5, 1.38, 0.82)
       if (albumBox) {
         drawGlow(
           albumBox.x + albumBox.width / 2,
           albumBox.y + albumBox.height / 2,
           Math.max(albumBox.width, albumBox.height) * (0.88 + bassEnergy * 0.28),
           palette[0],
-          (0.07 + bassEnergy * 0.14) * activeBoost,
+          (0.12 + bassEnergy * 0.2) * activeBoost,
           1.08,
           1.08,
         )

@@ -226,7 +226,7 @@ export default {
         '--playDetail-lrc-font-size': (isCommentLayoutVisible.value ? size * 0.82 : immersive ? size * 1.08 : size) + 'rem',
         '--playDetail-lrc-space-top-height': isCommentLayoutVisible.value ? (immersive ? '0%' : '8%') : immersive ? '44%' : '58%',
         '--playDetail-lrc-space-bottom-height': isCommentLayoutVisible.value ? (immersive ? '100%' : '92%') : immersive ? '44%' : '58%',
-        '--playDetail-lrc-color': immersive ? 'rgba(255, 255, 255, .86)' : 'rgba(54, 58, 60, .72)',
+        '--playDetail-lrc-color': immersive ? 'rgba(255, 255, 255, .42)' : 'rgba(54, 58, 60, .72)',
         '--playDetail-lrc-active-color': immersive ? 'rgba(255, 255, 255, .98)' : '#6374ff',
       }
     })
@@ -387,8 +387,8 @@ export default {
       color: var(--playDetail-lrc-color, rgba(255, 255, 255, .86));
       transition: @transition-normal;
       transition-property: color, padding, transform, opacity, text-shadow;
-      opacity: .56;
-      font-weight: 620;
+      opacity: .28;
+      font-weight: 600;
 
       .extended {
         font-size: 0.8em;
@@ -405,9 +405,29 @@ export default {
         text-shadow: 0 12px 34px rgba(0, 0, 0, .28);
       }
       &.line-mode.active {
-        transform: scale(1.035);
+        transform: scale(1.05);
         opacity: 1;
-        font-weight: 760;
+        font-weight: 720;
+      }
+
+      &.q-current-line {
+        transform: scale(1.05);
+        opacity: 1;
+        font-weight: 720;
+        filter: drop-shadow(0 10px 28px rgba(0, 0, 0, .26));
+      }
+
+      &.q-current-line ~ .line-content {
+        opacity: .42;
+      }
+
+      &.q-current-line.line-mode .font-lrc {
+        color: var(--playDetail-lrc-active-color, rgba(255, 255, 255, .98));
+        text-shadow: 0 2px 18px rgba(255, 255, 255, .14), 0 12px 34px rgba(0, 0, 0, .32);
+      }
+
+      &.q-current-line .extended {
+        opacity: .74;
       }
       &.font-mode .extended .font-lrc {
         transition: @transition-slow;

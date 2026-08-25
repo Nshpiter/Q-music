@@ -306,7 +306,15 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     dom_lyric_text.value.appendChild(dom_line_content)
     nextTick(() => {
       dom_lines = dom_lyric.value.querySelectorAll('.line-content')
+      updateCurrentLine(lyric.line)
       handleScrollLrc()
+    })
+  }
+
+  const updateCurrentLine = line => {
+    if (!dom_lines) return
+    dom_lines.forEach((element, index) => {
+      element.classList.toggle('q-current-line', index === line)
     })
   }
 
@@ -328,6 +336,7 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
 
   let delayScrollTimeout
   const scrollLine = (line, oldLine) => {
+    updateCurrentLine(line)
     if (line < 0) return
     if (line == 0 && isSetedLines) return isSetedLines = false
     isSetedLines &&= false

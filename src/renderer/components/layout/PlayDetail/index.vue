@@ -85,6 +85,7 @@ const FLIP_HEAVY_FRAME_MS = 40
 const FLIP_CLEAR_FRAME_STREAK = 3
 // 最长等待，兜底防止始终等不到判定条件
 const FLIP_RELEASE_MAX_WAIT_MS = 320
+const IMMERSIVE_CONTROLS_IDLE_MS = 2800
 
 const getInitialCommentWidth = () => {
   try {
@@ -124,6 +125,39 @@ export default {
     let resizeStartWidth = 0
     let commentLayoutCloseTimer = null
     let commentLayoutGlideTimer = null
+    let immersiveControlsTimer = null
+    let pointerOverPlayerControls = false
+
+    const getAppContainer = () => document.getElementById('container')
+    const clearImmersiveControlsTimer = () => {
+      if (immersiveControlsTimer == null) return
+      window.clearTimeout(immersiveControlsTimer)
+      immersiveControlsTimer = null
+    }
+    const showImmersiveControls = () => {
+      getAppContainer()?.classList.remove('immersive-controls-hidden')
+    }
+    const scheduleImmersiveControlsHide = () => {
+      clearImmersiveControlsTimer()
+      if (!isShowPlayerDetail.value || appSetting['playDetail.style.layout'] != 'immersive') {
+        showImmersiveControls()
+        return
+      }
+      immersiveControlsTimer = window.setTimeout(() => {
+        immersiveControlsTimer = null
+        if (pointerOverPlayerControls || isShowPlayComment.value || isCommentResizing.value) {
+          scheduleImmersiveControlsHide()
+          return
+        }
+        getAppContainer()?.classList.add('immersive-controls-hidden')
+      }, IMMERSIVE_CONTROLS_IDLE_MS)
+    }
+    const handleImmersiveActivity = event => {
+      const target = event.target instanceof Element ? event.target : null
+      pointerOverPlayerControls = event.type == 'pointermove' && Boolean(target?.closest('.q-player-footer'))
+      showImmersiveControls()
+      scheduleImmersiveControlsHide()
+    }
     const detailBgStyle = computed(() => {
       if (!musicInfo.pic) return {}
       return {
@@ -322,6 +356,12 @@ export default {
       (isFullscreen ? registerAutoHideMounse : unregisterAutoHideMounse)()
     })
 
+    watch([isShowPlayerDetail, () => appSetting['playDetail.style.layout']], ([visible, layout]) => {
+      showImmersiveControls()
+      if (visible && layout == 'immersive') scheduleImmersiveControlsHide()
+      else clearImmersiveControlsTimer()
+    })
+
     watch(isShowPlayComment, visible => {
       clearCommentLayoutCloseTimer()
       clearCommentLayoutGlideTimer()
@@ -409,6 +449,11 @@ export default {
 
     onMounted(() => {
       window.addEventListener('resize', updateMainWidth)
+      document.addEventListener('pointermove', handleImmersiveActivity, { passive: true })
+      document.addEventListener('pointerdown', handleImmersiveActivity, { passive: true })
+      document.addEventListener('wheel', handleImmersiveActivity, { passive: true })
+      document.addEventListener('keydown', handleImmersiveActivity)
+      scheduleImmersiveControlsHide()
     })
 
     onBeforeUnmount(() => {
@@ -416,7 +461,13 @@ export default {
       clearCommentLayoutGlideTimer()
       clearFlipAnimations()
       stopCommentResize()
+      clearImmersiveControlsTimer()
+      showImmersiveControls()
       window.removeEventListener('resize', updateMainWidth)
+      document.removeEventListener('pointermove', handleImmersiveActivity)
+      document.removeEventListener('pointerdown', handleImmersiveActivity)
+      document.removeEventListener('wheel', handleImmersiveActivity)
+      document.removeEventListener('keydown', handleImmersiveActivity)
     })
 
 

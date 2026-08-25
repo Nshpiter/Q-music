@@ -525,6 +525,7 @@ const handleImgError = () => {
     box-shadow: none;
     backdrop-filter: none;
     pointer-events: auto;
+    transition: opacity .36s ease, transform .46s cubic-bezier(.22, 1, .36, 1);
   }
 
   .playControl {
@@ -598,6 +599,7 @@ const handleImgError = () => {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 18px 44px rgba(0, 0, 0, .16);
     backdrop-filter: blur(22px) saturate(1.16);
     pointer-events: auto;
+    transition: opacity .36s ease, transform .46s cubic-bezier(.22, 1, .36, 1);
   }
 
   .tools {
@@ -616,6 +618,15 @@ const handleImgError = () => {
 
   .queueBadge {
     border-color: rgba(18, 22, 25, .82);
+  }
+}
+
+:global(#container.immersive-controls-hidden) .detailFooter {
+  .centerControl,
+  .toolArea {
+    opacity: 0;
+    transform: translateY(18px);
+    pointer-events: none;
   }
 }
 

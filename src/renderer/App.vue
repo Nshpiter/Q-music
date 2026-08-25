@@ -355,6 +355,13 @@ body {
     margin: 0;
   }
 }
+
+#container.show-player-detail {
+  font-family: "SF Pro Display", "SF Pro Text", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Segoe UI Variable Display", "Microsoft YaHei UI", system-ui, sans-serif;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
 #view {
   position: relative;
   flex: auto;
