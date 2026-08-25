@@ -269,16 +269,21 @@ export default {
   width: clamp(210px, 19%, 236px);
   display: flex;
   flex-flow: column nowrap;
+  overflow: hidden;
+  border-radius: 20px;
+  background: rgb(from var(--color-main-background) r g b / .52);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .66), 0 16px 38px rgba(72, 91, 112, .08);
+  backdrop-filter: blur(16px) saturate(1.1);
 }
 .listHeader {
   position: relative;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  min-height: 46px;
-  padding: 0 8px;
+  min-height: 52px;
+  padding: 0 12px;
   box-sizing: border-box;
-  border-bottom: var(--color-list-header-border-bottom);
+  border-bottom: 1px solid rgba(122, 136, 150, .1);
   &:hover {
     .listsAdd {
       opacity: 1;
@@ -291,8 +296,8 @@ export default {
   margin: 0;
   font-size: 13px;
   line-height: 1.2;
-  padding: 0 5px 0 2px;
-  font-weight: 650;
+  padding: 0 5px 0 0;
+  font-weight: 750;
   .mixin-ellipsis-1();
 }
 .headerBtns {
@@ -357,6 +362,8 @@ export default {
   flex: auto;
   min-width: 0;
   overflow-y: scroll !important;
+  padding: 7px;
+  box-sizing: border-box;
   // border-right: 1px solid rgba(0, 0, 0, 0.12);
 
   &.sortable {
@@ -377,6 +384,8 @@ export default {
 }
 .listsItem {
   position: relative;
+  margin-bottom: 3px;
+  border-radius: 12px;
   transition: .3s ease;
   transition-property: color, background-color, opacity;
   background-color: transparent;
@@ -387,8 +396,9 @@ export default {
     }
   }
   &.active {
-    // background-color:
-    color: var(--color-primary);
+    color: var(--color-primary-dark-300);
+    background-color: rgb(from var(--color-main-background) r g b / .76);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .78), 0 8px 20px rgba(72, 91, 112, .08);
   }
   &.selected {
     background-color: var(--color-primary-font-active);
@@ -413,13 +423,13 @@ export default {
 .activeIcon {
   height: .9em;
   width: .9em;
-  margin-left: -0.45em;
+  margin-right: .35em;
   vertical-align: -0.05em;
 }
 .listsLabel {
   display: block;
   height: @lists-item-height;
-  padding: 0 10px;
+  padding: 0 12px;
   font-size: 13px;
   line-height: @lists-item-height;
   .mixin-ellipsis-1();

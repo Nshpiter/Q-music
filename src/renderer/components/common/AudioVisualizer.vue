@@ -247,55 +247,28 @@ export default {
       ctx.restore()
     }
 
+    // Apple Music 式的可视化更接近封面取色后的流体光场：频谱只驱动
+    // 光晕的呼吸与位移，不直接绘制均衡器柱或波形。
     const drawAmbientField = () => {
       const longestSide = Math.max(width, height)
-      const activeBoost = isPlaying ? 1 : 0.58
-      const baseAlpha = (0.1 + energy * 0.2) * activeBoost
+      const activeBoost = isPlaying ? 1 : 0.5
+      const baseAlpha = (0.14 + energy * 0.24) * activeBoost
       ctx.save()
       ctx.globalCompositeOperation = 'screen'
-      drawGlow(width * (0.18 + Math.sin(phase * 0.42) * 0.055), height * (0.28 + Math.cos(phase * 0.31) * 0.07), longestSide * 0.52 * (1 + bassEnergy * 0.28), palette[0], baseAlpha * 1.28, 1.18, 0.86)
-      drawGlow(width * (0.78 + Math.cos(phase * 0.34) * 0.07), height * (0.34 + Math.sin(phase * 0.27) * 0.08), longestSide * 0.47 * (1 + midEnergy * 0.22), palette[1], baseAlpha * 1.08, 1.04, 0.92)
-      drawGlow(width * (0.56 + Math.sin(phase * 0.25 + 1.8) * 0.1), height * (0.82 + Math.cos(phase * 0.38) * 0.05), longestSide * 0.44 * (1 + trebleEnergy * 0.16), palette[2], baseAlpha, 1.28, 0.68)
-      drawGlow(width * (0.53 + Math.cos(phase * 0.2) * 0.08), height * (0.48 + Math.sin(phase * 0.24) * 0.06), longestSide * 0.58, mixColor(palette[0], palette[1], 0.5), baseAlpha * 0.5, 1.38, 0.82)
+      drawGlow(width * (0.12 + Math.sin(phase * 0.34) * 0.1), height * (0.22 + Math.cos(phase * 0.27) * 0.1), longestSide * 0.62 * (1 + bassEnergy * 0.2), palette[0], baseAlpha * 1.32, 1.28, 0.82)
+      drawGlow(width * (0.84 + Math.cos(phase * 0.28) * 0.1), height * (0.28 + Math.sin(phase * 0.22) * 0.11), longestSide * 0.58 * (1 + midEnergy * 0.17), palette[1], baseAlpha * 1.12, 1.16, 0.88)
+      drawGlow(width * (0.64 + Math.sin(phase * 0.2 + 1.8) * 0.14), height * (0.9 + Math.cos(phase * 0.3) * 0.08), longestSide * 0.55 * (1 + trebleEnergy * 0.12), palette[2], baseAlpha, 1.42, 0.72)
+      drawGlow(width * (0.48 + Math.cos(phase * 0.16) * 0.11), height * (0.5 + Math.sin(phase * 0.19) * 0.09), longestSide * 0.68, mixColor(palette[0], palette[1], 0.5), baseAlpha * 0.54, 1.48, 0.8)
       if (albumBox) {
         drawGlow(
           albumBox.x + albumBox.width / 2,
           albumBox.y + albumBox.height / 2,
-          Math.max(albumBox.width, albumBox.height) * (0.88 + bassEnergy * 0.28),
+          Math.max(albumBox.width, albumBox.height) * (1.02 + bassEnergy * 0.2),
           palette[0],
-          (0.12 + bassEnergy * 0.2) * activeBoost,
+          (0.13 + bassEnergy * 0.16) * activeBoost,
           1.08,
           1.08,
         )
-      }
-      ctx.restore()
-    }
-
-    const drawSpectrumRibbon = () => {
-      const bandCount = 42
-      const centerY = height * 0.58
-      const maxAmplitude = Math.min(height * 0.16, width * 0.09)
-      const spacing = width / (bandCount - 1)
-      ctx.save()
-      ctx.globalCompositeOperation = 'screen'
-      ctx.lineCap = 'round'
-      for (let index = 0; index < bandCount; index++) {
-        const ratio = index / (bandCount - 1)
-        const dataIndex = dataArray?.length
-          ? clamp(Math.floor(Math.pow(ratio, 1.7) * dataArray.length * 0.58), 0, dataArray.length - 1)
-          : 0
-        const analyserValue = dataArray?.length ? dataArray[dataIndex] / 255 : 0
-        const fallbackValue = 0.22 + Math.sin(phase * 2.2 + index * 0.48) * 0.12
-        const value = isPlaying ? Math.max(analyserValue, fallbackValue) : 0.08
-        const envelope = Math.sin(Math.PI * ratio)
-        const amplitude = (8 * dpr + maxAmplitude * value * envelope) * (0.82 + bassEnergy * 0.34)
-        const color = mixColor(palette[0], palette[index % 2 ? 1 : 2], ratio)
-        ctx.strokeStyle = rgba(color, 0.12 + value * 0.26)
-        ctx.lineWidth = Math.max(1.5 * dpr, spacing * 0.16)
-        ctx.beginPath()
-        ctx.moveTo(index * spacing, centerY - amplitude)
-        ctx.lineTo(index * spacing, centerY + amplitude)
-        ctx.stroke()
       }
       ctx.restore()
     }
@@ -312,7 +285,6 @@ export default {
       updateEnergy()
       ctx.clearRect(0, 0, width, height)
       drawAmbientField()
-      drawSpectrumRibbon()
       if (!isPlaying && energy < ENERGY_REST_THRESHOLD) {
         window.cancelAnimationFrame(animationFrameId)
         animationFrameId = null
@@ -389,6 +361,8 @@ export default {
   display: block;
   width: 100%;
   height: 100%;
-  opacity: 0.96;
+  opacity: 0.82;
+  filter: blur(18px) saturate(1.18);
+  transform: scale(1.06);
 }
 </style>

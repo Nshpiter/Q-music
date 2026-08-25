@@ -100,6 +100,12 @@ export default {
   height: 100%;
   display: flex;
   position: relative;
+  gap: 16px;
+  padding: 16px 18px calc(@height-player + 18px);
+  box-sizing: border-box;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .18), rgba(255, 255, 248, .42)),
+    radial-gradient(circle at 16% 14%, var(--color-primary-alpha-900), transparent 34%);
 }
 .header {
   flex: none;
@@ -124,9 +130,14 @@ export default {
 
 .lists {
   flex: none;
-  width: 14.8%;
+  width: clamp(190px, 18%, 230px);
   display: flex;
   flex-flow: column nowrap;
+  overflow: hidden;
+  border-radius: 20px;
+  background: rgb(from var(--color-main-background) r g b / .52);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .66), 0 16px 38px rgba(72, 91, 112, .08);
+  backdrop-filter: blur(16px) saturate(1.1);
 }
 .listsHeader {
   position: relative;
@@ -146,10 +157,12 @@ export default {
     width: 100%;
   }
   :global(.label-content) {
-    background-color: transparent !important;
+    margin: 7px;
+    width: calc(100% - 14px);
+    background-color: rgb(from var(--color-main-background) r g b / .54) !important;
     line-height: 38px;
     height: 38px;
-    border-radius: 0;
+    border-radius: 12px;
     &:hover {
       background: none !important;
     }
@@ -179,7 +192,7 @@ export default {
   }
   // line-height: 38px;
   // padding: 0 10px;
-  border-bottom: var(--color-list-header-border-bottom);
+  border-bottom: 1px solid rgba(122, 136, 150, .1);
   flex: none;
 }
 
@@ -190,6 +203,11 @@ export default {
   flex: auto;
   display: flex;
   flex-flow: column nowrap;
+  min-width: 0;
+  border-radius: 20px;
+  background: rgb(from var(--color-main-background) r g b / .54);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .68), 0 16px 38px rgba(72, 91, 112, .08);
+  backdrop-filter: blur(16px) saturate(1.1);
   // .noItem {
 
   // }

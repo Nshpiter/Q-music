@@ -86,6 +86,7 @@ const FLIP_CLEAR_FRAME_STREAK = 3
 // 最长等待，兜底防止始终等不到判定条件
 const FLIP_RELEASE_MAX_WAIT_MS = 320
 const IMMERSIVE_CONTROLS_IDLE_MS = 2200
+const IMMERSIVE_CONTROLS_REVEAL_ZONE_PX = 176
 
 const getInitialCommentWidth = () => {
   try {
@@ -156,14 +157,26 @@ export default {
       showImmersiveControls()
       scheduleImmersiveControlsHide()
     }
+    const isInImmersiveRevealZone = event => {
+      if (!immersiveActivityRoot) return false
+      const bounds = immersiveActivityRoot.getBoundingClientRect()
+      return event.clientY >= bounds.bottom - Math.min(IMMERSIVE_CONTROLS_REVEAL_ZONE_PX, bounds.height * 0.24)
+    }
+    const handleImmersivePointerMove = event => {
+      const target = event.target instanceof Element ? event.target : null
+      if (isInteractingWithPlayerControls || target?.closest('.q-player-footer') || isInImmersiveRevealZone(event)) {
+        handleImmersiveActivity()
+      }
+    }
     const handleImmersivePointerDown = event => {
       const target = event.target instanceof Element ? event.target : null
       isInteractingWithPlayerControls = Boolean(target?.closest('.q-player-footer'))
-      handleImmersiveActivity()
+      if (isInteractingWithPlayerControls || isInImmersiveRevealZone(event)) handleImmersiveActivity()
     }
-    const handleImmersivePointerUp = () => {
+    const handleImmersivePointerUp = event => {
+      const shouldReveal = isInteractingWithPlayerControls || isInImmersiveRevealZone(event)
       isInteractingWithPlayerControls = false
-      handleImmersiveActivity()
+      if (shouldReveal) handleImmersiveActivity()
     }
     const handleImmersivePointerLeave = () => {
       isInteractingWithPlayerControls = false
@@ -461,13 +474,11 @@ export default {
     onMounted(() => {
       window.addEventListener('resize', updateMainWidth)
       immersiveActivityRoot = document.getElementById('container')
-      immersiveActivityRoot?.addEventListener('pointermove', handleImmersiveActivity, { passive: true })
+      immersiveActivityRoot?.addEventListener('pointermove', handleImmersivePointerMove, { passive: true })
       immersiveActivityRoot?.addEventListener('pointerdown', handleImmersivePointerDown, { passive: true })
       immersiveActivityRoot?.addEventListener('pointerup', handleImmersivePointerUp, { passive: true })
       immersiveActivityRoot?.addEventListener('pointercancel', handleImmersivePointerUp, { passive: true })
       immersiveActivityRoot?.addEventListener('pointerleave', handleImmersivePointerLeave, { passive: true })
-      immersiveActivityRoot?.addEventListener('wheel', handleImmersiveActivity, { passive: true })
-      immersiveActivityRoot?.addEventListener('keydown', handleImmersiveActivity)
       scheduleImmersiveControlsHide()
     })
 
@@ -479,13 +490,11 @@ export default {
       clearImmersiveControlsTimer()
       showImmersiveControls()
       window.removeEventListener('resize', updateMainWidth)
-      immersiveActivityRoot?.removeEventListener('pointermove', handleImmersiveActivity)
+      immersiveActivityRoot?.removeEventListener('pointermove', handleImmersivePointerMove)
       immersiveActivityRoot?.removeEventListener('pointerdown', handleImmersivePointerDown)
       immersiveActivityRoot?.removeEventListener('pointerup', handleImmersivePointerUp)
       immersiveActivityRoot?.removeEventListener('pointercancel', handleImmersivePointerUp)
       immersiveActivityRoot?.removeEventListener('pointerleave', handleImmersivePointerLeave)
-      immersiveActivityRoot?.removeEventListener('wheel', handleImmersiveActivity)
-      immersiveActivityRoot?.removeEventListener('keydown', handleImmersiveActivity)
       immersiveActivityRoot = null
     })
 

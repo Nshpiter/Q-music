@@ -69,6 +69,12 @@ export default {
   height: 100%;
   display: flex;
   position: relative;
+  gap: 16px;
+  padding: 16px 18px calc(@height-player + 18px);
+  box-sizing: border-box;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .18), rgba(255, 255, 248, .42)),
+    radial-gradient(circle at 16% 14%, var(--color-primary-alpha-900), transparent 34%);
 }
 
 </style>

@@ -516,35 +516,17 @@ const handleImgError = () => {
     bottom: 28px;
     width: clamp(410px, 34vw, 570px);
     height: 94px;
-    padding: 8px 20px 10px;
+    padding: 0;
     box-sizing: border-box;
-    overflow: hidden;
-    isolation: isolate;
-    border: 1px solid rgba(255, 255, 255, .16);
-    border-radius: 32px;
+    overflow: visible;
+    border: none;
+    border-radius: 0;
     color: rgba(255, 255, 255, .94);
-    background:
-      linear-gradient(145deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .035) 48%, rgba(7, 12, 16, .18)),
-      rgba(19, 24, 28, .22);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, .2),
-      inset 0 -1px 0 rgba(255, 255, 255, .045),
-      0 20px 52px rgba(0, 0, 0, .2);
-    backdrop-filter: blur(30px) saturate(1.45) brightness(1.08);
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
     pointer-events: auto;
     transition: opacity .36s ease, transform .46s cubic-bezier(.22, 1, .36, 1);
-
-    &:before {
-      content: '';
-      position: absolute;
-      z-index: -1;
-      inset: 0;
-      border-radius: inherit;
-      background:
-        radial-gradient(130% 100% at 12% -12%, rgba(255, 255, 255, .2), transparent 44%),
-        radial-gradient(80% 90% at 92% 118%, rgba(133, 205, 191, .11), transparent 58%);
-      pointer-events: none;
-    }
   }
 
   .playControl {
@@ -574,9 +556,12 @@ const handleImgError = () => {
     width: 50px;
     height: 50px;
     color: rgba(22, 27, 30, .96);
-    background: rgba(255, 255, 255, .92);
-    border: 1px solid rgba(255, 255, 255, .24);
-    box-shadow: 0 14px 34px rgba(0, 0, 0, .24), inset 0 1px 0 #fff;
+    background:
+      radial-gradient(circle at 34% 20%, rgba(255, 255, 255, .98), rgba(255, 255, 255, .78) 58%, rgba(225, 235, 232, .68)),
+      rgba(255, 255, 255, .78);
+    border: none;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .24), inset 0 1px 1px rgba(255, 255, 255, .94);
+    backdrop-filter: blur(22px) saturate(1.4) brightness(1.08);
 
     &:hover {
       color: rgba(12, 16, 18, 1);
@@ -617,12 +602,12 @@ const handleImgError = () => {
     gap: 1px;
     overflow: hidden;
     isolation: isolate;
-    border: 1px solid rgba(255, 255, 255, .16);
+    border: none;
     border-radius: 24px;
     color: rgba(255, 255, 255, .86);
     background:
-      linear-gradient(145deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .035) 52%, rgba(7, 12, 16, .18)),
-      rgba(18, 23, 27, .22);
+      linear-gradient(145deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .025) 52%, rgba(7, 12, 16, .14)),
+      rgba(18, 23, 27, .18);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, .2),
       inset 0 -1px 0 rgba(255, 255, 255, .045),
