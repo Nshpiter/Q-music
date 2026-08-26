@@ -126,6 +126,7 @@ export default {
     let resizeStartWidth = 0
     let commentLayoutCloseTimer = null
     let commentLayoutGlideTimer = null
+    let commentLayoutTransitionId = 0
     let immersiveControlsTimer = null
     let immersiveActivityRoot = null
     let isInteractingWithPlayerControls = false
@@ -387,6 +388,7 @@ export default {
     })
 
     watch(isShowPlayComment, visible => {
+      const transitionId = ++commentLayoutTransitionId
       clearCommentLayoutCloseTimer()
       clearCommentLayoutGlideTimer()
       if (!visible) {
@@ -426,10 +428,15 @@ export default {
       isCommentLayoutSettling.value = false
       setTimeout(updateMainWidth)
       void nextTick(() => {
+        if (transitionId != commentLayoutTransitionId || !isShowPlayComment.value) return
         const releases = firstRects.map(item => item ? pinFlipToFirst(item.el, item.rect, item.scale) : null)
         // 释放过渡：撤下开场类，封面/歌词从旧位置平滑滑向新位置；
         // 并让评论面板在滑动尾声淡入
         const startGlide = () => {
+          if (transitionId != commentLayoutTransitionId || !isShowPlayComment.value) {
+            clearFlipAnimations()
+            return
+          }
           isCommentLayoutOpening.value = false
           for (const release of releases) release && release()
           clearCommentLayoutGlideTimer()
@@ -446,6 +453,10 @@ export default {
         let sawHeavyFrame = false
         let normalStreak = 0
         const waitClearFrame = ts => {
+          if (transitionId != commentLayoutTransitionId || !isShowPlayComment.value) {
+            clearFlipAnimations()
+            return
+          }
           if (!deadline) deadline = ts + FLIP_RELEASE_MAX_WAIT_MS
           if (prevTs) {
             const dt = ts - prevTs
@@ -483,6 +494,7 @@ export default {
     })
 
     onBeforeUnmount(() => {
+      commentLayoutTransitionId++
       clearCommentLayoutCloseTimer()
       clearCommentLayoutGlideTimer()
       clearFlipAnimations()
@@ -935,6 +947,9 @@ export default {
 }
 .left {
   flex: 0 0 min(42%, 520px);
+  // 标题使用单行省略时会产生很大的 min-content 宽度；若保留 flex
+  // 默认的 min-width:auto，超长歌名会把封面列撑宽并挤瘪歌词列。
+  min-width: 0;
   height: 100%;
   display: flex;
   flex-flow: column nowrap;
@@ -1095,6 +1110,8 @@ export default {
 
 .description {
   width: min(100%, 430px);
+  min-width: 0;
+  max-width: 100%;
   max-height: 92px;
   margin-top: 22px;
   padding: 0 8px;

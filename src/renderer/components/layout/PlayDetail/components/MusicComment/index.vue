@@ -45,6 +45,24 @@ import { toOldMusicInfo } from '@renderer/utils'
 import music from '@renderer/utils/musicSdk'
 import CommentFloor from './CommentFloor.vue'
 
+const normalizeCommentResult = (result, page, limit) => {
+  const comments = Array.isArray(result?.comments) ? result.comments : []
+  const loadedTotal = (page - 1) * limit + comments.length
+  const responseTotal = Number(result?.total)
+  const total = Number.isFinite(responseTotal) && responseTotal > 0
+    ? Math.max(responseTotal, loadedTotal)
+    : loadedTotal
+  const responseMaxPage = Number(result?.maxPage)
+
+  return {
+    comments,
+    total,
+    maxPage: Number.isFinite(responseMaxPage) && responseMaxPage > 0
+      ? Math.max(responseMaxPage, Math.ceil(total / limit))
+      : Math.max(1, Math.ceil(total / limit)),
+  }
+}
+
 export default {
   name: 'MusicComment',
   components: {
@@ -171,11 +189,12 @@ export default {
       this.newComment.isLoadError = false
       this.newComment.isLoading = true
       this.getComment(toOldMusicInfo(musicInfo), page, limit).then(comment => {
+        const result = normalizeCommentResult(comment, page, limit)
         this.newComment.isLoading = false
-        this.newComment.total = comment.total
-        this.newComment.maxPage = comment.maxPage
+        this.newComment.total = result.total
+        this.newComment.maxPage = result.maxPage
         this.newComment.page = page
-        this.newComment.list = comment.comments
+        this.newComment.list = result.comments
         this.$nextTick(() => {
           this.$refs.dom_commentNew.scrollTo(0, 0)
         })
@@ -190,11 +209,12 @@ export default {
       this.hotComment.isLoadError = false
       this.hotComment.isLoading = true
       this.getHotComment(toOldMusicInfo(musicInfo), page, limit).then(hotComment => {
+        const result = normalizeCommentResult(hotComment, page, limit)
         this.hotComment.isLoading = false
-        this.hotComment.total = hotComment.total
-        this.hotComment.maxPage = hotComment.maxPage
+        this.hotComment.total = result.total
+        this.hotComment.maxPage = result.maxPage
         this.hotComment.page = page
-        this.hotComment.list = hotComment.comments
+        this.hotComment.list = result.comments
         this.$nextTick(() => {
           this.$refs.dom_commentHot.scrollTo(0, 0)
         })
