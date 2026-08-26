@@ -389,6 +389,7 @@
   "search__account_qq_tip": "支援手機 QQ 掃碼或本機 QQ 快捷登入",
   "search__account_netease_tip": "支援網易雲音樂 App 掃碼或帳號快捷登入",
   "search__account_connected": "已登入",
+  "search__account_checking": "正在驗證登入狀態…",
   "search__account_qq_connected": "QQ音樂已登入",
   "search__account_netease_connected": "網易雲已登入",
   "search__account_both_connected": "音樂帳號已登入",

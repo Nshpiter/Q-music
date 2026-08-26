@@ -68,11 +68,11 @@ import { closeWindow, maxWindow, minWindow, setFullScreen } from '@renderer/util
 
 const COMMENT_WIDTH_KEY = 'q-music.play-detail.comment-width'
 const COMMENT_MIN_WIDTH = 320
-const COMMENT_MAX_WIDTH = 720
-const COVER_MIN_WIDTH = 240
-const COVER_MAX_WIDTH = 330
+const COMMENT_MAX_WIDTH = 540
+const COVER_MIN_WIDTH = 250
+const COVER_MAX_WIDTH = 320
 const LYRIC_MIN_WIDTH = 300
-const RESIZE_HANDLE_WIDTH = 24
+const RESIZE_HANDLE_WIDTH = 0
 const COMMENT_LAYOUT_GAP = 18
 const COMMENT_LAYOUT_CLOSE_MS = 500
 const FLIP_DURATION_MS = 560
@@ -95,7 +95,7 @@ const getInitialCommentWidth = () => {
       return Math.min(Math.max(savedWidth, COMMENT_MIN_WIDTH), COMMENT_MAX_WIDTH)
     }
   } catch (_) {}
-  return 520
+  return 460
 }
 
 export default {
@@ -730,8 +730,10 @@ export default {
   &.showComment {
     --cover-space: var(--cover-width, clamp(250px, 23vw, 350px));
     display: grid;
-    grid-template-columns: minmax(300px, 1fr) @comment-resize-handle-width minmax(320px, var(--comment-width));
-    gap: clamp(12px, 1.4vw, 18px);
+    grid-template-columns: minmax(300px, 1fr) 0 minmax(320px, var(--comment-width));
+    grid-template-rows: minmax(0, 1fr);
+    // 中间拖动列不占宽，两段 gap 合并为正常的一段视觉间距。
+    gap: clamp(6px, .7vw, 9px);
     margin: 0 clamp(24px, 3.5vw, 52px);
     padding-left: var(--cover-space);
     padding-bottom: calc(@height-player * .7);
@@ -770,8 +772,12 @@ export default {
 
     .comment {
       width: 100%;
+      height: auto;
       min-width: 0;
+      min-height: 0;
       flex-basis: auto;
+      align-self: stretch;
+      margin: clamp(12px, 1.8vh, 18px) 0 clamp(22px, 3vh, 32px);
       opacity: 1;
       transform: translate3d(0, 0, 0);
       pointer-events: auto;
@@ -782,8 +788,8 @@ export default {
     }
 
     .commentResizeHandle {
-      width: @comment-resize-handle-width;
-      flex-basis: auto;
+      width: 0;
+      flex-basis: 0;
       opacity: .74;
       pointer-events: auto;
     }
@@ -795,9 +801,9 @@ export default {
         flex: none;
         max-width: none;
         min-width: 0;
-        // 评论模式下播放控件固定在左下方，歌词列需要保留独立的底部安全区，
-        // 避免长歌词滚动到进度条和播放按钮后面。
-        padding-bottom: clamp(108px, 16vh, 132px);
+        // 评论模式下播放器固定在封面列，歌词列无需再为播放器预留整块高度。
+        // 仅保留轻量底边距，让短歌词/歌曲信息也能在中列自然居中。
+        padding-bottom: clamp(24px, 4vh, 40px);
         .lyricSelectContent {
           font-size: 14px;
         }
@@ -1165,22 +1171,7 @@ export default {
     opacity @transition-fast;
 
   &:before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 11%;
-    width: 3px;
-    height: 78%;
-    transform: translateX(-50%);
-    border-radius: 999px;
-    background: linear-gradient(180deg, rgba(99, 116, 255, .1), rgba(72, 186, 148, .48), rgba(99, 116, 255, .1));
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, .6), 0 14px 30px rgba(72, 186, 148, .16);
-    transition:
-      width @transition-fast,
-      height @transition-fast,
-      opacity @transition-fast,
-      background-color @transition-fast,
-      box-shadow @transition-fast;
+    display: none;
   }
 
   &:after {
@@ -1196,13 +1187,6 @@ export default {
   &:hover,
   &.commentResizeHandleActive {
     opacity: 1;
-
-    &:before {
-      width: 5px;
-      height: 84%;
-      background: linear-gradient(180deg, rgba(99, 116, 255, .18), rgba(72, 186, 148, .72), rgba(99, 116, 255, .18));
-      box-shadow: 0 0 0 1px rgba(255, 255, 255, .75), 0 18px 34px rgba(72, 186, 148, .24);
-    }
   }
 }
 

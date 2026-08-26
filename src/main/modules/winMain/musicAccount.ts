@@ -70,6 +70,7 @@ const providerConfig = {
 } as const
 
 const loginWindows = new Map<MusicAccountProvider, Electron.BrowserWindow>()
+const accountValidationCache = new Map<MusicAccountProvider, { connected: boolean, expiresAt: number }>()
 let qqDailyKeyWindow: BrowserWindow | null = null
 let qqDailyKeyTask: Promise<QQDailyKeySaveResult> | null = null
 const qqDailyKeyStoreName = 'music_account_credentials'
@@ -208,11 +209,6 @@ const configureLoginContents = (
     configureLoginContents(childWindow.webContents, provider, accountSession, onChildWindow)
   })
 }
-
-export const getMusicAccountStatus = async(): Promise<MusicAccountStatus> => ({
-  tx: await hasLoginCookie('tx'),
-  wy: await hasLoginCookie('wy'),
-})
 
 const readQQDailyApiKey = (): string => {
   if (!safeStorage.isEncryptionAvailable()) return ''
@@ -466,8 +462,45 @@ const getNeteaseUserId = async(): Promise<string> => {
   return String(result.profile?.userId ?? result.account?.id ?? '')
 }
 
+const verifyMusicAccount = async(provider: MusicAccountProvider, force = false): Promise<boolean> => {
+  const cached = accountValidationCache.get(provider)
+  if (!force && cached && cached.expiresAt > Date.now()) return cached.connected
+
+  let connected = false
+  try {
+    if (await hasLoginCookie(provider)) {
+      if (provider == 'wy') {
+        connected = !!await getNeteaseUserId()
+      } else {
+        const { uin, authst } = await getQQAccountCredentials()
+        if (uin != '0' && authst) {
+          const result = await requestQQMusicU<{
+            status?: { code?: number, data?: Record<string, unknown> }
+          }>({
+            status: {
+              module: 'music.musicasset.PlaylistBaseRead',
+              method: 'GetPlaylistByUin',
+              param: { uin },
+            },
+          })
+          connected = result.status?.code == 0 || result.status?.data != null
+        }
+      }
+    }
+  } catch (error) {
+    console.warn(`[musicAccount] ${provider} session validation failed`, error)
+  }
+  accountValidationCache.set(provider, { connected, expiresAt: Date.now() + (connected ? 15_000 : 2_000) })
+  return connected
+}
+
+export const getMusicAccountStatus = async(): Promise<MusicAccountStatus> => {
+  const [tx, wy] = await Promise.all([verifyMusicAccount('tx', true), verifyMusicAccount('wy', true)])
+  return { tx, wy }
+}
+
 export const getMusicAccountPlaylists = async(provider: MusicAccountProvider): Promise<MusicAccountPlaylistsResult> => {
-  if (!await hasLoginCookie(provider)) return { provider, playlists: [], status: 'login_required' }
+  if (!await verifyMusicAccount(provider)) return { provider, playlists: [], status: 'login_required' }
   try {
     if (provider == 'tx') {
       const { uin } = await getQQAccountCredentials()
@@ -541,7 +574,7 @@ export const getMusicAccountPlaylistDetail = async(
   provider: MusicAccountProvider,
   id: string,
 ): Promise<MusicAccountPlaylistDetailResult> => {
-  if (!await hasLoginCookie(provider)) return { provider, id, ids: [], status: 'login_required' }
+  if (!await verifyMusicAccount(provider)) return { provider, id, ids: [], status: 'login_required' }
   try {
     if (provider == 'tx') {
       const dirMatch = /^dir:(\d+)$/.exec(id)
@@ -630,7 +663,7 @@ export const getMusicAccountPlaylistDetail = async(
 }
 
 export const getMusicAccountDailySongIds = async(provider: MusicAccountProvider): Promise<MusicAccountDailyResult> => {
-  if (!await hasLoginCookie(provider)) return { provider, ids: [], status: 'login_required' }
+  if (!await verifyMusicAccount(provider)) return { provider, ids: [], status: 'login_required' }
   try {
     if (provider == 'tx') {
       const apiKey = readQQDailyApiKey()
@@ -654,10 +687,10 @@ export const openMusicAccountLogin = async(provider: MusicAccountProvider): Prom
   if (existingWindow && !existingWindow.isDestroyed()) {
     existingWindow.show()
     existingWindow.focus()
-    return { provider, status: await hasLoginCookie(provider) ? 'connected' : 'cancelled' }
+    return { provider, status: await verifyMusicAccount(provider, true) ? 'connected' : 'cancelled' }
   }
 
-  if (await hasLoginCookie(provider)) return { provider, status: 'connected' }
+  if (await verifyMusicAccount(provider, true)) return { provider, status: 'connected' }
 
   const config = providerConfig[provider]
   const accountSession = session.fromPartition(config.partition)
@@ -700,7 +733,7 @@ export const openMusicAccountLogin = async(provider: MusicAccountProvider): Prom
     const checkLogin = () => {
       if (settled || checkingLogin) return
       checkingLogin = true
-      void hasLoginCookie(provider).then(connected => {
+      void verifyMusicAccount(provider, true).then(connected => {
         if (connected) finish('connected')
       }).finally(() => {
         checkingLogin = false

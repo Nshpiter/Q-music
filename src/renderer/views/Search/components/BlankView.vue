@@ -171,7 +171,10 @@
   <material-modal :show="isShowAccountModal" :bg-close="!isAccountLoginPending" @close="closeAccountModal">
     <main :class="$style.accountModal">
       <div :class="$style.qrHeading">
-        <div :class="$style.qrIcon"><svg-icon name="headphones" /></div>
+        <div :class="$style.qrIcon" aria-hidden="true">
+          <source-icon source="tx" :size="30" />
+          <source-icon source="wy" :size="30" />
+        </div>
         <div>
           <h2>{{ $t('search__account_title') }}</h2>
           <p>{{ $t('search__account_desc') }}</p>
@@ -179,24 +182,24 @@
       </div>
       <div :class="$style.providerList">
         <button
-          type="button" :class="{ [$style.activeProvider]: selectedDailyProvider == 'tx' }" :disabled="isAccountLoginPending"
+          type="button" :class="{ [$style.activeProvider]: selectedDailyProvider == 'tx' }" :disabled="isAccountLoginPending || isAccountStatusLoading"
           @click="handleProviderAction('tx')"
         >
           <source-icon source="tx" :size="38" :label="$t('search__account_qq')" />
           <div>
             <strong>{{ $t('search__account_qq') }}</strong>
-            <span>{{ accountStatus.tx ? $t('search__account_connected') : $t('search__account_qq_tip') }}</span>
+            <span>{{ accountProviderStatusText('tx') }}</span>
           </div>
           <em :class="{ [$style.connectedDot]: accountStatus.tx }">{{ accountStatus.tx ? '✓' : '›' }}</em>
         </button>
         <button
-          type="button" :class="{ [$style.activeProvider]: selectedDailyProvider == 'wy' }" :disabled="isAccountLoginPending"
+          type="button" :class="{ [$style.activeProvider]: selectedDailyProvider == 'wy' }" :disabled="isAccountLoginPending || isAccountStatusLoading"
           @click="handleProviderAction('wy')"
         >
           <source-icon source="wy" :size="38" :label="$t('search__account_netease')" />
           <div>
             <strong>{{ $t('search__account_netease') }}</strong>
-            <span>{{ accountStatus.wy ? $t('search__account_connected') : $t('search__account_netease_tip') }}</span>
+            <span>{{ accountProviderStatusText('wy') }}</span>
           </div>
           <em :class="{ [$style.connectedDot]: accountStatus.wy }">{{ accountStatus.wy ? '✓' : '›' }}</em>
         </button>
@@ -277,6 +280,7 @@ const isPlaylistsLoading = shallowRef(false)
 const isPlaylistDetailLoading = shallowRef(false)
 const isShowAccountModal = ref(false)
 const isAccountLoginPending = ref(false)
+const isAccountStatusLoading = ref(false)
 const qqDailyApiKeyInput = ref('')
 const qqDailyKeyStatus = ref({ configured: false, encryptionAvailable: true })
 const qqDailyKeySaveState = ref('idle')
@@ -288,6 +292,7 @@ const dailyRecommendMode = ref('loading')
 const dailyRecommendKind = ref('radar')
 let hotSearchRequestId = 0
 let dailyRequestId = 0
+let accountStatusRequestId = 0
 const now = new Date()
 const todayDay = String(now.getDate()).padStart(2, '0')
 const todayMonth = new Intl.DateTimeFormat(window.i18n.locale || 'zh-CN', { month: 'short' }).format(now)
@@ -322,6 +327,11 @@ const accountActionText = computed(() => {
   if (accountStatus.value.wy) return window.i18n.t('search__account_netease_connected')
   return window.i18n.t('search__account_login')
 })
+const accountProviderStatusText = provider => {
+  if (isAccountStatusLoading.value) return window.i18n.t('search__account_checking')
+  if (accountStatus.value[provider]) return window.i18n.t('search__account_connected')
+  return window.i18n.t(provider == 'tx' ? 'search__account_qq_tip' : 'search__account_netease_tip')
+}
 const dailyDetailEmptyText = computed(() => isDailyLoading.value
   ? window.i18n.t('search__daily_recommend_loading')
   : window.i18n.t('search__daily_recommend_empty'))
@@ -495,7 +505,12 @@ const playDetailList = async(index = 0) => {
 }
 
 const refreshAccountStatus = async() => {
-  accountStatus.value = await getMusicAccountStatus().catch(() => ({ tx: false, wy: false }))
+  const requestId = ++accountStatusRequestId
+  isAccountStatusLoading.value = true
+  const status = await getMusicAccountStatus().catch(() => ({ tx: false, wy: false }))
+  if (requestId != accountStatusRequestId) return
+  accountStatus.value = status
+  isAccountStatusLoading.value = false
   if (!accountStatus.value[selectedDailyProvider.value]) {
     if (accountStatus.value.tx) selectedDailyProvider.value = 'tx'
     else if (accountStatus.value.wy) selectedDailyProvider.value = 'wy'
@@ -1137,17 +1152,23 @@ const handleSearch = (text) => {
   p { margin: 0; color: var(--color-font-label); font-size: 11px; line-height: 1.5; }
 }
 .qrIcon {
-  width: 42px;
+  width: 56px;
   height: 42px;
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
-  color: #fff;
-  background: var(--color-primary);
+  padding: 0 7px;
+  box-sizing: border-box;
 
-  :global(.svg-icon) { width: 19px; height: 19px; }
+  > * {
+    overflow: hidden;
+    border: 3px solid rgba(255, 255, 255, .92);
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(35, 54, 46, .13);
+  }
+  > * + * { margin-left: -9px; }
 }
 .providerList {
   display: grid;

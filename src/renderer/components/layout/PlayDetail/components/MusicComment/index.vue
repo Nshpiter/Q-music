@@ -154,8 +154,16 @@ export default {
       try {
         resp = await music[musicInfo.source].comment.getHotComment(musicInfo, page, limit)
       } catch (error) {
-        if (error.message == '取消请求' || ++retryNum > 2) throw error
-        resp = await this.getHotComment(musicInfo, page, limit, retryNum)
+        if (error.message == '取消请求') throw error
+        if (++retryNum <= 2) return this.getHotComment(musicInfo, page, limit, retryNum)
+
+        // 部分音源的热门评论接口会独立失效，此时使用最新评论并按点赞数排序，
+        // 避免一个非关键接口让整个热门页变成错误状态。
+        const fallback = await this.getComment(musicInfo, page, limit)
+        resp = {
+          ...fallback,
+          comments: [...fallback.comments].sort((a, b) => (b.likedCount ?? 0) - (a.likedCount ?? 0)),
+        }
       }
       return resp
     },
@@ -255,8 +263,9 @@ export default {
   transition-property: transform,opacity;
   transform-origin: 100%;
   overflow: hidden;
-  // 顶部留白与中列歌名基线对齐，避免标题贴住顶部控制区
-  padding: 20px 0 6px;
+  // 外层布局已经为评论栏预留上下安全区，这里只负责面板内部排版，
+  // 避免 100% 高度叠加 padding 后把底部圆角和最后一条评论裁掉。
+  padding: 0;
 }
 .commentHeader {
   flex: none;
@@ -306,24 +315,27 @@ export default {
   }
 }
 .commentMain {
-  flex: auto;
+  flex: 1 1 0;
   background-color: rgba(255, 255, 255, .54);
   border-radius: 22px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .64), 0 16px 38px rgba(88, 98, 114, .08);
+  box-shadow: none;
   backdrop-filter: blur(16px);
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  clip-path: inset(0 round 22px);
 }
 .tab_header {
   display: flex;
   flex-flow: row nowrap;
-  gap: 18px;
-  padding: 10px 22px 2px;
+  gap: 16px;
+  padding: 9px 22px 1px;
 }
 .tab_main {
-  flex: auto;
+  flex: 1 1 0;
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-flow: row nowrap;
   overflow: hidden;
@@ -333,16 +345,73 @@ export default {
 .tab_content {
   flex-shrink: 0;
   width: 100%;
+  height: 100%;
+  min-height: 0;
   position: relative;
+  overflow: hidden;
 }
 .tab_content_scroll {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  padding: 0 22px;
+  inset: 0 6px 0 0;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0 20px 28px 22px;
+  overflow-x: hidden;
   scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, .22) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-track {
+    margin: 8px 0 12px;
+    border-radius: 999px;
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    min-height: 44px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .2);
+    background-clip: padding-box;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, .34);
+    background-clip: padding-box;
+  }
+}
+
+// 全局 .scroll 会注入主题色滚动条；播放详情使用中性的沉浸式滚动条。
+:global(.scroll).tab_content_scroll {
+  scrollbar-color: rgba(255, 255, 255, .22) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    background-color: transparent;
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border: 1px solid transparent;
+    background-color: rgba(255, 255, 255, .2);
+    background-clip: padding-box;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, .34);
+    background-clip: padding-box;
+  }
 }
 .commentLabel {
   padding: 15px;
@@ -350,9 +419,9 @@ export default {
   font-size: 14px;
 }
 .commentType {
-  padding: 6px 0;
+  padding: 5px 0;
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   background: none;
   border: none;
   cursor: pointer;
@@ -424,7 +493,7 @@ export default {
     border: 1px solid rgba(255, 255, 255, .12);
     color: rgba(255, 255, 255, .84);
     background: rgba(25, 30, 34, .72);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 24px 56px rgba(0, 0, 0, .3);
+    box-shadow: none;
     backdrop-filter: blur(28px) saturate(1.12);
   }
 

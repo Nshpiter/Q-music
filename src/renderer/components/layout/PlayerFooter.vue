@@ -669,7 +669,10 @@ const handleImgError = () => {
 
 .detailFooter.commentVisible {
   .toolArea {
-    display: none;
+    // 评论面板开启时保留工具栏，并停靠在底部空白区。
+    right: clamp(34px, 4.4vw, 68px);
+    bottom: 24px;
+    max-width: min(46vw, 600px);
   }
 
   .centerControl {

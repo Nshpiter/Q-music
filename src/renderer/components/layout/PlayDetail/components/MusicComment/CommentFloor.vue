@@ -66,8 +66,8 @@ export default {
 }
 
 .content {
-  padding: 14px 0;
-  font-size: 13px;
+  padding: 12px 0;
+  font-size: 12px;
   color: var(--color-font);
   display: flex;
 }
@@ -75,8 +75,8 @@ export default {
   flex: none;
 }
 .avatar {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   object-fit: cover;
   border-radius: 10px;
   box-shadow: 0 0 2px rgba(0, 0, 0, .15);
@@ -84,15 +84,15 @@ export default {
 .right {
   flex: auto;
   min-width: 0;
-  margin-left: 12px;
+  margin-left: 10px;
 }
 
 .info {
   display: flex;
   flex-flow: row nowrap;
-  gap: 15px;
+  gap: 10px;
   width: 100%;
-  height: 40px;
+  height: 36px;
   line-height: 1.3;
   color: var(--color-450);
 }
@@ -119,12 +119,12 @@ export default {
 }
 .label {
   flex: none;
-  font-size: 12px;
+  font-size: 11px;
   // margin-left: 5px;
 }
 .likes {
   flex: none;
-  font-size: 11px;
+  font-size: 10px;
   text-align: right;
   padding-top: 3px;
   align-self: flex-start;
@@ -136,9 +136,9 @@ export default {
   color: var(--color-primary-alpha-500);
 }
 .comment_text {
-  text-align: justify;
-  font-size: 14px;
-  line-height: 1.62;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.55;
   word-break: break-all;
   overflow-wrap: break-word;
   white-space: pre-wrap;
@@ -155,8 +155,8 @@ export default {
 }
 
 .reply_floor {
-  padding: 0 0 0 14px;
-  margin-left: 24px;
+  padding: 0 0 0 12px;
+  margin-left: 20px;
   border-radius: 14px;
   &:last-child {
     margin-bottom: 12px;
