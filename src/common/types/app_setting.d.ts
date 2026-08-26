@@ -195,6 +195,11 @@ declare global {
       'player.audioVisualization': boolean
 
       /**
+       * 音频可视化样式
+       */
+      'player.audioVisualizationStyle': 'ambient' | 'ribbon' | 'spectrum'
+
+      /**
        * 定时暂停播放-是否等待歌曲播放完毕再暂停
        */
       'player.waitPlayEndStop': boolean

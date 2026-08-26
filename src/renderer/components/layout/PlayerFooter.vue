@@ -26,23 +26,23 @@
       <div :class="$style.playControl">
         <button type="button" :class="$style.playBtn" :aria-label="$t('player__prev')" @click="playPrev()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M7.2 7.2v9.6" fill="none" stroke-width="2.6" />
-            <path d="M17.2 7.5 L10.8 12 l6.4 4.5 z" stroke-width="1.6" />
+            <rect x="6.5" y="7" width="2.5" height="10" rx="1.25" />
+            <path d="M17.6 7.65c.65-.43 1.4.04 1.4.82v7.06c0 .78-.75 1.25-1.4.82l-6.04-3.53a.95.95 0 0 1 0-1.64z" />
           </svg>
         </button>
         <button type="button" :class="[$style.playBtn, $style.playBtnPrimary]" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
           <svg v-if="isPlay" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9.2 7.6v8.8" fill="none" stroke-width="3" />
-            <path d="M14.8 7.6v8.8" fill="none" stroke-width="3" />
+            <rect x="7.6" y="6.4" width="3.4" height="11.2" rx="1.6" />
+            <rect x="13" y="6.4" width="3.4" height="11.2" rx="1.6" />
           </svg>
           <svg v-else viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9.8 7.3 L17.2 12 l-7.4 4.7 z" stroke-width="1.6" />
+            <path d="M9.1 6.7c0-.86.94-1.39 1.68-.95l8.08 4.82a1.65 1.65 0 0 1 0 2.86l-8.08 4.82c-.74.44-1.68-.09-1.68-.95z" />
           </svg>
         </button>
         <button type="button" :class="$style.playBtn" :aria-label="$t('player__next')" @click="playNext()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M16.8 7.2v9.6" fill="none" stroke-width="2.6" />
-            <path d="M6.8 7.5 L13.2 12 l-6.4 4.5 z" stroke-width="1.6" />
+            <rect x="15" y="7" width="2.5" height="10" rx="1.25" />
+            <path d="M6.4 7.65C5.75 7.22 5 7.69 5 8.47v7.06c0 .78.75 1.25 1.4.82l6.04-3.53a.95.95 0 0 0 0-1.64z" />
           </svg>
         </button>
       </div>
@@ -343,15 +343,15 @@ const handleImgError = () => {
   gap: 14px;
 }
 .playBtn {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   flex: none;
   color: currentColor;
   border: none;
   background: transparent;
-  transition: opacity 0.2s ease, background-color @transition-fast, color @transition-fast, transform @transition-fast;
-  opacity: 1;
+  transition: opacity .2s ease, background-color @transition-fast, color @transition-fast, transform @transition-fast;
+  opacity: .76;
   cursor: pointer;
   display: flex;
   justify-content: center;
@@ -359,21 +359,18 @@ const handleImgError = () => {
   border-radius: 50%;
 
   svg {
-    width: 19px;
-    height: 19px;
+    width: 20px;
+    height: 20px;
     display: block;
     flex: none;
-    // 实心圆角图标：填充 + 同色描边圆角连接，让三角/竖杠都带圆角
     fill: currentColor;
-    stroke: currentColor;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    stroke: none;
   }
   &:hover {
     opacity: 1;
-    color: var(--color-primary-font);
-    background-color: var(--q-icon-btn-hover-bg);
+    color: var(--color-primary);
+    background-color: var(--color-primary-alpha-900);
+    transform: scale(1.06);
   }
   &:active {
     opacity: 0.82;
@@ -382,23 +379,23 @@ const handleImgError = () => {
 }
 
 .playBtnPrimary {
-  width: 40px;
-  height: 40px;
-  color: #fff;
-  background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary));
-  box-shadow: 0 10px 22px var(--color-primary-alpha-700), inset 0 1px 0 rgba(255, 255, 255, .45);
+  width: 44px;
+  height: 44px;
+  color: var(--color-font);
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;
 
   svg {
-    width: 20px;
-    height: 20px;
+    width: 25px;
+    height: 25px;
   }
 
   &:hover {
-    color: #fff;
-    background: linear-gradient(145deg, var(--color-primary), var(--color-primary-dark-200));
-    background-color: transparent;
-    box-shadow: 0 12px 26px var(--color-primary-alpha-600), inset 0 1px 0 rgba(255, 255, 255, .5);
-    transform: translateY(-1px);
+    color: var(--color-primary);
+    background: var(--color-primary-alpha-900);
+    box-shadow: none;
+    transform: scale(1.06);
   }
   &:active {
     transform: scale(.95);
@@ -533,13 +530,15 @@ const handleImgError = () => {
     position: relative;
     z-index: 1;
     height: 48px;
-    gap: clamp(24px, 2.5vw, 38px);
+    gap: clamp(26px, 2.7vw, 42px);
     color: rgba(255, 255, 255, .94);
   }
 
   .playBtn {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
+    color: rgba(255, 255, 255, .78);
+    opacity: 1;
 
     svg {
       width: 24px;
@@ -548,25 +547,31 @@ const handleImgError = () => {
 
     &:hover {
       color: #fff;
-      background: rgba(255, 255, 255, .12);
+      background: rgba(255, 255, 255, .09);
+      transform: scale(1.08);
     }
   }
 
   .playBtnPrimary {
-    width: 50px;
-    height: 50px;
-    color: rgba(22, 27, 30, .96);
-    background:
-      radial-gradient(circle at 34% 20%, rgba(255, 255, 255, .98), rgba(255, 255, 255, .78) 58%, rgba(225, 235, 232, .68)),
-      rgba(255, 255, 255, .78);
+    width: 54px;
+    height: 54px;
+    color: #fff;
+    background: transparent;
     border: none;
-    box-shadow: 0 14px 34px rgba(0, 0, 0, .24), inset 0 1px 1px rgba(255, 255, 255, .94);
-    backdrop-filter: blur(22px) saturate(1.4) brightness(1.08);
+    box-shadow: none;
+    backdrop-filter: none;
+
+    svg {
+      width: 30px;
+      height: 30px;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .28));
+    }
 
     &:hover {
-      color: rgba(12, 16, 18, 1);
-      background: #fff;
-      box-shadow: 0 17px 38px rgba(0, 0, 0, .3), inset 0 1px 0 #fff;
+      color: #fff;
+      background: rgba(255, 255, 255, .1);
+      box-shadow: none;
+      transform: scale(1.08);
     }
   }
 
@@ -668,7 +673,9 @@ const handleImgError = () => {
   }
 
   .centerControl {
-    width: clamp(300px, 30vw, 430px);
+    // 评论三栏布局中播放条只占封面列，不再伸入中间歌词列。
+    left: clamp(42px, 5vw, 82px);
+    width: clamp(230px, 22vw, 320px);
   }
 }
 

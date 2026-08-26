@@ -484,7 +484,7 @@ export default {
   }
 
   .lyric {
-    -webkit-mask-image: linear-gradient(transparent 0%, #fff 10%,  #fff 84%, transparent 100%);
+    -webkit-mask-image: linear-gradient(transparent 0%, #fff 10%, #fff 76%, transparent 100%);
     transform: translateY(-2px);
   }
 }

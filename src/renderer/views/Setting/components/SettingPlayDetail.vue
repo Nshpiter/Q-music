@@ -15,6 +15,15 @@ dd
     base-checkbox.gap-left(id="setting_play_detail_layout_immersive" :model-value="appSetting['playDetail.style.layout']" need value="immersive" :label="$t('setting__play_detail_layout_immersive')" @update:model-value="updateSetting({ 'playDetail.style.layout': $event })")
 
 dd
+  h3#play_detail_visualization {{ $t('setting__play_detail_visualization') }}
+  div
+    base-checkbox(id="setting_play_detail_visualization_enable" :model-value="appSetting['player.audioVisualization']" :label="$t('setting__play_detail_visualization_enable')" @update:model-value="updateSetting({ 'player.audioVisualization': $event })")
+  div.gap-top
+    base-checkbox.gap-left(id="setting_play_detail_visualization_ambient" :model-value="appSetting['player.audioVisualizationStyle']" need value="ambient" :label="$t('setting__play_detail_visualization_ambient')" @update:model-value="setVisualizationStyle")
+    base-checkbox.gap-left(id="setting_play_detail_visualization_ribbon" :model-value="appSetting['player.audioVisualizationStyle']" need value="ribbon" :label="$t('setting__play_detail_visualization_ribbon')" @update:model-value="setVisualizationStyle")
+    base-checkbox.gap-left(id="setting_play_detail_visualization_spectrum" :model-value="appSetting['player.audioVisualizationStyle']" need value="spectrum" :label="$t('setting__play_detail_visualization_spectrum')" @update:model-value="setVisualizationStyle")
+
+dd
   h3#play_detail_align {{ $t('setting__play_detail_align') }}
   div
     base-checkbox.gap-left(id="setting_play_detail_align_left" :model-value="appSetting['playDetail.style.align']" need value="left" :label="$t('setting__play_detail_align_left')" @update:model-value="updateSetting({ 'playDetail.style.align': $event })")
@@ -30,9 +39,17 @@ import { appSetting, updateSetting } from '@renderer/store/setting'
 export default {
   name: 'SettingPlayDetail',
   setup() {
+    const setVisualizationStyle = style => {
+      if (!style) return
+      updateSetting({
+        'player.audioVisualization': true,
+        'player.audioVisualizationStyle': style,
+      })
+    }
     return {
       appSetting,
       updateSetting,
+      setVisualizationStyle,
     }
   },
 }

@@ -7,13 +7,14 @@ div(:class="[$style.footerLeftControlBtns, { [$style.detail]: detail }]")
       path(d="M5 16h6")
       path(d="M16 15.5c1.9 0 3 1 3 2.3s-1.1 2.2-3 2.2-3-1-3-2.2 1.1-2.3 3-2.3z")
       path(d="M19 8v9.6")
-  button(:class="[$style.footerLeftControlBtn, { [$style.active]: appSetting['player.audioVisualization'] }]" :aria-label="$t('audio_visualization')" @click="toggleAudioVisualization")
+  button(:class="[$style.footerLeftControlBtn, $style.appearanceBtn, { [$style.active]: appSetting['player.audioVisualization'] }]" :aria-label="$t('play_detail_appearance_menu')" @click.stop="showAppearanceMenu")
     svg(viewBox="0 0 24 24" aria-hidden="true")
       path(d="M4 13v-2")
       path(d="M8 16V8")
       path(d="M12 19V5")
       path(d="M16 16V8")
       path(d="M20 13v-2")
+    span(:class="$style.menuIndicator" aria-hidden="true")
   button(:class="[$style.footerLeftControlBtn, { [$style.active]: isShowLrcSelectContent }]" :aria-label="$t('lyric__select')" @click="toggleVisibleLrc")
     svg(viewBox="0 0 24 24" aria-hidden="true")
       path(d="M6 7h12")
@@ -43,6 +44,13 @@ div(:class="[$style.footerLeftControlBtns, { [$style.detail]: detail }]")
       path(v-if="!isLoveMusic" d="M18 17v4")
       path(v-if="!isLoveMusic" d="M16 19h4")
   common-list-add-modal(v-model:show="isShowAddMusicTo" :music-info="currentMusicInfo")
+  PlayerAppearanceMenu(
+    v-model="appearanceMenuVisible"
+    :xy="appearanceMenuXY"
+    :dark="detail"
+    @select-layout="selectDetailLayout"
+    @select-visualization="selectVisualization"
+  )
 
 </template>
 
@@ -66,11 +74,13 @@ import useNextTogglePlay from '@renderer/utils/compositions/useNextTogglePlay'
 import useToggleDesktopLyric from '@renderer/utils/compositions/useToggleDesktopLyric'
 import { dialog } from '@renderer/plugins/Dialog'
 import { setMediaDeviceId } from '@renderer/plugins/player'
-import { appSetting, saveMediaDeviceId, setEnableAudioVisualization } from '@renderer/store/setting'
+import { appSetting, saveMediaDeviceId, updateSetting } from '@renderer/store/setting'
 import { addListMusics, checkListExistMusic, removeListMusics } from '@renderer/store/list/action'
 import { loveList } from '@renderer/store/list/state'
+import PlayerAppearanceMenu from './PlayerAppearanceMenu.vue'
 
 export default {
+  components: { PlayerAppearanceMenu },
   props: {
     detail: Boolean,
   },
@@ -100,6 +110,8 @@ export default {
     } = useToggleDesktopLyric()
 
     const isShowAddMusicTo = ref(false)
+    const appearanceMenuVisible = ref(false)
+    const appearanceMenuXY = ref({ x: 0, y: 0 })
     const isLoveMusic = ref(false)
     const isTogglingLove = ref(false)
     let loveCheckId = 0
@@ -166,19 +178,38 @@ export default {
       window.app_event.off('myListUpdate', handleMyListUpdate)
     })
 
-    const toggleAudioVisualization = async() => {
-      const newSetting = !appSetting['player.audioVisualization']
-      if (newSetting && appSetting['player.mediaDeviceId'] != 'default') {
+    const ensureVisualizationAudioDevice = async() => {
+      if (appSetting['player.mediaDeviceId'] != 'default') {
         const confirm = await dialog.confirm({
           message: t('setting__player_audio_visualization_tip'),
           cancelButtonText: t('cancel_button_text'),
           confirmButtonText: t('confirm_button_text'),
         })
-        if (!confirm) return
+        if (!confirm) return false
         await setMediaDeviceId('default').catch(_ => _)
         saveMediaDeviceId('default')
       }
-      setEnableAudioVisualization(newSetting)
+      return true
+    }
+    const showAppearanceMenu = event => {
+      const rect = event.currentTarget.getBoundingClientRect()
+      // 传递按钮右上角，菜单会按自身实际尺寸放到按钮正上方。
+      appearanceMenuXY.value = { x: rect.right, y: rect.top }
+      appearanceMenuVisible.value = !appearanceMenuVisible.value
+    }
+    const selectDetailLayout = layout => {
+      updateSetting({ 'playDetail.style.layout': layout })
+    }
+    const selectVisualization = async(style) => {
+      if (style == 'off') {
+        updateSetting({ 'player.audioVisualization': false })
+        return
+      }
+      if (!await ensureVisualizationAudioDevice()) return
+      updateSetting({
+        'player.audioVisualization': true,
+        'player.audioVisualizationStyle': style,
+      })
     }
 
     return {
@@ -192,7 +223,11 @@ export default {
       toggleDesktopLyricBtnTitle,
       toggleDesktopLyric,
       toggleLockDesktopLyric,
-      toggleAudioVisualization,
+      appearanceMenuVisible,
+      appearanceMenuXY,
+      showAppearanceMenu,
+      selectDetailLayout,
+      selectVisualization,
       isShowAddMusicTo,
       playMusicInfo,
       currentMusicInfo,
@@ -323,6 +358,21 @@ export default {
 
   .lrcBtn {
     width: var(--q-footer-tool-size);
+  }
+
+  .appearanceBtn {
+    position: relative;
+  }
+
+  .menuIndicator {
+    position: absolute;
+    right: 1px;
+    bottom: 2px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .72;
   }
 
   :global {

@@ -795,6 +795,9 @@ export default {
         flex: none;
         max-width: none;
         min-width: 0;
+        // 评论模式下播放控件固定在左下方，歌词列需要保留独立的底部安全区，
+        // 避免长歌词滚动到进度条和播放按钮后面。
+        padding-bottom: clamp(108px, 16vh, 132px);
         .lyricSelectContent {
           font-size: 14px;
         }

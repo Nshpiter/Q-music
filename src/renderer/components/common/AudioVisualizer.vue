@@ -1,13 +1,14 @@
 <template>
   <div :class="$style.content">
-    <canvas ref="dom_canvas" :class="$style.canvas" />
+    <canvas ref="dom_canvas" :class="[$style.canvas, $style[visualizationStyle]]" />
   </div>
 </template>
 
 <script>
-import { ref, onBeforeUnmount, onMounted } from '@common/utils/vueTools'
+import { computed, ref, onBeforeUnmount, onMounted, watch } from '@common/utils/vueTools'
 import { getAnalyser } from '@renderer/plugins/player'
 import { isPlay } from '@renderer/store/player/state'
+import { appSetting } from '@renderer/store/setting'
 
 const FFT_SIZE = 1024
 const FRAME_INTERVAL = 1000 / 30
@@ -56,6 +57,7 @@ const getHue = ({ r, g, b }) => {
 export default {
   setup() {
     const dom_canvas = ref(null)
+    const visualizationStyle = computed(() => appSetting['player.audioVisualizationStyle'] || 'ambient')
     const sampleCanvas = document.createElement('canvas')
     const sampleContext = sampleCanvas.getContext('2d', { willReadFrequently: true })
 
@@ -247,18 +249,115 @@ export default {
       ctx.restore()
     }
 
-    // Apple Music 式的可视化更接近封面取色后的流体光场：频谱只驱动
-    // 光晕的呼吸与位移，不直接绘制均衡器柱或波形。
-    const drawAmbientField = () => {
-      const longestSide = Math.max(width, height)
-      const activeBoost = isPlaying ? 1 : 0.5
-      const baseAlpha = (0.14 + energy * 0.24) * activeBoost
+    const drawRibbon = (color, yRatio, bandEnergy, speed, offset) => {
+      const amplitude = height * (0.022 + bandEnergy * 0.065)
+      const baseY = height * yRatio
+      const gradient = ctx.createLinearGradient(0, 0, width, 0)
+      gradient.addColorStop(0, rgba(color, 0))
+      gradient.addColorStop(0.18, rgba(color, 0.2 + bandEnergy * 0.22))
+      gradient.addColorStop(0.52, rgba(color, 0.34 + bandEnergy * 0.3))
+      gradient.addColorStop(0.84, rgba(color, 0.16 + bandEnergy * 0.2))
+      gradient.addColorStop(1, rgba(color, 0))
+
       ctx.save()
       ctx.globalCompositeOperation = 'screen'
-      drawGlow(width * (0.12 + Math.sin(phase * 0.34) * 0.1), height * (0.22 + Math.cos(phase * 0.27) * 0.1), longestSide * 0.62 * (1 + bassEnergy * 0.2), palette[0], baseAlpha * 1.32, 1.28, 0.82)
-      drawGlow(width * (0.84 + Math.cos(phase * 0.28) * 0.1), height * (0.28 + Math.sin(phase * 0.22) * 0.11), longestSide * 0.58 * (1 + midEnergy * 0.17), palette[1], baseAlpha * 1.12, 1.16, 0.88)
-      drawGlow(width * (0.64 + Math.sin(phase * 0.2 + 1.8) * 0.14), height * (0.9 + Math.cos(phase * 0.3) * 0.08), longestSide * 0.55 * (1 + trebleEnergy * 0.12), palette[2], baseAlpha, 1.42, 0.72)
-      drawGlow(width * (0.48 + Math.cos(phase * 0.16) * 0.11), height * (0.5 + Math.sin(phase * 0.19) * 0.09), longestSide * 0.68, mixColor(palette[0], palette[1], 0.5), baseAlpha * 0.54, 1.48, 0.8)
+      ctx.filter = `blur(${Math.max(4, 7 * dpr)}px)`
+      ctx.strokeStyle = gradient
+      ctx.lineWidth = (12 + bandEnergy * 30) * dpr
+      ctx.lineCap = 'round'
+      ctx.beginPath()
+      for (let step = 0; step <= 48; step++) {
+        const x = width * step / 48
+        const ratio = x / width
+        const y = baseY +
+          Math.sin(ratio * Math.PI * 2.15 + phase * speed + offset) * amplitude +
+          Math.sin(ratio * Math.PI * 4.4 - phase * speed * 0.58 + offset * 1.7) * amplitude * 0.34
+        if (step == 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.stroke()
+      ctx.restore()
+    }
+
+    const drawAlbumHalo = () => {
+      if (!albumBox) return
+      const pulse = (8 + bassEnergy * 24) * dpr
+      const radius = Math.min(albumBox.width, albumBox.height) * 0.075
+      const gradient = ctx.createLinearGradient(albumBox.x, albumBox.y, albumBox.x + albumBox.width, albumBox.y + albumBox.height)
+      gradient.addColorStop(0, rgba(palette[0], 0.58 + bassEnergy * 0.22))
+      gradient.addColorStop(0.52, rgba(palette[1], 0.46 + midEnergy * 0.2))
+      gradient.addColorStop(1, rgba(palette[2], 0.42 + trebleEnergy * 0.18))
+
+      ctx.save()
+      ctx.globalCompositeOperation = 'screen'
+      ctx.filter = `blur(${Math.max(3, 5 * dpr)}px)`
+      ctx.strokeStyle = gradient
+      ctx.lineWidth = (2.5 + bassEnergy * 4.5) * dpr
+      ctx.shadowBlur = (18 + energy * 34) * dpr
+      ctx.shadowColor = rgba(palette[0], 0.72)
+      ctx.beginPath()
+      ctx.roundRect(
+        albumBox.x - pulse,
+        albumBox.y - pulse,
+        albumBox.width + pulse * 2,
+        albumBox.height + pulse * 2,
+        radius + pulse * 0.35,
+      )
+      ctx.stroke()
+      ctx.restore()
+    }
+
+    const drawSpectrum = () => {
+      const barCount = 42
+      const spectrumWidth = width * 0.86
+      const gap = Math.max(3 * dpr, spectrumWidth * 0.0045)
+      const barWidth = Math.max(3 * dpr, (spectrumWidth - gap * (barCount - 1)) / barCount)
+      const startX = (width - spectrumWidth) / 2
+      const bottomY = height * 0.93
+      const maxBarHeight = height * 0.2
+
+      ctx.save()
+      ctx.globalCompositeOperation = 'screen'
+      ctx.filter = `blur(${Math.max(1.5, 2.2 * dpr)}px)`
+      for (let index = 0; index < barCount; index++) {
+        const ratio = index / Math.max(1, barCount - 1)
+        const frequencyRatio = 0.008 + Math.pow(ratio, 1.55) * 0.5
+        const frequencyEnergy = isPlaying
+          ? sampleBand(frequencyRatio, Math.min(frequencyRatio + 0.018, 0.58))
+          : 0
+        const idleShape = 0.065 + (Math.sin(index * 0.72) + 1) * 0.022
+        const shapedEnergy = Math.max(idleShape, frequencyEnergy * (1 - Math.abs(ratio - 0.5) * 0.24))
+        const barHeight = Math.max(3 * dpr, shapedEnergy * maxBarHeight)
+        const x = startX + index * (barWidth + gap)
+        const colorPosition = ratio * 2
+        const from = palette[Math.min(1, Math.floor(colorPosition))]
+        const to = palette[Math.min(2, Math.floor(colorPosition) + 1)]
+        const color = mixColor(from, to, colorPosition % 1)
+        const gradient = ctx.createLinearGradient(0, bottomY - barHeight, 0, bottomY)
+        gradient.addColorStop(0, rgba(color, 0.06))
+        gradient.addColorStop(0.54, rgba(color, 0.48 + shapedEnergy * 0.26))
+        gradient.addColorStop(1, rgba(color, 0.82))
+        ctx.fillStyle = gradient
+        ctx.beginPath()
+        ctx.roundRect(x, bottomY - barHeight, barWidth, barHeight, barWidth / 2)
+        ctx.fill()
+      }
+      ctx.restore()
+    }
+
+    // 三种模式共用封面取色与频谱采样，只切换绘制策略，避免维护三套音频链路。
+    const drawAmbientField = () => {
+      const activeStyle = visualizationStyle.value
+      const longestSide = Math.max(width, height)
+      const activeBoost = isPlaying ? 1 : 0.38
+      const ambientMode = activeStyle == 'ambient'
+      const baseAlpha = ((ambientMode ? 0.16 : 0.12) + energy * (ambientMode ? 0.28 : 0.2)) * activeBoost
+      ctx.save()
+      ctx.globalCompositeOperation = 'screen'
+      drawGlow(width * (0.12 + Math.sin(phase * 0.34) * 0.1), height * (0.22 + Math.cos(phase * 0.27) * 0.1), longestSide * 0.62 * (1 + bassEnergy * 0.26), palette[0], baseAlpha * 1.36, 1.28, 0.82)
+      drawGlow(width * (0.84 + Math.cos(phase * 0.28) * 0.1), height * (0.28 + Math.sin(phase * 0.22) * 0.11), longestSide * 0.58 * (1 + midEnergy * 0.22), palette[1], baseAlpha * 1.18, 1.16, 0.88)
+      drawGlow(width * (0.64 + Math.sin(phase * 0.2 + 1.8) * 0.14), height * (0.9 + Math.cos(phase * 0.3) * 0.08), longestSide * 0.55 * (1 + trebleEnergy * 0.18), palette[2], baseAlpha * 1.08, 1.42, 0.72)
+      drawGlow(width * (0.48 + Math.cos(phase * 0.16) * 0.11), height * (0.5 + Math.sin(phase * 0.19) * 0.09), longestSide * 0.68, mixColor(palette[0], palette[1], 0.5), baseAlpha * 0.64, 1.48, 0.8)
       if (albumBox) {
         drawGlow(
           albumBox.x + albumBox.width / 2,
@@ -271,6 +370,15 @@ export default {
         )
       }
       ctx.restore()
+
+      if (activeStyle == 'ribbon') {
+        drawRibbon(palette[0], 0.48, Math.max(bassEnergy, 0.08), 1.18, 0)
+        drawRibbon(palette[1], 0.58, Math.max(midEnergy, 0.065), 1.46, 2.1)
+        drawRibbon(palette[2], 0.68, Math.max(trebleEnergy, 0.05), 1.82, 4.2)
+      } else if (activeStyle == 'spectrum') {
+        drawSpectrum()
+      }
+      if (activeStyle != 'spectrum') drawAlbumHalo()
     }
 
     const renderFrame = timestamp => {
@@ -324,6 +432,14 @@ export default {
     window.app_event.on('error', handlePause)
     window.addEventListener('resize', handleResize)
 
+    const stopWatchVisualizationStyle = watch(visualizationStyle, () => {
+      if (!ctx) return
+      ctx.clearRect(0, 0, width, height)
+      // 即使当前处于暂停状态，也立即绘制新风格的静态首帧。
+      energy = Math.max(energy, 0.08)
+      startRender()
+    })
+
     onBeforeUnmount(() => {
       isPlaying = false
       if (animationFrameId != null) window.cancelAnimationFrame(animationFrameId)
@@ -331,6 +447,7 @@ export default {
       window.app_event.off('pause', handlePause)
       window.app_event.off('error', handlePause)
       window.removeEventListener('resize', handleResize)
+      stopWatchVisualizationStyle()
     })
 
     onMounted(() => {
@@ -344,7 +461,7 @@ export default {
       startRender()
     })
 
-    return { dom_canvas }
+    return { dom_canvas, visualizationStyle }
   },
 }
 </script>
@@ -361,8 +478,16 @@ export default {
   display: block;
   width: 100%;
   height: 100%;
-  opacity: 0.82;
-  filter: blur(18px) saturate(1.18);
-  transform: scale(1.06);
+  opacity: 0.96;
+  transform: scale(1.035);
+}
+.ambient {
+  filter: blur(14px) saturate(1.36);
+}
+.ribbon {
+  filter: blur(7px) saturate(1.28);
+}
+.spectrum {
+  filter: blur(1.4px) saturate(1.22);
 }
 </style>
