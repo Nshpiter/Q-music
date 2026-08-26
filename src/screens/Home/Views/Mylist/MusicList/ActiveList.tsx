@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react'
-import { TouchableOpacity } from 'react-native'
+import { StyleSheet, TouchableOpacity } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
 import { BorderWidths } from '@/theme'
@@ -71,10 +71,14 @@ export default forwardRef<ActiveListType, ActiveListProps>(({ onShowImport, onSh
         style={{
           ...styles.importButton,
           backgroundColor: theme['q-surface-tint'],
+          borderColor: theme['q-outline'],
         }}
         onPress={onShowImport}
       >
-        <Icon color={theme['q-accent-text']} name="download-2" size={17} />
+        <Icon color={theme['q-accent-text']} name="download-2" size={15} />
+        <Text size={11} style={styles.importText} color={theme['q-accent-text']} numberOfLines={1}>
+          {global.i18n.t('playlist_import_modal__title')}
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.currentListBtns} onPress={onShowSearchBar}>
         <Icon color={theme['c-button-font']} name="search-2" />
@@ -118,10 +122,17 @@ const styles = createStyle({
     // backgroundColor: 'rgba(0,0,0,0.2)',
   },
   importButton: {
-    width: 34,
-    height: 30,
-    borderRadius: 11,
+    height: 32,
+    maxWidth: 132,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  importText: {
+    marginLeft: 5,
+    fontWeight: '600',
   },
 })

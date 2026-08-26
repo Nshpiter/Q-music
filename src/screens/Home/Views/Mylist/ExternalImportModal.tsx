@@ -458,6 +458,7 @@ const styles = createStyle({
   },
   sourceRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 7,
   },
   sourceButton: {
@@ -465,11 +466,12 @@ const styles = createStyle({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    height: 38,
+    width: '48%',
+    flexGrow: 1,
+    height: 46,
     borderRadius: 11,
     borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 3,
+    paddingHorizontal: 8,
   },
   targetList: {
     gap: 8,
