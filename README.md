@@ -2,35 +2,73 @@
   <img src="./doc/images/icon.png" width="150" alt="Q-music logo">
 </p>
 
-<h1 align="center">Q-music 桌面版</h1>
+<h1 align="center">Q-music</h1>
 
 <p align="center">
   <a href="https://github.com/Nshpiter/Q-music/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Nshpiter/Q-music?include_prereleases&label=release"></a>
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
+  <img alt="Windows" src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4">
+  <img alt="Android" src="https://img.shields.io/badge/Android-支持-3ddc84">
+  <img alt="Arch Linux" src="https://img.shields.io/badge/Arch%20Linux-x86__64-1793d1">
   <img alt="Electron" src="https://img.shields.io/badge/electron-40.9.2-47848f">
   <img alt="Vue" src="https://img.shields.io/badge/vue-3-42b883">
 </p>
 
-<p align="center">基于 Electron 与 Vue 3 的桌面音乐软件，专注于清爽的玻璃质感界面与完整的桌面播放体验。</p>
+<p align="center">面向 Windows、Arch Linux 与 Android 的多端音乐播放器，提供聚合搜索、账号推荐、歌单同步与沉浸式歌词体验。</p>
 
-![Q-music v0.2.2 desktop UI](./doc/images/app.png)
+<p align="center">
+  <a href="https://github.com/Nshpiter/Q-music/releases/latest"><strong>下载最新版本</strong></a>
+  ·
+  <a href="./publish/changeLog.md">更新日志</a>
+  ·
+  <a href="https://github.com/Nshpiter/Q-music/issues">问题反馈</a>
+</p>
+
+## 界面预览
+
+### 每日推荐与完整歌单
+
+![Q-music 每日推荐详情](./doc/images/app.png)
+
+<table>
+  <tr>
+    <td width="50%" align="center"><strong>沉浸歌词与动态氛围</strong></td>
+    <td width="50%" align="center"><strong>经典歌词与播放栏</strong></td>
+  </tr>
+  <tr>
+    <td><img src="./doc/images/player-immersive.png" alt="Q-music 沉浸歌词与动态氛围界面"></td>
+    <td><img src="./doc/images/player-classic.png" alt="Q-music 经典歌词与播放栏界面"></td>
+  </tr>
+</table>
 
 ## 项目说明
 
-Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前桌面版 `v0.2.2` 基于 LX Music Desktop `2.12.2`，并提供 Windows、Arch Linux 与 Android 客户端，主要调整了应用品牌、跨端界面风格、播放详情页、音频可视化、播放队列以及打包更新配置。
+Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前桌面端与 Android 端版本均为 `v0.3.12`，桌面端基于 LX Music Desktop `2.12.2`，主要重做了跨端界面、首页推荐、音乐账号接入、歌单同步、播放详情页、音频可视化与发布更新流程。
 
 本仓库不是 LX Music 官方仓库，也不代表原作者对本项目提供支持或背书。完整变更可查看 [更新日志](./publish/changeLog.md) 与 [二次修改说明](./MODIFICATIONS.md)。
+
+## 下载与平台
+
+| 平台 | 安装方式 | 状态 |
+| --- | --- | --- |
+| Windows 10 / 11 x64 | 从 [GitHub Releases](https://github.com/Nshpiter/Q-music/releases/latest) 下载 `Q-music-*-x64-Setup.exe` | 稳定 |
+| Android arm64-v8a | 从 [GitHub Releases](https://github.com/Nshpiter/Q-music/releases/latest) 下载 arm64 APK；架构不确定时使用 universal APK | 测试版 |
+| Arch Linux x86_64 | 按下文命令构建 pacman 包 | 适配中 |
+
+Android 源码位于本仓库 [`android`](https://github.com/Nshpiter/Q-music/tree/android) 分支。Release 同时提供 SHA256 校验文件，Windows 客户端支持应用内检查更新。
 
 ## 功能亮点
 
 - 液态玻璃界面：支持全局背景图、面板透明度与模糊程度实时调节，并提供清晰、平衡、沉浸三档外观预设。
 - 流畅模式：一键关闭实时毛玻璃采样，保留配色与层次，降低低功耗设备、远程桌面及部分 Linux 合成器的图形压力。
 - 主题化视觉：主题预览卡、磨砂菜单、胶囊标签和统一的导航选中态。
-- 搜索欢迎页：玻璃欢迎卡、热门搜索与历史记录卡片化，支持刷新热门内容，并可通过按钮或 `F1` 快速聚焦搜索框。
-- 每日精选：根据已同步的收藏歌手与当日热门搜索生成 12 首推荐，支持换一批与一键播放；平台推荐接口不可用时仍可降级工作。
+- 聚合搜索：一个结果条目聚合多个音乐来源，可按歌曲选择可用来源，首页不堆叠来源标签。
+- 音乐账号：支持 QQ 音乐与网易云音乐授权状态检测、账号歌单读取及推荐来源切换。
+- 每日推荐：支持 QQ 音乐每日 30 首、私人雷达与网易云音乐推荐，并提供完整歌单详情、一键播放和换一批。
+- 歌单导入：支持账号歌单同步与外部歌单链接导入，统一管理本地收藏和跨平台歌单。
 - 多端云同步：可连接独立同步服务，在 Windows、Arch Linux 与 Android 间自动同步歌单及“不喜欢”列表。
 - 重做播放栏：播放控制居中、主题色进度条、拖拽圆点和分组工具按钮。
-- 播放详情页：唱片式封面、氛围背景、歌词、评论与音频可视化。
+- 播放详情页：提供经典与沉浸两种布局，支持逐行歌词、评论面板、自动沉浸控件及多种音频可视化。
 - 列表体验：播放中高亮、均衡跳动提示、磨砂悬停效果和播放队列。
 - 桌面能力：桌面歌词、全局快捷键、音效设置、数据同步与开放 API。
 - 独立更新：使用 Q-music 的版本检测、发布地址和 `qmusic://` Scheme URL，不与上游安装冲突。
@@ -104,7 +142,7 @@ npm run pack:arch
 安装本地构建产物：
 
 ```bash
-sudo pacman -U ./build/Q-music_0.2.2_x64.pacman
+sudo pacman -U ./build/Q-music_0.3.12_x64.pacman
 ```
 
 pacman 安装由系统包管理器负责升级；应用内会提示新版本，但不会自行覆盖系统
