@@ -1,6 +1,6 @@
 <template>
   <div :class="$style.content">
-    <canvas ref="dom_canvas" :class="[$style.canvas, $style[visualizationStyle]]" />
+    <canvas ref="dom_canvas" :class="[$style.canvas, $style[visualizationStyle], { [$style.classic]: isClassicLayout }]" />
   </div>
 </template>
 
@@ -55,9 +55,16 @@ const getHue = ({ r, g, b }) => {
 }
 
 export default {
-  setup() {
+  props: {
+    layout: {
+      type: String,
+      default: 'immersive',
+    },
+  },
+  setup(props) {
     const dom_canvas = ref(null)
     const visualizationStyle = computed(() => appSetting['player.audioVisualizationStyle'] || 'ambient')
+    const isClassicLayout = computed(() => props.layout == 'classic')
     const sampleCanvas = document.createElement('canvas')
     const sampleContext = sampleCanvas.getContext('2d', { willReadFrequently: true })
 
@@ -296,13 +303,23 @@ export default {
       ctx.shadowBlur = (18 + energy * 34) * dpr
       ctx.shadowColor = rgba(palette[0], 0.72)
       ctx.beginPath()
-      ctx.roundRect(
-        albumBox.x - pulse,
-        albumBox.y - pulse,
-        albumBox.width + pulse * 2,
-        albumBox.height + pulse * 2,
-        radius + pulse * 0.35,
-      )
+      if (isClassicLayout.value) {
+        ctx.arc(
+          albumBox.x + albumBox.width / 2,
+          albumBox.y + albumBox.height / 2,
+          Math.max(albumBox.width, albumBox.height) / 2 + pulse,
+          0,
+          Math.PI * 2,
+        )
+      } else {
+        ctx.roundRect(
+          albumBox.x - pulse,
+          albumBox.y - pulse,
+          albumBox.width + pulse * 2,
+          albumBox.height + pulse * 2,
+          radius + pulse * 0.35,
+        )
+      }
       ctx.stroke()
       ctx.restore()
     }
@@ -313,8 +330,9 @@ export default {
       const gap = Math.max(3 * dpr, spectrumWidth * 0.0045)
       const barWidth = Math.max(3 * dpr, (spectrumWidth - gap * (barCount - 1)) / barCount)
       const startX = (width - spectrumWidth) / 2
-      const bottomY = height * 0.93
-      const maxBarHeight = height * 0.2
+      // 经典模式底部有常驻播放栏，频谱上移并收窄，避免和控件叠在一起。
+      const bottomY = height * (isClassicLayout.value ? 0.84 : 0.93)
+      const maxBarHeight = height * (isClassicLayout.value ? 0.14 : 0.2)
 
       ctx.save()
       ctx.globalCompositeOperation = 'screen'
@@ -351,7 +369,8 @@ export default {
       const longestSide = Math.max(width, height)
       const activeBoost = isPlaying ? 1 : 0.38
       const ambientMode = activeStyle == 'ambient'
-      const baseAlpha = ((ambientMode ? 0.16 : 0.12) + energy * (ambientMode ? 0.28 : 0.2)) * activeBoost
+      const layoutStrength = isClassicLayout.value ? 0.62 : 1
+      const baseAlpha = ((ambientMode ? 0.16 : 0.12) + energy * (ambientMode ? 0.28 : 0.2)) * activeBoost * layoutStrength
       ctx.save()
       ctx.globalCompositeOperation = 'screen'
       drawGlow(width * (0.12 + Math.sin(phase * 0.34) * 0.1), height * (0.22 + Math.cos(phase * 0.27) * 0.1), longestSide * 0.62 * (1 + bassEnergy * 0.26), palette[0], baseAlpha * 1.36, 1.28, 0.82)
@@ -364,7 +383,7 @@ export default {
           albumBox.y + albumBox.height / 2,
           Math.max(albumBox.width, albumBox.height) * (1.02 + bassEnergy * 0.2),
           palette[0],
-          (0.13 + bassEnergy * 0.16) * activeBoost,
+          (0.13 + bassEnergy * 0.16) * activeBoost * layoutStrength,
           1.08,
           1.08,
         )
@@ -432,7 +451,7 @@ export default {
     window.app_event.on('error', handlePause)
     window.addEventListener('resize', handleResize)
 
-    const stopWatchVisualizationStyle = watch(visualizationStyle, () => {
+    const stopWatchVisualizationStyle = watch([visualizationStyle, isClassicLayout], () => {
       if (!ctx) return
       ctx.clearRect(0, 0, width, height)
       // 即使当前处于暂停状态，也立即绘制新风格的静态首帧。
@@ -461,7 +480,7 @@ export default {
       startRender()
     })
 
-    return { dom_canvas, visualizationStyle }
+    return { dom_canvas, visualizationStyle, isClassicLayout }
   },
 }
 </script>
@@ -489,5 +508,21 @@ export default {
 }
 .spectrum {
   filter: blur(1.4px) saturate(1.22);
+}
+.classic {
+  opacity: .62;
+  mix-blend-mode: multiply;
+
+  &.ambient {
+    filter: blur(18px) saturate(1.16);
+  }
+  &.ribbon {
+    opacity: .76;
+    filter: blur(5px) saturate(1.26);
+  }
+  &.spectrum {
+    opacity: .7;
+    filter: blur(1px) saturate(1.08);
+  }
 }
 </style>

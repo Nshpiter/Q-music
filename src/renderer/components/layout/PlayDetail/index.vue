@@ -39,7 +39,7 @@ transition(enter-active-class="q-detail-enter-active" leave-active-class="q-deta
       //- 避免大量评论节点的创建/布局阻塞封面歌词的滑动动画
       music-comment(:class="$style.comment" :show="isShowPlayComment && !isCommentLayoutGliding" :music-info="playMusicInfo.musicInfo" @close="hideComment")
     transition(enter-active-class="animated-slow fadeIn" leave-active-class="animated-slow fadeOut")
-      common-audio-visualizer(v-if="appSetting['player.audioVisualization'] && visibled")
+      common-audio-visualizer(v-if="appSetting['player.audioVisualization'] && visibled" :layout="appSetting['playDetail.style.layout']")
 </template>
 
 

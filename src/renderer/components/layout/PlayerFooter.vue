@@ -369,8 +369,8 @@ const handleImgError = () => {
   &:hover {
     opacity: 1;
     color: var(--color-primary);
-    background-color: var(--color-primary-alpha-900);
-    transform: scale(1.06);
+    background-color: transparent;
+    transform: translateY(-1px) scale(1.04);
   }
   &:active {
     opacity: 0.82;
@@ -393,9 +393,9 @@ const handleImgError = () => {
 
   &:hover {
     color: var(--color-primary);
-    background: var(--color-primary-alpha-900);
+    background: transparent;
     box-shadow: none;
-    transform: scale(1.06);
+    transform: translateY(-1px) scale(1.04);
   }
   &:active {
     transform: scale(.95);
@@ -547,8 +547,8 @@ const handleImgError = () => {
 
     &:hover {
       color: #fff;
-      background: rgba(255, 255, 255, .09);
-      transform: scale(1.08);
+      background: transparent;
+      transform: translateY(-1px) scale(1.04);
     }
   }
 
@@ -569,9 +569,9 @@ const handleImgError = () => {
 
     &:hover {
       color: #fff;
-      background: rgba(255, 255, 255, .1);
+      background: transparent;
       box-shadow: none;
-      transform: scale(1.08);
+      transform: translateY(-1px) scale(1.04);
     }
   }
 
