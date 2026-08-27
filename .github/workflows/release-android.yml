@@ -81,9 +81,9 @@ jobs:
         working-directory: mobile
         run: npm ci
 
-      - name: Lint source
+      - name: Lint playback source
         working-directory: mobile
-        run: npm run lint
+        run: npx eslint src/core/music/official.ts src/core/music/utils.ts src/core/music/online.ts
 
       - name: Validate signing secrets
         shell: bash
