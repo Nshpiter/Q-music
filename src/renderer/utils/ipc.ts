@@ -82,6 +82,12 @@ export interface MusicAccountPlaylistDetailResult {
   ids: string[]
   status: 'available' | 'login_required' | 'unavailable'
 }
+export interface MusicAccountMusicUrlResult {
+  provider: MusicAccountProvider
+  status: 'available' | 'login_required' | 'unavailable' | 'error'
+  url: string
+  quality: LX.Quality
+}
 export const getMusicAccountStatus = async() => {
   return rendererInvoke<MusicAccountStatus>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_status)
 }
@@ -96,6 +102,22 @@ export const getMusicAccountPlaylists = async(provider: MusicAccountProvider) =>
 }
 export const getMusicAccountPlaylistDetail = async(provider: MusicAccountProvider, id: string) => {
   return rendererInvoke<{ provider: MusicAccountProvider, id: string }, MusicAccountPlaylistDetailResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playlist_detail, { provider, id })
+}
+export const getMusicAccountMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, refresh = false) => {
+  if (musicInfo.source != 'tx' && musicInfo.source != 'wy') return null
+  return rendererInvoke<{
+    provider: MusicAccountProvider
+    songId: string
+    mediaId?: string
+    quality: LX.Quality
+    refresh?: boolean
+  }, MusicAccountMusicUrlResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_music_url, {
+    provider: musicInfo.source,
+    songId: String(musicInfo.meta.songId),
+    mediaId: musicInfo.source == 'tx' ? musicInfo.meta.strMediaMid : undefined,
+    quality,
+    refresh,
+  })
 }
 export const getQQDailyKeyStatus = async() => rendererInvoke<QQDailyKeyStatus>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_daily_key_status)
 export const saveQQDailyApiKey = async(apiKey: string) => rendererInvoke<string, QQDailyKeySaveResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_daily_key_save, apiKey)

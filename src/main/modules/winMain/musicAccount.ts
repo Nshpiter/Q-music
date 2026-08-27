@@ -54,6 +54,21 @@ export interface MusicAccountPlaylistDetailResult {
   status: 'available' | 'login_required' | 'unavailable'
 }
 
+export interface MusicAccountMusicUrlRequest {
+  provider: MusicAccountProvider
+  songId: string
+  mediaId?: string
+  quality: LX.Quality
+  refresh?: boolean
+}
+
+export interface MusicAccountMusicUrlResult {
+  provider: MusicAccountProvider
+  status: 'available' | 'login_required' | 'unavailable' | 'error'
+  url: string
+  quality: LX.Quality
+}
+
 const providerConfig = {
   tx: {
     partition: 'persist:qmusic-account-qq',
@@ -71,6 +86,7 @@ const providerConfig = {
 
 const loginWindows = new Map<MusicAccountProvider, Electron.BrowserWindow>()
 const accountValidationCache = new Map<MusicAccountProvider, { connected: boolean, expiresAt: number }>()
+const officialMusicUrlCache = new Map<string, { url: string, quality: LX.Quality, expiresAt: number }>()
 let qqDailyKeyWindow: BrowserWindow | null = null
 let qqDailyKeyTask: Promise<QQDailyKeySaveResult> | null = null
 const qqDailyKeyStoreName = 'music_account_credentials'
@@ -160,6 +176,63 @@ const requestQQMusicU = async<T>(requests: Record<string, unknown>): Promise<T> 
   })
   if (!response.ok) throw new Error(`QQ Music account request failed: ${response.status}`)
   return response.json() as Promise<T>
+}
+
+const getQualityFallbacks = (quality: LX.Quality): LX.Quality[] => {
+  switch (quality) {
+    case 'flac24bit': return ['flac24bit', 'flac', '320k', '128k']
+    case 'flac': return ['flac', '320k', '128k']
+    case '320k': return ['320k', '128k']
+    default: return ['128k']
+  }
+}
+
+const qqQualityFile = {
+  flac24bit: { prefix: 'RS01', extension: '.flac' },
+  flac: { prefix: 'F000', extension: '.flac' },
+  '320k': { prefix: 'M800', extension: '.mp3' },
+  '128k': { prefix: 'M500', extension: '.mp3' },
+} as const
+
+const getQQOfficialMusicUrl = async(songId: string, mediaId: string, quality: LX.Quality) => {
+  const candidates = getQualityFallbacks(quality)
+    .filter((item): item is keyof typeof qqQualityFile => item in qqQualityFile)
+    .map(item => ({ quality: item, filename: `${qqQualityFile[item].prefix}${mediaId}${qqQualityFile[item].extension}` }))
+  if (!songId || !mediaId || !candidates.length) return null
+
+  const result = await requestQQMusicU<{
+    url?: {
+      code?: number
+      data?: {
+        sip?: string[]
+        midurlinfo?: Array<{ filename?: string, purl?: string }>
+      }
+    }
+  }>({
+    url: {
+      module: 'vkey.GetVkeyServer',
+      method: 'CgiGetVkey',
+      param: {
+        guid: String(Math.floor(Math.random() * 9_000_000_000) + 1_000_000_000),
+        songmid: candidates.map(() => songId),
+        songtype: candidates.map(() => 0),
+        filename: candidates.map(item => item.filename),
+        loginflag: 1,
+        platform: '20',
+      },
+    },
+  })
+  const urlResult = result.url
+  if (urlResult?.code != null && urlResult.code != 0) return null
+  const sip = urlResult?.data?.sip?.find(Boolean) ?? ''
+  const urlInfos = urlResult?.data?.midurlinfo ?? []
+  for (const candidate of candidates) {
+    const info = urlInfos.find(item => item.filename == candidate.filename)
+    if (!info?.purl) continue
+    const url = /^https?:\/\//i.test(info.purl) ? info.purl : `${sip}${info.purl}`
+    if (url) return { url, quality: candidate.quality as LX.Quality }
+  }
+  return null
 }
 
 const getCompatibleUserAgent = (userAgent: string) => userAgent
@@ -442,6 +515,60 @@ const requestNeteaseWeapi = async<T>(path: string, data: Record<string, unknown>
   })
   if (!response.ok) throw new Error(`NetEase request failed (${path}): ${response.status}`)
   return response.json() as Promise<T>
+}
+
+const neteaseQualityLevel = {
+  flac24bit: 'hires',
+  flac: 'lossless',
+  '320k': 'exhigh',
+  '128k': 'standard',
+} as const
+
+const getNeteaseOfficialMusicUrl = async(songId: string, quality: LX.Quality) => {
+  if (!/^\d+$/.test(songId)) return null
+  const candidates = getQualityFallbacks(quality)
+    .filter((item): item is keyof typeof neteaseQualityLevel => item in neteaseQualityLevel)
+  for (const candidate of candidates) {
+    const result = await requestNeteaseWeapi<{
+      code?: number
+      data?: Array<{ url?: string | null, code?: number }>
+    }>('/weapi/song/enhance/player/url/v1', {
+      ids: JSON.stringify([Number(songId)]),
+      level: neteaseQualityLevel[candidate],
+      encodeType: 'flac',
+    })
+    const item = result.data?.[0]
+    if (result.code == 200 && item?.code == 200 && item.url) return { url: item.url, quality: candidate as LX.Quality }
+  }
+  return null
+}
+
+export const getMusicAccountMusicUrl = async(request: MusicAccountMusicUrlRequest): Promise<MusicAccountMusicUrlResult> => {
+  const unavailable = (status: MusicAccountMusicUrlResult['status']): MusicAccountMusicUrlResult => ({
+    provider: request.provider,
+    status,
+    url: '',
+    quality: request.quality,
+  })
+  if (!await verifyMusicAccount(request.provider)) return unavailable('login_required')
+
+  const cacheKey = `${request.provider}:${request.songId}:${request.mediaId ?? ''}:${request.quality}`
+  const cached = officialMusicUrlCache.get(cacheKey)
+  if (!request.refresh && cached && cached.expiresAt > Date.now()) {
+    return { provider: request.provider, status: 'available', url: cached.url, quality: cached.quality }
+  }
+
+  try {
+    const result = request.provider == 'tx'
+      ? await getQQOfficialMusicUrl(request.songId, request.mediaId ?? request.songId, request.quality)
+      : await getNeteaseOfficialMusicUrl(request.songId, request.quality)
+    if (!result) return unavailable('unavailable')
+    officialMusicUrlCache.set(cacheKey, { ...result, expiresAt: Date.now() + 5 * 60_000 })
+    return { provider: request.provider, status: 'available', ...result }
+  } catch (error) {
+    console.warn(`[musicAccount] ${request.provider} official music URL unavailable`, error)
+    return unavailable('error')
+  }
 }
 
 const getNeteaseDailySongIds = async(): Promise<string[]> => {

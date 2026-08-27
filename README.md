@@ -43,7 +43,7 @@
 
 ## 项目说明
 
-Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前桌面端版本为 `v0.3.13`，Android 端版本为 `v0.3.12`；桌面端基于 LX Music Desktop `2.12.2`，主要重做了跨端界面、首页推荐、音乐账号接入、歌单同步、播放详情页、音频可视化与发布更新流程。
+Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前桌面端与 Android 端版本均为 `v0.3.14`；桌面端基于 LX Music Desktop `2.12.2`，主要重做了跨端界面、首页推荐、音乐账号接入、歌单同步、播放详情页、音频可视化与发布更新流程。
 
 本仓库不是 LX Music 官方仓库，也不代表原作者对本项目提供支持或背书。完整变更可查看 [更新日志](./publish/changeLog.md) 与 [二次修改说明](./MODIFICATIONS.md)。
 
@@ -63,6 +63,7 @@ Android 源码位于本仓库 [`android`](https://github.com/Nshpiter/Q-music/tr
 - 流畅模式：一键关闭实时毛玻璃采样，保留配色与层次，降低低功耗设备、远程桌面及部分 Linux 合成器的图形压力。
 - 主题化视觉：主题预览卡、磨砂菜单、胶囊标签和统一的导航选中态。
 - 聚合搜索：一个结果条目聚合多个音乐来源，可按歌曲选择可用来源，首页不堆叠来源标签。
+- 智能播放线路：QQ 音乐与网易云音乐优先请求官方可用地址，失败后自动回退到自定义接口及跨源匹配，不改变其他音乐源行为。
 - 音乐账号：支持 QQ 音乐与网易云音乐授权状态检测、账号歌单读取及推荐来源切换。
 - 每日推荐：支持 QQ 音乐每日 30 首、私人雷达与网易云音乐推荐，并提供完整歌单详情、一键播放和换一批。
 - 歌单导入：支持账号歌单同步与外部歌单链接导入，统一管理本地收藏和跨平台歌单。
@@ -142,7 +143,7 @@ npm run pack:arch
 安装本地构建产物：
 
 ```bash
-sudo pacman -U ./build/Q-music_0.3.13_x64.pacman
+sudo pacman -U ./build/Q-music_0.3.14_x64.pacman
 ```
 
 pacman 安装由系统包管理器负责升级；应用内会提示新版本，但不会自行覆盖系统

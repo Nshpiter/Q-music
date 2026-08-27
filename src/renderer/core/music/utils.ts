@@ -4,6 +4,7 @@ import musicSdk from '@renderer/utils/musicSdk'
 import {
   // getOtherSource as getOtherSourceFromStore,
   // saveOtherSource as saveOtherSourceFromStore,
+  getMusicAccountMusicUrl,
   getMusicUrl as getStoreMusicUrl,
   getPlayerLyric as getStoreLyric,
 } from '@renderer/utils/ipc'
@@ -299,10 +300,29 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   musicInfo: LX.Music.MusicInfoOnline
   quality: LX.Quality
   isFromCache: boolean
+  isOfficial?: boolean
 }> => {
-  if (!await window.lx.apiInitPromise[0]) throw new Error('source init failed')
-  // console.log(musicInfo.source)
   const targetQuality = quality ?? getPlayQuality(appSetting['player.playQuality'], musicInfo)
+
+  if (musicInfo.source == 'tx' || musicInfo.source == 'wy') {
+    const officialResult = await getMusicAccountMusicUrl(musicInfo, targetQuality, isRefresh).catch(error => {
+      console.warn('[music] official URL request failed', error)
+      return null
+    })
+    if (officialResult?.status == 'available' && officialResult.url) {
+      return {
+        musicInfo,
+        url: officialResult.url,
+        quality: officialResult.quality,
+        isFromCache: false,
+        isOfficial: true,
+      }
+    }
+  }
+
+  const cachedUrl = await getStoreMusicUrl(musicInfo, targetQuality)
+  if (cachedUrl && !isRefresh) return { musicInfo, url: cachedUrl, quality: targetQuality, isFromCache: true }
+  if (!await window.lx.apiInitPromise[0]) throw new Error('source init failed')
 
   let reqPromise
   try {
