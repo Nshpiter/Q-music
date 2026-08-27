@@ -8,6 +8,7 @@ import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
 import { usePlayMusicInfo } from '@/store/player/hook'
 import { createStyle, type RowInfo } from '@/utils/tools'
+import SourceLogo from '@/components/SourceLogo'
 
 export const ITEM_HEIGHT = 54
 
@@ -91,7 +92,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
             <Text style={isPlaying ? styles.playingTitle : undefined} color={isPlaying ? theme['q-accent-text'] : theme['c-font']} numberOfLines={1}>{item.name}</Text>
             <View style={styles.listItemSingle}>
               { tagInfo.type ? <Badge type={tagInfo.type}>{tagInfo.text}</Badge> : null }
-              { showSource ? <Badge type="tertiary">{item.source}</Badge> : null }
+              { showSource ? <SourceLogo source={item.source} size={16} /> : null }
               <Text style={styles.listItemSingleText} size={11} color={theme['q-text-secondary']} numberOfLines={1}>{singer}</Text>
             </View>
           </View>

@@ -6,7 +6,7 @@ import { createStyle, type RowInfo } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useAssertApiSupport } from '@/store/common/hook'
 import Text from '@/components/common/Text'
-import Badge from '@/components/common/Badge'
+import SourceLogo from '@/components/SourceLogo'
 
 export const ITEM_HEIGHT = 54
 
@@ -72,7 +72,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
           <View style={styles.itemInfo}>
             <Text style={active ? styles.playingTitle : undefined} color={active ? theme['q-accent-text'] : theme['c-font']} numberOfLines={1}>{item.name}</Text>
             <View style={styles.listItemSingle}>
-              <Badge>{item.source.toUpperCase()}</Badge>
+              {item.source != 'local' ? <SourceLogo source={item.source} size={16} /> : null}
               <Text style={styles.listItemSingleText} size={11} color={theme['q-text-secondary']} numberOfLines={1}>
                 {singer}
               </Text>

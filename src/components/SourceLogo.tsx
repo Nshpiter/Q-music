@@ -5,6 +5,8 @@ const SOURCES: Record<string, { label: string, uri: string }> = {
   tx: { label: 'QQ音乐', uri: 'https://y.qq.com/mediastyle/yqq/img/logo.png?max_age=2592000' },
   wy: { label: '网易云音乐', uri: 'https://s2.music.126.net/style/web2/img/logo.png?564bc3a5ff72eb9d555a7f46bf934203' },
   kg: { label: '酷狗音乐', uri: 'https://www.kugou.com/common/images/icon_logo_v20.png' },
+  kw: { label: '酷我音乐', uri: 'https://h5s.kuwo.cn/www/kw-www/img/logo.ce08bf7.png' },
+  mg: { label: '咪咕音乐', uri: 'https://h5.nf.migu.cn/app/favicon.ico' },
   spotify: { label: 'Spotify', uri: 'https://open.spotifycdn.com/cdn/images/favicon32.b64ecc03.png' },
 }
 

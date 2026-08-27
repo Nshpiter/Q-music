@@ -31,11 +31,34 @@ type CacheValue = Map<string, PageCache | ListDetailInfo['list']>
 
 const cache = new Map<string, CacheValue>()
 const LIST_LOAD_LIMIT = 30
+const RETRY_DELAYS = [250, 500]
+
+const requestWithRetry = async<T>(request: () => Promise<T>, validate: (result: T) => boolean): Promise<T> => {
+  let lastError: unknown
+  for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+    try {
+      const result = await request()
+      if (!validate(result)) throw new Error('invalid leaderboard response')
+      return result
+    } catch (error) {
+      lastError = error
+      if (attempt < RETRY_DELAYS.length) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS[attempt]))
+      }
+    }
+  }
+  throw lastError
+}
 
 export const getBoardsList = async(source: LX.OnlineSource) => {
   // const source = (await getLeaderboardSetting()).source as LX.OnlineSource
   if (leaderboardState.boards[source]) return leaderboardState.boards[source].list
-  const board = await (musicSdk[source]?.leaderboard.getBoards() as Promise<Board>)
+  const leaderboard = musicSdk[source]?.leaderboard
+  if (!leaderboard) throw new Error('source not found')
+  const board = await requestWithRetry(
+    async() => leaderboard.getBoards() as Promise<Board>,
+    result => Array.isArray(result?.list) && result.list.length > 0,
+  )
   setBoard(board, source)
   return leaderboardState.boards[source]!.list
 }
@@ -60,8 +83,13 @@ const getListLimit = async(source: LX.OnlineSource, bangId: string, page: number
     if (prevPageData) sourcePage = prevPageData.sourcePage
   }
 
-  return musicSdk[source]?.leaderboard.getList(bangId, sourcePage + 1).then((result: ListDetailInfo) => {
-    if (listCache !== cache.get(listKey)) return
+  const leaderboard = musicSdk[source]?.leaderboard
+  if (!leaderboard) return Promise.reject(new Error('source not found'))
+  return requestWithRetry(
+    async() => leaderboard.getList(bangId, sourcePage + 1) as Promise<ListDetailInfo>,
+    result => Array.isArray(result?.list) && Number.isFinite(result?.total) && Number.isFinite(result?.limit),
+  ).then((result: ListDetailInfo) => {
+    if (listCache !== cache.get(listKey)) throw new Error('leaderboard request superseded')
     result.list = deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[])
     let p = page
     const tempList = listCache.get(tempListKey) as ListDetailInfo['list']
@@ -96,7 +124,7 @@ const getListLimit = async(source: LX.OnlineSource, bangId: string, page: number
       p++
     } while (result.list.length > 0)
     return (listCache.get(`${source}__${bangId}__${page}`) as PageCache).data
-  }) ?? Promise.reject(new Error('source not found'))
+  })
 }
 
 /**
