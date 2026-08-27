@@ -43,7 +43,7 @@
 
 ## 项目说明
 
-Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前桌面端与 Android 端版本均为 `v0.3.12`，桌面端基于 LX Music Desktop `2.12.2`，主要重做了跨端界面、首页推荐、音乐账号接入、歌单同步、播放详情页、音频可视化与发布更新流程。
+Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前桌面端版本为 `v0.3.13`，Android 端版本为 `v0.3.12`；桌面端基于 LX Music Desktop `2.12.2`，主要重做了跨端界面、首页推荐、音乐账号接入、歌单同步、播放详情页、音频可视化与发布更新流程。
 
 本仓库不是 LX Music 官方仓库，也不代表原作者对本项目提供支持或背书。完整变更可查看 [更新日志](./publish/changeLog.md) 与 [二次修改说明](./MODIFICATIONS.md)。
 
@@ -53,7 +53,7 @@ Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop)
 | --- | --- | --- |
 | Windows 10 / 11 x64 | 从 [GitHub Releases](https://github.com/Nshpiter/Q-music/releases/latest) 下载 `Q-music-*-x64-Setup.exe` | 稳定 |
 | Android arm64-v8a | 从 [GitHub Releases](https://github.com/Nshpiter/Q-music/releases/latest) 下载 arm64 APK；架构不确定时使用 universal APK | 测试版 |
-| Arch Linux x86_64 | 按下文命令构建 pacman 包 | 适配中 |
+| Arch Linux x86_64 | 按下文命令构建 pacman 包 | 测试版 |
 
 Android 源码位于本仓库 [`android`](https://github.com/Nshpiter/Q-music/tree/android) 分支。Release 同时提供 SHA256 校验文件，Windows 客户端支持应用内检查更新。
 
@@ -142,7 +142,7 @@ npm run pack:arch
 安装本地构建产物：
 
 ```bash
-sudo pacman -U ./build/Q-music_0.3.12_x64.pacman
+sudo pacman -U ./build/Q-music_0.3.13_x64.pacman
 ```
 
 pacman 安装由系统包管理器负责升级；应用内会提示新版本，但不会自行覆盖系统
@@ -155,8 +155,9 @@ pacman 安装由系统包管理器负责升级；应用内会提示新版本，�
 q-music --use-gl=desktop
 ```
 
-若合成器仍存在滚动掉帧，可在“设置 → 基本设置”开启“流畅模式”，关闭实时
-毛玻璃采样，同时保留当前主题配色与面板层次。
+原生 Wayland 会自动使用轻量合成路径：关闭大面积实时毛玻璃采样，并降低全屏
+音频可视化的绘制分辨率与刷新率，同时保留当前主题配色与面板层次。需要进一步
+降低开销时，仍可在“设置 → 基本设置”开启“流畅模式”。
 
 若桌面歌词的位置、置顶或透明效果受合成器限制，可临时回退到 XWayland：
 

@@ -10,8 +10,9 @@ import { getAnalyser } from '@renderer/plugins/player'
 import { isPlay } from '@renderer/store/player/state'
 import { appSetting } from '@renderer/store/setting'
 
-const FFT_SIZE = 1024
-const FRAME_INTERVAL = 1000 / 30
+const IS_NATIVE_WAYLAND = document.documentElement.classList.contains('nativeWayland')
+const FFT_SIZE = IS_NATIVE_WAYLAND ? 512 : 1024
+const FRAME_INTERVAL = 1000 / (IS_NATIVE_WAYLAND ? 20 : 30)
 const ENERGY_REST_THRESHOLD = 0.004
 const SAMPLE_SIZE = 24
 const FALLBACK_COLORS = [
@@ -435,8 +436,8 @@ export default {
     const resizeCanvas = () => {
       const canvas = dom_canvas.value
       if (!canvas) return
-      // 大面积渐变限制到 1.5x DPR，降低集显和 Wayland 的合成负担。
-      dpr = Math.min(window.devicePixelRatio || 1, 1.5)
+      // Wayland 固定 1x，其余平台限制到 1.5x，避免全屏 Canvas 像素量随缩放倍增。
+      dpr = Math.min(window.devicePixelRatio || 1, IS_NATIVE_WAYLAND ? 1 : 1.5)
       width = canvas.width = Math.max(1, Math.round(canvas.clientWidth * dpr))
       height = canvas.height = Math.max(1, Math.round(canvas.clientHeight * dpr))
       measureLayout()
@@ -523,6 +524,18 @@ export default {
   &.spectrum {
     opacity: .7;
     filter: blur(1px) saturate(1.08);
+  }
+}
+
+:global(.nativeWayland) {
+  .ambient {
+    filter: blur(7px) saturate(1.18);
+  }
+  .ribbon {
+    filter: blur(3px) saturate(1.16);
+  }
+  .spectrum {
+    filter: none;
   }
 }
 </style>

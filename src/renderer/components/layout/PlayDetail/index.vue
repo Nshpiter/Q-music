@@ -703,6 +703,12 @@ export default {
       linear-gradient(180deg, rgba(11, 14, 17, .16), rgba(11, 15, 18, .34) 58%, rgba(11, 15, 18, .66));
   }
 }
+
+// 原生 Wayland 避免对超出视口的放大背景执行 76px 模糊；视觉仍由渐变遮罩与封面色维持。
+:global(.nativeWayland) .bg {
+  filter: blur(36px) saturate(1.24) brightness(.74);
+  transform: scale(1.1);
+}
 // .bg2 {
 //   position: absolute;
 //   width: 100%;

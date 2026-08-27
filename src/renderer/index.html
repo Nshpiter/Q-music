@@ -25,6 +25,7 @@
     }
     window.setLang()
     document.documentElement.classList.add(/os=(\w+)/.exec(window.location.search)[1])
+    if (/wayland=true/.test(window.location.search)) document.documentElement.classList.add('nativeWayland')
     window.shouldUseDarkColors = /dark=true/.test(window.location.search)
     window.dt = /dt=true/.test(window.location.search)
     document.documentElement.classList.add(window.dt ? 'disableTransparent' : 'transparent')

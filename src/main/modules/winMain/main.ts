@@ -1,7 +1,7 @@
 import { BrowserWindow, dialog, screen, session } from 'electron'
 import path from 'node:path'
 import { createTaskBarButtons, getWindowSizeInfo } from './utils'
-import { getPlatform, isLinux, isWin } from '@common/utils'
+import { getPlatform, isLinux, isNativeWayland, isWin } from '@common/utils'
 import { getProxy, openDevTools as handleOpenDevTools } from '@main/utils'
 import { mainSend } from '@common/mainIpc'
 import { sendFocus, sendTaskbarButtonClick } from './rendererEvent'
@@ -139,7 +139,7 @@ export const createWindow = () => {
   browserWindow = new BrowserWindow(options)
 
   const winURL = process.env.NODE_ENV !== 'production' ? 'http://localhost:9080' : `file://${path.join(encodePath(__dirname), 'index.html')}`
-  void browserWindow.loadURL(winURL + `?os=${getPlatform()}&dt=${global.envParams.cmdParams.dt}&dark=${shouldUseDarkColors}&theme=${encodeURIComponent(JSON.stringify(theme))}`)
+  void browserWindow.loadURL(winURL + `?os=${getPlatform()}&dt=${global.envParams.cmdParams.dt}&wayland=${isNativeWayland}&dark=${shouldUseDarkColors}&theme=${encodeURIComponent(JSON.stringify(theme))}`)
 
   winEvent()
 

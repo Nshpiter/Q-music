@@ -127,6 +127,22 @@ body {
   }
 }
 
+// Chromium 在原生 Wayland 下对大面积 backdrop-filter 的合成开销明显高于 Windows。
+// 自动采用与流畅模式相同的轻量采样路径，但不改变用户在其他平台保存的外观设置。
+.nativeWayland {
+  #root *,
+  #root *::before,
+  #root *::after {
+    backdrop-filter: none !important;
+  }
+
+  #container,
+  #right,
+  #player:before {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3);
+  }
+}
+
 // 尊重系统的“减少动态效果”偏好，避免长动画造成眩晕或额外重绘。
 @media (prefers-reduced-motion: reduce) {
   #root *,
