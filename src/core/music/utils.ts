@@ -11,6 +11,7 @@ import settingState from '@/store/setting/state'
 import { requestMsg } from '@/utils/message'
 import BackgroundTimer from 'react-native-background-timer'
 import { apis } from '@/utils/musicSdk/api-source'
+import { getOfficialMusicUrl } from './official'
 
 
 const getOtherSourcePromises = new Map()
@@ -294,10 +295,16 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   musicInfo: LX.Music.MusicInfoOnline
   quality: LX.Quality
   isFromCache: boolean
+  isOfficial?: boolean
 }> => {
-  if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
-  // console.log(musicInfo.source)
   const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
+
+  const officialResult = await getOfficialMusicUrl(musicInfo, targetQuality, isRefresh)
+  if (officialResult) {
+    return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
+  }
+
+  if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
 
   let reqPromise
   try {
