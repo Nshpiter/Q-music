@@ -8,6 +8,23 @@ const cache = new Map<string, any>()
 const boardRequests = new Map<LX.OnlineSource, Promise<Board>>()
 const detailRequests = new Map<string, Promise<ListDetailInfo>>()
 
+const wait = async(ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+const requestWithRetry = async<T>(factory: () => Promise<T>, validate: (result: T) => boolean, retryCount = 2): Promise<T> => {
+  let lastError: unknown
+  for (let attempt = 0; attempt <= retryCount; attempt++) {
+    try {
+      const result = await factory()
+      if (!validate(result)) throw new Error('Invalid leaderboard response')
+      return result
+    } catch (error) {
+      lastError = error
+      if (attempt == retryCount) break
+      await wait(250 * (attempt + 1))
+    }
+  }
+  throw lastError
+}
+
 export const setBoard = (board: Board, source: LX.OnlineSource) => {
   boards[source] = markRaw(board)
 }
@@ -39,8 +56,12 @@ export const getBoardsList = async(source: LX.OnlineSource) => {
   const pendingRequest = boardRequests.get(source)
   if (pendingRequest) return pendingRequest
 
-  const request = musicSdk[source]?.leaderboard.getBoards() as Promise<Board> | undefined
-  if (!request) throw new Error(`Leaderboard source not found: ${source}`)
+  const leaderboard = musicSdk[source]?.leaderboard
+  if (!leaderboard) throw new Error(`Leaderboard source not found: ${source}`)
+  const request = requestWithRetry(
+    async() => leaderboard.getBoards() as Promise<Board>,
+    result => Array.isArray(result?.list) && result.list.length > 0,
+  )
 
   boardRequests.set(source, request)
   try {
@@ -68,10 +89,13 @@ export const getListDetail = async(id: string, page: number, isRefresh = false):
   const pendingRequest = detailRequests.get(key)
   if (pendingRequest) return pendingRequest
 
-  const sourceRequest = musicSdk[source]?.leaderboard?.getList(bangId, page) as Promise<ListDetailInfo> | undefined
-  if (!sourceRequest) throw new Error(`Leaderboard source not found: ${source}`)
+  const leaderboard = musicSdk[source]?.leaderboard
+  if (!leaderboard) throw new Error(`Leaderboard source not found: ${source}`)
 
-  const request = sourceRequest.then((result: ListDetailInfo) => {
+  const request = requestWithRetry(
+    async() => leaderboard.getList(bangId, page) as Promise<ListDetailInfo>,
+    result => Array.isArray(result?.list) && Number.isFinite(result?.limit),
+  ).then((result: ListDetailInfo) => {
     result.list = markRawList(deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[]))
     cache.set(key, result)
     return result
@@ -99,11 +123,16 @@ export const getListDetailAll = async(id: string, isRefresh = false): Promise<LX
     let key = `${source}__${id}__${page}`
     if (!isRefresh && cache.has(key)) return cache.get(key)
 
-    return musicSdk[source]?.leaderboard.getList(id, page).then((result: ListDetailInfo) => {
+    const leaderboard = musicSdk[source]?.leaderboard
+    if (!leaderboard) throw new Error('source not found' + source)
+    return requestWithRetry(
+      async() => leaderboard.getList(id, page) as Promise<ListDetailInfo>,
+      result => Array.isArray(result?.list) && Number.isFinite(result?.limit),
+    ).then((result: ListDetailInfo) => {
       result.list = markRawList(deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[]))
       cache.set(key, result)
       return result
-    }) ?? Promise.reject(new Error('source not found' + source))
+    })
   }
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   return loadData(bangId, 1).then((result: ListDetailInfo) => {

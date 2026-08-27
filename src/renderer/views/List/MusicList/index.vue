@@ -43,7 +43,7 @@
           </div>
           <div class="list-item-cell auto name" :aria-label="item.name">
             <span class="select name">{{ item.name }}</span>
-            <source-icon v-if="isShowSource" class="no-select label-source" :source="item.source" :size="14" />
+            <source-icon v-if="isShowSource || item.source != 'local'" class="no-select label-source" :source="item.source" :size="14" />
           </div>
           <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
@@ -75,7 +75,7 @@
           </div>
           <div class="list-item-cell auto name">
             <span class="select name" :aria-label="item.name">{{ item.name }}</span>
-            <source-icon v-if="isShowSource" class="no-select label-source" :source="item.source" :size="14" />
+            <source-icon v-if="isShowSource || item.source != 'local'" class="no-select label-source" :source="item.source" :size="14" />
           </div>
           <div class="list-item-cell" style="flex: 0 0 25%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
           <div class="list-item-cell" style="flex: 0 0 28%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>

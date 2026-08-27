@@ -15,6 +15,9 @@ div(:class="[$style.footerLeftControlBtns, { [$style.detail]: detail }]")
       path(d="M16 16V8")
       path(d="M20 13v-2")
     span(:class="$style.menuIndicator" aria-hidden="true")
+  button(:class="[$style.footerLeftControlBtn, $style.qualityBtn]" :aria-label="$t('player__quality_title')" @click.stop="showQualityMenu")
+    span(:class="$style.qualityLabel") {{ currentQualityBadge }}
+    span(:class="$style.menuIndicator" aria-hidden="true")
   button(:class="[$style.footerLeftControlBtn, { [$style.active]: isShowLrcSelectContent }]" :aria-label="$t('lyric__select')" @click="toggleVisibleLrc")
     svg(viewBox="0 0 24 24" aria-hidden="true")
       path(d="M6 7h12")
@@ -51,6 +54,12 @@ div(:class="[$style.footerLeftControlBtns, { [$style.detail]: detail }]")
     @select-layout="selectDetailLayout"
     @select-visualization="selectVisualization"
   )
+  PlayerQualityMenu(
+    v-model="qualityMenuVisible"
+    :xy="qualityMenuXY"
+    :dark="detail"
+    @select="selectQuality"
+  )
 
 </template>
 
@@ -63,6 +72,7 @@ import {
   isShowPlayComment,
   isShowPlayerDetail,
   playMusicInfo,
+  isPlay,
 } from '@renderer/store/player/state'
 import {
   setShowPlayerDetail,
@@ -73,14 +83,16 @@ import {
 import useNextTogglePlay from '@renderer/utils/compositions/useNextTogglePlay'
 import useToggleDesktopLyric from '@renderer/utils/compositions/useToggleDesktopLyric'
 import { dialog } from '@renderer/plugins/Dialog'
-import { setMediaDeviceId } from '@renderer/plugins/player'
+import { getCurrentTime, onCanplay, setCurrentTime, setMediaDeviceId, setPause, setPlay } from '@renderer/plugins/player'
+import { setMusicUrl } from '@renderer/core/player/action'
 import { appSetting, saveMediaDeviceId, updateSetting } from '@renderer/store/setting'
 import { addListMusics, checkListExistMusic, removeListMusics } from '@renderer/store/list/action'
 import { loveList } from '@renderer/store/list/state'
 import PlayerAppearanceMenu from './PlayerAppearanceMenu.vue'
+import PlayerQualityMenu from './PlayerQualityMenu.vue'
 
 export default {
-  components: { PlayerAppearanceMenu },
+  components: { PlayerAppearanceMenu, PlayerQualityMenu },
   props: {
     detail: Boolean,
   },
@@ -112,9 +124,13 @@ export default {
     const isShowAddMusicTo = ref(false)
     const appearanceMenuVisible = ref(false)
     const appearanceMenuXY = ref({ x: 0, y: 0 })
+    const qualityMenuVisible = ref(false)
+    const qualityMenuXY = ref({ x: 0, y: 0 })
     const isLoveMusic = ref(false)
     const isTogglingLove = ref(false)
     let loveCheckId = 0
+    let cancelQualityResume = null
+    let qualityResumeTimeout = null
 
     const currentMusicInfo = computed(() => {
       const info = playMusicInfo.musicInfo
@@ -176,6 +192,8 @@ export default {
     })
     onBeforeUnmount(() => {
       window.app_event.off('myListUpdate', handleMyListUpdate)
+      cancelQualityResume?.()
+      if (qualityResumeTimeout) clearTimeout(qualityResumeTimeout)
     })
 
     const ensureVisualizationAudioDevice = async() => {
@@ -195,7 +213,49 @@ export default {
       const rect = event.currentTarget.getBoundingClientRect()
       // 传递按钮右上角，菜单会按自身实际尺寸放到按钮正上方。
       appearanceMenuXY.value = { x: rect.right, y: rect.top }
+      qualityMenuVisible.value = false
       appearanceMenuVisible.value = !appearanceMenuVisible.value
+    }
+    const currentQualityBadge = computed(() => ({
+      '128k': 'STD',
+      '320k': 'HQ',
+      flac: 'SQ',
+      flac24bit: 'Hi-Res',
+    })[appSetting['player.playQuality']] ?? 'HQ')
+    const showQualityMenu = event => {
+      const rect = event.currentTarget.getBoundingClientRect()
+      qualityMenuXY.value = { x: rect.right, y: rect.top }
+      appearanceMenuVisible.value = false
+      qualityMenuVisible.value = !qualityMenuVisible.value
+    }
+    const selectQuality = quality => {
+      if (appSetting['player.playQuality'] == quality) return
+      const musicInfo = playMusicInfo.musicInfo
+      const position = getCurrentTime()
+      const shouldResume = isPlay.value
+      updateSetting({ 'player.playQuality': quality })
+      if (!musicInfo || 'progress' in musicInfo || musicInfo.source == 'local') return
+
+      cancelQualityResume?.()
+      if (qualityResumeTimeout) clearTimeout(qualityResumeTimeout)
+      const musicId = musicInfo.id
+      cancelQualityResume = onCanplay(() => {
+        cancelQualityResume?.()
+        cancelQualityResume = null
+        if (qualityResumeTimeout) clearTimeout(qualityResumeTimeout)
+        qualityResumeTimeout = null
+        if (playMusicInfo.musicInfo?.id != musicId) return
+        setCurrentTime(position)
+        shouldResume ? setPlay() : setPause()
+      })
+      qualityResumeTimeout = setTimeout(() => {
+        cancelQualityResume?.()
+        cancelQualityResume = null
+        qualityResumeTimeout = null
+      }, 20_000)
+      setPause()
+      window.app_event.pause()
+      setMusicUrl(musicInfo, true, quality)
     }
     const selectDetailLayout = layout => {
       updateSetting({ 'playDetail.style.layout': layout })
@@ -228,6 +288,11 @@ export default {
       showAppearanceMenu,
       selectDetailLayout,
       selectVisualization,
+      qualityMenuVisible,
+      qualityMenuXY,
+      currentQualityBadge,
+      showQualityMenu,
+      selectQuality,
       isShowAddMusicTo,
       playMusicInfo,
       currentMusicInfo,
@@ -362,6 +427,17 @@ export default {
 
   .appearanceBtn {
     position: relative;
+  }
+
+  .qualityBtn {
+    position: relative;
+  }
+
+  .qualityLabel {
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    white-space: nowrap;
   }
 
   .menuIndicator {

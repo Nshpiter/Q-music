@@ -8,6 +8,7 @@
       :list="listInfo.list"
       :no-item="listInfo.noItemLabel"
       :source-selector="sourceId == 'all'"
+      :source-tag="sourceId != 'all'"
       :source-options="getSourceOptions"
       :source-name="getSourceName"
       check-api-source

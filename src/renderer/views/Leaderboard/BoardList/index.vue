@@ -79,7 +79,7 @@ const handleMenuClick = (action) => {
 }
 
 
-watch(() => props.source, async(source) => {
+watch(() => [props.source, props.boardId], async([source, boardId]) => {
   const currentRequestId = ++requestId
   // const source = (await getLeaderboardSetting()).source as LX.OnlineSource
   let boardList = boards[source]
@@ -92,7 +92,7 @@ watch(() => props.source, async(source) => {
   }
   if (currentRequestId != requestId || source != props.source) return
   list.splice(0, list.length, ...boardList.list)
-  if (!props.boardId && boardList.list.length) handleToggleList(boardList.list[0].id)
+  if (boardList.list.length && !boardList.list.some(item => item.id == boardId)) handleToggleList(boardList.list[0].id)
 }, {
   immediate: true,
 })

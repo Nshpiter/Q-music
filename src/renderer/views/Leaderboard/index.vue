@@ -33,12 +33,19 @@ const verifyQueryParams = async function(to, from, next) {
   if (_source == null) {
     const setting = await getLeaderboardSetting()
     if (_source == null) {
-      _source = setting.source
+      _source = sources.includes(setting.source) ? setting.source : sources[0]
       _boardId = setting.boardId
     }
     next({
       path: to.path,
       query: { ...to.query, source: _source, boardId: _boardId },
+    })
+    return
+  }
+  if (!sources.includes(_source)) {
+    next({
+      path: to.path,
+      query: { ...to.query, source: sources[0], boardId: undefined },
     })
     return
   }

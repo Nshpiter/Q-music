@@ -33,6 +33,8 @@ const officialIcons: Record<string, string> = {
   tx: 'https://y.qq.com/favicon.ico',
   wy: 'https://s1.music.126.net/style/favicon.ico?v20180823',
   kg: 'https://www.kugou.com/favicon.ico',
+  kw: 'https://h5s.kuwo.cn/www/kw-www/img/logo.ce08bf7.png',
+  mg: 'https://h5.nf.migu.cn/app/favicon.ico',
   spotify: 'https://open.spotifycdn.com/cdn/images/favicon32.b64ecc03.png',
 }
 const sourceLabel = computed(() => props.label || sourceLabels[props.source] || props.source)
