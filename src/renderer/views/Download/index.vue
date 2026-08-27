@@ -3,7 +3,7 @@
     <div :class="$style.header">
       <base-tab v-model="activeTab" :class="$style.tab" :list="tabs" />
     </div>
-    <div :class="$style.content">
+    <div :class="$style.downloadPanel">
       <div class="thead" :class="$style.thead">
         <table>
           <thead>
@@ -18,7 +18,7 @@
           </thead>
         </table>
       </div>
-      <div v-if="list.length" ref="dom_listContent" :class="$style.content">
+      <div v-if="list.length" ref="dom_listContent" :class="$style.listContent">
         <base-virtualized-list
           ref="listRef" v-slot="{ item, index }" :list="list" key-name="id" :item-height="listItemHeight"
           container-class="scroll" content-class="list"
@@ -57,7 +57,13 @@
         </base-virtualized-list>
       </div>
       <div v-else :class="$style.noItem">
+        <div :class="$style.emptyIcon" aria-hidden="true">
+          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve">
+            <use xlink:href="#icon-download-2" />
+          </svg>
+        </div>
         <p v-text="$t('no_item')" />
+        <span>{{ $t('download') }}</span>
       </div>
       <base-menu v-model="isShowItemMenu" :menus="menus" :xy="menuLocation" item-name="name" @menu-click="handleMenuClick" />
       <!-- <base-menu :menus="listItemMenu" :location="listMenu.menuLocation" item-name="name" :is-show="listMenu.isShowItemMenu" @menu-click="handleListItemMenuClick" /> -->
@@ -259,6 +265,26 @@ export default {
     }
   }
 }
+.header {
+  flex: none;
+  width: min(1240px, calc(100% - 44px));
+  margin: 10px auto 8px;
+}
+.downloadPanel {
+  min-height: 0;
+  width: min(1240px, calc(100% - 44px));
+  margin: 0 auto calc(@height-player + 14px);
+  display: flex;
+  flex-flow: column nowrap;
+  flex: auto;
+  overflow: hidden;
+  border: 1px solid rgb(from var(--color-font) r g b / .08);
+  border-radius: 18px;
+  background: rgb(from var(--color-content-background) r g b / .46);
+  box-shadow: 0 18px 44px rgba(34, 45, 48, .08), inset 0 1px 0 rgba(255, 255, 255, .5);
+  backdrop-filter: blur(16px);
+  font-size: 14px;
+}
 .num {
   height: 100%;
   display: flex;
@@ -280,7 +306,7 @@ export default {
   opacity: .7;
 }
 
-.content {
+.listContent {
   min-height: 0;
   font-size: 14px;
   display: flex;
@@ -295,10 +321,44 @@ export default {
   flex-flow: column nowrap;
   justify-content: center;
   align-items: center;
+  gap: 8px;
+  color: var(--color-font-label);
 
   p {
-    font-size: 24px;
-    color: var(--color-font-label);
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-font);
+  }
+
+  span {
+    font-size: 13px;
+    opacity: .68;
+  }
+}
+
+.emptyIcon {
+  width: 62px;
+  height: 62px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  color: var(--color-primary);
+  background: rgb(from var(--color-primary) r g b / .1);
+  box-shadow: inset 0 0 0 1px rgb(from var(--color-primary) r g b / .12);
+
+  svg {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+@media (max-width: 980px) {
+  .header,
+  .downloadPanel {
+    width: calc(100% - 24px);
   }
 }
 

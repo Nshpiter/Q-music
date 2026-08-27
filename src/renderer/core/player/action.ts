@@ -1,5 +1,5 @@
 import { isEmpty, setPause, setPlay, setResource, setStop } from '@renderer/plugins/player'
-import { isPlay, playedList, playInfo, playMusicInfo, tempPlayList, musicInfo as _musicInfo } from '@renderer/store/player/state'
+import { isPlay, playedList, playInfo, playMusicInfo, playbackSourceInfo, tempPlayList, musicInfo as _musicInfo } from '@renderer/store/player/state'
 import {
   getList,
   clearPlayedList,
@@ -14,6 +14,7 @@ import {
 } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
 import { getMusicUrl, getPicPath, getLyricInfo } from '../music/index'
+import type { MusicUrlResolvedInfo } from '../music/index'
 import { filterList } from './utils'
 import { requestMsg } from '@renderer/utils/message'
 import { getRandom } from '@renderer/utils/index'
@@ -92,17 +93,24 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
 
   // const type = getPlayType(appSetting['player.highQuality'], musicInfo)
   let toggleMusicInfo = ('progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo).meta.toggleMusicInfo
+  const requestedSource = ('progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo).source
+  const handleResolved = (info: MusicUrlResolvedInfo) => {
+    const mode = info.resolvedSource != requestedSource && (info.mode == 'api' || info.mode == 'cache') ? 'fallback' : info.mode
+    playbackSourceInfo.value = { ...info, requestedSource, mode }
+  }
 
   return (toggleMusicInfo ? getMusicUrl({
     musicInfo: toggleMusicInfo,
     quality,
     isRefresh,
     allowToggleSource: false,
+    onResolved: handleResolved,
   }) : Promise.reject(new Error('not found'))).catch(async() => {
     return getMusicUrl({
       musicInfo,
       quality,
       isRefresh,
+      onResolved: handleResolved,
       onToggleSource(mInfo) {
         if (diffCurrentMusicInfo(musicInfo)) return
         setAllStatus(window.i18n.t('toggle_source_try'))
@@ -131,6 +139,7 @@ export const setMusicUrl = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
   // if (appSetting['player.autoSkipOnError']) addLoadTimeout()
   if (!diffCurrentMusicInfo(musicInfo)) return
   if (cancelDelayRetry) cancelDelayRetry()
+  playbackSourceInfo.value = null
   gettingUrlId = createGettingUrlId(musicInfo)
   void getMusicPlayUrl(musicInfo, isRefresh, false, quality).then((url) => {
     if (!url) return

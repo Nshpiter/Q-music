@@ -1,7 +1,7 @@
 import { markRaw } from '@common/utils/vueTools'
 import music from '@renderer/utils/musicSdk'
 import { deduplicationList, toNewMusicInfo } from '@renderer/utils'
-import { sortInsert, similar } from '@common/utils/common'
+import { similar } from '@common/utils/common'
 import { assertApiSupport } from '@renderer/store/utils'
 
 import { sources, maxPages, listInfos } from './state'
@@ -66,14 +66,25 @@ export const selectAggregateSource = (index: number, source: LX.OnlineSource) =>
  * @returns 排序后的列表
  */
 const handleSortList = (list: LX.Music.MusicInfo[], keyword: string) => {
-  let arr: any[] = []
-  for (const item of list) {
-    sortInsert(arr, {
-      num: similar(keyword, `${item.name} ${item.singer}`),
-      data: item,
+  const query = normalizeText(keyword)
+  const variantPattern = /(?:翻唱|cover|remix|mix|live|现场|dj|伴奏|纯音乐|instrumental|加速|降速|女声版|男声版|片段|剪辑)/i
+  return list
+    .map((item, index) => {
+      const name = normalizeText(item.name)
+      const singer = normalizeText(item.singer)
+      const albumName = item.meta.albumName ?? ''
+      let score = similar(keyword, `${item.name} ${item.singer}`)
+      if (name == query) score += 8
+      else if (name.startsWith(query)) score += 4
+      else if (name.includes(query)) score += 2
+      if (singer == query) score += 2
+      // 同名同歌手被多个平台同时返回时，通常更接近正式发行版本。
+      score += Math.min(getAggregateSources(item).length, 3) * 2
+      if (variantPattern.test(`${item.name} ${albumName}`)) score -= 3
+      return { item, index, score }
     })
-  }
-  return arr.map(item => item.data).reverse()
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map(({ item }) => item)
 }
 
 
@@ -107,7 +118,7 @@ const setLists = (results: SearchResult[], page: number, text: string): LX.Music
 const setList = (datas: SearchResult, page: number, text: string): LX.Music.MusicInfo[] => {
   // console.log(datas.source, datas.list)
   let listInfo = listInfos[datas.source]!
-  listInfo.list = deduplicationList(datas.list.map(s => markRaw(toNewMusicInfo(s))))
+  listInfo.list = handleSortList(deduplicationList(datas.list.map(s => markRaw(toNewMusicInfo(s)))), text)
   if (page == 1 || (datas.total && datas.list.length)) listInfo.total = datas.total
   else listInfo.total = datas.limit * page
   listInfo.maxPage = datas.allPage

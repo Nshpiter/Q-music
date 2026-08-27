@@ -5,7 +5,6 @@ import {
   getSearchHistoryList,
   saveSearchHistoryList,
 } from '@renderer/utils/ipc'
-import { appSetting } from '../setting'
 import { searchText, historyList } from './state'
 
 
@@ -25,7 +24,6 @@ export const getHistoryList = async() => {
   isInitedSearchHistory ||= true
 }
 export const addHistoryWord = async(word: string) => {
-  if (!appSetting['search.isShowHistorySearch']) return
   if (!isInitedSearchHistory) await getHistoryList()
   let index = historyList.indexOf(word)
   if (index == 0) return

@@ -6,7 +6,6 @@
         <sort-tab :source="source" :tag-id="tagId" :sort-id="sortId" />
       </div>
       <base-btn :class="$style.btn" outline min @click="visibleOpenSongListModal = true">{{ $t('songlist__import_input_show_btn') }}</base-btn>
-      <base-selection :model-value="source" :class="$style.select" :list="sourceList" item-key="id" item-name="name" @update:model-value="handleToggleSource" />
     </div>
     <list-view :source="source" :tag-id="tagId" :sort-id="sortId" :page="page" />
     <open-list-modal v-model="visibleOpenSongListModal" :source-list="sourceList" />
@@ -14,7 +13,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ref } from '@common/utils/vueTools'
+import { computed, ref, watch } from '@common/utils/vueTools'
 import { getSongListSetting, setSongListSetting } from '@renderer/utils/data'
 import TagList from './components/TagList.vue'
 import SortTab from './components/SortTab.vue'
@@ -22,6 +21,7 @@ import OpenListModal from './components/OpenListModal.vue'
 import ListView from './ListView.vue'
 import { sources, sortList, listInfo, isVisibleListDetail } from '@renderer/store/songList/state'
 import { sourceNames } from '@renderer/store'
+import { selectedSource } from '@renderer/store/search/state'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
 
 const source = ref<LX.OnlineSource>('kw')
@@ -71,6 +71,8 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
   tagId.value = _tagId ?? ''
   sortId.value = _sortId ?? ''
   page.value = _page ? parseInt(_page) : 1
+  // 路由完成校验后再同步顶部来源，避免初始化旧值反向触发路由切换。
+  selectedSource.value = source.value
   void setSongListSetting({ source: _source, tagId: _tagId, sortId: _sortId })
 }
 
@@ -105,6 +107,11 @@ export default {
         },
       })
     }
+
+    watch(selectedSource, value => {
+      if (route.name != 'SongList' || value == 'all' || value == source.value) return
+      handleToggleSource(value)
+    })
 
     return {
       source,
@@ -152,66 +159,5 @@ export default {
   }
 }
 
-
-.select {
-  font-size: 12px;
-  width: auto;
-  flex: none;
-  padding: 0 5px;
-
-  &:hover {
-    :global(.icon) {
-      opacity: 1;
-    }
-  }
-
-
-  :global {
-    .label-content {
-      background-color: transparent !important;
-      transition: color @transition-fast;
-      color: var(--color-font);
-      // line-height: 38px;
-      // height: 38px;
-      border-radius: 0;
-      &:hover {
-        // background: none !important;
-        color: var(--color-primary-font-hover);
-        .icon {
-          opacity: 1;
-          // color: var(--color-primary-font-hover);
-        }
-      }
-    }
-    // .label {
-    //   color: var(--color-font) !important;
-    // }
-    .icon {
-      svg {
-        width: .8em;
-      }
-      // opacity: .6;
-      // transition: color @transition-fast;
-      // color: var(--color-font-label);
-    }
-
-    .selection-list {
-      max-height: 500px;
-      box-shadow: 0 1px 4px 0 rgba(0,0,0,.2);
-      li {
-        // background-color: var(--color-main-background);
-        text-align: center;
-        line-height: 38px;
-        font-size: 13px;
-        &:hover {
-          background-color: var(--color-button-background-hover);
-        }
-        &:active {
-          background-color: var(--color-button-background-active);
-        }
-      }
-    }
-  }
-}
 
 </style>

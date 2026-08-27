@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, screen } from 'electron'
 import { debounce, getPlatform, isLinux, isNativeWayland, isWin } from '@common/utils'
 import { initWindowSize, minHeight, minWidth } from './utils'
 import { mainSend } from '@common/mainIpc'
@@ -10,6 +10,26 @@ import { encodePath } from '@common/utils/electron'
 
 let browserWindow: Electron.BrowserWindow | null = null
 let isWinBoundsUpdateing = false
+
+const ensureVisibleBounds = (bounds: Electron.Rectangle): Electron.Rectangle => {
+  const displays = screen.getAllDisplays()
+  const hasVisibleArea = displays.some(({ workArea }) => {
+    const width = Math.max(0, Math.min(bounds.x + bounds.width, workArea.x + workArea.width) - Math.max(bounds.x, workArea.x))
+    const height = Math.max(0, Math.min(bounds.y + bounds.height, workArea.y + workArea.height) - Math.max(bounds.y, workArea.y))
+    return width >= minWidth && height >= minHeight
+  })
+  if (hasVisibleArea) return bounds
+
+  const workArea = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea
+  const width = Math.min(Math.max(bounds.width, minWidth), workArea.width)
+  const height = Math.min(Math.max(bounds.height, minHeight), workArea.height)
+  return {
+    width,
+    height,
+    x: Math.round(workArea.x + (workArea.width - width) / 2),
+    y: Math.round(workArea.y + workArea.height - height - 48),
+  }
+}
 
 const saveBoundsConfig = debounce((config: Partial<LX.AppSetting>) => {
   global.lx.event_app.update_config(config)
@@ -103,7 +123,7 @@ export const createWindow = () => {
   // let isLockScreen = global.lx.appSetting['desktopLyric.isLockScreen']
   let isShowTaskbar = global.lx.appSetting['desktopLyric.isShowTaskbar']
   // let { width: screenWidth, height: screenHeight } = global.envParams.workAreaSize
-  const winSize = initWindowSize(x, y, width, height)
+  const winSize = ensureVisibleBounds(initWindowSize(x, y, width, height))
   global.lx.event_app.update_config(isNativeWayland
     ? {
         'desktopLyric.width': winSize.width,
@@ -169,7 +189,19 @@ export const closeWindow = () => {
 
 export const showWindow = () => {
   if (!browserWindow) return
-  browserWindow.show()
+  if (browserWindow.isMinimized()) browserWindow.restore()
+  const bounds = ensureVisibleBounds(browserWindow.getBounds())
+  if (JSON.stringify(bounds) != JSON.stringify(browserWindow.getBounds())) {
+    setBounds(bounds)
+    global.lx.event_app.update_config({
+      'desktopLyric.x': bounds.x,
+      'desktopLyric.y': bounds.y,
+      'desktopLyric.width': bounds.width,
+      'desktopLyric.height': bounds.height,
+    })
+  }
+  browserWindow.showInactive()
+  browserWindow.moveTop()
 }
 
 export const setResizeable = (isResizeable: boolean) => {

@@ -18,26 +18,40 @@ import {
   getLyricInfo as getLocalLyricInfo,
 } from './local'
 
+export interface MusicUrlResolvedInfo {
+  requestedSource: LX.Source
+  resolvedSource: LX.Source
+  quality: LX.Quality | null
+  mode: 'official' | 'api' | 'fallback' | 'cache' | 'local' | 'download'
+}
+
 
 export const getMusicUrl = async({
   musicInfo,
   quality,
   isRefresh = false,
   onToggleSource,
+  onResolved,
   allowToggleSource,
 }: {
   musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
   isRefresh?: boolean
   quality?: LX.Quality
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+  onResolved?: (info: MusicUrlResolvedInfo) => void
   allowToggleSource?: boolean
 }): Promise<string> => {
   if ('progress' in musicInfo) {
-    return getDownloadMusicUrl({ musicInfo, isRefresh, onToggleSource, allowToggleSource })
+    const url = await getDownloadMusicUrl({ musicInfo, isRefresh, onToggleSource, allowToggleSource })
+    const source = musicInfo.metadata.musicInfo.source
+    onResolved?.({ requestedSource: source, resolvedSource: source, quality: musicInfo.metadata.quality, mode: 'download' })
+    return url
   } else if (musicInfo.source == 'local') {
-    return getLocalMusicUrl({ musicInfo, isRefresh, onToggleSource, allowToggleSource })
+    const url = await getLocalMusicUrl({ musicInfo, isRefresh, onToggleSource, allowToggleSource })
+    onResolved?.({ requestedSource: musicInfo.source, resolvedSource: musicInfo.source, quality: null, mode: 'local' })
+    return url
   } else {
-    return getOnlineMusicUrl({ musicInfo, isRefresh, quality, onToggleSource, allowToggleSource })
+    return getOnlineMusicUrl({ musicInfo, isRefresh, quality, onToggleSource, onResolved, allowToggleSource })
   }
 }
 

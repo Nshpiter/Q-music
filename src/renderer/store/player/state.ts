@@ -42,6 +42,15 @@ export const isShowLrcSelectContent = ref(false)
 
 export const isShowPlayQueue = ref(false)
 
+export interface PlaybackSourceInfo {
+  requestedSource: LX.Source
+  resolvedSource: LX.Source
+  quality: LX.Quality | null
+  mode: 'official' | 'api' | 'fallback' | 'cache' | 'local' | 'download'
+}
+
+export const playbackSourceInfo = ref<PlaybackSourceInfo | null>(null)
+
 export const playMusicInfo = shallowReactive<{
   /**
    * 当前播放歌曲的列表 id

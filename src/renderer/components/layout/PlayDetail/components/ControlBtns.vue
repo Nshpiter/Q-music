@@ -7,7 +7,7 @@ div(:class="[$style.footerLeftControlBtns, { [$style.detail]: detail }]")
       path(d="M5 16h6")
       path(d="M16 15.5c1.9 0 3 1 3 2.3s-1.1 2.2-3 2.2-3-1-3-2.2 1.1-2.3 3-2.3z")
       path(d="M19 8v9.6")
-  button(:class="[$style.footerLeftControlBtn, $style.appearanceBtn, { [$style.active]: appSetting['player.audioVisualization'] }]" :aria-label="$t('play_detail_appearance_menu')" @click.stop="showAppearanceMenu")
+  button(:class="[$style.footerLeftControlBtn, $style.appearanceBtn, { [$style.active]: appearanceMenuVisible }]" :aria-label="$t('play_detail_appearance_menu')" @click.stop="showAppearanceMenu")
     svg(viewBox="0 0 24 24" aria-hidden="true")
       path(d="M4 13v-2")
       path(d="M8 16V8")
@@ -15,7 +15,7 @@ div(:class="[$style.footerLeftControlBtns, { [$style.detail]: detail }]")
       path(d="M16 16V8")
       path(d="M20 13v-2")
     span(:class="$style.menuIndicator" aria-hidden="true")
-  button(:class="[$style.footerLeftControlBtn, $style.qualityBtn]" :aria-label="$t('player__quality_title')" @click.stop="showQualityMenu")
+  button(:class="[$style.footerLeftControlBtn, $style.qualityBtn, { [$style.active]: qualityMenuVisible }]" :aria-label="$t('player__quality_title')" @click.stop="showQualityMenu")
     span(:class="$style.qualityLabel") {{ currentQualityBadge }}
     span(:class="$style.menuIndicator" aria-hidden="true")
   button(:class="[$style.footerLeftControlBtn, { [$style.active]: isShowLrcSelectContent }]" :aria-label="$t('lyric__select')" @click="toggleVisibleLrc")
@@ -49,16 +49,18 @@ div(:class="[$style.footerLeftControlBtns, { [$style.detail]: detail }]")
   common-list-add-modal(v-model:show="isShowAddMusicTo" :music-info="currentMusicInfo")
   PlayerAppearanceMenu(
     v-model="appearanceMenuVisible"
-    :xy="appearanceMenuXY"
     :dark="detail"
+    :anchor="appearanceMenuAnchor"
     @select-layout="selectDetailLayout"
     @select-visualization="selectVisualization"
   )
   PlayerQualityMenu(
     v-model="qualityMenuVisible"
-    :xy="qualityMenuXY"
     :dark="detail"
+    :anchor="qualityMenuAnchor"
+    :music-info="currentMusicInfo"
     @select="selectQuality"
+    @select-source="selectPlaybackSource"
   )
 
 </template>
@@ -123,9 +125,9 @@ export default {
 
     const isShowAddMusicTo = ref(false)
     const appearanceMenuVisible = ref(false)
-    const appearanceMenuXY = ref({ x: 0, y: 0 })
     const qualityMenuVisible = ref(false)
-    const qualityMenuXY = ref({ x: 0, y: 0 })
+    const appearanceMenuAnchor = ref(null)
+    const qualityMenuAnchor = ref(null)
     const isLoveMusic = ref(false)
     const isTogglingLove = ref(false)
     let loveCheckId = 0
@@ -209,11 +211,13 @@ export default {
       }
       return true
     }
-    const showAppearanceMenu = event => {
+    const getMenuAnchor = event => {
       const rect = event.currentTarget.getBoundingClientRect()
-      // 传递按钮右上角，菜单会按自身实际尺寸放到按钮正上方。
-      appearanceMenuXY.value = { x: rect.right, y: rect.top }
+      return { x: rect.left + rect.width / 2, y: rect.top }
+    }
+    const showAppearanceMenu = event => {
       qualityMenuVisible.value = false
+      appearanceMenuAnchor.value = getMenuAnchor(event)
       appearanceMenuVisible.value = !appearanceMenuVisible.value
     }
     const currentQualityBadge = computed(() => ({
@@ -223,17 +227,14 @@ export default {
       flac24bit: 'Hi-Res',
     })[appSetting['player.playQuality']] ?? 'HQ')
     const showQualityMenu = event => {
-      const rect = event.currentTarget.getBoundingClientRect()
-      qualityMenuXY.value = { x: rect.right, y: rect.top }
       appearanceMenuVisible.value = false
+      qualityMenuAnchor.value = getMenuAnchor(event)
       qualityMenuVisible.value = !qualityMenuVisible.value
     }
-    const selectQuality = quality => {
-      if (appSetting['player.playQuality'] == quality) return
+    const reloadCurrentMusic = quality => {
       const musicInfo = playMusicInfo.musicInfo
       const position = getCurrentTime()
       const shouldResume = isPlay.value
-      updateSetting({ 'player.playQuality': quality })
       if (!musicInfo || 'progress' in musicInfo || musicInfo.source == 'local') return
 
       cancelQualityResume?.()
@@ -256,6 +257,20 @@ export default {
       setPause()
       window.app_event.pause()
       setMusicUrl(musicInfo, true, quality)
+    }
+    const selectQuality = quality => {
+      if (appSetting['player.playQuality'] == quality) return
+      updateSetting({ 'player.playQuality': quality })
+      reloadCurrentMusic(quality)
+    }
+    const selectPlaybackSource = musicInfo => {
+      const current = currentMusicInfo.value
+      if (!current || current.source == 'local') return
+      const currentSource = current.meta.toggleMusicInfo?.source ?? current.source
+      const nextSource = musicInfo?.source ?? current.source
+      if (currentSource == nextSource) return
+      current.meta.toggleMusicInfo = musicInfo
+      reloadCurrentMusic(appSetting['player.playQuality'])
     }
     const selectDetailLayout = layout => {
       updateSetting({ 'playDetail.style.layout': layout })
@@ -284,15 +299,16 @@ export default {
       toggleDesktopLyric,
       toggleLockDesktopLyric,
       appearanceMenuVisible,
-      appearanceMenuXY,
+      appearanceMenuAnchor,
       showAppearanceMenu,
       selectDetailLayout,
       selectVisualization,
       qualityMenuVisible,
-      qualityMenuXY,
+      qualityMenuAnchor,
       currentQualityBadge,
       showQualityMenu,
       selectQuality,
+      selectPlaybackSource,
       isShowAddMusicTo,
       playMusicInfo,
       currentMusicInfo,

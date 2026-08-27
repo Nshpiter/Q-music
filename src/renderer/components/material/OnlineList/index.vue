@@ -46,7 +46,7 @@
                   >
                     <option v-for="source in sourceOptions(item)" :key="source" :value="source">{{ sourceName(source) }}</option>
                   </select>
-                  <source-icon v-else-if="sourceSelector" :class="$style.sourceSingle" :source="item.source" :size="15" :label="sourceName(item.source)" />
+                  <source-icon v-else-if="sourceSelector" :class="$style.sourceSingle" :source="item.source" :size="19" :label="sourceName(item.source)" />
                   <source-icon v-else-if="sourceTag" class="no-select" :source="item.source" :size="15" />
                 </div>
                 <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
@@ -84,7 +84,7 @@
                   >
                     <option v-for="source in sourceOptions(item)" :key="source" :value="source">{{ sourceName(source) }}</option>
                   </select>
-                  <source-icon v-else-if="sourceSelector" :class="$style.sourceSingle" :source="item.source" :size="15" :label="sourceName(item.source)" />
+                  <source-icon v-else-if="sourceSelector" :class="$style.sourceSingle" :source="item.source" :size="19" :label="sourceName(item.source)" />
                   <source-icon v-else-if="sourceTag" class="no-select" :source="item.source" :size="15" />
                 </div>
                 <div class="list-item-cell" style="flex: 0 0 24%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
@@ -393,11 +393,11 @@ export default {
   font-size: 10px;
 }
 .sourceSingle {
-  margin-left: 7px;
-  padding: 4px 7px;
-  border-radius: 7px;
+  margin-left: 8px;
+  padding: 0;
+  border-radius: 5px;
   color: var(--color-font-label);
-  background: var(--color-primary-alpha-900);
+  background: transparent;
   font-size: 10px;
 }
 

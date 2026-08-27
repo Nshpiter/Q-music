@@ -1,12 +1,12 @@
 <template>
   <div :class="$style.container">
-    <div v-if="searchText" :class="$style.header">
-      <base-tab v-model="searchType" :list="searchTypes" @change="handleTypeChange" />
+    <div :class="$style.header">
+      <base-tab v-if="searchText" v-model="searchType" :list="searchTypes" @change="handleTypeChange" />
     </div>
     <div :class="$style.main">
-      <song-list-list v-show="searchText && searchType == 'songlist'" :page="page" :source-id="source" />
-      <music-list v-show="searchText && searchType == 'music'" :page="page" :source-id="source" />
-      <blank-view :visible="!searchText" :source="source" />
+      <blank-view v-if="isSearchEmpty" :visible="true" :source="source" />
+      <song-list-list v-else-if="searchType == 'songlist'" :page="page" :source-id="source" />
+      <music-list v-else :page="page" :source-id="source" />
     </div>
   </div>
 </template>
@@ -21,13 +21,15 @@ import MusicList from './MusicList/index.vue'
 import SongListList from './SongListList/index.vue'
 import BlankView from './components/BlankView.vue'
 import { computed, ref } from '@common/utils/vueTools'
+import music from '@renderer/utils/musicSdk'
 
 const source = ref('all')
 const searchType = ref(null)
 const page = ref(1)
 
 const verifyQueryParams = async(to, from, next) => {
-  const _source = 'all'
+  const validSources = new Set(['all', ...music.sources.map(item => item.id)])
+  const _source = validSources.has(to.query.source) ? to.query.source : 'all'
   let _type = to.query.type
   let _page = to.query.page
 
@@ -65,6 +67,7 @@ export default {
   setup() {
     const route = useRoute()
     const router = useRouter()
+    const isSearchEmpty = computed(() => typeof searchText.value != 'string' || !searchText.value.trim())
 
     const searchTypes = computed(() => {
       return [
@@ -92,6 +95,7 @@ export default {
       handleTypeChange,
       page,
       searchText,
+      isSearchEmpty,
     }
   },
 }
@@ -112,7 +116,10 @@ export default {
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 0 22px;
+  gap: 16px;
 }
 
 .main {

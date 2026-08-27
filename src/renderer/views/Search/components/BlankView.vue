@@ -19,6 +19,33 @@
           </button>
         </header>
 
+        <div v-if="hasDiscoveryContent" :class="$style.noitemListContainer">
+          <dl v-if="appSetting['search.isShowHotSearch']" :class="[$style.noitemList, $style.noitemHotSearchList]">
+            <dt :class="$style.noitemListTitle">
+              <span>{{ $t('search__hot_search') }}</span>
+              <button type="button" :class="$style.listActionBtn" :disabled="isHotSearchLoading" @click="refreshHotSearch">
+                {{ isHotSearchLoading ? $t('search__hot_search_loading') : $t('search__hot_search_refresh') }}
+              </button>
+            </dt>
+            <div v-if="isHotSearchLoading && !hotSearchList.length" :class="$style.chipSkeletons" aria-hidden="true">
+              <i v-for="index in 6" :key="index" />
+            </div>
+            <dd v-else-if="!hotSearchList.length" :class="$style.listEmpty">{{ $t('search__hot_search_empty') }}</dd>
+            <template v-else>
+              <dd v-for="(item, index) in hotSearchList" :key="index" :class="$style.noitemListItem" @click="handleSearch(item)">{{ item }}</dd>
+            </template>
+          </dl>
+          <dl v-if="appSetting['search.isShowHistorySearch'] && historyList.length" :class="$style.noitemList">
+            <dt :class="$style.noitemListTitle">
+              <span>{{ $t('history_search') }}</span><button type="button" :class="$style.historyClearBtn" :aria-label="$t('history_clear')" @click="clearHistoryList">
+              <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 512 512" space="preserve">
+                <use xlink:href="#icon-eraser" />
+              </svg></button>
+            </dt>
+            <dd v-for="(item, index) in historyList" :key="index + item" :class="$style.noitemListItem" :aria-label="$t('history_remove')" @contextmenu="removeHistoryWord(index)" @click="handleSearch(item)">{{ item }}</dd>
+          </dl>
+        </div>
+
         <div :class="$style.featureGrid">
           <section
             :class="$style.dailyCard" role="button" tabindex="0"
@@ -101,32 +128,6 @@
           <p v-else-if="!isPlaylistsLoading" :class="$style.playlistEmpty">{{ $t('search__account_playlists_empty') }}</p>
         </section>
 
-        <div v-if="hasDiscoveryContent" :class="$style.noitemListContainer">
-          <dl v-if="appSetting['search.isShowHotSearch']" :class="[$style.noitemList, $style.noitemHotSearchList]">
-            <dt :class="$style.noitemListTitle">
-              <span>{{ $t('search__hot_search') }}</span>
-              <button type="button" :class="$style.listActionBtn" :disabled="isHotSearchLoading" @click="refreshHotSearch">
-                {{ isHotSearchLoading ? $t('search__hot_search_loading') : $t('search__hot_search_refresh') }}
-              </button>
-            </dt>
-            <div v-if="isHotSearchLoading && !hotSearchList.length" :class="$style.chipSkeletons" aria-hidden="true">
-              <i v-for="index in 6" :key="index" />
-            </div>
-            <dd v-else-if="!hotSearchList.length" :class="$style.listEmpty">{{ $t('search__hot_search_empty') }}</dd>
-            <template v-else>
-              <dd v-for="(item, index) in hotSearchList" :key="index" :class="$style.noitemListItem" @click="handleSearch(item)">{{ item }}</dd>
-            </template>
-          </dl>
-          <dl v-if="appSetting['search.isShowHistorySearch'] && historyList.length" :class="$style.noitemList">
-            <dt :class="$style.noitemListTitle">
-              <span>{{ $t('history_search') }}</span><button type="button" :class="$style.historyClearBtn" :aria-label="$t('history_clear')" @click="clearHistoryList">
-              <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 512 512" space="preserve">
-                <use xlink:href="#icon-eraser" />
-              </svg></button>
-            </dt>
-            <dd v-for="(item, index) in historyList" :key="index + item" :class="$style.noitemListItem" :aria-label="$t('history_remove')" @contextmenu="removeHistoryWord(index)" @click="handleSearch(item)">{{ item }}</dd>
-          </dl>
-        </div>
       </div>
       <div v-else :class="$style.dailyDetail">
         <header :class="$style.detailHeader">
@@ -620,6 +621,7 @@ const handleSearch = (text) => {
     path: '/search',
     query: {
       text,
+      source: props.source,
     },
   })
 }
@@ -651,6 +653,7 @@ const handleSearch = (text) => {
   box-sizing: border-box;
 }
 .welcomeBar {
+  order: 0;
   min-height: 92px;
   display: flex;
   align-items: center;
@@ -686,6 +689,7 @@ const handleSearch = (text) => {
   text-transform: uppercase;
 }
 .featureGrid {
+  order: 2;
   display: block;
 }
 .dailyCard {
@@ -834,6 +838,7 @@ const handleSearch = (text) => {
   font-size: 12px;
 }
 .playlistShelf {
+  order: 3;
   padding: 6px 4px 2px;
 
   > header {
@@ -1307,6 +1312,7 @@ const handleSearch = (text) => {
   gap: 9px;
 }
 .noitemListContainer {
+  order: 1;
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
