@@ -11,7 +11,7 @@ transition(enter-active-class="q-detail-enter-active" leave-active-class="q-deta
         path(d="M6.5 9.5 12 15l5.5-5.5")
     div(ref="dom_main" :class="[$style.main, {[$style.showComment]: isCommentLayoutVisible, [$style.commentOpening]: isCommentLayoutOpening, [$style.commentGliding]: isCommentLayoutGliding, [$style.commentClosing]: isCommentLayoutClosing, [$style.commentSettling]: isCommentLayoutSettling}]" :style="mainStyle")
       div.left(:class="$style.left")
-        div(ref="dom_record" :class="['q-album-stage', $style.albumStage]")
+        div(ref="dom_record" :class="['q-album-stage', $style.albumStage, { [$style.albumStagePlaying]: isPlay }]")
           div(:class="$style.record")
             img(v-if="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
             div(v-else :class="$style.emptyCover")
@@ -49,9 +49,11 @@ import { isFullscreen } from '@renderer/store'
 import {
   isShowPlayerDetail,
   isShowPlayComment,
+  isPlay,
   musicInfo,
   playMusicInfo,
 } from '@renderer/store/player/state'
+import { playProgress } from '@renderer/store/player/playProgress'
 import {
   setShowPlayerDetail,
   setShowPlayComment,
@@ -74,6 +76,7 @@ const COVER_MAX_WIDTH = 320
 const LYRIC_MIN_WIDTH = 300
 const RESIZE_HANDLE_WIDTH = 0
 const COMMENT_LAYOUT_GAP = 18
+const RECORD_SPIN_SECONDS = 18
 const COMMENT_LAYOUT_CLOSE_MS = 500
 const FLIP_DURATION_MS = 560
 const FLIP_EASING = 'cubic-bezier(.22, 1, .36, 1)'
@@ -130,6 +133,34 @@ export default {
     let immersiveControlsTimer = null
     let immersiveActivityRoot = null
     let isInteractingWithPlayerControls = false
+    let recordAnimationFrameId = null
+    let recordSpinStartTime = 0
+    let recordSpinStartPlayTime = 0
+
+    const getRecordRotation = time => (time % RECORD_SPIN_SECONDS) / RECORD_SPIN_SECONDS * 360
+    const setRecordRotation = rotation => {
+      dom_record.value?.style.setProperty('--q-record-rotation', `${rotation}deg`)
+    }
+    const syncRecordRotation = () => {
+      setRecordRotation(getRecordRotation(playProgress.nowPlayTime))
+    }
+    const stopRecordSpin = () => {
+      if (recordAnimationFrameId == null) return
+      window.cancelAnimationFrame(recordAnimationFrameId)
+      recordAnimationFrameId = null
+    }
+    const updateRecordSpin = () => {
+      const elapsed = (window.performance.now() - recordSpinStartTime) / 1000
+      setRecordRotation(getRecordRotation(recordSpinStartPlayTime + elapsed))
+      recordAnimationFrameId = window.requestAnimationFrame(updateRecordSpin)
+    }
+    const startRecordSpin = () => {
+      stopRecordSpin()
+      recordSpinStartTime = window.performance.now()
+      recordSpinStartPlayTime = playProgress.nowPlayTime
+      syncRecordRotation()
+      recordAnimationFrameId = window.requestAnimationFrame(updateRecordSpin)
+    }
 
     const clearImmersiveControlsTimer = () => {
       if (immersiveControlsTimer == null) return
@@ -482,6 +513,19 @@ export default {
       })
     })
 
+    watch([isPlay, isShowPlayerDetail], ([playing, visible]) => {
+      if (playing && visible) startRecordSpin()
+      else stopRecordSpin()
+    })
+    watch(() => playProgress.nowPlayTime, () => {
+      if (!isPlay.value) {
+        syncRecordRotation()
+        return
+      }
+      const elapsed = (window.performance.now() - recordSpinStartTime) / 1000
+      if (Math.abs(playProgress.nowPlayTime - (recordSpinStartPlayTime + elapsed)) > 1.2) startRecordSpin()
+    })
+
     onMounted(() => {
       window.addEventListener('resize', updateMainWidth)
       immersiveActivityRoot = document.getElementById('container')
@@ -490,6 +534,8 @@ export default {
       immersiveActivityRoot?.addEventListener('pointerup', handleImmersivePointerUp, { passive: true })
       immersiveActivityRoot?.addEventListener('pointercancel', handleImmersivePointerUp, { passive: true })
       immersiveActivityRoot?.addEventListener('pointerleave', handleImmersivePointerLeave, { passive: true })
+      syncRecordRotation()
+      if (isPlay.value && isShowPlayerDetail.value) startRecordSpin()
       scheduleImmersiveControlsHide()
     })
 
@@ -508,12 +554,14 @@ export default {
       immersiveActivityRoot?.removeEventListener('pointercancel', handleImmersivePointerUp)
       immersiveActivityRoot?.removeEventListener('pointerleave', handleImmersivePointerLeave)
       immersiveActivityRoot = null
+      stopRecordSpin()
     })
 
 
     return {
       appSetting,
       playMusicInfo,
+      isPlay,
       isShowPlayerDetail,
       isShowPlayComment,
       isCommentLayoutVisible,
@@ -1075,6 +1123,7 @@ export default {
   height: 60%;
   transform: rotate(-10deg);
   transform-origin: 80% 12%;
+  transition: transform .48s cubic-bezier(.16, 1, .3, 1);
   pointer-events: none;
   filter: drop-shadow(8px 12px 16px rgba(42, 50, 56, .2));
 }
@@ -1271,6 +1320,12 @@ export default {
     }
   }
 
+  .albumStagePlaying {
+    .toneArm {
+      transform: rotate(12deg);
+    }
+  }
+
   .record {
     overflow: visible;
     border: none;
@@ -1280,6 +1335,8 @@ export default {
       repeating-radial-gradient(circle, rgba(255, 255, 255, .16) 0 1px, rgba(0, 0, 0, .08) 2px 4px),
       radial-gradient(circle, #8f9490, #545956 72%, #2f3532);
     box-shadow: inset 0 0 34px rgba(255, 255, 255, .2), 0 18px 38px rgba(47, 60, 72, .18);
+    transform: rotate(var(--q-record-rotation, 0deg));
+    will-change: transform;
 
     &:before {
       display: none;
