@@ -1,6 +1,6 @@
 <template>
   <div :class="$style.view">
-    <router-view :key="$route.fullPath" class="view-container" />
+    <router-view :key="$route.name == 'Search' ? $route.path : $route.fullPath" class="view-container" />
   </div>
 </template>
 

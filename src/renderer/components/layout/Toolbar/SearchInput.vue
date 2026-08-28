@@ -7,7 +7,7 @@
       <i aria-hidden="true" />
     </button>
     <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
-      <section v-if="panelVisible" :class="$style.searchPanel" @mousedown.prevent>
+      <section v-show="panelVisible" :class="$style.searchPanel" @mousedown.prevent>
         <div :class="$style.panelHeading">
           <strong>{{ $t('search__source_select') }}</strong>
           <span>{{ selectedSourceLabel }}</span>
@@ -64,7 +64,6 @@ import {
   ref,
   shallowRef,
   watch,
-  nextTick,
 } from '@common/utils/vueTools'
 import { useRouter, useRoute } from '@common/utils/vueRouter'
 import { historyList, searchText as _searchText, selectedSource } from '@renderer/store/search/state'
@@ -164,8 +163,14 @@ export default {
       if (searchText.value) handleTipSearch()
     })
 
-    const handleSearch = () => {
+    const closePanel = () => {
       panelPinned.value = false
+      isFocused.value = false
+      searchSlotRef.value?.querySelector('input')?.blur()
+    }
+
+    const handleSearch = () => {
+      closePanel()
       if (!searchText.value && route.path != '/search') {
         setSearchText('')
         return
@@ -197,7 +202,7 @@ export default {
           break
         case 'listClick':
           searchText.value = tipList.value[data]
-          void nextTick(handleSearch)
+          handleSearch()
       }
     }
 
@@ -219,7 +224,7 @@ export default {
     }
     const search = text => {
       searchText.value = text
-      void nextTick(handleSearch)
+      handleSearch()
     }
     const refreshHotSearch = () => { void loadHotSearch(true) }
     const handleOutside = event => {
