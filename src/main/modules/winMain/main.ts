@@ -169,7 +169,7 @@ const setSesProxy = (ses: Electron.Session, host?: string, port?: string | numbe
     })
   } else {
     void ses.setProxy({
-      mode: 'direct',
+      mode: 'system',
     })
   }
 }

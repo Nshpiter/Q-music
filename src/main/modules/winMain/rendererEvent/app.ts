@@ -25,7 +25,7 @@ import {
 import { quitApp } from '@main/app'
 import { getAllThemes, removeTheme, saveTheme, setPowerSaveBlocker } from '@main/utils'
 import { openDirInExplorer } from '@common/utils/electron'
-import { getMusicAccountDailySongIds, getMusicAccountMusicUrl, getMusicAccountPlaylistDetail, getMusicAccountPlaylists, getMusicAccountStatus, getQQDailyKeyStatus, openMusicAccountLogin, openQQDailyKeyPage, saveQQDailyApiKey, type MusicAccountDailyResult, type MusicAccountLoginResult, type MusicAccountMusicUrlRequest, type MusicAccountMusicUrlResult, type MusicAccountPlaylistDetailResult, type MusicAccountPlaylistsResult, type MusicAccountProvider, type QQDailyKeySaveResult } from '../musicAccount'
+import { getMusicAccountDailySongIds, getMusicAccountMusicUrl, getMusicAccountPlaylistDetail, getMusicAccountPlaylists, getMusicAccountStatus, getQQDailyKeyStatus, logoutMusicAccount, openMusicAccountLogin, openQQDailyKeyPage, saveQQDailyApiKey, type MusicAccountDailyResult, type MusicAccountLoginResult, type MusicAccountLogoutResult, type MusicAccountMusicUrlRequest, type MusicAccountMusicUrlResult, type MusicAccountPlaylistDetailResult, type MusicAccountPlaylistsResult, type MusicAccountProvider, type QQDailyKeySaveResult } from '../musicAccount'
 
 export default () => {
   // 设置应用名称
@@ -137,6 +137,9 @@ export default () => {
   })
   mainHandle<MusicAccountProvider, MusicAccountLoginResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_login, async({ params: provider }) => {
     return openMusicAccountLogin(provider)
+  })
+  mainHandle<MusicAccountProvider, MusicAccountLogoutResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_logout, async({ params: provider }) => {
+    return logoutMusicAccount(provider)
   })
   mainHandle<MusicAccountProvider, MusicAccountDailyResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_daily, async({ params: provider }) => {
     return getMusicAccountDailySongIds(provider)

@@ -2,7 +2,7 @@ import { mainSend } from '@common/mainIpc'
 import { BrowserWindow } from 'electron'
 import fs from 'fs'
 import path from 'node:path'
-import { openDevTools as handleOpenDevTools } from '@main/utils'
+import { getProxy as getAppProxy, openDevTools as handleOpenDevTools } from '@main/utils'
 import USER_API_RENDERER_EVENT_NAME from './rendererEvent/name'
 import { getScript } from './utils'
 
@@ -21,26 +21,8 @@ const denyEvents = [
 
 
 export const getProxy = () => {
-  if (global.lx.appSetting['network.proxy.enable'] && global.lx.appSetting['network.proxy.host']) {
-    return {
-      host: global.lx.appSetting['network.proxy.host'],
-      port: global.lx.appSetting['network.proxy.port'],
-    }
-  }
-  const envProxy = envParams.cmdParams['proxy-server']
-  if (envProxy) {
-    if (envProxy && typeof envProxy == 'string') {
-      const [host, port = ''] = envProxy.split(':')
-      return {
-        host,
-        port,
-      }
-    }
-  }
-  return {
-    host: '',
-    port: '',
-  }
+  const proxy = getAppProxy()
+  return proxy ?? { host: '', port: '' }
 }
 const handleUpdateProxy = (keys: Array<keyof LX.AppSetting>) => {
   if (keys.includes('network.proxy.enable') || (global.lx.appSetting['network.proxy.enable'] && keys.some(k => k.startsWith('network.proxy.')))) {

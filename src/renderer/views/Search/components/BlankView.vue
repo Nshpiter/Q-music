@@ -10,9 +10,9 @@
           </div>
           <button type="button" :class="[$style.syncAction, { [$style.connected]: hasMusicAccount }]" @click="openAccountModal">
             <span :class="$style.accountIcons">
-              <source-icon v-if="accountStatus.tx" source="tx" :size="20" />
-              <source-icon v-if="accountStatus.wy" source="wy" :size="20" />
-              <svg-icon v-if="!hasMusicAccount" name="headphones" />
+              <source-icon v-if="accountStatus.accounts.tx.hasSession" source="tx" :size="20" />
+              <source-icon v-if="accountStatus.accounts.wy.hasSession" source="wy" :size="20" />
+              <svg-icon v-if="!hasMusicAccountSession" name="headphones" />
             </span>
             <span>{{ accountActionText }}</span>
             <b aria-hidden="true">›</b>
@@ -182,28 +182,37 @@
         </div>
       </div>
       <div :class="$style.providerList">
-        <button
-          type="button" :class="{ [$style.activeProvider]: selectedDailyProvider == 'tx' }" :disabled="isAccountLoginPending || isAccountStatusLoading"
-          @click="handleProviderAction('tx')"
+        <div
+          v-for="provider in accountProviderOptions" :key="provider.id"
+          :class="[$style.providerCard, { [$style.activeProvider]: selectedDailyProvider == provider.id }]"
         >
-          <source-icon source="tx" :size="38" :label="$t('search__account_qq')" />
-          <div>
-            <strong>{{ $t('search__account_qq') }}</strong>
-            <span>{{ accountProviderStatusText('tx') }}</span>
-          </div>
-          <em :class="{ [$style.connectedDot]: accountStatus.tx }">{{ accountStatus.tx ? '✓' : '›' }}</em>
-        </button>
-        <button
-          type="button" :class="{ [$style.activeProvider]: selectedDailyProvider == 'wy' }" :disabled="isAccountLoginPending || isAccountStatusLoading"
-          @click="handleProviderAction('wy')"
-        >
-          <source-icon source="wy" :size="38" :label="$t('search__account_netease')" />
-          <div>
-            <strong>{{ $t('search__account_netease') }}</strong>
-            <span>{{ accountProviderStatusText('wy') }}</span>
-          </div>
-          <em :class="{ [$style.connectedDot]: accountStatus.wy }">{{ accountStatus.wy ? '✓' : '›' }}</em>
-        </button>
+          <button
+            type="button" :class="$style.providerAction"
+            :disabled="isAccountLoginPending || isAccountStatusLoading || !!isAccountLogoutPending"
+            @click="handleProviderAction(provider.id)"
+          >
+            <img
+              v-if="accountStatus.accounts[provider.id].avatar" :class="$style.accountAvatar"
+              :src="accountStatus.accounts[provider.id].avatar" alt="" @error="handleAccountAvatarError(provider.id)"
+            >
+            <source-icon v-else :source="provider.id" :size="38" :label="$t(provider.nameKey)" />
+            <div>
+              <strong>{{ accountStatus.accounts[provider.id].displayName || $t(provider.nameKey) }}</strong>
+              <span v-if="accountStatus.accounts[provider.id].accountHint" :class="$style.accountIdentity">
+                {{ accountStatus.accounts[provider.id].accountHint }}
+              </span>
+              <span>{{ accountProviderStatusText(provider.id) }}</span>
+            </div>
+            <em v-if="!accountStatus.accounts[provider.id].hasSession">›</em>
+          </button>
+          <button
+            v-if="accountStatus.accounts[provider.id].hasSession" type="button" :class="$style.logoutButton"
+            :disabled="isAccountLoginPending || isAccountStatusLoading || !!isAccountLogoutPending"
+            @click.stop="disconnectMusicAccount(provider.id)"
+          >
+            {{ isAccountLogoutPending == provider.id ? $t('search__account_logging_out') : $t('search__account_logout') }}
+          </button>
+        </div>
       </div>
       <section v-if="selectedDailyProvider == 'tx' || accountStatus.tx" :class="$style.officialDailySetup">
         <div>
@@ -251,7 +260,7 @@ import { setTempList } from '@renderer/store/list/action'
 import { playList } from '@renderer/core/player/action'
 import { getPicPath } from '@renderer/core/music'
 import { LIST_IDS } from '@common/constants'
-import { getMusicAccountDaily, getMusicAccountPlaylistDetail, getMusicAccountPlaylists, getMusicAccountStatus, getQQDailyKeyStatus, loginMusicAccount, openQQDailyKeyPage, saveQQDailyApiKey } from '@renderer/utils/ipc'
+import { getMusicAccountDaily, getMusicAccountPlaylistDetail, getMusicAccountPlaylists, getMusicAccountStatus, getQQDailyKeyStatus, loginMusicAccount, logoutMusicAccount, openQQDailyKeyPage, saveQQDailyApiKey } from '@renderer/utils/ipc'
 import wyMusicDetail from '@renderer/utils/musicSdk/wy/musicDetail'
 import txMusicInfo from '@renderer/utils/musicSdk/tx/musicInfo'
 import { toNewMusicInfo } from '@renderer/utils'
@@ -281,12 +290,19 @@ const isPlaylistsLoading = shallowRef(false)
 const isPlaylistDetailLoading = shallowRef(false)
 const isShowAccountModal = ref(false)
 const isAccountLoginPending = ref(false)
+const isAccountLogoutPending = ref('')
 const isAccountStatusLoading = ref(false)
 const qqDailyApiKeyInput = ref('')
 const qqDailyKeyStatus = ref({ configured: false, encryptionAvailable: true })
 const qqDailyKeySaveState = ref('idle')
 const isQQDailyKeySaving = ref(false)
-const accountStatus = ref({ tx: false, wy: false })
+const createEmptyAccountProfile = () => ({ state: 'disconnected', displayName: '', avatar: '', accountHint: '', hasSession: false })
+const createEmptyAccountStatus = () => ({ tx: false, wy: false, accounts: { tx: createEmptyAccountProfile(), wy: createEmptyAccountProfile() } })
+const accountStatus = ref(createEmptyAccountStatus())
+const accountProviderOptions = [
+  { id: 'tx', nameKey: 'search__account_qq' },
+  { id: 'wy', nameKey: 'search__account_netease' },
+]
 const storedDailyProvider = window.localStorage.getItem('qmusic.dailyRecommend.provider')
 const selectedDailyProvider = ref(storedDailyProvider == 'wy' ? 'wy' : 'tx')
 const dailyRecommendMode = ref('loading')
@@ -299,6 +315,7 @@ const todayDay = String(now.getDate()).padStart(2, '0')
 const todayMonth = new Intl.DateTimeFormat(window.i18n.locale || 'zh-CN', { month: 'short' }).format(now)
 const todayLabel = new Intl.DateTimeFormat(window.i18n.locale || 'zh-CN', { month: 'long', day: 'numeric' }).format(now)
 const hasMusicAccount = computed(() => accountStatus.value.tx || accountStatus.value.wy)
+const hasMusicAccountSession = computed(() => accountStatus.value.accounts.tx.hasSession || accountStatus.value.accounts.wy.hasSession)
 const dailyTitle = computed(() => {
   const title = selectedDailyProvider.value == 'tx'
     ? window.i18n.t(dailyRecommendKind.value == 'official_daily' ? 'search__qq_daily_30' : 'search__qq_radar')
@@ -326,11 +343,15 @@ const accountActionText = computed(() => {
   if (accountStatus.value.tx && accountStatus.value.wy) return window.i18n.t('search__account_both_connected')
   if (accountStatus.value.tx) return window.i18n.t('search__account_qq_connected')
   if (accountStatus.value.wy) return window.i18n.t('search__account_netease_connected')
+  if (hasMusicAccountSession.value) return window.i18n.t('search__account_attention')
   return window.i18n.t('search__account_login')
 })
 const accountProviderStatusText = provider => {
   if (isAccountStatusLoading.value) return window.i18n.t('search__account_checking')
-  if (accountStatus.value[provider]) return window.i18n.t('search__account_connected')
+  const account = accountStatus.value.accounts[provider]
+  if (account.state == 'connected') return window.i18n.t('search__account_valid')
+  if (account.state == 'expired') return window.i18n.t('search__account_expired')
+  if (account.state == 'unavailable') return window.i18n.t('search__account_unavailable')
   return window.i18n.t(provider == 'tx' ? 'search__account_qq_tip' : 'search__account_netease_tip')
 }
 const dailyDetailEmptyText = computed(() => isDailyLoading.value
@@ -508,7 +529,7 @@ const playDetailList = async(index = 0) => {
 const refreshAccountStatus = async() => {
   const requestId = ++accountStatusRequestId
   isAccountStatusLoading.value = true
-  const status = await getMusicAccountStatus().catch(() => ({ tx: false, wy: false }))
+  const status = await getMusicAccountStatus().catch(() => createEmptyAccountStatus())
   if (requestId != accountStatusRequestId) return
   accountStatus.value = status
   isAccountStatusLoading.value = false
@@ -572,12 +593,16 @@ const saveOfficialDailyKey = async() => {
 }
 
 const closeAccountModal = () => {
-  if (isAccountLoginPending.value) return
+  if (isAccountLoginPending.value || isAccountLogoutPending.value) return
   isShowAccountModal.value = false
 }
 
+const handleAccountAvatarError = provider => {
+  accountStatus.value.accounts[provider].avatar = ''
+}
+
 const connectMusicAccount = async(provider) => {
-  if (isAccountLoginPending.value) return
+  if (isAccountLoginPending.value || isAccountLogoutPending.value) return
   isAccountLoginPending.value = true
   try {
     const result = await loginMusicAccount(provider)
@@ -591,7 +616,26 @@ const connectMusicAccount = async(provider) => {
   }
 }
 
+const disconnectMusicAccount = async(provider) => {
+  if (isAccountLoginPending.value || isAccountLogoutPending.value) return
+  isAccountLogoutPending.value = provider
+  try {
+    const result = await logoutMusicAccount(provider)
+    if (result.status != 'disconnected') return
+    accountPlaylists.value = accountPlaylistsProvider.value == provider ? [] : accountPlaylists.value
+    if (provider == 'tx') await refreshQQDailyKeyStatus()
+    await refreshAccountStatus()
+    void loadDailyRecommend(true, selectedDailyProvider.value)
+  } finally {
+    isAccountLogoutPending.value = ''
+  }
+}
+
 const handleProviderAction = (provider) => {
+  if (accountStatus.value.accounts[provider].state == 'unavailable') {
+    void refreshAccountStatus()
+    return
+  }
   if (!accountStatus.value[provider]) {
     void connectMusicAccount(provider)
     return
@@ -1179,50 +1223,81 @@ const handleSearch = (text) => {
   display: grid;
   gap: 11px;
   margin-top: 22px;
+}
+.providerCard {
+  position: relative;
+}
+.providerAction {
+  width: 100%;
+  min-height: 82px;
+  padding: 13px 86px 13px 15px;
+  border: 1px solid rgba(54, 83, 70, .13);
+  border-radius: 17px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-font);
+  background: rgba(255, 255, 255, .62);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: transform @transition-fast, border-color @transition-fast, box-shadow @transition-fast;
 
-  button {
-    position: relative;
-    min-height: 76px;
-    padding: 15px 50px 15px 15px;
-    border: 1px solid rgba(54, 83, 70, .13);
-    border-radius: 17px;
-    display: grid;
-    grid-template-columns: 38px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 12px;
-    color: var(--color-font);
-    background: rgba(255, 255, 255, .62);
-    cursor: pointer;
-    font: inherit;
-    text-align: left;
-    transition: transform @transition-fast, border-color @transition-fast, box-shadow @transition-fast;
-
-    &:hover:not(:disabled) {
-      transform: translateY(-2px);
-      border-color: var(--color-primary-alpha-700);
-      box-shadow: 0 12px 28px rgba(35, 54, 46, .11);
-    }
-    &.activeProvider {
-      border-color: var(--color-primary-alpha-500);
-      background: var(--color-primary-alpha-1000);
-      box-shadow: inset 0 0 0 1px var(--color-primary-alpha-900);
-    }
-    &:disabled { cursor: wait; opacity: .65; }
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: var(--color-primary-alpha-700);
+    box-shadow: 0 12px 28px rgba(35, 54, 46, .11);
   }
-  button > div { min-width: 0; }
+  &:disabled { cursor: wait; opacity: .65; }
+  > div { min-width: 0; }
   strong { font-size: 14px; }
-  strong, button > div span { display: block; .mixin-ellipsis-1(); }
-  button > div span { margin-top: 6px; color: var(--color-font-label); font-size: 11px; }
+  strong, > div span { display: block; .mixin-ellipsis-1(); }
+  > div span { margin-top: 4px; color: var(--color-font-label); font-size: 11px; }
+  > div .accountIdentity { color: var(--color-font); font-size: 10px; opacity: .76; }
   em {
-    position: absolute;
-    top: 50%;
-    right: 18px;
-    transform: translateY(-50%);
     color: var(--color-font-label);
     font-style: normal;
     font-size: 22px;
   }
-  .connectedDot { color: var(--color-primary); font-size: 11px; font-weight: 700; }
+}
+.activeProvider .providerAction {
+  border-color: var(--color-primary-alpha-500);
+  background: var(--color-primary-alpha-1000);
+  box-shadow: inset 0 0 0 1px var(--color-primary-alpha-900);
+}
+.accountAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-primary-background);
+  box-shadow: 0 5px 14px rgba(35, 54, 46, .12);
+}
+.logoutButton {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  z-index: 1;
+  min-width: 54px;
+  height: 30px;
+  padding: 0 9px;
+  transform: translateY(-50%);
+  border: 1px solid rgba(54, 83, 70, .13);
+  border-radius: 9px;
+  color: var(--color-font-label);
+  background: rgba(255, 255, 255, .64);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  transition: color @transition-fast, border-color @transition-fast, background-color @transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary-alpha-600);
+    color: var(--color-primary);
+    background: var(--color-primary-background-hover);
+  }
+  &:disabled { cursor: wait; opacity: .55; }
 }
 .officialDailySetup {
   margin-top: 14px;

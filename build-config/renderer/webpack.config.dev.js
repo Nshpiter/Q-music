@@ -15,10 +15,8 @@ module.exports = merge(baseConfig, {
   devtool: 'eval-source-map',
   plugins: [
     new webpack.DefinePlugin({
-      'process.env': {
-        NODE_ENV: '"development"',
-        ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
-      },
+      'process.env.NODE_ENV': JSON.stringify('development'),
+      'process.env.ELECTRON_DISABLE_SECURITY_WARNINGS': 'true',
       // ENVIRONMENT: 'process.env',
       __VUE_OPTIONS_API__: 'true',
       __VUE_PROD_DEVTOOLS__: 'false',

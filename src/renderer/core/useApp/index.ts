@@ -15,6 +15,7 @@ import usePlayer from './usePlayer'
 import useSettingSync from './useSettingSync'
 import { useRouter } from '@common/utils/vueRouter'
 import handleListAutoUpdate from './listAutoUpdate'
+import { parseProxy } from '@common/utils/proxy'
 
 
 export default () => {
@@ -49,11 +50,8 @@ export default () => {
     // }
     const envProxy = envParams.cmdParams['proxy-server']
     if (envProxy && typeof envProxy == 'string') {
-      const [host, port = ''] = envProxy.split(':')
-      proxy.envProxy = {
-        host,
-        port,
-      }
+      const commandProxy = parseProxy(envProxy)
+      if (commandProxy) proxy.envProxy = { host: commandProxy.host, port: String(commandProxy.port) }
     }
 
     void getViewPrevState().then(state => {

@@ -41,13 +41,26 @@ export const getOtherSourceCount = async() => {
 }
 
 export type MusicAccountProvider = 'tx' | 'wy'
+export type MusicAccountConnectionState = 'connected' | 'expired' | 'disconnected' | 'unavailable'
+export interface MusicAccountProfile {
+  state: MusicAccountConnectionState
+  displayName: string
+  avatar: string
+  accountHint: string
+  hasSession: boolean
+}
 export interface MusicAccountStatus {
   tx: boolean
   wy: boolean
+  accounts: Record<MusicAccountProvider, MusicAccountProfile>
 }
 export interface MusicAccountLoginResult {
   provider: MusicAccountProvider
   status: 'connected' | 'cancelled'
+}
+export interface MusicAccountLogoutResult {
+  provider: MusicAccountProvider
+  status: 'disconnected' | 'error'
 }
 export interface MusicAccountDailyResult {
   provider: MusicAccountProvider
@@ -93,6 +106,9 @@ export const getMusicAccountStatus = async() => {
 }
 export const loginMusicAccount = async(provider: MusicAccountProvider) => {
   return rendererInvoke<MusicAccountProvider, MusicAccountLoginResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_login, provider)
+}
+export const logoutMusicAccount = async(provider: MusicAccountProvider) => {
+  return rendererInvoke<MusicAccountProvider, MusicAccountLogoutResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_logout, provider)
 }
 export const getMusicAccountDaily = async(provider: MusicAccountProvider) => {
   return rendererInvoke<MusicAccountProvider, MusicAccountDailyResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_daily, provider)

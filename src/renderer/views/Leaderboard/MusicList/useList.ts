@@ -15,7 +15,7 @@ export default () => {
   const getList = (id: string, page: number) => {
     void getAndSetListDetail(id, page).then(() => {
       setTimeout(() => {
-        if (listRef.value) listRef.value.scrollToTop()
+        listRef.value?.scrollToTop?.()
       })
     }).catch(() => {})
   }

@@ -6,27 +6,25 @@ import { bHh } from './musicSdk/options'
 import { deflateRaw } from 'zlib'
 import { proxy } from '@renderer/store'
 import { httpOverHttp, httpsOverHttp } from 'tunnel'
+import { getEnvProxy } from '@common/utils/proxy'
 // import fs from 'fs'
 
 const httpsRxp = /^https:/
 const getRequestAgent = url => {
-  let options
+  let proxyInfo
   if (proxy.enable && proxy.host) {
-    options = {
-      proxy: {
-        host: proxy.host,
-        port: proxy.port,
-      },
+    proxyInfo = {
+      host: proxy.host,
+      port: proxy.port,
     }
   } else if (proxy.envProxy) {
-    options = {
-      proxy: {
-        host: proxy.envProxy.host,
-        port: proxy.envProxy.port,
-      },
-    }
+    proxyInfo = proxy.envProxy
+  } else {
+    proxyInfo = getEnvProxy(url)
   }
-  return options ? (httpsRxp.test(url) ? httpsOverHttp : httpOverHttp)(options) : undefined
+  return proxyInfo
+    ? (httpsRxp.test(url) ? httpsOverHttp : httpOverHttp)({ proxy: proxyInfo })
+    : undefined
 }
 
 

@@ -5,14 +5,30 @@ import { constants, createCipheriv, publicEncrypt, randomBytes } from 'node:cryp
 
 export type MusicAccountProvider = 'tx' | 'wy'
 
+export type MusicAccountConnectionState = 'connected' | 'expired' | 'disconnected' | 'unavailable'
+
+export interface MusicAccountProfile {
+  state: MusicAccountConnectionState
+  displayName: string
+  avatar: string
+  accountHint: string
+  hasSession: boolean
+}
+
 export interface MusicAccountStatus {
   tx: boolean
   wy: boolean
+  accounts: Record<MusicAccountProvider, MusicAccountProfile>
 }
 
 export interface MusicAccountLoginResult {
   provider: MusicAccountProvider
   status: 'connected' | 'cancelled'
+}
+
+export interface MusicAccountLogoutResult {
+  provider: MusicAccountProvider
+  status: 'disconnected' | 'error'
 }
 
 export interface MusicAccountDailyResult {
@@ -85,7 +101,7 @@ const providerConfig = {
 } as const
 
 const loginWindows = new Map<MusicAccountProvider, Electron.BrowserWindow>()
-const accountValidationCache = new Map<MusicAccountProvider, { connected: boolean, expiresAt: number }>()
+const accountValidationCache = new Map<MusicAccountProvider, { connected: boolean, state: MusicAccountConnectionState, expiresAt: number }>()
 const officialMusicUrlCache = new Map<string, { url: string, quality: LX.Quality, expiresAt: number }>()
 let qqDailyKeyWindow: BrowserWindow | null = null
 let qqDailyKeyTask: Promise<QQDailyKeySaveResult> | null = null
@@ -131,6 +147,15 @@ const hasLoginCookie = async(provider: MusicAccountProvider) => {
   return hasIdentifier && hasMusicKey
 }
 
+const configureAccountSessionProxy = async(provider: MusicAccountProvider) => {
+  const accountSession = session.fromPartition(providerConfig[provider].partition)
+  const proxy = getProxy()
+  await accountSession.setProxy(proxy?.host
+    ? { mode: 'fixed_servers', proxyRules: `http://${proxy.host}:${proxy.port}` }
+    : { mode: 'system' })
+  return accountSession
+}
+
 const getQQAccountCredentials = async() => {
   const accountSession = session.fromPartition(providerConfig.tx.partition)
   const cookies = await accountSession.cookies.get({})
@@ -143,24 +168,85 @@ const getQQAccountCredentials = async() => {
   }
 }
 
-const getQQEncryptedUin = async() => {
+const normalizeRemoteImageUrl = (value: unknown) => {
+  const url = String(value ?? '').trim()
+  if (!url) return ''
+  return url.startsWith('//') ? `https:${url}` : url
+}
+
+const maskAccountId = (value: string) => {
+  if (!value) return ''
+  if (value.length <= 4) return value
+  return `${'•'.repeat(Math.min(4, value.length - 4))}${value.slice(-4)}`
+}
+
+const getQQAccountProfile = async() => {
   const { accountSession, uin } = await getQQAccountCredentials()
-  if (uin == '0') return ''
+  const emptyProfile = { displayName: '', avatar: '', encryptedUin: '', accountHint: uin == '0' ? '' : `QQ · ${maskAccountId(uin)}` }
+  if (uin == '0') return emptyProfile
   try {
     const url = new URL('https://c6.y.qq.com/rsc/fcgi-bin/fcg_get_profile_homepage.fcg')
     url.search = new URLSearchParams({ ct: '20', cv: '4747474', cid: '205360838', userid: uin }).toString()
     const response = await accountSession.fetch(url.toString(), {
       headers: { Referer: 'https://y.qq.com/' },
     })
-    if (!response.ok) return ''
-    const result = await response.json() as { data?: { creator?: { encrypt_uin?: string } } }
-    return result.data?.creator?.encrypt_uin ?? ''
+    if (!response.ok) return emptyProfile
+    const result = await response.json() as {
+      data?: {
+        creator?: {
+          encrypt_uin?: string
+          nick?: string
+          nickname?: string
+          headpic?: string
+          avatarUrl?: string
+          avatar_url?: string
+        }
+      }
+    }
+    const creator = result.data?.creator
+    return {
+      displayName: String(creator?.nick ?? creator?.nickname ?? '').trim(),
+      avatar: normalizeRemoteImageUrl(creator?.headpic ?? creator?.avatarUrl ?? creator?.avatar_url),
+      encryptedUin: creator?.encrypt_uin ?? '',
+      accountHint: emptyProfile.accountHint,
+    }
   } catch {
-    return ''
+    return emptyProfile
   }
 }
 
-const requestQQMusicU = async<T>(requests: Record<string, unknown>): Promise<T> => {
+const getQQEncryptedUin = async() => (await getQQAccountProfile()).encryptedUin
+
+const qqMusicCredentialRejectionCodes = new Set([401, 403, 1000, 104400, 104401])
+
+class QQMusicURequestError extends Error {
+  constructor(
+    public readonly reason: 'login_required' | 'unavailable',
+    public readonly code?: number,
+    message = 'QQ Music account request failed',
+  ) {
+    super(code == null ? message : `${message}: ${code}`)
+    this.name = 'QQMusicURequestError'
+  }
+}
+
+const parseQQMusicCode = (value: unknown): number | undefined => {
+  if (value == null || value === '') return undefined
+  const code = Number(value)
+  return Number.isFinite(code) ? code : undefined
+}
+
+const createQQMusicURequestError = (code?: number, message?: string) => {
+  const reason = code != null && qqMusicCredentialRejectionCodes.has(code) ? 'login_required' : 'unavailable'
+  if (reason == 'login_required') accountValidationCache.delete('tx')
+  return new QQMusicURequestError(reason, code, message)
+}
+
+const isQQMusicLoginRequiredError = (error: unknown) => {
+  return error instanceof QQMusicURequestError && error.reason == 'login_required'
+}
+
+const requestQQMusicU = async<T extends object>(requests: Record<string, unknown>): Promise<T> => {
   const { accountSession, uin, authst } = await getQQAccountCredentials()
   const response = await accountSession.fetch('https://u.y.qq.com/cgi-bin/musicu.fcg', {
     method: 'POST',
@@ -174,8 +260,27 @@ const requestQQMusicU = async<T>(requests: Record<string, unknown>): Promise<T> 
       ...requests,
     }),
   })
-  if (!response.ok) throw new Error(`QQ Music account request failed: ${response.status}`)
-  return response.json() as Promise<T>
+  if (!response.ok) {
+    const error = new QQMusicURequestError(
+      response.status == 401 || response.status == 403 ? 'login_required' : 'unavailable',
+      response.status,
+    )
+    if (error.reason == 'login_required') accountValidationCache.delete('tx')
+    throw error
+  }
+
+  const result = await response.json() as T & { code?: unknown }
+  const globalCode = parseQQMusicCode(result.code)
+  if (globalCode != 0) throw createQQMusicURequestError(globalCode, 'QQ Music global request failed')
+  const resultModules = result as T & Record<string, unknown>
+  for (const key of Object.keys(requests)) {
+    const moduleResult = resultModules[key]
+    const moduleCode = moduleResult && typeof moduleResult == 'object'
+      ? parseQQMusicCode((moduleResult as { code?: unknown }).code)
+      : undefined
+    if (moduleCode != 0) throw createQQMusicURequestError(moduleCode, `QQ Music module ${key} failed`)
+  }
+  return result
 }
 
 const getQualityFallbacks = (quality: LX.Quality): LX.Quality[] => {
@@ -368,11 +473,7 @@ export const openQQDailyKeyPage = async(): Promise<QQDailyKeySaveResult> => {
   }
 
   const task = (async() => {
-    const accountSession = session.fromPartition(providerConfig.tx.partition)
-    const proxy = getProxy()
-    await accountSession.setProxy(proxy?.host
-      ? { mode: 'fixed_servers', proxyRules: `http://${proxy.host}:${proxy.port}` }
-      : { mode: 'direct' })
+    const accountSession = await configureAccountSessionProxy('tx')
 
     return new Promise<QQDailyKeySaveResult>(resolve => {
       const parent = BrowserWindow.getFocusedWindow() ?? undefined
@@ -567,7 +668,7 @@ export const getMusicAccountMusicUrl = async(request: MusicAccountMusicUrlReques
     return { provider: request.provider, status: 'available', ...result }
   } catch (error) {
     console.warn(`[musicAccount] ${request.provider} official music URL unavailable`, error)
-    return unavailable('error')
+    return unavailable(isQQMusicLoginRequiredError(error) ? 'login_required' : 'error')
   }
 }
 
@@ -580,50 +681,105 @@ const getNeteaseDailySongIds = async(): Promise<string[]> => {
   return (result.data?.dailySongs ?? []).map(item => String(item.id ?? '')).filter(Boolean)
 }
 
-const getNeteaseUserId = async(): Promise<string> => {
+const getNeteaseAccountProfile = async() => {
   const result = await requestNeteaseWeapi<{
     code?: number
-    profile?: { userId?: string | number }
+    profile?: { userId?: string | number, nickname?: string, avatarUrl?: string }
     account?: { id?: string | number }
   }>('/weapi/w/nuser/account/get', {})
-  return String(result.profile?.userId ?? result.account?.id ?? '')
+  const userId = String(result.profile?.userId ?? result.account?.id ?? '')
+  return {
+    userId,
+    displayName: result.profile?.nickname?.trim() ?? '',
+    avatar: normalizeRemoteImageUrl(result.profile?.avatarUrl),
+    accountHint: userId ? `网易云 · ${maskAccountId(userId)}` : '',
+  }
+}
+
+const getNeteaseUserId = async(): Promise<string> => (await getNeteaseAccountProfile()).userId
+
+const validateMusicAccount = async(provider: MusicAccountProvider, force = false) => {
+  const cached = accountValidationCache.get(provider)
+  if (!force && cached && cached.expiresAt > Date.now()) return cached
+
+  let connected = false
+  let state: MusicAccountConnectionState = 'disconnected'
+  try {
+    if (!await hasLoginCookie(provider)) {
+      const result = { connected, state, expiresAt: Date.now() + 2_000 }
+      accountValidationCache.set(provider, result)
+      return result
+    }
+
+    await configureAccountSessionProxy(provider)
+    if (provider == 'wy') {
+      connected = !!await getNeteaseUserId()
+    } else {
+      const { uin, authst } = await getQQAccountCredentials()
+      if (uin != '0' && authst) {
+        await requestQQMusicU<{
+          status?: { code?: number, data?: Record<string, unknown> }
+        }>({
+          status: {
+            module: 'music.musicasset.PlaylistBaseRead',
+            method: 'GetPlaylistByUin',
+            param: { uin },
+          },
+        })
+        connected = true
+      }
+    }
+    state = connected ? 'connected' : 'expired'
+  } catch (error) {
+    state = isQQMusicLoginRequiredError(error) ? 'expired' : 'unavailable'
+    console.warn(`[musicAccount] ${provider} session validation failed`, error)
+  }
+  const result = { connected, state, expiresAt: Date.now() + (connected ? 15_000 : 2_000) }
+  accountValidationCache.set(provider, result)
+  return result
 }
 
 const verifyMusicAccount = async(provider: MusicAccountProvider, force = false): Promise<boolean> => {
-  const cached = accountValidationCache.get(provider)
-  if (!force && cached && cached.expiresAt > Date.now()) return cached.connected
+  return (await validateMusicAccount(provider, force)).connected
+}
 
-  let connected = false
-  try {
-    if (await hasLoginCookie(provider)) {
-      if (provider == 'wy') {
-        connected = !!await getNeteaseUserId()
-      } else {
-        const { uin, authst } = await getQQAccountCredentials()
-        if (uin != '0' && authst) {
-          const result = await requestQQMusicU<{
-            status?: { code?: number, data?: Record<string, unknown> }
-          }>({
-            status: {
-              module: 'music.musicasset.PlaylistBaseRead',
-              method: 'GetPlaylistByUin',
-              param: { uin },
-            },
-          })
-          connected = result.status?.code == 0 || result.status?.data != null
-        }
-      }
-    }
-  } catch (error) {
-    console.warn(`[musicAccount] ${provider} session validation failed`, error)
-  }
-  accountValidationCache.set(provider, { connected, expiresAt: Date.now() + (connected ? 15_000 : 2_000) })
-  return connected
+const resolveQQAccountFailureStatus = async(): Promise<'login_required' | 'unavailable'> => {
+  const validation = await validateMusicAccount('tx', true)
+  return validation.state == 'expired' || validation.state == 'disconnected' ? 'login_required' : 'unavailable'
 }
 
 export const getMusicAccountStatus = async(): Promise<MusicAccountStatus> => {
-  const [tx, wy] = await Promise.all([verifyMusicAccount('tx', true), verifyMusicAccount('wy', true)])
-  return { tx, wy }
+  const inspectAccount = async(provider: MusicAccountProvider): Promise<MusicAccountProfile> => {
+    const validation = await validateMusicAccount(provider, true)
+    if (!validation.connected) {
+      let accountHint = ''
+      if (provider == 'tx' && validation.state != 'disconnected') {
+        const { uin } = await getQQAccountCredentials().catch(() => ({ uin: '0' }))
+        if (uin != '0') accountHint = `QQ · ${maskAccountId(uin)}`
+      }
+      return {
+        state: validation.state,
+        displayName: '',
+        avatar: '',
+        accountHint,
+        hasSession: validation.state != 'disconnected',
+      }
+    }
+
+    if (provider == 'tx') {
+      const profile = await getQQAccountProfile()
+      return { state: 'connected', displayName: profile.displayName, avatar: profile.avatar, accountHint: profile.accountHint, hasSession: true }
+    }
+    const profile = await getNeteaseAccountProfile().catch(() => ({ displayName: '', avatar: '', accountHint: '' }))
+    return { state: 'connected', displayName: profile.displayName, avatar: profile.avatar, accountHint: profile.accountHint, hasSession: true }
+  }
+
+  const [txAccount, wyAccount] = await Promise.all([inspectAccount('tx'), inspectAccount('wy')])
+  return {
+    tx: txAccount.state == 'connected',
+    wy: wyAccount.state == 'connected',
+    accounts: { tx: txAccount, wy: wyAccount },
+  }
 }
 
 export const getMusicAccountPlaylists = async(provider: MusicAccountProvider): Promise<MusicAccountPlaylistsResult> => {
@@ -631,38 +787,117 @@ export const getMusicAccountPlaylists = async(provider: MusicAccountProvider): P
   try {
     if (provider == 'tx') {
       const { uin } = await getQQAccountCredentials()
-      const result = await requestQQMusicU<{
+      const encryptedUin = await getQQEncryptedUin()
+      if (!encryptedUin) {
+        return { provider, playlists: [], status: await resolveQQAccountFailureStatus() }
+      }
+
+      interface FavoritePlaylistData {
+        v_list?: Array<Record<string, unknown>>
+        v_playlist?: Array<Record<string, unknown>>
+        hasmore?: boolean | number
+      }
+      interface QQPlaylistsResponse {
         created?: { code?: number, data?: { v_playlist?: Array<Record<string, unknown>> } }
-        favorite?: { code?: number, data?: { v_list?: Array<Record<string, unknown>>, v_playlist?: Array<Record<string, unknown>> } }
-      }>({
+        favorite?: { code?: number, data?: FavoritePlaylistData }
+        liked?: {
+          code?: number
+          data?: {
+            songlist?: Array<Record<string, unknown>>
+            total_song_num?: number
+            songnum?: number
+            totalnum?: number
+          }
+        }
+      }
+      const favoritePageSize = 100
+      const result = await requestQQMusicU<QQPlaylistsResponse>({
         created: {
           module: 'music.musicasset.PlaylistBaseRead',
           method: 'GetPlaylistByUin',
           param: { uin },
         },
         favorite: {
-          module: 'music.musicasset.PlaylistBaseRead',
-          method: 'GetFavPlaylistByUin',
-          param: { uin, page: 1, size: 100 },
+          module: 'music.musicasset.PlaylistFavRead',
+          method: 'CgiGetPlaylistFavInfo',
+          param: { uin: encryptedUin, offset: 0, size: favoritePageSize },
+        },
+        liked: {
+          module: 'music.srfDissInfo.DissInfo',
+          method: 'CgiGetDiss',
+          param: {
+            disstid: 0,
+            dirid: 201,
+            tag: true,
+            song_begin: 0,
+            song_num: 1,
+            userinfo: true,
+            orderlist: true,
+            enc_host_uin: encryptedUin,
+          },
         },
       })
+      if (!result.created?.data || !result.favorite?.data || !result.liked?.data) {
+        throw new QQMusicURequestError('unavailable', undefined, 'QQ Music playlists response missing data')
+      }
+
+      const favoriteItems = [
+        ...(result.favorite.data.v_list ?? result.favorite.data.v_playlist ?? []),
+      ]
+      let favoriteOffset = favoriteItems.length
+      let favoriteHasMore = result.favorite.data.hasmore === true || parseQQMusicCode(result.favorite.data.hasmore) == 1
+      for (let page = 1; favoriteHasMore && page < 100; page++) {
+        const pageResult = await requestQQMusicU<{ favorite?: { code?: number, data?: FavoritePlaylistData } }>({
+          favorite: {
+            module: 'music.musicasset.PlaylistFavRead',
+            method: 'CgiGetPlaylistFavInfo',
+            param: { uin: encryptedUin, offset: favoriteOffset, size: favoritePageSize },
+          },
+        })
+        const pageData = pageResult.favorite?.data
+        if (!pageData) throw new QQMusicURequestError('unavailable', undefined, 'QQ Music favorite playlists response missing data')
+        const pageItems = pageData.v_list ?? pageData.v_playlist ?? []
+        if (!pageItems.length) break
+        const nextOffset = favoriteOffset + pageItems.length
+        if (nextOffset <= favoriteOffset) break
+        favoriteItems.push(...pageItems)
+        favoriteOffset = nextOffset
+        favoriteHasMore = pageData.hasmore === true || parseQQMusicCode(pageData.hasmore) == 1
+      }
+      if (favoriteHasMore) {
+        throw new QQMusicURequestError('unavailable', undefined, 'QQ Music favorite playlists pagination incomplete')
+      }
       const normalize = (items: Array<Record<string, unknown>>, kind: MusicAccountPlaylist['kind']) => items.map(item => {
-        const dissId = [item.tid, item.id, item.dissid]
+        const dirId = String(item.dirId ?? item.dirid ?? '')
+        const dissId = [item.tid, item.dissid, item.dissId, item.id]
           .map(value => String(value ?? ''))
           .find(value => value && value != '0') ?? ''
-        const dirId = String(item.dirId ?? '')
         return {
-          id: dissId && dissId != '0' ? dissId : dirId ? `dir:${dirId}` : '',
-          name: String(item.dirName ?? item.title ?? item.dissname ?? item.name ?? ''),
-          cover: String(item.picUrl ?? item.bigpicUrl ?? item.picurl ?? ''),
-          trackCount: Number(item.songNum ?? item.song_cnt ?? item.songnum ?? 0),
+          id: dirId == '201' ? 'dir:201' : dissId && dissId != '0' ? dissId : dirId ? `dir:${dirId}` : '',
+          name: String(item.dirName ?? item.dirname ?? item.title ?? item.dissname ?? item.name ?? ''),
+          cover: String(item.picUrl ?? item.bigpicUrl ?? item.picurl ?? item.logo ?? ''),
+          trackCount: Number(item.songNum ?? item.song_cnt ?? item.songnum ?? item.song_num ?? item.songCount ?? item.trackCount ?? 0),
           creator: '',
           kind,
         }
       }).filter(item => item.id && item.name)
       const created = normalize(result.created?.data?.v_playlist ?? [], 'created')
-      const favorite = normalize(result.favorite?.data?.v_list ?? result.favorite?.data?.v_playlist ?? [], 'favorite')
-      const playlistMap = new Map([...created, ...favorite].map(item => [item.id, item]))
+      const favorite = normalize(favoriteItems, 'favorite')
+      const existingLiked = created.find(item => item.id == 'dir:201')
+      const likedData = result.liked.data
+      const liked = {
+        id: 'dir:201',
+        name: existingLiked?.name ?? '我喜欢',
+        cover: existingLiked?.cover ?? '',
+        trackCount: Number(likedData.total_song_num ?? likedData.songnum ?? likedData.totalnum ?? likedData.songlist?.length ?? 0),
+        creator: '',
+        kind: 'created' as const,
+      }
+      const playlistMap = new Map([
+        liked,
+        ...created.filter(item => item.id != 'dir:201'),
+        ...favorite,
+      ].map(item => [item.id, item]))
       const playlists = [...playlistMap.values()]
       return { provider, playlists, status: playlists.length ? 'available' : 'unavailable' }
     }
@@ -693,7 +928,7 @@ export const getMusicAccountPlaylists = async(provider: MusicAccountProvider): P
     return { provider, playlists, status: playlists.length ? 'available' : 'unavailable' }
   } catch (error) {
     console.warn(`[musicAccount] ${provider} playlists unavailable`, error)
-    return { provider, playlists: [], status: 'unavailable' }
+    return { provider, playlists: [], status: isQQMusicLoginRequiredError(error) ? 'login_required' : 'unavailable' }
   }
 }
 
@@ -735,18 +970,25 @@ export const getMusicAccountPlaylistDetail = async(
 
       if (!dirId && !Number.isFinite(dissId)) return { provider, id, ids: [], status: 'unavailable' }
       const encryptedUin = dirId ? await getQQEncryptedUin() : ''
+      if (dirId && !encryptedUin) {
+        return { provider, id, ids: [], status: await resolveQQAccountFailureStatus() }
+      }
       const ids: string[] = []
-      const pageSize = 500
-      for (let offset = 0; offset < 100000; offset += pageSize) {
+      const pageSize = 100
+      let offset = 0
+      let requestSucceeded = false
+      for (let page = 0; page < 1000 && offset < 100000; page++) {
         const result = await requestQQMusicU<{
           detail?: {
             code?: number
             data?: {
               songlist?: Array<Record<string, unknown>>
+              songList?: Array<Record<string, unknown>>
+              track_list?: Array<Record<string, unknown>>
               total_song_num?: number
               songnum?: number
               totalnum?: number
-              hasmore?: number
+              hasmore?: boolean | number
             }
           }
         }>({
@@ -756,25 +998,31 @@ export const getMusicAccountPlaylistDetail = async(
             param: {
               disstid: dissId,
               dirid: dirId,
-              tag: 1,
+              tag: true,
               song_begin: offset,
               song_num: pageSize,
-              userinfo: 1,
-              orderlist: 1,
+              userinfo: true,
+              orderlist: true,
               ...(encryptedUin ? { enc_host_uin: encryptedUin } : {}),
             },
           },
         })
         const data = result.detail?.data
-        const songs = data?.songlist ?? []
+        if (!data) throw new QQMusicURequestError('unavailable', undefined, 'QQ Music playlist detail response missing data')
+        requestSucceeded = true
+        const songs = data.songlist ?? data.songList ?? data.track_list ?? []
         ids.push(...songs.map(item => {
           const track = (item.track_info ?? item) as Record<string, unknown>
-          return String(track.mid ?? track.songmid ?? '')
+          return String(track.mid ?? track.songmid ?? track.songMid ?? track.song_mid ?? '')
         }).filter(Boolean))
-        const total = Number(data?.total_song_num ?? data?.songnum ?? data?.totalnum ?? 0)
-        if (!songs.length || data?.hasmore == 0 || (total > 0 && offset + songs.length >= total)) break
+        if (!songs.length) break
+        const nextOffset = offset + songs.length
+        if (nextOffset <= offset) break
+        const total = Number(data.total_song_num ?? data.songnum ?? data.totalnum ?? 0)
+        if (data.hasmore === false || parseQQMusicCode(data.hasmore) == 0 || (total > 0 && nextOffset >= total)) break
+        offset = nextOffset
       }
-      return { provider, id, ids: [...new Set(ids)], status: ids.length ? 'available' : 'unavailable' }
+      return { provider, id, ids: [...new Set(ids)], status: requestSucceeded ? 'available' : 'unavailable' }
     }
 
     const result = await requestNeteaseWeapi<{
@@ -785,7 +1033,7 @@ export const getMusicAccountPlaylistDetail = async(
     return { provider, id, ids, status: ids.length ? 'available' : 'unavailable' }
   } catch (error) {
     console.warn(`[musicAccount] ${provider} playlist detail unavailable`, error)
-    return { provider, id, ids: [], status: 'unavailable' }
+    return { provider, id, ids: [], status: isQQMusicLoginRequiredError(error) ? 'login_required' : 'unavailable' }
   }
 }
 
@@ -820,11 +1068,7 @@ export const openMusicAccountLogin = async(provider: MusicAccountProvider): Prom
   if (await verifyMusicAccount(provider, true)) return { provider, status: 'connected' }
 
   const config = providerConfig[provider]
-  const accountSession = session.fromPartition(config.partition)
-  const proxy = getProxy()
-  await accountSession.setProxy(proxy?.host
-    ? { mode: 'fixed_servers', proxyRules: `http://${proxy.host}:${proxy.port}` }
-    : { mode: 'direct' })
+  const accountSession = await configureAccountSessionProxy(provider)
 
   return new Promise(resolve => {
     const parent = BrowserWindow.getFocusedWindow() ?? undefined
@@ -887,4 +1131,33 @@ export const openMusicAccountLogin = async(provider: MusicAccountProvider): Prom
     loginWindow.on('closed', () => { finish('cancelled') })
     void loginWindow.loadURL(config.loginUrl)
   })
+}
+
+export const logoutMusicAccount = async(provider: MusicAccountProvider): Promise<MusicAccountLogoutResult> => {
+  try {
+    const loginWindow = loginWindows.get(provider)
+    if (loginWindow && !loginWindow.isDestroyed()) loginWindow.close()
+    if (provider == 'tx' && qqDailyKeyWindow && !qqDailyKeyWindow.isDestroyed()) qqDailyKeyWindow.close()
+
+    const accountSession = session.fromPartition(providerConfig[provider].partition)
+    await accountSession.clearStorageData()
+    accountValidationCache.delete(provider)
+    for (const cacheKey of officialMusicUrlCache.keys()) {
+      if (cacheKey.startsWith(`${provider}:`)) officialMusicUrlCache.delete(cacheKey)
+    }
+    await accountSession.clearCache().catch(error => {
+      console.warn(`[musicAccount] ${provider} cache cleanup after logout failed`, error)
+    })
+    if (provider == 'tx') {
+      try {
+        getStore(qqDailyKeyStoreName).set(qqDailyKeyStoreField, '')
+      } catch (error) {
+        console.warn('[musicAccount] QQ daily authorization cleanup after logout failed', error)
+      }
+    }
+    return { provider, status: 'disconnected' }
+  } catch (error) {
+    console.warn(`[musicAccount] ${provider} logout failed`, error)
+    return { provider, status: 'error' }
+  }
 }

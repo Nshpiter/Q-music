@@ -1,4 +1,4 @@
-import { encodePath, isUrl, throttle, isMac } from '@common/utils'
+import { encodePath, getEnvProxy, isUrl, parseProxy, throttle, isMac } from '@common/utils'
 import migrateSetting from '@common/utils/migrateSetting'
 import getStore from '@main/utils/store'
 import { STORE_NAMES, URL_SCHEME_RXP } from '@common/constants'
@@ -12,14 +12,14 @@ import themes from '@common/theme/index.json'
 export const parseEnvParams = (argv = process.argv): { cmdParams: LX.CmdParams, deeplink: string | null } => {
   const cmdParams: LX.CmdParams = {}
   let deeplink = null
-  const rx = /^-\w+/
+  const rx = /^--?\w+/
   for (let param of argv) {
     if (URL_SCHEME_RXP.test(param)) {
       deeplink = param
     }
 
     if (!rx.test(param)) continue
-    param = param.substring(1)
+    param = param.replace(/^--?/, '')
     let index = param.indexOf('=')
     if (index < 0) {
       cmdParams[param] = true
@@ -313,7 +313,7 @@ export const setPowerSaveBlocker = (enabled: boolean) => {
 }
 
 
-let envProxy: null | { host: string, port: number } = null
+let commandProxy: null | { host: string, port: number } = null
 export const getProxy = () => {
   if (global.lx.appSetting['network.proxy.enable'] && global.lx.appSetting['network.proxy.host']) {
     return {
@@ -321,21 +321,13 @@ export const getProxy = () => {
       port: parseInt(global.lx.appSetting['network.proxy.port'] || '80'),
     }
   }
-  if (envProxy) {
-    return {
-      host: envProxy.host,
-      port: envProxy.port,
-    }
-  } else {
-    const envProxyStr = envParams.cmdParams['proxy-server']
-    if (envProxyStr && typeof envProxyStr == 'string') {
-      const [host, port = ''] = envProxyStr.split(':')
-      return envProxy = {
-        host,
-        port: parseInt(port || '80'),
-      }
-    }
+  if (commandProxy) return commandProxy
+
+  const commandProxyValue = envParams.cmdParams['proxy-server']
+  if (commandProxyValue && typeof commandProxyValue == 'string') {
+    commandProxy = parseProxy(commandProxyValue)
+    if (commandProxy) return commandProxy
   }
 
-  return null
+  return getEnvProxy()
 }

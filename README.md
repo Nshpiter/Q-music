@@ -43,7 +43,7 @@
 
 ## 项目说明
 
-Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前桌面端与 Android 端版本均为 `v0.3.15`；桌面端基于 LX Music Desktop `2.12.2`，主要重做了跨端界面、首页推荐、音乐账号接入、歌单同步、播放详情页、音频可视化与发布更新流程。
+Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前桌面端与 Android 端版本均为 `v0.3.18`；桌面端基于 LX Music Desktop `2.12.2`，主要重做了跨端界面、首页推荐、音乐账号接入、歌单同步、播放详情页、音频可视化与发布更新流程。
 
 本仓库不是 LX Music 官方仓库，也不代表原作者对本项目提供支持或背书。完整变更可查看 [更新日志](./publish/changeLog.md) 与 [二次修改说明](./MODIFICATIONS.md)。
 
@@ -143,7 +143,7 @@ npm run pack:arch
 安装本地构建产物：
 
 ```bash
-sudo pacman -U ./build/Q-music_0.3.15_x64.pacman
+sudo pacman -U ./build/Q-music_0.3.18_x64.pacman
 ```
 
 pacman 安装由系统包管理器负责升级；应用内会提示新版本，但不会自行覆盖系统

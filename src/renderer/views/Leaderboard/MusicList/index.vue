@@ -47,11 +47,12 @@ const hideListsMenu = () => {
 }
 
 const togglePage = (page: number) => {
+  if (!listDetailInfo.id) return
   getList(listDetailInfo.id, page)
 }
 
 const hideMenu = () => {
-  listRef.value.handleMenuClick()
+  listRef.value?.handleMenuClick?.()
 }
 
 defineExpose({ hideMenu })
