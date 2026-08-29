@@ -124,7 +124,8 @@ const playbackModeText = computed(() => {
   const info = playbackSourceInfo.value
   if (!info) return ''
   const quality = info.quality ? ` · ${info.quality == 'flac24bit' ? 'Hi-Res' : info.quality.toUpperCase()}` : ''
-  return `${t(`player__quality_route_${info.mode}`)}${quality}`
+  const fallback = info.isFallback ? ` · ${t('player__quality_route_fallback')}` : ''
+  return `${t(`player__quality_route_${info.mode}`)}${fallback}${quality}`
 })
 const needsMembershipHint = computed(() => ['tx', 'wy'].includes(props.musicInfo?.source))
 const close = () => { emit('update:modelValue', false) }

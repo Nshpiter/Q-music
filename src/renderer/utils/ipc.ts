@@ -100,6 +100,19 @@ export interface MusicAccountMusicUrlResult {
   status: 'available' | 'login_required' | 'unavailable' | 'error'
   url: string
   quality: LX.Quality
+  reportSongId?: string
+}
+export interface MusicAccountPlaybackReportRequest {
+  provider: MusicAccountProvider
+  songId: string
+  mediaId?: string
+  sourceId?: string
+  playedSeconds: number
+  startedAt: number
+}
+export interface MusicAccountPlaybackReportResult {
+  provider: MusicAccountProvider
+  status: 'reported' | 'login_required' | 'unavailable'
 }
 export const getMusicAccountStatus = async() => {
   return rendererInvoke<MusicAccountStatus>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_status)
@@ -125,15 +138,20 @@ export const getMusicAccountMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline
     provider: MusicAccountProvider
     songId: string
     mediaId?: string
+    reportSongId?: string
     quality: LX.Quality
     refresh?: boolean
   }, MusicAccountMusicUrlResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_music_url, {
     provider: musicInfo.source,
     songId: String(musicInfo.meta.songId),
     mediaId: musicInfo.source == 'tx' ? musicInfo.meta.strMediaMid : undefined,
+    reportSongId: musicInfo.source == 'tx' ? String(musicInfo.meta.id ?? '') : String(musicInfo.meta.songId),
     quality,
     refresh,
   })
+}
+export const reportMusicAccountPlayback = async(request: MusicAccountPlaybackReportRequest) => {
+  return rendererInvoke<MusicAccountPlaybackReportRequest, MusicAccountPlaybackReportResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playback_report, request)
 }
 export const getQQDailyKeyStatus = async() => rendererInvoke<QQDailyKeyStatus>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_daily_key_status)
 export const saveQQDailyApiKey = async(apiKey: string) => rendererInvoke<string, QQDailyKeySaveResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_daily_key_save, apiKey)
@@ -738,8 +756,12 @@ export const getThemes = async() => {
  * @param type URL音质
  * @returns
  */
-export const getMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality): Promise<string> => {
-  return rendererInvoke<string, string>(WIN_MAIN_RENDERER_EVENT_NAME.get_music_url, `${musicInfo.id}_${type}`)
+const getMusicUrlCacheId = (musicInfo: LX.Music.MusicInfo, type: LX.Quality, providerId: string) => {
+  return `${providerId}_${musicInfo.source}_${musicInfo.id}_${type}`
+}
+
+export const getMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality, providerId: string): Promise<string> => {
+  return rendererInvoke<string, string>(WIN_MAIN_RENDERER_EVENT_NAME.get_music_url, getMusicUrlCacheId(musicInfo, type, providerId))
 }
 
 /**
@@ -748,11 +770,15 @@ export const getMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality
  * @param type URL音质
  * @param url 歌曲URL
  */
-export const saveMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality, url: string) => {
+export const saveMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality, url: string, providerId: string) => {
   await rendererInvoke<LX.Music.MusicUrlInfo>(WIN_MAIN_RENDERER_EVENT_NAME.save_music_url, {
-    id: `${musicInfo.id}_${type}`,
+    id: getMusicUrlCacheId(musicInfo, type, providerId),
     url,
   })
+}
+
+export const removeMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality, providerId: string) => {
+  await rendererInvoke<string>(WIN_MAIN_RENDERER_EVENT_NAME.remove_music_url, getMusicUrlCacheId(musicInfo, type, providerId))
 }
 /**
  * 清理所有缓存的歌曲URL

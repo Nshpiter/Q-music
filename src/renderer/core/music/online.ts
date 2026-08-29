@@ -3,17 +3,15 @@ import { appSetting } from '@renderer/store/setting'
 import {
   saveLyric,
   saveMusicUrl,
-  getMusicUrl as getStoreMusicUrl,
 } from '@renderer/utils/ipc'
 import {
   buildLyricInfo,
-  getPlayQuality,
   handleGetOnlineLyricInfo,
   handleGetOnlineMusicUrl,
   handleGetOnlinePicUrl,
   getCachedLyricInfo,
 } from './utils'
-import type { MusicUrlResolvedInfo } from './index'
+import type { MusicUrlRequestOptions, MusicUrlResolvedInfo } from './index'
 
 /* export const setMusicUrl = ({ musicInfo, type, url }: {
   musicInfo: LX.Music.MusicInfo
@@ -39,13 +37,14 @@ export const setPic = (datas: {
  */
 
 
-export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSource = true, onToggleSource = () => {}, onResolved }: {
+export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSource = true, onToggleSource = () => {}, onResolved, requestOptions }: {
   musicInfo: LX.Music.MusicInfoOnline
   quality?: LX.Quality
   isRefresh: boolean
   allowToggleSource?: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
   onResolved?: (info: MusicUrlResolvedInfo) => void
+  requestOptions?: MusicUrlRequestOptions
 }): Promise<string> => {
   // if (!musicInfo._types[type]) {
   //   // 兼容旧版酷我源搜索列表过滤128k音质的bug
@@ -53,25 +52,21 @@ export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSou
 
   //   // return Promise.reject(new Error('该歌曲没有可播放的音频'))
   // }
-  const targetQuality = getPlayQuality(quality ?? appSetting['player.playQuality'], musicInfo)
-  if (musicInfo.source != 'tx' && musicInfo.source != 'wy') {
-    const cachedUrl = await getStoreMusicUrl(musicInfo, targetQuality)
-    if (cachedUrl && !isRefresh) {
-      onResolved?.({ requestedSource: musicInfo.source, resolvedSource: musicInfo.source, quality: targetQuality, mode: 'cache' })
-      return cachedUrl
-    }
-  }
-
-  return handleGetOnlineMusicUrl({ musicInfo, quality: targetQuality, onToggleSource, isRefresh, allowToggleSource }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache, isOfficial }) => {
+  const targetQuality = quality ?? appSetting['player.playQuality']
+  return handleGetOnlineMusicUrl({ musicInfo, quality: targetQuality, onToggleSource, isRefresh, allowToggleSource, requestOptions }).then(({ url, quality: resolvedQuality, musicInfo: targetMusicInfo, isFromCache, isOfficial, routeKey, transportMode, cacheProviderId, officialReportSongId }) => {
     onResolved?.({
       requestedSource: musicInfo.source,
       resolvedSource: targetMusicInfo.source,
-      quality: targetQuality,
-      mode: isOfficial ? 'official' : targetMusicInfo.source != musicInfo.source ? 'fallback' : isFromCache ? 'cache' : 'api',
+      quality: resolvedQuality,
+      mode: transportMode,
+      isFallback: targetMusicInfo.source != musicInfo.source,
+      routeKey,
+      resolvedMusicInfo: targetMusicInfo,
+      cacheProviderId,
+      officialReportSongId,
     })
     if (isOfficial) return url
-    if (targetMusicInfo.id != musicInfo.id && !isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url)
-    void saveMusicUrl(musicInfo, targetQuality, url)
+    if (!isFromCache) void saveMusicUrl(targetMusicInfo, resolvedQuality, url, cacheProviderId)
     return url
   })
 }

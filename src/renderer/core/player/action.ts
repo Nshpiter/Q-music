@@ -14,20 +14,79 @@ import {
 } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
 import { getMusicUrl, getPicPath, getLyricInfo } from '../music/index'
-import type { MusicUrlResolvedInfo } from '../music/index'
+import type { MusicUrlRequestOptions, MusicUrlResolvedInfo } from '../music/index'
 import { filterList } from './utils'
 import { requestMsg } from '@renderer/utils/message'
 import { getRandom } from '@renderer/utils/index'
 import { addListMusics, removeListMusics } from '@renderer/store/list/action'
 import { loveList } from '@renderer/store/list/state'
 import { addDislikeInfo } from '@renderer/core/dislikeList'
+import { removeMusicUrl as removeStoreMusicUrl } from '@renderer/utils/ipc'
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
 
 let gettingUrlId = ''
+let musicUrlRequestId = 0
+let musicUrlAbortController: AbortController | null = null
 const createGettingUrlId = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem) => {
-  const tInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo.meta.toggleMusicInfo : musicInfo.meta.toggleMusicInfo
-  return `${musicInfo.id}_${tInfo?.id ?? ''}`
+  const originalMusicInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
+  const tInfo = originalMusicInfo.meta.toggleMusicInfo
+  return `${originalMusicInfo.source}:${originalMusicInfo.id}:${musicInfo.id}:${tInfo?.source ?? ''}:${tInfo?.id ?? ''}`
 }
+
+const playbackRouteState: {
+  musicId: string
+  failedUrls: Set<string>
+  failedRouteKeys: Set<string>
+  rateLimitedRouteKeys: Map<string, number>
+  refreshRouteKeys: Set<string>
+  currentUrl: string
+  currentResolvedInfo: MusicUrlResolvedInfo | null
+} = {
+  musicId: '',
+  failedUrls: new Set(),
+  failedRouteKeys: new Set(),
+  rateLimitedRouteKeys: new Map(),
+  refreshRouteKeys: new Set(),
+  currentUrl: '',
+  currentResolvedInfo: null,
+}
+
+const resetPlaybackRouteState = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem) => {
+  playbackRouteState.musicId = createGettingUrlId(musicInfo)
+  playbackRouteState.failedUrls.clear()
+  playbackRouteState.failedRouteKeys.clear()
+  playbackRouteState.rateLimitedRouteKeys.clear()
+  playbackRouteState.refreshRouteKeys.clear()
+  playbackRouteState.currentUrl = ''
+  playbackRouteState.currentResolvedInfo = null
+}
+
+const invalidateCurrentPlaybackRoute = () => {
+  if (playbackRouteState.currentUrl) playbackRouteState.failedUrls.add(playbackRouteState.currentUrl)
+  const resolvedInfo = playbackRouteState.currentResolvedInfo
+  if (resolvedInfo?.routeKey) {
+    if (
+      playbackRouteState.refreshRouteKeys.has(resolvedInfo.routeKey) ||
+      /^(cache|local|download):/.test(resolvedInfo.routeKey)
+    ) {
+      playbackRouteState.failedRouteKeys.add(resolvedInfo.routeKey)
+      playbackRouteState.refreshRouteKeys.delete(resolvedInfo.routeKey)
+    } else {
+      playbackRouteState.refreshRouteKeys.add(resolvedInfo.routeKey)
+    }
+  }
+  if (
+    resolvedInfo?.resolvedMusicInfo &&
+    resolvedInfo.quality &&
+    resolvedInfo.cacheProviderId &&
+    /^(cache|api):/.test(resolvedInfo.routeKey ?? '')
+  ) {
+    void removeStoreMusicUrl(resolvedInfo.resolvedMusicInfo, resolvedInfo.quality, resolvedInfo.cacheProviderId)
+  }
+  playbackRouteState.currentUrl = ''
+  playbackRouteState.currentResolvedInfo = null
+}
+
 const createDelayNextTimeout = (delay: number) => {
   let timeout: NodeJS.Timeout | null
   const clearDelayNextTimeout = () => {
@@ -54,7 +113,25 @@ const createDelayNextTimeout = (delay: number) => {
   }
 }
 const { addDelayNextTimeout, clearDelayNextTimeout } = createDelayNextTimeout(5000)
-const { addDelayNextTimeout: addLoadTimeout, clearDelayNextTimeout: clearLoadTimeout } = createDelayNextTimeout(100000)
+
+const RATE_LIMIT_COOLDOWN = 15_000
+const releaseRateLimitedRoutes = () => {
+  const now = Date.now()
+  for (const [routeKey, expiresAt] of playbackRouteState.rateLimitedRouteKeys) {
+    if (expiresAt > now) continue
+    playbackRouteState.failedRouteKeys.delete(routeKey)
+    playbackRouteState.rateLimitedRouteKeys.delete(routeKey)
+  }
+}
+
+const getRateLimitRetryDelay = () => {
+  const now = Date.now()
+  let retryAt = now + 1_000
+  for (const expiresAt of playbackRouteState.rateLimitedRouteKeys.values()) {
+    retryAt = Math.max(retryAt, expiresAt)
+  }
+  return Math.max(1_000, retryAt - now)
+}
 
 /**
  * 检查音乐信息是否已更改
@@ -65,20 +142,22 @@ const diffCurrentMusicInfo = (curMusicInfo: LX.Music.MusicInfo | LX.Download.Lis
 }
 
 let cancelDelayRetry: (() => void) | null = null
-const delayRetry = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false, quality?: LX.Quality): Promise<string | null> => {
+const delayRetry = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, requestId: number, signal: AbortSignal, isRefresh = false, quality?: LX.Quality): Promise<string | null> => {
   // if (cancelDelayRetry) cancelDelayRetry()
   return new Promise<string | null>((resolve, reject) => {
-    const time = getRandom(2, 6)
+    const delay = getRateLimitRetryDelay()
+    const time = Math.ceil(delay / 1_000)
     setAllStatus(window.i18n.t('player__getting_url_delay_retry', { time }))
     const tiemout = setTimeout(() => {
-      getMusicPlayUrl(musicInfo, isRefresh, true, quality).then((result) => {
+      releaseRateLimitedRoutes()
+      getMusicPlayUrl(musicInfo, requestId, signal, isRefresh, true, quality).then((result) => {
         cancelDelayRetry = null
         resolve(result)
       }).catch(async(err: any) => {
         cancelDelayRetry = null
         reject(err)
       })
-    }, time * 1000)
+    }, delay)
     cancelDelayRetry = () => {
       clearTimeout(tiemout)
       cancelDelayRetry = null
@@ -86,75 +165,159 @@ const delayRetry = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, i
     }
   })
 }
-const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh = false, isRetryed = false, quality?: LX.Quality): Promise<string | null> => {
+const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, requestId: number, signal: AbortSignal, isRefresh = false, isRateLimitRetry = false, quality?: LX.Quality): Promise<string | null> => {
   // this.musicInfo.url = await getMusicPlayUrl(targetSong, type)
   setAllStatus(window.i18n.t('player__getting_url'))
-  if (appSetting['player.autoSkipOnError']) addLoadTimeout()
+  releaseRateLimitedRoutes()
 
-  // const type = getPlayType(appSetting['player.highQuality'], musicInfo)
-  let toggleMusicInfo = ('progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo).meta.toggleMusicInfo
-  const requestedSource = ('progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo).source
+  const originalMusicInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
+  const requestedSource = originalMusicInfo.source
+  const blockedApiProviders = new Map<string, Error>()
+  for (const routeKey of playbackRouteState.rateLimitedRouteKeys.keys()) {
+    if (routeKey.startsWith('api-provider:')) {
+      blockedApiProviders.set(routeKey.slice('api-provider:'.length), new Error(requestMsg.tooManyRequests))
+    }
+  }
+  const requestOptions: MusicUrlRequestOptions = {
+    excludedUrls: playbackRouteState.failedUrls,
+    excludedRouteKeys: playbackRouteState.failedRouteKeys,
+    refreshRouteKeys: playbackRouteState.refreshRouteKeys,
+    blockedApiProviders,
+    signal,
+    onRouteFailed(routeKey, url) {
+      if (requestId != musicUrlRequestId) return
+      playbackRouteState.failedRouteKeys.add(routeKey)
+      playbackRouteState.refreshRouteKeys.delete(routeKey)
+      if (url) playbackRouteState.failedUrls.add(url)
+    },
+    onRouteRateLimited(routeKey) {
+      if (requestId != musicUrlRequestId) return
+      playbackRouteState.failedRouteKeys.add(routeKey)
+      playbackRouteState.rateLimitedRouteKeys.set(routeKey, Date.now() + RATE_LIMIT_COOLDOWN)
+    },
+  }
   const handleResolved = (info: MusicUrlResolvedInfo) => {
-    const mode = info.resolvedSource != requestedSource && (info.mode == 'api' || info.mode == 'cache') ? 'fallback' : info.mode
-    playbackSourceInfo.value = { ...info, requestedSource, mode }
+    if (requestId != musicUrlRequestId) return
+    const isFallback = info.resolvedSource != requestedSource
+    playbackRouteState.currentResolvedInfo = { ...info, requestedSource, isFallback }
+    const resolvedMusicInfo = info.resolvedMusicInfo
+    playbackSourceInfo.value = {
+      requestedSource,
+      resolvedSource: info.resolvedSource,
+      quality: info.quality,
+      mode: info.mode,
+      isFallback,
+      resolvedSongId: info.officialReportSongId ?? (resolvedMusicInfo?.source == 'tx'
+        ? String(resolvedMusicInfo.meta.id ?? '')
+        : (resolvedMusicInfo ? String(resolvedMusicInfo.meta.songId ?? '') : '')),
+      resolvedMediaId: resolvedMusicInfo?.source == 'tx' ? (resolvedMusicInfo.meta.strMediaMid ?? '') : '',
+      officialSourceId: resolvedMusicInfo?.source == 'wy' ? String(resolvedMusicInfo.meta.albumId ?? '') : '',
+    }
   }
 
-  return (toggleMusicInfo ? getMusicUrl({
-    musicInfo: toggleMusicInfo,
-    quality,
-    isRefresh,
-    allowToggleSource: false,
-    onResolved: handleResolved,
-  }) : Promise.reject(new Error('not found'))).catch(async() => {
-    return getMusicUrl({
-      musicInfo,
-      quality,
-      isRefresh,
-      onResolved: handleResolved,
-      onToggleSource(mInfo) {
-        if (diffCurrentMusicInfo(musicInfo)) return
-        setAllStatus(window.i18n.t('toggle_source_try'))
-      },
-    })
-  }).then(url => {
-    if (window.lx.isPlayedStop || diffCurrentMusicInfo(musicInfo)) return null
+  const attempts: Array<{
+    musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
+    allowToggleSource: boolean
+    routeStrategy: MusicUrlRequestOptions['routeStrategy']
+    directOnly?: boolean
+  }> = []
+  const addOnlineAttempts = (onlineMusicInfo: LX.Music.MusicInfoOnline) => {
+    const targetToggleMusicInfo = onlineMusicInfo.meta.toggleMusicInfo
+    const hasExplicitToggle = !!targetToggleMusicInfo && (targetToggleMusicInfo.id != onlineMusicInfo.id || targetToggleMusicInfo.source != onlineMusicInfo.source)
+    const primaryMusicInfo = hasExplicitToggle ? targetToggleMusicInfo : onlineMusicInfo
+    const exactCandidates = hasExplicitToggle ? [primaryMusicInfo, onlineMusicInfo] : [onlineMusicInfo]
+    for (const candidate of exactCandidates) {
+      if (candidate.source == 'tx' || candidate.source == 'wy') {
+        attempts.push({ musicInfo: candidate, allowToggleSource: false, routeStrategy: 'official' })
+      }
+      attempts.push({ musicInfo: candidate, allowToggleSource: false, routeStrategy: 'api' })
+    }
+    attempts.push({ musicInfo: primaryMusicInfo, allowToggleSource: true, routeStrategy: 'all' })
+  }
+  if ('progress' in musicInfo) {
+    attempts.push({ musicInfo, allowToggleSource: false, routeStrategy: 'all', directOnly: true })
+    addOnlineAttempts(originalMusicInfo as LX.Music.MusicInfoOnline)
+  } else if (originalMusicInfo.source == 'local') {
+    attempts.push({ musicInfo, allowToggleSource: false, routeStrategy: 'all', directOnly: true })
+    attempts.push({ musicInfo, allowToggleSource: true, routeStrategy: 'all' })
+  } else {
+    addOnlineAttempts(originalMusicInfo)
+  }
 
-    return url
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  }).catch(err => {
-    // console.log('err', err.message)
-    if (window.lx.isPlayedStop ||
-      diffCurrentMusicInfo(musicInfo) ||
-      err.message == requestMsg.cancelRequest) return null
+  let lastError: unknown = new Error('music URL unavailable')
+  let rateLimitError: Error | null = null
+  for (const attempt of attempts) {
+    try {
+      const url = await getMusicUrl({
+        musicInfo: attempt.musicInfo,
+        quality,
+        isRefresh,
+        allowToggleSource: attempt.allowToggleSource,
+        requestOptions: { ...requestOptions, routeStrategy: attempt.routeStrategy, directOnly: attempt.directOnly },
+        onResolved: handleResolved,
+        onToggleSource() {
+          if (diffCurrentMusicInfo(musicInfo)) return
+          setAllStatus(window.i18n.t('toggle_source_try'))
+        },
+      })
+      if (requestId != musicUrlRequestId) return null
+      if (window.lx.isPlayedStop || diffCurrentMusicInfo(musicInfo)) return null
+      return url
+    } catch (err: any) {
+      lastError = err
+      if (err.message == requestMsg.cancelRequest) break
+      if (err.message == requestMsg.tooManyRequests) rateLimitError = err
+    }
+  }
 
-    if (err.message == requestMsg.tooManyRequests) return delayRetry(musicInfo, isRefresh, quality)
-
-    if (!isRetryed) return getMusicPlayUrl(musicInfo, isRefresh, true, quality)
-
-    throw err
-  })
+  const error = rateLimitError ?? (lastError instanceof Error ? lastError : new Error('music URL unavailable'))
+  if (requestId != musicUrlRequestId) return null
+  if (window.lx.isPlayedStop || diffCurrentMusicInfo(musicInfo) || error.message == requestMsg.cancelRequest) return null
+  if (error.message == requestMsg.tooManyRequests && !isRateLimitRetry) return delayRetry(musicInfo, requestId, signal, isRefresh, quality)
+  throw error
 }
 
-export const setMusicUrl = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh?: boolean, quality?: LX.Quality) => {
-  // if (appSetting['player.autoSkipOnError']) addLoadTimeout()
-  if (!diffCurrentMusicInfo(musicInfo)) return
+const setMusicUrlInternal = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh?: boolean, quality?: LX.Quality, preserveFailedRoutes = false) => {
+  if (!preserveFailedRoutes && !isRefresh && quality == null && !diffCurrentMusicInfo(musicInfo)) return
+  if (preserveFailedRoutes && musicInfo.id != playMusicInfo.musicInfo?.id) return
   if (cancelDelayRetry) cancelDelayRetry()
+  musicUrlAbortController?.abort()
+  const abortController = new AbortController()
+  musicUrlAbortController = abortController
+  if (!preserveFailedRoutes || playbackRouteState.musicId != createGettingUrlId(musicInfo)) resetPlaybackRouteState(musicInfo)
+  clearDelayNextTimeout()
   playbackSourceInfo.value = null
   gettingUrlId = createGettingUrlId(musicInfo)
-  void getMusicPlayUrl(musicInfo, isRefresh, false, quality).then((url) => {
+  const requestId = ++musicUrlRequestId
+  void getMusicPlayUrl(musicInfo, requestId, abortController.signal, isRefresh, false, quality).then((url) => {
+    if (requestId != musicUrlRequestId) return
     if (!url) return
+    playbackRouteState.currentUrl = url
     setResource(url)
   }).catch((err: any) => {
+    if (requestId != musicUrlRequestId) return
     console.log(err)
     setAllStatus(err.message)
     window.app_event.error()
     if (appSetting['player.autoSkipOnError']) addDelayNextTimeout()
   }).finally(() => {
-    if (musicInfo === playMusicInfo.musicInfo) {
+    if (musicUrlAbortController == abortController) musicUrlAbortController = null
+    if (requestId == musicUrlRequestId && musicInfo === playMusicInfo.musicInfo) {
       gettingUrlId = ''
-      clearLoadTimeout()
     }
   })
+}
+
+export const setMusicUrl = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, isRefresh?: boolean, quality?: LX.Quality) => {
+  setMusicUrlInternal(musicInfo, isRefresh, quality)
+}
+
+export const retryMusicUrl = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem) => {
+  const musicId = createGettingUrlId(musicInfo)
+  if (gettingUrlId == musicId) return
+  if (playbackRouteState.musicId != musicId) resetPlaybackRouteState(musicInfo)
+  invalidateCurrentPlaybackRoute()
+  setMusicUrlInternal(musicInfo, false, undefined, true)
 }
 
 // 恢复上次播放的状态
@@ -213,7 +376,6 @@ const handlePlay = () => {
   window.app_event.pause()
 
   clearDelayNextTimeout()
-  clearLoadTimeout()
 
 
   if (appSetting['player.togglePlayMethod'] == 'random' && !playMusicInfo.isTempPlay) addPlayedList({ ...(playMusicInfo as LX.Player.PlayMusicInfo) })

@@ -7,19 +7,42 @@ import {
 } from './online'
 import { buildLyricInfo, getCachedLyricInfo } from './utils'
 import { buildSavePath } from '@renderer/store/download/utils'
+import type { MusicUrlRequestOptions, MusicUrlResolvedInfo } from './index'
 
-export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = true, onToggleSource = () => {} }: {
+export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = true, onToggleSource = () => {}, onResolved, requestOptions }: {
   musicInfo: LX.Download.ListItem
   isRefresh: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+  onResolved?: (info: MusicUrlResolvedInfo) => void
   allowToggleSource?: boolean
+  requestOptions?: MusicUrlRequestOptions
 }): Promise<string> => {
+  const onlineMusicInfo = musicInfo.metadata.musicInfo
+  const routeKey = `download:${onlineMusicInfo.source}:${musicInfo.id}`
   if (!isRefresh) {
     const path = await getDownloadFilePath(musicInfo, buildSavePath(musicInfo))
-    if (path) return path
+    if (path && !requestOptions?.excludedRouteKeys?.has(routeKey)) {
+      if (!requestOptions?.excludedUrls?.has(path)) {
+        onResolved?.({
+          requestedSource: onlineMusicInfo.source,
+          resolvedSource: onlineMusicInfo.source,
+          quality: musicInfo.metadata.quality,
+          mode: 'download',
+          routeKey,
+          resolvedMusicInfo: onlineMusicInfo,
+        })
+        return path
+      }
+      requestOptions?.onRouteFailed?.(routeKey, path)
+    }
   }
 
-  return getOnlineMusicUrl({ musicInfo: musicInfo.metadata.musicInfo, isRefresh, onToggleSource, allowToggleSource })
+  if (requestOptions?.directOnly) {
+    requestOptions.onRouteFailed?.(routeKey)
+    throw new Error('downloaded music file unavailable')
+  }
+
+  return getOnlineMusicUrl({ musicInfo: onlineMusicInfo, isRefresh, onToggleSource, onResolved, allowToggleSource, requestOptions })
 }
 
 export const getPicUrl = async({ musicInfo, isRefresh, listId, onToggleSource = () => {} }: {

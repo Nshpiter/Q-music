@@ -47,6 +47,10 @@ export interface PlaybackSourceInfo {
   resolvedSource: LX.Source
   quality: LX.Quality | null
   mode: 'official' | 'api' | 'fallback' | 'cache' | 'local' | 'download'
+  isFallback: boolean
+  resolvedSongId: string
+  resolvedMediaId: string
+  officialSourceId: string
 }
 
 export const playbackSourceInfo = ref<PlaybackSourceInfo | null>(null)

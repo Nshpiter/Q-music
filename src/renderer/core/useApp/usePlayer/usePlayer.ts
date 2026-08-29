@@ -37,11 +37,13 @@ import useSoundEffect from './useSoundEffect'
 import useMaxOutputChannelCount from './useMaxOutputChannelCount'
 import { setPowerSaveBlocker } from '@renderer/core/player/utils'
 import usePreloadNextMusic from './usePreloadNextMusic'
+import useOfficialPlaybackReport from './useOfficialPlaybackReport'
 
 
 export default () => {
   const t = useI18n()
 
+  useOfficialPlaybackReport()
   usePlayProgress()
   useMediaSessionInfo()
   usePlayEvent()

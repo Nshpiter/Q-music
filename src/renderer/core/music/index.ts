@@ -23,6 +23,23 @@ export interface MusicUrlResolvedInfo {
   resolvedSource: LX.Source
   quality: LX.Quality | null
   mode: 'official' | 'api' | 'fallback' | 'cache' | 'local' | 'download'
+  isFallback?: boolean
+  routeKey?: string
+  resolvedMusicInfo?: LX.Music.MusicInfo
+  officialReportSongId?: string
+  cacheProviderId?: string
+}
+
+export interface MusicUrlRequestOptions {
+  routeStrategy?: 'all' | 'official' | 'api'
+  excludedUrls?: ReadonlySet<string>
+  excludedRouteKeys?: ReadonlySet<string>
+  refreshRouteKeys?: ReadonlySet<string>
+  onRouteFailed?: (routeKey: string, url?: string) => void
+  onRouteRateLimited?: (routeKey: string) => void
+  blockedApiProviders?: Map<string, Error>
+  signal?: AbortSignal
+  directOnly?: boolean
 }
 
 
@@ -33,6 +50,7 @@ export const getMusicUrl = async({
   onToggleSource,
   onResolved,
   allowToggleSource,
+  requestOptions,
 }: {
   musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
   isRefresh?: boolean
@@ -40,18 +58,14 @@ export const getMusicUrl = async({
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
   onResolved?: (info: MusicUrlResolvedInfo) => void
   allowToggleSource?: boolean
+  requestOptions?: MusicUrlRequestOptions
 }): Promise<string> => {
   if ('progress' in musicInfo) {
-    const url = await getDownloadMusicUrl({ musicInfo, isRefresh, onToggleSource, allowToggleSource })
-    const source = musicInfo.metadata.musicInfo.source
-    onResolved?.({ requestedSource: source, resolvedSource: source, quality: musicInfo.metadata.quality, mode: 'download' })
-    return url
+    return getDownloadMusicUrl({ musicInfo, isRefresh, onToggleSource, onResolved, allowToggleSource, requestOptions })
   } else if (musicInfo.source == 'local') {
-    const url = await getLocalMusicUrl({ musicInfo, isRefresh, onToggleSource, allowToggleSource })
-    onResolved?.({ requestedSource: musicInfo.source, resolvedSource: musicInfo.source, quality: null, mode: 'local' })
-    return url
+    return getLocalMusicUrl({ musicInfo, isRefresh, onToggleSource, onResolved, allowToggleSource, requestOptions })
   } else {
-    return getOnlineMusicUrl({ musicInfo, isRefresh, quality, onToggleSource, onResolved, allowToggleSource })
+    return getOnlineMusicUrl({ musicInfo, isRefresh, quality, onToggleSource, onResolved, allowToggleSource, requestOptions })
   }
 }
 

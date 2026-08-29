@@ -1,7 +1,7 @@
 import { BrowserWindow, safeStorage, session, shell, type Session, type WebContents } from 'electron'
 import { getProxy } from '@main/utils'
 import getStore from '@main/utils/store'
-import { constants, createCipheriv, publicEncrypt, randomBytes } from 'node:crypto'
+import { constants, createCipheriv, createHash, publicEncrypt, randomBytes } from 'node:crypto'
 
 export type MusicAccountProvider = 'tx' | 'wy'
 
@@ -74,6 +74,7 @@ export interface MusicAccountMusicUrlRequest {
   provider: MusicAccountProvider
   songId: string
   mediaId?: string
+  reportSongId?: string
   quality: LX.Quality
   refresh?: boolean
 }
@@ -83,6 +84,21 @@ export interface MusicAccountMusicUrlResult {
   status: 'available' | 'login_required' | 'unavailable' | 'error'
   url: string
   quality: LX.Quality
+  reportSongId?: string
+}
+
+export interface MusicAccountPlaybackReportRequest {
+  provider: MusicAccountProvider
+  songId: string
+  mediaId?: string
+  sourceId?: string
+  playedSeconds: number
+  startedAt: number
+}
+
+export interface MusicAccountPlaybackReportResult {
+  provider: MusicAccountProvider
+  status: 'reported' | 'login_required' | 'unavailable'
 }
 
 const providerConfig = {
@@ -102,7 +118,9 @@ const providerConfig = {
 
 const loginWindows = new Map<MusicAccountProvider, Electron.BrowserWindow>()
 const accountValidationCache = new Map<MusicAccountProvider, { connected: boolean, state: MusicAccountConnectionState, expiresAt: number }>()
-const officialMusicUrlCache = new Map<string, { url: string, quality: LX.Quality, expiresAt: number }>()
+const officialMusicUrlCache = new Map<string, { url: string, quality: LX.Quality, reportSongId?: string, expiresAt: number }>()
+let qqPlaybackGuid = ''
+let neteasePlaybackDeviceId = ''
 let qqDailyKeyWindow: BrowserWindow | null = null
 let qqDailyKeyTask: Promise<QQDailyKeySaveResult> | null = null
 const qqDailyKeyStoreName = 'music_account_credentials'
@@ -110,8 +128,11 @@ const qqDailyKeyStoreField = 'qqDailyApiKey'
 const qqDailyKeyPage = 'https://y.qq.com/n/ryqq_v2/qqmusic_skills'
 const neteaseIv = Buffer.from('0102030405060708')
 const neteasePresetKey = Buffer.from('0CoJUm6Qyw8W8jud')
+const neteaseEapiKey = Buffer.from('e82ckenh8dichen8')
 const neteaseBase62 = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 const neteasePublicKey = '-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDgtQn2JZ34ZC28NWYpAUd98iZ37BUrX/aKzmFbt7clFSs6sXqHauqKWqdtLkF2KexO40H1YTX8z2lSgBBOAxLsvaklV8k4cBFK9snQXE9/DDaFt6Rr7iVZMldczhC0JNgTz+SHXT6CBHuX3e9SdB1Ua44oncaTWz7OBGLbCiK45wIDAQAB\n-----END PUBLIC KEY-----'
+const neteasePlaybackLogPath = '/api/feedback/weblog'
+const playbackReportTimeout = 10_000
 
 const aesEncrypt = (buffer: Buffer, key: Buffer) => {
   const cipher = createCipheriv('aes-128-cbc', key, neteaseIv)
@@ -126,6 +147,15 @@ const buildNeteaseWeapiForm = (data: Record<string, unknown>) => {
   const paddedKey = Buffer.concat([Buffer.alloc(128 - reversedKey.length), reversedKey])
   const encSecKey = publicEncrypt({ key: neteasePublicKey, padding: constants.RSA_NO_PADDING }, paddedKey).toString('hex')
   return new URLSearchParams({ params, encSecKey })
+}
+
+const buildNeteaseEapiForm = (path: string, data: Record<string, unknown>) => {
+  const text = JSON.stringify(data)
+  const digest = createHash('md5').update(`nobody${path}use${text}md5forencrypt`).digest('hex')
+  const payload = `${path}-36cd479b6b5-${text}-36cd479b6b5-${digest}`
+  const cipher = createCipheriv('aes-128-ecb', neteaseEapiKey, null)
+  const params = Buffer.concat([cipher.update(Buffer.from(payload)), cipher.final()]).toString('hex').toUpperCase()
+  return new URLSearchParams({ params })
 }
 
 const isAllowedHost = (provider: MusicAccountProvider, target: string) => {
@@ -246,7 +276,7 @@ const isQQMusicLoginRequiredError = (error: unknown) => {
   return error instanceof QQMusicURequestError && error.reason == 'login_required'
 }
 
-const requestQQMusicU = async<T extends object>(requests: Record<string, unknown>): Promise<T> => {
+const requestQQMusicU = async<T extends object>(requests: Record<string, unknown>, signal?: AbortSignal): Promise<T> => {
   const { accountSession, uin, authst } = await getQQAccountCredentials()
   const response = await accountSession.fetch('https://u.y.qq.com/cgi-bin/musicu.fcg', {
     method: 'POST',
@@ -259,6 +289,7 @@ const requestQQMusicU = async<T extends object>(requests: Record<string, unknown
       comm: { uin, format: 'json', ct: 24, cv: 0, authst },
       ...requests,
     }),
+    signal,
   })
   if (!response.ok) {
     const error = new QQMusicURequestError(
@@ -338,6 +369,29 @@ const getQQOfficialMusicUrl = async(songId: string, mediaId: string, quality: LX
     if (url) return { url, quality: candidate.quality as LX.Quality }
   }
   return null
+}
+
+const getQQNumericSongId = async(songMid: string, signal?: AbortSignal) => {
+  try {
+    const result = await requestQQMusicU<{
+      detail?: {
+        data?: { track_info?: { id?: string | number } }
+      }
+    }>({
+      detail: {
+        module: 'music.pf_song_detail_svr',
+        method: 'get_song_detail_yqq',
+        param: { song_type: 0, song_mid: songMid },
+      },
+    }, signal)
+    const songId = String(result.detail?.data?.track_info?.id ?? '')
+    return /^\d+$/.test(songId) ? songId : ''
+  } catch (error) {
+    if (signal?.aborted == true) throw error
+    if (isQQMusicLoginRequiredError(error)) throw error
+    console.warn('[musicAccount] QQ numeric song id unavailable', error)
+    return ''
+  }
 }
 
 const getCompatibleUserAgent = (userAgent: string) => userAgent
@@ -651,12 +705,19 @@ export const getMusicAccountMusicUrl = async(request: MusicAccountMusicUrlReques
     url: '',
     quality: request.quality,
   })
-  if (!await verifyMusicAccount(request.provider)) return unavailable('login_required')
+  try {
+    if (!await hasLoginCookie(request.provider)) return unavailable('login_required')
+    await configureAccountSessionProxy(request.provider)
+  } catch (error) {
+    console.warn(`[musicAccount] ${request.provider} credential check unavailable`, error)
+    return unavailable('error')
+  }
 
   const cacheKey = `${request.provider}:${request.songId}:${request.mediaId ?? ''}:${request.quality}`
   const cached = officialMusicUrlCache.get(cacheKey)
   if (!request.refresh && cached && cached.expiresAt > Date.now()) {
-    return { provider: request.provider, status: 'available', url: cached.url, quality: cached.quality }
+    const reportSongId = /^\d+$/.test(request.reportSongId ?? '') ? request.reportSongId : cached.reportSongId
+    return { provider: request.provider, status: 'available', url: cached.url, quality: cached.quality, reportSongId }
   }
 
   try {
@@ -664,11 +725,202 @@ export const getMusicAccountMusicUrl = async(request: MusicAccountMusicUrlReques
       ? await getQQOfficialMusicUrl(request.songId, request.mediaId ?? request.songId, request.quality)
       : await getNeteaseOfficialMusicUrl(request.songId, request.quality)
     if (!result) return unavailable('unavailable')
-    officialMusicUrlCache.set(cacheKey, { ...result, expiresAt: Date.now() + 5 * 60_000 })
-    return { provider: request.provider, status: 'available', ...result }
+    const reportSongId = request.provider == 'tx'
+      ? (/^\d+$/.test(request.reportSongId ?? '') ? request.reportSongId : request.songId)
+      : request.songId
+    officialMusicUrlCache.set(cacheKey, { ...result, reportSongId, expiresAt: Date.now() + 5 * 60_000 })
+    return { provider: request.provider, status: 'available', ...result, reportSongId }
   } catch (error) {
     console.warn(`[musicAccount] ${request.provider} official music URL unavailable`, error)
     return unavailable(isQQMusicLoginRequiredError(error) ? 'login_required' : 'error')
+  }
+}
+
+const withPlaybackReportTimeout = async<T>(handler: (signal: AbortSignal) => Promise<T>) => {
+  const abortController = new AbortController()
+  const timeout = setTimeout(() => {
+    abortController.abort()
+  }, playbackReportTimeout)
+  try {
+    return await handler(abortController.signal)
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+const reportQQPlayback = async(request: MusicAccountPlaybackReportRequest) => withPlaybackReportTimeout(async signal => {
+  const { accountSession, uin } = await getQQAccountCredentials()
+  if (uin == '0') return 'login_required' as const
+  const songId = /^\d+$/.test(request.songId) ? request.songId : await getQQNumericSongId(request.songId, signal)
+  if (!songId) return 'unavailable' as const
+  const cookies = await accountSession.cookies.get({ url: 'https://y.qq.com' })
+  const cookieGuid = cookies.find(cookie => cookie.name.toLowerCase() == 'pgv_pvid')?.value ?? ''
+  const guid = /^\d{6,}$/.test(cookieGuid)
+    ? cookieGuid
+    : (qqPlaybackGuid ||= Array.from(randomBytes(10), value => String(value % 10)).join(''))
+  const url = new URL('https://stat6.y.qq.com/pc/fcgi-bin/cgi_music_webreport.fcg')
+  url.search = new URLSearchParams({
+    Count: '1',
+    Fqq: uin,
+    Fguid: guid,
+    Ffromtag1: '10050',
+    Ffromtag2: songId,
+    Fsong_id: songId,
+    Fplay_time: String(Math.max(0, Math.floor(request.playedSeconds))),
+    Fstart_time: String(Math.max(0, Math.floor(request.startedAt))),
+    Ftype: request.mediaId ? '3' : '1',
+    Fversion: '1',
+    Fid1: '0',
+  }).toString()
+  const response = await accountSession.fetch(url.toString(), {
+    headers: { Referer: 'https://y.qq.com/' },
+    signal,
+  })
+  if (response.status == 401 || response.status == 403) {
+    accountValidationCache.delete('tx')
+    return 'login_required' as const
+  }
+  if (!response.ok) return 'unavailable' as const
+  const responseText = await response.text()
+  if (/(?:input\s+id|login\s*(?:required|invalid)|invalid\s*(?:uin|user))/i.test(responseText)) {
+    accountValidationCache.delete('tx')
+    return 'login_required' as const
+  }
+  if (/(?:error|failed?)/i.test(responseText)) return 'unavailable' as const
+  return 'reported' as const
+})
+
+const getNeteasePlaybackContext = async(accountSession: Session) => {
+  const cookies = await accountSession.cookies.get({ url: 'https://music.163.com' })
+  const cookieMap = new Map(cookies.map(cookie => [cookie.name.toLowerCase(), cookie.value]))
+  const musicU = cookieMap.get('music_u') ?? ''
+  if (!musicU) return null
+
+  return {
+    csrfToken: cookieMap.get('__csrf') ?? '',
+    deviceId: cookieMap.get('deviceid') ?? cookieMap.get('_ntes_nuid') ?? (neteasePlaybackDeviceId ||= randomBytes(16).toString('hex')),
+    musicU,
+    nmtid: cookieMap.get('nmtid') ?? '',
+  }
+}
+
+const requestNeteasePlaybackLog = async(
+  accountSession: Session,
+  context: NonNullable<Awaited<ReturnType<typeof getNeteasePlaybackContext>>>,
+  log: Record<string, unknown>,
+) => withPlaybackReportTimeout(async signal => {
+  const header: Record<string, string> = {
+    osver: '15.5',
+    deviceId: context.deviceId,
+    os: 'osx',
+    appver: '3.1.10.5100',
+    versioncode: '140',
+    mobilename: '',
+    buildver: String(Math.floor(Date.now() / 1_000)),
+    resolution: '1920x1080',
+    __csrf: context.csrfToken,
+    channel: 'netease',
+    requestId: `${Date.now()}_${String(randomBytes(2).readUInt16BE(0) % 10_000).padStart(4, '0')}`,
+    MUSIC_U: context.musicU,
+  }
+  if (context.nmtid) header.NMTID = context.nmtid
+  const cookie = Object.entries(header)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('; ')
+  const body = buildNeteaseEapiForm(neteasePlaybackLogPath, {
+    logs: JSON.stringify([log]),
+    e_r: false,
+    header,
+  })
+  const response = await accountSession.fetch('https://clientlog.music.163.com/eapi/feedback/weblog', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+      Cookie: cookie,
+      Origin: 'https://music.163.com',
+      Referer: 'https://music.163.com/',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    },
+    body,
+    signal,
+  })
+  if (response.status == 401 || response.status == 403) {
+    accountValidationCache.delete('wy')
+    return 'login_required' as const
+  }
+  if (!response.ok) return 'unavailable' as const
+  try {
+    const result = await response.json() as { code?: number | string }
+    const code = Number(result.code)
+    if (code == 200) return 'reported' as const
+    if (code == 301 || code == 401) {
+      accountValidationCache.delete('wy')
+      return 'login_required' as const
+    }
+    return 'unavailable' as const
+  } catch {
+    return 'unavailable' as const
+  }
+})
+
+const reportNeteasePlayback = async(request: MusicAccountPlaybackReportRequest) => {
+  if (!/^\d+$/.test(request.songId)) return 'unavailable' as const
+  const accountSession = session.fromPartition(providerConfig.wy.partition)
+  const context = await getNeteasePlaybackContext(accountSession)
+  if (!context) return 'login_required' as const
+  const songId = Number(request.songId)
+  const requestedSourceId = request.sourceId ?? ''
+  const sourceId = /^\d+$/.test(requestedSourceId) ? requestedSourceId : '0'
+  const startStatus = await requestNeteasePlaybackLog(accountSession, context, {
+    action: 'startplay',
+    json: {
+      id: songId,
+      type: 'song',
+      mainsite: '1',
+      mainsiteWeb: '1',
+      content: `id=${sourceId}`,
+    },
+  })
+  if (startStatus != 'reported') return startStatus
+
+  return requestNeteasePlaybackLog(accountSession, context, {
+    action: 'play',
+    json: {
+      download: 0,
+      end: 'playend',
+      id: songId,
+      sourceId,
+      time: Math.max(1, Math.floor(request.playedSeconds)),
+      type: 'song',
+      wifi: 0,
+      source: 'list',
+      mainsite: '1',
+      mainsiteWeb: '1',
+      content: `id=${sourceId}`,
+    },
+  })
+}
+
+export const reportMusicAccountPlayback = async(request: MusicAccountPlaybackReportRequest): Promise<MusicAccountPlaybackReportResult> => {
+  const unavailable = (status: MusicAccountPlaybackReportResult['status']): MusicAccountPlaybackReportResult => ({
+    provider: request.provider,
+    status,
+  })
+  try {
+    if (
+      (request.provider == 'wy' ? !/^\d+$/.test(request.songId) : !request.songId.trim()) ||
+      !Number.isFinite(request.playedSeconds) || request.playedSeconds <= 0 ||
+      !Number.isFinite(request.startedAt) || request.startedAt <= 0
+    ) return unavailable('unavailable')
+    if (!await hasLoginCookie(request.provider)) return unavailable('login_required')
+    await configureAccountSessionProxy(request.provider)
+    const status = request.provider == 'tx'
+      ? await reportQQPlayback(request)
+      : await reportNeteasePlayback(request)
+    return unavailable(status)
+  } catch (error) {
+    console.warn(`[musicAccount] ${request.provider} playback report unavailable`, error)
+    return unavailable(isQQMusicLoginRequiredError(error) ? 'login_required' : 'unavailable')
   }
 }
 

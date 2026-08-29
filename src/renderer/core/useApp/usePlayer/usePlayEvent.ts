@@ -2,35 +2,23 @@ import { onBeforeUnmount } from '@common/utils/vueTools'
 import { useI18n } from '@renderer/plugins/i18n'
 import { musicInfo, playMusicInfo } from '@renderer/store/player/state'
 import { setStop, isEmpty } from '@renderer/plugins/player'
-import { playNext, setMusicUrl } from '@renderer/core/player'
+import { retryMusicUrl } from '@renderer/core/player'
 import { setAllStatus } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
 
 export default () => {
   const t = useI18n()
-  let retryNum = 0
-  let prevTimeoutId: string | null = null
-
   let loadingTimeout: NodeJS.Timeout | null = null
-  let delayNextTimeout: NodeJS.Timeout | null = null
   const startLoadingTimeout = () => {
     // console.log('start load timeout')
     clearLoadingTimeout()
     loadingTimeout = setTimeout(() => {
       if (window.lx.isPlayedStop) {
-        prevTimeoutId = null
         setAllStatus('')
         return
       }
-
-      // 如果加载超时，则尝试刷新URL
-      if (prevTimeoutId == musicInfo.id) {
-        prevTimeoutId = null
-        void playNext(true)
-      } else {
-        prevTimeoutId = musicInfo.id
-        if (playMusicInfo.musicInfo) setMusicUrl(playMusicInfo.musicInfo, true)
-      }
+      if (!isEmpty()) setStop()
+      if (playMusicInfo.musicInfo) retryMusicUrl(playMusicInfo.musicInfo)
     }, 25000)
   }
   const clearLoadingTimeout = () => {
@@ -38,23 +26,6 @@ export default () => {
     // console.log('clear load timeout')
     clearTimeout(loadingTimeout)
     loadingTimeout = null
-  }
-
-  const clearDelayNextTimeout = () => {
-    // console.log(this.delayNextTimeout)
-    if (!delayNextTimeout) return
-    clearTimeout(delayNextTimeout)
-    delayNextTimeout = null
-  }
-  const addDelayNextTimeout = () => {
-    clearDelayNextTimeout()
-    delayNextTimeout = setTimeout(() => {
-      if (window.lx.isPlayedStop) {
-        setAllStatus('')
-        return
-      }
-      void playNext(true)
-    }, 5000)
   }
 
   const handleLoadstart = () => {
@@ -73,11 +44,11 @@ export default () => {
   }
 
   const handleEmpied = () => {
-    clearDelayNextTimeout()
     clearLoadingTimeout()
   }
 
   const handleWating = () => {
+    if (appSetting['player.autoSkipOnError']) startLoadingTimeout()
     setAllStatus(t('player__buffering'))
   }
 
@@ -86,29 +57,16 @@ export default () => {
     clearLoadingTimeout()
     if (window.lx.isPlayedStop) return
     if (!isEmpty()) setStop()
-    if (playMusicInfo.musicInfo && errCode !== 1 && retryNum < 2) { // 若音频URL无效则尝试刷新2次URL
-      // console.log(this.retryNum)
-      retryNum++
-      setMusicUrl(playMusicInfo.musicInfo, true)
+    if (playMusicInfo.musicInfo && errCode !== 1) {
+      retryMusicUrl(playMusicInfo.musicInfo)
       setAllStatus(t('player__refresh_url'))
       return
     }
 
-    if (appSetting['player.autoSkipOnError']) {
-      if (document.hidden) {
-        console.warn('error skip to next')
-        void playNext(true)
-      } else {
-        setAllStatus(t('player__error'))
-        setTimeout(addDelayNextTimeout)
-      }
-    }
+    setAllStatus(t('player__error'))
   }
 
   const handleSetPlayInfo = () => {
-    retryNum = 0
-    prevTimeoutId = null
-    clearDelayNextTimeout()
     clearLoadingTimeout()
   }
 

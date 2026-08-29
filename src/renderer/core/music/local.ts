@@ -2,6 +2,7 @@ import { encodePath } from '@common/utils/common'
 import { updateListMusics } from '@renderer/store/list/action'
 import { saveLyric, saveMusicUrl } from '@renderer/utils/ipc'
 import { getLocalFilePath } from '@renderer/utils/music'
+import { requestMsg } from '@renderer/utils/message'
 
 import {
   buildLyricInfo,
@@ -14,26 +15,27 @@ import {
   getOnlineOtherSourcePicUrl,
   getOtherSource,
 } from './utils'
+import type { MusicUrlRequestOptions, MusicUrlResolvedInfo } from './index'
 
 
-const getOtherSourceByLocal = async<T>(musicInfo: LX.Music.MusicInfoLocal, handler: (infos: LX.Music.MusicInfoOnline[]) => Promise<T>) => {
-  let result: LX.Music.MusicInfoOnline[] = []
-  result = await getOtherSource(musicInfo)
-  if (result.length) try { return await handler(result) } catch {}
+const getOtherSourceByLocal = async<T>(
+  musicInfo: LX.Music.MusicInfoLocal,
+  handler: (infos: LX.Music.MusicInfoOnline[]) => Promise<T>,
+  signal?: AbortSignal,
+) => {
+  const candidates: Array<{ musicInfo: LX.Music.MusicInfoLocal, isRefresh: boolean }> = [{ musicInfo, isRefresh: false }]
+  const candidateKeys = new Set([`${musicInfo.name}\n${musicInfo.singer}`])
+  const addCandidate = (name: string, singer: string) => {
+    const key = `${name}\n${singer}`
+    if (candidateKeys.has(key)) return
+    candidateKeys.add(key)
+    candidates.push({ musicInfo: { ...musicInfo, name, singer }, isRefresh: true })
+  }
+
   if (musicInfo.name.includes('-')) {
     const [name, singer] = musicInfo.name.split('-').map(val => val.trim())
-    result = await getOtherSource({
-      ...musicInfo,
-      name,
-      singer,
-    }, true)
-    if (result.length) try { return await handler(result) } catch {}
-    result = await getOtherSource({
-      ...musicInfo,
-      name: singer,
-      singer: name,
-    }, true)
-    if (result.length) try { return await handler(result) } catch {}
+    addCandidate(name, singer)
+    addCandidate(singer, name)
   }
   let fileName = musicInfo.meta.filePath.split(/\/|\\/).at(-1)
   if (fileName) {
@@ -41,61 +43,119 @@ const getOtherSourceByLocal = async<T>(musicInfo: LX.Music.MusicInfoLocal, handl
     if (fileName != musicInfo.name) {
       if (fileName.includes('-')) {
         const [name, singer] = fileName.split('-').map(val => val.trim())
-        result = await getOtherSource({
-          ...musicInfo,
-          name,
-          singer,
-        }, true)
-        if (result.length) try { return await handler(result) } catch {}
-        result = await getOtherSource({
-          ...musicInfo,
-          name: singer,
-          singer: name,
-        }, true)
+        addCandidate(name, singer)
+        addCandidate(singer, name)
       } else {
-        result = await getOtherSource({
-          ...musicInfo,
-          name: fileName,
-          singer: '',
-        }, true)
+        addCandidate(fileName, '')
       }
-      if (result.length) try { return await handler(result) } catch {}
     }
   }
 
-  throw new Error('source not found')
+  let lastError: Error | null = null
+  let rateLimitError: Error | null = null
+  for (const candidate of candidates) {
+    if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
+    let result: LX.Music.MusicInfoOnline[]
+    try {
+      result = await getOtherSource(candidate.musicInfo, candidate.isRefresh, signal)
+    } catch (error: any) {
+      if (error.message == requestMsg.cancelRequest) throw error
+      lastError = error instanceof Error ? error : new Error('source search failed')
+      continue
+    }
+    if (!result.length) continue
+    try {
+      return await handler(result)
+    } catch (error: any) {
+      if (error.message == requestMsg.cancelRequest) throw error
+      lastError = error instanceof Error ? error : new Error('source route failed')
+      if (error.message == requestMsg.tooManyRequests) rateLimitError = lastError
+    }
+  }
+
+  throw rateLimitError ?? lastError ?? new Error('source not found')
 }
 
-export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = true, onToggleSource = () => {} }: {
+export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = true, onToggleSource = () => {}, onResolved, requestOptions }: {
   musicInfo: LX.Music.MusicInfoLocal
   isRefresh: boolean
   allowToggleSource?: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+  onResolved?: (info: MusicUrlResolvedInfo) => void
+  requestOptions?: MusicUrlRequestOptions
 }): Promise<string> => {
+  const localRouteKey = `local:${musicInfo.id}`
   if (!isRefresh) {
     const path = await getLocalFilePath(musicInfo)
-    if (path) return encodePath(path)
+    if (path && !requestOptions?.excludedRouteKeys?.has(localRouteKey)) {
+      const url = encodePath(path)
+      if (!requestOptions?.excludedUrls?.has(url)) {
+        onResolved?.({
+          requestedSource: musicInfo.source,
+          resolvedSource: musicInfo.source,
+          quality: null,
+          mode: 'local',
+          routeKey: localRouteKey,
+          resolvedMusicInfo: musicInfo,
+        })
+        return url
+      }
+      requestOptions?.onRouteFailed?.(localRouteKey, url)
+    }
   }
 
+  if (requestOptions?.directOnly) {
+    requestOptions.onRouteFailed?.(localRouteKey)
+    throw new Error('local music file unavailable')
+  }
+
+  let initialError: Error | null = null
   try {
-    return await getOnlineOtherSourceMusicUrlByLocal(musicInfo, isRefresh).then(({ url, quality, isFromCache }) => {
-      if (!isFromCache) void saveMusicUrl(musicInfo, quality, url)
+    return await getOnlineOtherSourceMusicUrlByLocal(musicInfo, isRefresh, requestOptions).then(({ url, quality, isFromCache, routeKey, transportMode, cacheProviderId }) => {
+      onResolved?.({
+        requestedSource: musicInfo.source,
+        resolvedSource: musicInfo.source,
+        quality,
+        mode: transportMode,
+        routeKey,
+        resolvedMusicInfo: musicInfo,
+        cacheProviderId,
+      })
+      if (!isFromCache) void saveMusicUrl(musicInfo, quality, url, cacheProviderId)
       return url
     })
-  } catch {}
+  } catch (err: any) {
+    if (err.message == requestMsg.cancelRequest) throw err
+    initialError = err instanceof Error ? err : new Error('local source route failed')
+  }
 
-  if (!allowToggleSource) throw new Error('failed')
+  if (!allowToggleSource) throw initialError ?? new Error('failed')
 
   onToggleSource()
-  return getOtherSourceByLocal(musicInfo, async(otherSource) => {
-    return getOnlineOtherSourceMusicUrl({ musicInfos: [...otherSource], onToggleSource, isRefresh }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache }) => {
-      // saveLyric(musicInfo, data.lyricInfo)
-      if (!isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url)
+  try {
+    return await getOtherSourceByLocal(musicInfo, async(otherSource) => {
+      return getOnlineOtherSourceMusicUrl({ musicInfos: [...otherSource], onToggleSource, isRefresh, requestOptions }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache, routeKey, transportMode, cacheProviderId }) => {
+        // saveLyric(musicInfo, data.lyricInfo)
+        onResolved?.({
+          requestedSource: musicInfo.source,
+          resolvedSource: targetMusicInfo.source,
+          quality: targetQuality,
+          mode: transportMode,
+          routeKey,
+          resolvedMusicInfo: targetMusicInfo,
+          cacheProviderId,
+        })
+        if (!isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url, cacheProviderId)
 
-      // TODO: save url ?
-      return url
-    })
-  })
+        // TODO: save url ?
+        return url
+      })
+    }, requestOptions?.signal)
+  } catch (error: any) {
+    if (error.message == requestMsg.cancelRequest) throw error
+    if (initialError?.message == requestMsg.tooManyRequests && error.message != requestMsg.tooManyRequests) throw initialError
+    throw error
+  }
 }
 
 export const getPicUrl = async({ musicInfo, listId, isRefresh, onToggleSource = () => {} }: {

@@ -131,6 +131,7 @@ const modules = {
     get_lyric_edited_count: 'get_lyric_edited_count',
     get_music_url: 'get_music_url',
     save_music_url: 'save_music_url',
+    remove_music_url: 'remove_music_url',
     clear_music_url: 'clear_music_url',
     get_music_url_count: 'get_music_url_count',
 
@@ -145,6 +146,7 @@ const modules = {
     music_account_playlists: 'music_account_playlists',
     music_account_playlist_detail: 'music_account_playlist_detail',
     music_account_music_url: 'music_account_music_url',
+    music_account_playback_report: 'music_account_playback_report',
     music_account_qq_daily_key_status: 'music_account_qq_daily_key_status',
     music_account_qq_daily_key_save: 'music_account_qq_daily_key_save',
     music_account_qq_daily_key_page: 'music_account_qq_daily_key_page',
