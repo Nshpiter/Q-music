@@ -355,11 +355,26 @@ const getQualityFallbacks = (quality: LX.Quality) => {
 
 export const getPlayQualityCandidates = (highQuality: LX.Quality, musicInfo: LX.Music.MusicInfoOnline): LX.Quality[] => {
   const supportedQualitys = qualityList.value[musicInfo.source]
-  if (!supportedQualitys?.length) return ['128k']
-
   const fallbackQualitys = getQualityFallbacks(highQuality)
+  const metadataQualitys = musicInfo.meta?._qualitys ?? {}
+  // 自定义 API 的 qualitys 声明就是该接口可尝试的音质范围。
+  // 与官方/内置接口不同，它不一定能在搜索结果的歌曲元数据中完整标注，
+  // 因此不能再用歌曲元数据把自定义高音质提前过滤掉。
+  const isUserApi = /^user_api(?:_|$)/.test(apiSource.value ?? '')
+  if (!supportedQualitys?.length) {
+    // 自定义接口刚切换或仍在初始化时 qualityList 可能暂时为空。
+    // 不要立即把用户选择降成 128K：接口声明未知时先按自定义接口
+    // 的完整回退链尝试；内置接口则只相信歌曲元数据，避免无意义请求。
+    if (isUserApi) return fallbackQualitys
+    const metadataCandidates = fallbackQualitys.filter(quality => {
+      if (quality == '128k') return true
+      if (quality == 'flac' && (metadataQualitys.flac ?? metadataQualitys.ape ?? metadataQualitys.wav)) return true
+      return !!metadataQualitys[quality]
+    })
+    return metadataCandidates.length ? metadataCandidates : ['128k']
+  }
   const candidates = fallbackQualitys.filter(quality => {
-    return supportedQualitys.includes(quality) && (quality == '128k' || !!musicInfo.meta._qualitys[quality])
+    return supportedQualitys.includes(quality) && (isUserApi || quality == '128k' || !!metadataQualitys[quality])
   })
   if (candidates.length) return candidates
 

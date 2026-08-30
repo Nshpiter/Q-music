@@ -1,10 +1,11 @@
 import { markRaw } from '@common/utils/vueTools'
 import music from '@renderer/utils/musicSdk'
-import { deduplicationList, toNewMusicInfo } from '@renderer/utils'
-import { similar } from '@common/utils/common'
+import { toNewMusicInfo } from '@renderer/utils'
 import { assertApiSupport } from '@renderer/store/utils'
 
 import { sources, maxPages, listInfos } from './state'
+import { getSearchSingerTokens, getSearchVariantKinds, normalizeSearchText, rankSearchItems } from './ranking'
+import type { SearchAlbumEvidence, SearchSourceRank } from './ranking'
 
 interface SearchResult {
   list: LX.Music.MusicInfo[]
@@ -15,26 +16,32 @@ interface SearchResult {
 }
 
 const aggregateSources = new WeakMap<LX.Music.MusicInfo, LX.Music.MusicInfo[]>()
+const aggregateSourceRanks = new WeakMap<LX.Music.MusicInfo, SearchSourceRank>()
 
-const normalizeText = (text: string) => text
-  .normalize('NFKC')
-  .toLocaleLowerCase()
-  .replace(/[^\p{L}\p{N}]+/gu, '')
+// Music IDs are normally source-prefixed, but a few providers (notably
+// legacy KuGou results) can reuse the same ID format. Search aggregation must
+// retain one entry per provider so the source picker and fallback routes do
+// not silently lose a candidate.
+const deduplicationListBySource = <T extends LX.Music.MusicInfo>(list: T[]): T[] => {
+  const keys = new Set<string>()
+  return list.filter(item => {
+    const key = `${item.source}__${item.id}`
+    if (keys.has(key)) return false
+    keys.add(key)
+    return true
+  })
+}
 
-const normalizeSinger = (singer: string) => singer
-  .split(/[、,&/]+/)
-  .map(normalizeText)
-  .filter(Boolean)
-  .sort()
-  .join('')
+const normalizeSinger = (singer: string) => getSearchSingerTokens(singer).join('')
 
 const getAggregateKey = (musicInfo: LX.Music.MusicInfo) => {
-  return `${normalizeText(musicInfo.name)}__${normalizeSinger(musicInfo.singer)}`
+  const variantKinds = getSearchVariantKinds(`${musicInfo.name} ${musicInfo.meta.albumName ?? ''}`).join(',')
+  return `${normalizeSearchText(musicInfo.name)}__${normalizeSinger(musicInfo.singer)}__${variantKinds}`
 }
 
 const mergeSourceResults = (list: LX.Music.MusicInfo[]) => {
   const groups = new Map<string, LX.Music.MusicInfo[]>()
-  for (const item of deduplicationList(list)) {
+  for (const item of deduplicationListBySource(list)) {
     const key = getAggregateKey(item)
     const group = groups.get(key)
     if (group) group.push(item)
@@ -59,32 +66,49 @@ export const selectAggregateSource = (index: number, source: LX.OnlineSource) =>
 }
 
 
-/**
- * 按搜索关键词重新排序列表
- * @param list 歌曲列表
- * @param keyword 搜索关键词
- * @returns 排序后的列表
- */
-const handleSortList = (list: LX.Music.MusicInfo[], keyword: string) => {
-  const query = normalizeText(keyword)
-  const variantPattern = /(?:翻唱|cover|remix|mix|live|现场|dj|伴奏|纯音乐|instrumental|加速|降速|女声版|男声版|片段|剪辑)/i
-  return list
-    .map((item, index) => {
-      const name = normalizeText(item.name)
-      const singer = normalizeText(item.singer)
-      const albumName = item.meta.albumName ?? ''
-      let score = similar(keyword, `${item.name} ${item.singer}`)
-      if (name == query) score += 8
-      else if (name.startsWith(query)) score += 4
-      else if (name.includes(query)) score += 2
-      if (singer == query) score += 2
-      // 同名同歌手被多个平台同时返回时，通常更接近正式发行版本。
-      score += Math.min(getAggregateSources(item).length, 3) * 2
-      if (variantPattern.test(`${item.name} ${albumName}`)) score -= 3
-      return { item, index, score }
-    })
-    .sort((a, b) => b.score - a.score || a.index - b.index)
-    .map(({ item }) => item)
+const getSourceRanks = (musicInfo: LX.Music.MusicInfo) => {
+  const sourceRanks = new Map<LX.Source, SearchSourceRank>()
+  for (const sourceInfo of getAggregateSources(musicInfo)) {
+    const rank = aggregateSourceRanks.get(sourceInfo)
+    if (!rank) continue
+    const current = sourceRanks.get(sourceInfo.source)
+    if (!current || rank.rank < current.rank) sourceRanks.set(sourceInfo.source, rank)
+  }
+  return [...sourceRanks.values()]
+}
+
+const getAlbumEvidence = (musicInfo: LX.Music.MusicInfo): SearchAlbumEvidence[] => {
+  const albums = new Map<string, SearchAlbumEvidence>()
+  for (const sourceInfo of getAggregateSources(musicInfo)) {
+    const name = sourceInfo.meta.albumName ?? ''
+    if (!name) continue
+
+    let albumId: string | number | undefined
+    if (sourceInfo.source != 'local') {
+      albumId = sourceInfo.meta.albumId
+      if (!albumId && sourceInfo.source == 'tx') albumId = sourceInfo.meta.albumMid
+    }
+    // 某些平台不会返回专辑 ID。单平台搜索仍需要识别“专辑名精确命中 +
+    // 多首曲目”的原声簇，因此用带来源前缀的规范化专辑名作保守兜底；
+    // 不同平台不会因为同名专辑被错误合并。
+    const key = albumId == null || albumId === ''
+      ? `${sourceInfo.source}:name:${normalizeSearchText(name)}`
+      : `${sourceInfo.source}:${albumId}`
+    const evidence = { name, key }
+    albums.set(`${key ?? ''}__${normalizeSearchText(name)}`, evidence)
+  }
+  return [...albums.values()]
+}
+
+const rankAggregateList = (list: LX.Music.MusicInfo[], keyword: string, allowSingleSourceCollection = false) => {
+  return rankSearchItems(list.map((item, index) => ({
+    data: item,
+    name: item.name,
+    singer: item.singer,
+    albums: getAlbumEvidence(item),
+    sourceRanks: getSourceRanks(item),
+    index,
+  })), keyword, { allowSingleSourceCollection })
 }
 
 
@@ -92,16 +116,20 @@ const setLists = (results: SearchResult[], page: number, text: string): LX.Music
   let pages = []
   let totals = []
   let limit = 0
-  let list = []
-  for (const source of results) {
+  let list: LX.Music.MusicInfo[] = []
+  for (const [sourceOrder, source] of results.entries()) {
     maxPages[source.source] = source.allPage
     limit = Math.max(source.limit, limit)
     if (source.allPage < page) continue
-    list.push(...source.list)
+    list.push(...source.list.map((item, rank) => {
+      const musicInfo = markRaw(toNewMusicInfo(item))
+      aggregateSourceRanks.set(musicInfo, { rank, sourceOrder })
+      return musicInfo
+    }))
     pages.push(source.allPage)
     totals.push(source.total)
   }
-  list = mergeSourceResults(list.map(s => markRaw(toNewMusicInfo(s))))
+  list = mergeSourceResults(list)
   let listInfo = listInfos.all
   listInfo.maxPage = Math.max(0, ...pages)
   const total = Math.max(0, ...totals)
@@ -109,7 +137,10 @@ const setLists = (results: SearchResult[], page: number, text: string): LX.Music
   else listInfo.total = limit * page
   // listInfo.limit = limit
   listInfo.page = page
-  listInfo.list = handleSortList(list, text)
+  // 聚合结果中经常只有一个平台能返回完整的电影/专辑曲目簇，即使其他
+  // 平台返回了零散同名歌曲，也要启用保守的单来源簇识别；识别门槛由
+  // ranking.ts 统一控制，避免把普通同名歌曲误判为原声。
+  listInfo.list = rankAggregateList(list, text, true)
   if (text && !list.length && page == 1) listInfo.noItemLabel = window.i18n.t('no_item')
   else listInfo.noItemLabel = ''
   return listInfo.list
@@ -118,7 +149,14 @@ const setLists = (results: SearchResult[], page: number, text: string): LX.Music
 const setList = (datas: SearchResult, page: number, text: string): LX.Music.MusicInfo[] => {
   // console.log(datas.source, datas.list)
   let listInfo = listInfos[datas.source]!
-  listInfo.list = handleSortList(deduplicationList(datas.list.map(s => markRaw(toNewMusicInfo(s)))), text)
+  // 单平台结果也统一经过轻量排序：保留原生名次作为主信号，同时把
+  // 可靠的原声/原唱条目置于普通同名翻唱之前。
+  const list = deduplicationListBySource(datas.list.map((item, rank) => {
+    const musicInfo = markRaw(toNewMusicInfo(item))
+    aggregateSourceRanks.set(musicInfo, { rank, sourceOrder: 0 })
+    return musicInfo
+  }))
+  listInfo.list = rankAggregateList(list, text, true)
   if (page == 1 || (datas.total && datas.list.length)) listInfo.total = datas.total
   else listInfo.total = datas.limit * page
   listInfo.maxPage = datas.allPage

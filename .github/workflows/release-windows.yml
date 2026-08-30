@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release tag. Empty means v<package.json version>.'
+        description: 'Existing pushed release tag. Empty means v<package.json version>.'
         required: false
         type: string
       release_title:
@@ -12,7 +12,7 @@ on:
         required: false
         type: string
       draft:
-        description: 'Create a draft release when the release does not exist.'
+        description: 'Leave the release as a draft instead of publishing after assets are ready.'
         required: true
         default: false
         type: boolean
@@ -33,8 +33,10 @@ on:
 permissions:
   contents: write
 
+# Only this workflow may create or edit release metadata. A tag-based group
+# prevents a tag push and a manual retry for the same release from racing.
 concurrency:
-  group: release-windows-${{ github.ref }}
+  group: q-music-release-metadata-${{ inputs.tag_name || github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -53,6 +55,8 @@ jobs:
     steps:
       - name: Check out git repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Get npm cache directory
         run: echo "NPM_CACHE=$(npm config get cache)" >> $env:GITHUB_ENV
@@ -63,12 +67,25 @@ jobs:
         uses: ./.github/actions/setup
 
       - name: Resolve release metadata
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          INPUT_TAG_NAME: ${{ inputs.tag_name }}
+          INPUT_RELEASE_TITLE: ${{ inputs.release_title }}
+          INPUT_DRAFT: ${{ inputs.draft }}
+          INPUT_PRERELEASE: ${{ inputs.prerelease }}
+          INPUT_LATEST: ${{ inputs.latest }}
+          TRIGGER_SHA: ${{ github.sha }}
         run: |
           $packageVersion = node -p "require('./package.json').version"
-          $tagName = '${{ github.ref_name }}'
+          $tagName = $env:REF_NAME
 
-          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
-            $inputTag = '${{ inputs.tag_name }}'
+          if ($env:EVENT_NAME -eq 'workflow_dispatch') {
+            if ($env:REF_TYPE -ne 'tag') {
+              throw 'Manual release runs must be dispatched from the pushed release tag, not a branch.'
+            }
+            $inputTag = $env:INPUT_TAG_NAME
             if ([string]::IsNullOrWhiteSpace($inputTag)) {
               $tagName = "v$packageVersion"
             } else {
@@ -81,18 +98,32 @@ jobs:
             throw "Release tag '$tagName' does not match package.json version '$expectedTag'. Update package.json first."
           }
 
-          $releaseTitle = '${{ inputs.release_title }}'
+          $releaseTitle = $env:INPUT_RELEASE_TITLE
           if ([string]::IsNullOrWhiteSpace($releaseTitle)) {
             $releaseTitle = "Q-music $tagName"
+          }
+          if ($releaseTitle -match "[`r`n]") {
+            throw 'Release title must be a single line.'
+          }
+
+          $tagExists = $null -ne (git tag --list $tagName | Select-Object -First 1)
+          if (-not $tagExists) {
+            throw "Release tag '$tagName' does not exist in the checked-out repository. Push the tag first, then dispatch this workflow from that tag."
+          }
+
+          $tagCommit = git rev-parse "$tagName^{}"
+          $triggerCommit = git rev-parse "$env:TRIGGER_SHA^{}"
+          if ($LASTEXITCODE -ne 0 -or $tagCommit -ne $triggerCommit) {
+            throw "Release tag '$tagName' does not point to the workflow commit. Dispatch the workflow from the tag itself."
           }
 
           $releaseDraft = 'false'
           $releasePrerelease = 'false'
           $releaseLatest = 'true'
-          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
-            $releaseDraft = '${{ inputs.draft }}'
-            $releasePrerelease = '${{ inputs.prerelease }}'
-            $releaseLatest = '${{ inputs.latest }}'
+          if ($env:EVENT_NAME -eq 'workflow_dispatch') {
+            $releaseDraft = $env:INPUT_DRAFT
+            $releasePrerelease = $env:INPUT_PRERELEASE
+            $releaseLatest = $env:INPUT_LATEST
           }
 
           echo "PACKAGE_VERSION=$packageVersion" >> $env:GITHUB_ENV
@@ -101,9 +132,44 @@ jobs:
           echo "RELEASE_DRAFT=$releaseDraft" >> $env:GITHUB_ENV
           echo "RELEASE_PRERELEASE=$releasePrerelease" >> $env:GITHUB_ENV
           echo "RELEASE_LATEST=$releaseLatest" >> $env:GITHUB_ENV
+          echo "RELEASE_EVENT_NAME=$env:EVENT_NAME" >> $env:GITHUB_ENV
+          echo "TAG_EXISTS=$($tagExists.ToString().ToLowerInvariant())" >> $env:GITHUB_ENV
+
+      - name: Validate and render release notes
+        run: |
+          @'
+          const fs = require('node:fs')
+          const metadata = JSON.parse(fs.readFileSync('publish/version.json', 'utf8'))
+          const expectedVersion = process.env.PACKAGE_VERSION
+          const description = String(metadata.desc ?? '').trim()
+
+          if (metadata.version !== expectedVersion) {
+            throw new Error(`publish/version.json version '${metadata.version}' does not match package.json '${expectedVersion}'`)
+          }
+          if (description.length < 80 || !description.includes(expectedVersion) || /^\*\*Full Changelog\*\*:/i.test(description)) {
+            throw new Error('Release notes must contain a human-readable description for the current version')
+          }
+          fs.writeFileSync('release-notes.md', `${description}\n\n<!-- q-music-managed-release -->`, 'utf8')
+          '@ | node
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Release notes validation failed.'
+          }
+
+          $parentCommit = git rev-parse "$env:GITHUB_SHA^" 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            $previousTag = git describe --tags --match 'v0.*' --abbrev=0 $parentCommit 2>$null
+            $previousVersion = if ($previousTag -match '^v(\d+\.\d+\.\d+)$') { [version] $Matches[1] } else { $null }
+            $currentVersion = [version] $env:PACKAGE_VERSION
+            if ($null -ne $previousVersion -and $previousVersion -lt $currentVersion) {
+              Add-Content 'release-notes.md' "`n`n---`n`n[完整变更对比](https://github.com/$env:GITHUB_REPOSITORY/compare/$($previousTag)...$env:TAG_NAME)"
+            }
+          }
 
       - name: Lint
         run: npm run lint
+
+      - name: Unit tests
+        run: npm test
 
       - name: Build Windows x64 installer
         run: npm run pack
@@ -133,51 +199,141 @@ jobs:
             }
           }
 
-          for ($attempt = 1; $attempt -le 12; $attempt++) {
-            gh release view $env:TAG_NAME --repo $env:GITHUB_REPOSITORY *> $null
-            if ($LASTEXITCODE -eq 0) {
-              gh release upload $env:TAG_NAME @assets --repo $env:GITHUB_REPOSITORY --clobber
-              if ($LASTEXITCODE -eq 0 -and $env:RELEASE_LATEST -eq 'true' -and $env:RELEASE_DRAFT -ne 'true' -and $env:RELEASE_PRERELEASE -ne 'true') {
-                gh release edit $env:TAG_NAME --repo $env:GITHUB_REPOSITORY --latest
-              }
-              exit $LASTEXITCODE
+          function Get-Release {
+            $json = gh release view $env:TAG_NAME --repo $env:GITHUB_REPOSITORY --json body,isDraft,isPrerelease 2>$null
+            if ($LASTEXITCODE -ne 0) {
+              return $null
             }
-
-            $releaseArgs = @(
-              'release',
-              'create',
-              $env:TAG_NAME
-            )
-            $releaseArgs += $assets
-            $releaseArgs += @(
-              '--repo',
-              $env:GITHUB_REPOSITORY,
-              '--target',
-              $env:GITHUB_SHA,
-              '--title',
-              $env:RELEASE_TITLE,
-              '--generate-notes'
-            )
-
-            if ($env:RELEASE_DRAFT -eq 'true') {
-              $releaseArgs += '--draft'
-            }
-            if ($env:RELEASE_PRERELEASE -eq 'true') {
-              $releaseArgs += '--prerelease'
-            }
-            if ($env:RELEASE_LATEST -eq 'true' -and $env:RELEASE_DRAFT -ne 'true' -and $env:RELEASE_PRERELEASE -ne 'true') {
-              $releaseArgs += '--latest'
-            } elseif ($env:RELEASE_LATEST -ne 'true' -and $env:RELEASE_PRERELEASE -ne 'true') {
-              $releaseArgs += '--latest=false'
-            }
-
-            gh @releaseArgs
-            if ($LASTEXITCODE -eq 0) {
-              exit 0
-            }
-
-            Write-Host "Release is being created by another workflow; retry $attempt/12."
-            Start-Sleep -Seconds 10
+            return $json | ConvertFrom-Json
           }
 
-          throw "Unable to create or update release '$env:TAG_NAME'."
+          function Test-PlaceholderBody([string] $body) {
+            if ([string]::IsNullOrWhiteSpace($body)) {
+              return $true
+            }
+            $trimmed = $body.Trim()
+            if ($trimmed -match '^\*\*Full Changelog\*\*:\s*https://github\.com/\S+/compare/\S+\s*$') {
+              return $true
+            }
+            return $false
+          }
+
+          $release = Get-Release
+          $createdByRun = $false
+          if ($null -eq $release) {
+            # Create as a draft so a failed asset upload never leaves a new public, incomplete release.
+            $createArgs = @(
+              'release', 'create', $env:TAG_NAME,
+              '--repo', $env:GITHUB_REPOSITORY,
+              '--title', $env:RELEASE_TITLE,
+              '--notes-file', 'release-notes.md',
+              '--draft',
+              '--verify-tag'
+            )
+            if ($env:RELEASE_PRERELEASE -eq 'true') {
+              $createArgs += '--prerelease'
+            }
+            gh @createArgs
+            if ($LASTEXITCODE -eq 0) {
+              $createdByRun = $true
+            } else {
+              # Another actor may have created the release between view and create.
+              for ($attempt = 1; $attempt -le 3 -and $null -eq $release; $attempt++) {
+                Start-Sleep -Seconds 3
+                $release = Get-Release
+              }
+              if ($null -eq $release) {
+                throw "Unable to create or read release '$env:TAG_NAME'."
+              }
+            }
+          }
+
+          if (-not $createdByRun) {
+            $latestRelease = Get-Release
+            if ($null -eq $latestRelease) {
+              throw "Release '$env:TAG_NAME' disappeared while its metadata was being checked."
+            }
+            if ($latestRelease.body -eq $release.body -and (Test-PlaceholderBody $latestRelease.body)) {
+              gh release edit $env:TAG_NAME --repo $env:GITHUB_REPOSITORY --notes-file release-notes.md
+              if ($LASTEXITCODE -ne 0) {
+                throw "Unable to repair release notes for '$env:TAG_NAME'."
+              }
+              $latestRelease = Get-Release
+              if ($null -eq $latestRelease) {
+                throw "Release '$env:TAG_NAME' disappeared after its notes were repaired."
+              }
+            }
+            $release = $latestRelease
+          }
+
+          gh release upload $env:TAG_NAME @assets --repo $env:GITHUB_REPOSITORY --clobber
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to upload Windows assets to release '$env:TAG_NAME'."
+          }
+
+          $managedDraft = $null -ne $release -and $release.isDraft -and $release.body -match '<!-- q-music-managed-release -->'
+          $shouldPublish = ($createdByRun -or $managedDraft) -and $env:RELEASE_DRAFT -ne 'true'
+          if ($shouldPublish) {
+            $requiredAssets = @(
+              "Q-music-v$env:PACKAGE_VERSION-x64-Setup.exe",
+              "Q-music-v$env:PACKAGE_VERSION-x64-Setup.exe.blockmap",
+              'latest.yml',
+              'SHA256SUMS-windows.txt',
+              "Q-music-android-v$env:PACKAGE_VERSION-arm64-v8a.apk",
+              "Q-music-android-v$env:PACKAGE_VERSION-universal.apk",
+              'SHA256SUMS-android.txt',
+              'SHA256SUMS-arch.txt',
+              "Q-music_$($env:PACKAGE_VERSION)_x64.pacman"
+            )
+            $assetsComplete = $false
+            for ($attempt = 1; $attempt -le 180 -and -not $assetsComplete; $attempt++) {
+              $assetNames = @(gh release view $env:TAG_NAME --repo $env:GITHUB_REPOSITORY --json assets --jq '.assets[].name')
+              if ($LASTEXITCODE -ne 0) {
+                throw "Unable to inspect assets for release '$env:TAG_NAME'."
+              }
+              $missingAssets = @($requiredAssets | Where-Object { $_ -notin $assetNames })
+              $assetsComplete = $missingAssets.Count -eq 0
+              if (-not $assetsComplete) {
+                Write-Host "Waiting for Android and Arch assets ($attempt/180). Missing: $($missingAssets -join ', ')"
+                Start-Sleep -Seconds 10
+              }
+            }
+            if (-not $assetsComplete) {
+              throw "Release '$env:TAG_NAME' remains a draft because not all platform assets were uploaded."
+            }
+
+            # Re-read the draft immediately before publishing. A maintainer may
+            # have edited, published, or replaced it while platform jobs ran.
+            $currentTagCommit = git rev-parse "$env:TAG_NAME^{}"
+            $currentTriggerCommit = git rev-parse "$env:GITHUB_SHA^{}"
+            if ($LASTEXITCODE -ne 0 -or $currentTagCommit -ne $currentTriggerCommit) {
+              throw "Release tag '$env:TAG_NAME' moved while waiting for platform assets; refusing to publish it."
+            }
+            $finalRelease = Get-Release
+            if ($null -eq $finalRelease -or -not $finalRelease.isDraft -or $finalRelease.body -notmatch '<!-- q-music-managed-release -->') {
+              throw "Release '$env:TAG_NAME' changed while waiting for platform assets; refusing to publish it automatically."
+            }
+            $expectedBody = ((Get-Content 'release-notes.md' -Raw) -replace "`r`n", "`n").Trim()
+            $actualBody = (([string]$finalRelease.body) -replace "`r`n", "`n").Trim()
+            if ($actualBody -ne $expectedBody) {
+              throw "Release '$env:TAG_NAME' notes changed while waiting for platform assets; refusing to publish human-edited text."
+            }
+
+            $publishArgs = @('release', 'edit', $env:TAG_NAME, '--repo', $env:GITHUB_REPOSITORY, '--draft=false')
+            if ($env:RELEASE_PRERELEASE -eq 'true') {
+              $publishArgs += '--prerelease=true'
+            } else {
+              $publishArgs += '--prerelease=false'
+              $publishArgs += if ($env:RELEASE_LATEST -eq 'true') { '--latest=true' } else { '--latest=false' }
+            }
+            gh @publishArgs
+            if ($LASTEXITCODE -ne 0) {
+              throw "Assets were uploaded, but release '$env:TAG_NAME' could not be published."
+            }
+          } elseif (-not $createdByRun -and $null -ne $release -and -not $release.isDraft -and -not $release.isPrerelease) {
+            $latestFlag = if ($env:RELEASE_LATEST -eq 'true') { '--latest=true' } else { '--latest=false' }
+            gh release edit $env:TAG_NAME --repo $env:GITHUB_REPOSITORY $latestFlag
+            if ($LASTEXITCODE -ne 0) {
+              throw "Unable to update the latest flag for '$env:TAG_NAME'."
+            }
+          }

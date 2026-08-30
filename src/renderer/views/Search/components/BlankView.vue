@@ -310,6 +310,8 @@ const dailyRecommendKind = ref('radar')
 let hotSearchRequestId = 0
 let dailyRequestId = 0
 let accountStatusRequestId = 0
+let accountPlaylistsRequestId = 0
+let playlistDetailRequestId = 0
 const now = new Date()
 const todayDay = String(now.getDate()).padStart(2, '0')
 const todayMonth = new Intl.DateTimeFormat(window.i18n.locale || 'zh-CN', { month: 'short' }).format(now)
@@ -477,22 +479,38 @@ const closeDailyDetail = () => {
 }
 
 const loadAccountPlaylists = async(force = false, provider = selectedDailyProvider.value) => {
-  if (!accountStatus.value[provider] || (accountPlaylistsProvider.value == provider && accountPlaylists.value.length && !force)) return
+  if (!accountStatus.value[provider]) {
+    accountPlaylistsRequestId++
+    if (accountPlaylistsProvider.value == provider) {
+      accountPlaylistsProvider.value = ''
+      accountPlaylists.value = []
+    }
+    isPlaylistsLoading.value = false
+    return
+  }
+  if (accountPlaylistsProvider.value == provider && accountPlaylists.value.length && !force) return
+  const requestId = ++accountPlaylistsRequestId
   isPlaylistsLoading.value = true
   accountPlaylistsProvider.value = provider
   accountPlaylists.value = []
   try {
     const result = await getMusicAccountPlaylists(provider)
-    if (accountPlaylistsProvider.value == provider) accountPlaylists.value = result.status == 'available' ? result.playlists : []
+    if (requestId == accountPlaylistsRequestId && accountPlaylistsProvider.value == provider) {
+      accountPlaylists.value = result?.status == 'available' && Array.isArray(result.playlists) ? result.playlists : []
+    }
   } catch {
-    if (accountPlaylistsProvider.value == provider) accountPlaylists.value = []
+    if (requestId == accountPlaylistsRequestId && accountPlaylistsProvider.value == provider) accountPlaylists.value = []
   } finally {
-    isPlaylistsLoading.value = false
+    if (requestId == accountPlaylistsRequestId) isPlaylistsLoading.value = false
   }
 }
 
 const openAccountPlaylist = async(playlist) => {
-  const provider = selectedDailyProvider.value
+  // 歌单列表的提供方与“每日推荐”选择可以不同；必须沿用列表请求
+  // 的 provider，否则切换推荐平台后点击旧列表会请求错接口。
+  const provider = accountPlaylistsProvider.value || selectedDailyProvider.value
+  if (!playlist?.id || !accountStatus.value[provider]) return
+  const requestId = ++playlistDetailRequestId
   selectedAccountPlaylist.value = playlist
   selectedAccountPlaylistProvider.value = provider
   playlistDetailList.value = []
@@ -501,20 +519,25 @@ const openAccountPlaylist = async(playlist) => {
   isPlaylistDetailLoading.value = true
   try {
     const result = await getMusicAccountPlaylistDetail(provider, playlist.id)
-    if (result.ids.length) {
+    if (requestId != playlistDetailRequestId) return
+    if (Array.isArray(result?.ids) && result.ids.length) {
       if (provider == 'wy') {
-        playlistDetailList.value = await wyMusicDetail.getList(result.ids).then(data => data.list.map(item => toNewMusicInfo(item))).catch(() => [])
+        const list = await wyMusicDetail.getList(result.ids).then(data => data.list.map(item => toNewMusicInfo(item))).catch(() => [])
+        if (requestId == playlistDetailRequestId) playlistDetailList.value = list
       } else {
         const list = []
         for (let index = 0; index < result.ids.length; index += 30) {
           const items = await Promise.all(result.ids.slice(index, index + 30).map(id => txMusicInfo(id).catch(() => null)))
+          if (requestId != playlistDetailRequestId) return
           list.push(...items.filter(Boolean).map(item => toNewMusicInfo(item)))
         }
-        playlistDetailList.value = list
+        if (requestId == playlistDetailRequestId) playlistDetailList.value = list
       }
     }
+  } catch {
+    if (requestId == playlistDetailRequestId) playlistDetailList.value = []
   } finally {
-    isPlaylistDetailLoading.value = false
+    if (requestId == playlistDetailRequestId) isPlaylistDetailLoading.value = false
   }
 }
 
@@ -537,6 +560,11 @@ const refreshAccountStatus = async() => {
     if (accountStatus.value.tx) selectedDailyProvider.value = 'tx'
     else if (accountStatus.value.wy) selectedDailyProvider.value = 'wy'
     window.localStorage.setItem('qmusic.dailyRecommend.provider', selectedDailyProvider.value)
+  }
+  if (accountPlaylistsProvider.value && !accountStatus.value[accountPlaylistsProvider.value]) {
+    accountPlaylistsRequestId++
+    accountPlaylistsProvider.value = ''
+    accountPlaylists.value = []
   }
   if (accountStatus.value[selectedDailyProvider.value]) void loadAccountPlaylists(false, selectedDailyProvider.value)
 }
@@ -622,7 +650,9 @@ const disconnectMusicAccount = async(provider) => {
   try {
     const result = await logoutMusicAccount(provider)
     if (result.status != 'disconnected') return
+    playlistDetailRequestId++
     accountPlaylists.value = accountPlaylistsProvider.value == provider ? [] : accountPlaylists.value
+    if (accountPlaylistsProvider.value == provider) accountPlaylistsProvider.value = ''
     if (provider == 'tx') await refreshQQDailyKeyStatus()
     await refreshAccountStatus()
     void loadDailyRecommend(true, selectedDailyProvider.value)

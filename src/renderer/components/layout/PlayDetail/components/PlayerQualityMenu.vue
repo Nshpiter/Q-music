@@ -4,9 +4,13 @@
       <div :class="$style.header">
         <div :class="$style.title">{{ $t('player__quality_title') }}</div>
         <div v-if="musicInfo" :class="$style.song">{{ musicInfo.name }} · {{ musicInfo.singer }}</div>
-        <div v-if="playbackSourceInfo" :class="$style.route">
-          <source-icon :source="playbackSourceInfo.resolvedSource" :size="18" />
-          <span><b>{{ resolvedSourceName }}</b><small>{{ playbackModeText }}</small></span>
+        <div v-if="activePlaybackSourceInfo" :class="$style.route">
+          <source-icon :source="activePlaybackSourceInfo.resolvedSource" :size="18" />
+          <span>
+            <b>{{ resolvedSourceName }}</b>
+            <small>{{ playbackModeText }}</small>
+            <small v-if="activePlaybackSourceInfo.isFallback" :class="$style.requestedRoute">{{ $t('player__quality_route_requested') }}：{{ sourceName(activePlaybackSourceInfo.requestedSource) }}</small>
+          </span>
         </div>
       </div>
       <div v-if="musicInfo && musicInfo.source != 'local'" :class="$style.sourceSwitch">
@@ -24,7 +28,7 @@
       </div>
       <div :class="$style.options">
         <button v-for="option in options" :key="option.value" type="button" :class="[$style.option, { [$style.active]: appSetting['player.playQuality'] == option.value }]" @click="selectQuality(option.value)">
-          <span><b><source-icon v-if="effectiveSource" :source="effectiveSource" :size="15" />{{ option.label }}</b><small>{{ option.meta }}</small></span>
+          <span><b><source-icon v-if="resolvedSource" :source="resolvedSource" :size="15" />{{ option.label }}</b><small>{{ option.meta }}</small></span>
           <svg v-if="appSetting['player.playQuality'] == option.value" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4 4L19 7" /></svg>
         </button>
       </div>
@@ -37,6 +41,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from '@common/utils/vueTools'
 import { useI18n } from '@renderer/plugins/i18n'
 import { appSetting } from '@renderer/store/setting'
+import { apiSource, qualityList, userApi } from '@renderer/store'
 import { playbackSourceInfo } from '@renderer/store/player/state'
 import SourceIcon from '@renderer/components/common/SourceIcon.vue'
 import { getOtherSource } from '@renderer/core/music/utils'
@@ -66,20 +71,45 @@ const formatSize = size => {
   if (/^[\d.]+k$/i.test(value)) return `${parseFloat(value).toFixed(0)} KB`
   return value.replace(/mb$/i, ' MB').replace(/kb$/i, ' KB')
 }
+// 请求源是用户选择的平台，解析源是当前实际拿到音频地址的平台。
+// 官方音源不可用时两者可能不同，面板需要同时展示这两个状态。
+const requestedSource = computed(() => props.musicInfo?.meta?.toggleMusicInfo?.source ?? props.musicInfo?.source)
+// 源选择高亮表示用户请求的平台；实际解析到的平台单独在顶部 route 中展示。
+// 保留这个别名供模板复用，避免请求源与解析源混淆。
+const effectiveSource = requestedSource
+const getMusicKey = music => music ? `${music.source}:${music.id}` : ''
+const activePlaybackSourceInfo = computed(() => {
+  const info = playbackSourceInfo.value
+  if (!info || !props.musicInfo || info.musicKey != getMusicKey(props.musicInfo)) return null
+  return info
+})
+const resolvedSource = computed(() => activePlaybackSourceInfo.value?.resolvedSource ?? requestedSource.value)
+const getResolvedMusicInfo = () => {
+  const source = resolvedSource.value
+  if (!source || !props.musicInfo) return props.musicInfo
+  const candidates = [props.musicInfo, props.musicInfo.meta?.toggleMusicInfo, ...otherSources.value]
+  return candidates.find(item => item?.source == source) ?? props.musicInfo
+}
 const qualityKeys = quality => quality == 'flac' ? ['flac', 'ape', 'wav'] : [quality]
 const getQualityEntry = quality => {
-  const qualitys = props.musicInfo?.meta?._qualitys ?? {}
+  const qualitys = getResolvedMusicInfo()?.meta?._qualitys ?? {}
   for (const key of qualityKeys(quality)) {
     if (qualitys[key]) return qualitys[key]
   }
   return null
 }
+const isCustomApiQualitySupported = quality => {
+  if (!/^user_api(?:_|$)/.test(apiSource.value ?? '')) return false
+  const source = resolvedSource.value
+  return !!source && (qualityList.value[source] ?? []).includes(quality)
+}
 const estimateSize = bitrate => {
-  const seconds = parseDuration(props.musicInfo?.interval)
+  const seconds = parseDuration(getResolvedMusicInfo()?.interval)
   return seconds && bitrate ? `${t('player__quality_estimated')} ${(seconds * bitrate * 1000 / 8 / 1024 / 1024).toFixed(2)} MB` : ''
 }
 const getSize = (quality, bitrate) => {
   const entry = getQualityEntry(quality)
+  if (!entry && isCustomApiQualitySupported(quality)) return t('player__quality_available_size_unknown')
   if (!entry) return t('player__quality_not_listed')
   const size = formatSize(entry.size)
   if (size) return size
@@ -101,7 +131,6 @@ const sourceOptions = computed(() => {
     return true
   })
 })
-const effectiveSource = computed(() => props.musicInfo?.meta?.toggleMusicInfo?.source ?? props.musicInfo?.source)
 const loadOtherSources = async() => {
   const musicInfo = props.musicInfo
   const requestId = ++sourceRequestId
@@ -117,23 +146,37 @@ const loadOtherSources = async() => {
     if (requestId == sourceRequestId) isSourceLoading.value = false
   }
 }
-watch(() => [props.modelValue, props.musicInfo?.id], () => { void loadOtherSources() }, { immediate: true })
+watch(() => [props.modelValue, props.musicInfo?.source, props.musicInfo?.id], ([visible, musicSource, musicId], previous) => {
+  const previousMusicKey = `${previous?.[1] ?? ''}:${previous?.[2] ?? ''}`
+  const musicKey = `${musicSource ?? ''}:${musicId ?? ''}`
+  if (visible && musicId && previous?.[2] && musicKey != previousMusicKey) close()
+  void loadOtherSources()
+}, { immediate: true })
 const sourceName = source => source == 'local' ? t('player__quality_local_file') : t(`source_${source}`)
-const resolvedSourceName = computed(() => sourceName(playbackSourceInfo.value?.resolvedSource))
+const resolvedSourceName = computed(() => sourceName(activePlaybackSourceInfo.value?.resolvedSource))
+const customApiName = computed(() => {
+  const id = apiSource.value
+  if (!id || !/^user_api/.test(id)) return ''
+  return userApi.list.find(api => api.id == id)?.name ?? t('player__quality_custom_source')
+})
 const playbackModeText = computed(() => {
-  const info = playbackSourceInfo.value
+  const info = activePlaybackSourceInfo.value
   if (!info) return ''
   const quality = info.quality ? ` · ${info.quality == 'flac24bit' ? 'Hi-Res' : info.quality.toUpperCase()}` : ''
   const fallback = info.isFallback ? ` · ${t('player__quality_route_fallback')}` : ''
-  return `${t(`player__quality_route_${info.mode}`)}${fallback}${quality}`
+  const customApi = info.mode == 'api' && customApiName.value ? ` · ${t('player__quality_route_custom_api', { name: customApiName.value })}` : ''
+  return `${t(`player__quality_route_${info.mode}`)}${customApi}${fallback}${quality}`
 })
-const needsMembershipHint = computed(() => ['tx', 'wy'].includes(props.musicInfo?.source))
+const needsMembershipHint = computed(() => ['tx', 'wy'].includes(requestedSource.value))
 const close = () => { emit('update:modelValue', false) }
 const handleOutside = event => { if (props.modelValue && !menuRef.value?.contains(event.target)) close() }
 onMounted(() => { document.addEventListener('click', handleOutside) })
 onBeforeUnmount(() => { document.removeEventListener('click', handleOutside) })
 const selectQuality = value => { emit('select', value); close() }
-const selectSource = item => { emit('select-source', item.source == props.musicInfo?.source ? null : item) }
+const selectSource = item => {
+  emit('select-source', item.source == requestedSource.value ? null : item)
+  close()
+}
 </script>
 
 <style lang="less" module>
@@ -142,7 +185,7 @@ const selectSource = item => { emit('select-source', item.source == props.musicI
 .header { padding: 1px 2px 10px; border-bottom: 1px solid rgb(from currentColor r g b / .09); }
 .title { font-size: 14px; font-weight: 720; }
 .song { margin-top: 3px; overflow: hidden; font-size: 10px; opacity: .46; text-overflow: ellipsis; white-space: nowrap; }
-.route { margin-top: 9px; min-height: 29px; display: flex; align-items: center; gap: 8px; span { min-width: 0; display: flex; flex-direction: column; } b { overflow: hidden; font-size: 11px; font-weight: 680; text-overflow: ellipsis; white-space: nowrap; } small { margin-top: 1px; font-size: 9px; opacity: .52; } }
+.route { margin-top: 9px; min-height: 29px; display: flex; align-items: center; gap: 8px; span { min-width: 0; display: flex; flex-direction: column; } b { overflow: hidden; font-size: 11px; font-weight: 680; text-overflow: ellipsis; white-space: nowrap; } small { margin-top: 1px; font-size: 9px; opacity: .52; } .requestedRoute { color: var(--color-primary); opacity: .72; } }
 .sourceSwitch { padding: 9px 0 7px; border-bottom: 1px solid rgb(from currentColor r g b / .09); }
 .sectionTitle { padding: 0 2px 7px; display: flex; align-items: center; justify-content: space-between; span { font-size: 10px; font-weight: 680; opacity: .62; } small { font-size: 9px; opacity: .42; } }
 .sourceOptions { display: flex; gap: 5px; overflow-x: auto; button { flex: none; min-width: 55px; height: 36px; padding: 0 8px; display: flex; align-items: center; justify-content: center; gap: 5px; color: currentColor; border: 1px solid transparent; border-radius: 10px; background: rgb(from currentColor r g b / .045); cursor: pointer; opacity: .65; } button:hover, .sourceActive { color: var(--color-primary); border-color: var(--color-primary-alpha-600); background: var(--color-primary-alpha-800); opacity: 1; } span { font-size: 9px; white-space: nowrap; } }

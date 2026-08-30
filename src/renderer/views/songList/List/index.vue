@@ -29,6 +29,13 @@ const tagId = ref<string>('')
 const sortId = ref<string>('')
 const page = ref<number>(1)
 
+const normalizePage = (value: unknown): number => {
+  const text = typeof value == 'number' ? String(value) : typeof value == 'string' ? value : ''
+  if (!/^\d+$/.test(text)) return 1
+  const normalized = Number(text)
+  return Number.isSafeInteger(normalized) && normalized > 0 ? normalized : 1
+}
+
 
 interface Query {
   source?: string
@@ -66,11 +73,16 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
     })
     return
   }
+  const normalizedPage = normalizePage(_page)
+  if (_page != null && _page != String(normalizedPage)) {
+    next({ path: to.path, query: { ...to.query, page: String(normalizedPage) } })
+    return
+  }
   next()
   source.value = _source as LX.OnlineSource
   tagId.value = _tagId ?? ''
   sortId.value = _sortId ?? ''
-  page.value = _page ? parseInt(_page) : 1
+  page.value = normalizedPage
   // 路由完成校验后再同步顶部来源，避免初始化旧值反向触发路由切换。
   selectedSource.value = source.value
   void setSongListSetting({ source: _source, tagId: _tagId, sortId: _sortId })

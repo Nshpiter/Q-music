@@ -1,6 +1,6 @@
 import { onBeforeUnmount } from '@common/utils/vueTools'
 import { getCurrentTime } from '@renderer/plugins/player'
-import { playbackSourceInfo } from '@renderer/store/player/state'
+import { playbackSourceInfo, playMusicInfo } from '@renderer/store/player/state'
 import { reportMusicAccountPlayback, type MusicAccountProvider } from '@renderer/utils/ipc'
 
 const MIN_REPORT_DURATION = 5_000
@@ -24,8 +24,15 @@ interface PlaybackReportSession {
 
 const getOfficialPlaybackInfo = () => {
   const sourceInfo = playbackSourceInfo.value
+  const currentMusic = playMusicInfo.musicInfo
+  const currentMusicInfo = currentMusic && 'progress' in currentMusic
+    ? currentMusic.metadata.musicInfo
+    : currentMusic
+  const currentMusicKey = currentMusicInfo ? `${currentMusicInfo.source}:${currentMusicInfo.id}` : ''
   if (
     sourceInfo?.mode != 'official' ||
+    !currentMusicKey ||
+    sourceInfo.musicKey != currentMusicKey ||
     (sourceInfo.resolvedSource != 'tx' && sourceInfo.resolvedSource != 'wy') ||
     !sourceInfo.resolvedSongId ||
     (sourceInfo.resolvedSource == 'wy' && !/^\d+$/.test(sourceInfo.resolvedSongId))
@@ -64,6 +71,9 @@ export default () => {
     if (session) {
       session.lastPosition = null
       session.lastTickAt = null
+      // 用户暂停/等待时也要及时同步有效播放时长，避免只有切歌或
+      // 播放结束才写入官方平台记录。
+      reportSession(session)
     }
   }
 

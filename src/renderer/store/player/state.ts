@@ -43,6 +43,8 @@ export const isShowLrcSelectContent = ref(false)
 export const isShowPlayQueue = ref(false)
 
 export interface PlaybackSourceInfo {
+  /** 用于避免切歌/切源请求尚未完成时显示上一首的线路信息。 */
+  musicKey: string
   requestedSource: LX.Source
   resolvedSource: LX.Source
   quality: LX.Quality | null

@@ -58,6 +58,13 @@ const page = ref<number>(1)
 const picUrl = ref<string>('')
 const refresh = ref<boolean>(false)
 
+const normalizePage = (value: unknown): number => {
+  const text = typeof value == 'number' ? String(value) : typeof value == 'string' ? value : ''
+  if (!/^\d+$/.test(text)) return 1
+  const normalized = Number(text)
+  return Number.isSafeInteger(normalized) && normalized > 0 ? normalized : 1
+}
+
 
 interface Query {
   source?: string
@@ -93,11 +100,16 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
     })
     return
   }
+  const normalizedPage = normalizePage(_page)
+  if (_page != null && _page != String(normalizedPage)) {
+    next({ path: to.path, query: { ...to.query, page: String(normalizedPage) } })
+    return
+  }
   next()
   setVisibleListDetail(true)
   source.value = _source as LX.OnlineSource
   id.value = _id
-  page.value = _page ? parseInt(_page) : 1
+  page.value = normalizedPage
   picUrl.value = _picUrl ?? ''
   refresh.value = _refresh ? _refresh == 'true' : false
   if (to.query.fromName) window.lx.songListInfo.fromName = to.query.fromName

@@ -171,7 +171,13 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
   releaseRateLimitedRoutes()
 
   const originalMusicInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
-  const requestedSource = originalMusicInfo.source
+  const explicitToggleMusicInfo = originalMusicInfo.meta.toggleMusicInfo
+  const hasExplicitToggle = !!explicitToggleMusicInfo && (
+    explicitToggleMusicInfo.id != originalMusicInfo.id ||
+    explicitToggleMusicInfo.source != originalMusicInfo.source
+  )
+  // 手动切换的平台是用户真正请求的源；自动跨平台回退仍以原曲源为请求源。
+  const requestedSource = hasExplicitToggle ? explicitToggleMusicInfo.source : originalMusicInfo.source
   const blockedApiProviders = new Map<string, Error>()
   for (const routeKey of playbackRouteState.rateLimitedRouteKeys.keys()) {
     if (routeKey.startsWith('api-provider:')) {
@@ -198,10 +204,14 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
   }
   const handleResolved = (info: MusicUrlResolvedInfo) => {
     if (requestId != musicUrlRequestId) return
-    const isFallback = info.resolvedSource != requestedSource
+    // requestedSource 是用户本次播放真正选择的平台。解析器内部可能会
+    // 尝试多个候选平台，不能用 info.requestedSource 覆盖用户的选择，
+    // 否则切换平台失败后回到原平台时会被误报为“未回退”。
+    const isFallback = !!info.isFallback || info.resolvedSource != requestedSource
     playbackRouteState.currentResolvedInfo = { ...info, requestedSource, isFallback }
     const resolvedMusicInfo = info.resolvedMusicInfo
     playbackSourceInfo.value = {
+      musicKey: `${originalMusicInfo.source}:${originalMusicInfo.id}`,
       requestedSource,
       resolvedSource: info.resolvedSource,
       quality: info.quality,

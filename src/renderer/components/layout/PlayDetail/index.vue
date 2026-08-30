@@ -136,8 +136,12 @@ export default {
     let recordAnimationFrameId = null
     let recordSpinStartTime = 0
     let recordSpinStartPlayTime = 0
+    let lastObservedPlayTime = playProgress.nowPlayTime
 
-    const getRecordRotation = time => (time % RECORD_SPIN_SECONDS) / RECORD_SPIN_SECONDS * 360
+    const getRecordRotation = time => {
+      const normalizedTime = ((time % RECORD_SPIN_SECONDS) + RECORD_SPIN_SECONDS) % RECORD_SPIN_SECONDS
+      return normalizedTime / RECORD_SPIN_SECONDS * 360
+    }
     const setRecordRotation = rotation => {
       dom_record.value?.style.setProperty('--q-record-rotation', `${rotation}deg`)
     }
@@ -150,6 +154,10 @@ export default {
       recordAnimationFrameId = null
     }
     const updateRecordSpin = () => {
+      if (!isPlay.value || !isShowPlayerDetail.value) {
+        recordAnimationFrameId = null
+        return
+      }
       const elapsed = (window.performance.now() - recordSpinStartTime) / 1000
       setRecordRotation(getRecordRotation(recordSpinStartPlayTime + elapsed))
       recordAnimationFrameId = window.requestAnimationFrame(updateRecordSpin)
@@ -158,6 +166,7 @@ export default {
       stopRecordSpin()
       recordSpinStartTime = window.performance.now()
       recordSpinStartPlayTime = playProgress.nowPlayTime
+      lastObservedPlayTime = playProgress.nowPlayTime
       syncRecordRotation()
       recordAnimationFrameId = window.requestAnimationFrame(updateRecordSpin)
     }
@@ -515,15 +524,24 @@ export default {
 
     watch([isPlay, isShowPlayerDetail], ([playing, visible]) => {
       if (playing && visible) startRecordSpin()
-      else stopRecordSpin()
+      else {
+        stopRecordSpin()
+        syncRecordRotation()
+      }
     })
-    watch(() => playProgress.nowPlayTime, () => {
+    watch(() => playProgress.nowPlayTime, currentPlayTime => {
+      const previousPlayTime = lastObservedPlayTime
+      lastObservedPlayTime = currentPlayTime
       if (!isPlay.value) {
         syncRecordRotation()
         return
       }
       const elapsed = (window.performance.now() - recordSpinStartTime) / 1000
-      if (Math.abs(playProgress.nowPlayTime - (recordSpinStartPlayTime + elapsed)) > 1.2) startRecordSpin()
+      // 进度条拖动可能只改变很小一段时间，单纯比较 rAF 起点会漏掉
+      // 这类 seek；同时保留相位偏差判断，覆盖外部播放器跳转/恢复进度。
+      const jumped = Math.abs(currentPlayTime - previousPlayTime) > 1.2
+      const drifted = Math.abs(currentPlayTime - (recordSpinStartPlayTime + elapsed)) > 1.2
+      if (jumped || drifted) startRecordSpin()
     })
 
     onMounted(() => {

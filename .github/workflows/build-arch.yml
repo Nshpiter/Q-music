@@ -8,7 +8,7 @@ on:
         required: false
         type: string
       upload_to_release:
-        description: 'Upload the pacman package to the matching GitHub Release.'
+        description: 'Upload only when the matching pushed tag exists; disable for artifact-only builds.'
         required: true
         default: true
         type: boolean
@@ -20,7 +20,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-arch-${{ github.ref }}
+  group: release-arch-${{ inputs.tag_name || github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -33,6 +33,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Install packaging tools
         run: sudo apt-get update && sudo apt-get install -y libarchive-tools
@@ -48,17 +50,22 @@ jobs:
 
       - name: Resolve release metadata
         shell: bash
+        env:
+          INPUT_TAG_NAME: ${{ inputs.tag_name }}
+          INPUT_UPLOAD_TO_RELEASE: ${{ inputs.upload_to_release }}
+          TRIGGER_SHA: ${{ github.sha }}
+          REF_TYPE: ${{ github.ref_type }}
         run: |
           package_version="$(node -p "require('./package.json').version")"
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             tag_name="$GITHUB_REF_NAME"
             upload_to_release=true
           else
-            tag_name="${{ inputs.tag_name }}"
+            tag_name="$INPUT_TAG_NAME"
             if [ -z "$tag_name" ]; then
               tag_name="v$package_version"
             fi
-            upload_to_release="${{ inputs.upload_to_release }}"
+            upload_to_release="$INPUT_UPLOAD_TO_RELEASE"
           fi
 
           expected_tag="v$package_version"
@@ -67,12 +74,34 @@ jobs:
             exit 1
           fi
 
+          if [ "$upload_to_release" = "true" ]; then
+            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$REF_TYPE" != "tag" ]; then
+              echo "Manual Arch release uploads must be dispatched from the pushed release tag, not a branch." >&2
+              exit 1
+            fi
+            if ! tag_commit="$(git rev-parse "$tag_name^{}" 2>/dev/null)"; then
+              echo "Release tag '$tag_name' does not exist in the checked-out repository. Push the tag first or disable release upload." >&2
+              exit 1
+            fi
+            if ! trigger_commit="$(git rev-parse "$TRIGGER_SHA^{}" 2>/dev/null)"; then
+              echo "Unable to resolve the workflow trigger commit for release tag '$tag_name'." >&2
+              exit 1
+            fi
+            if [ "$tag_commit" != "$trigger_commit" ]; then
+              echo "Release tag '$tag_name' does not point to the workflow commit." >&2
+              exit 1
+            fi
+          fi
+
           echo "PACKAGE_VERSION=$package_version" >> "$GITHUB_ENV"
           echo "TAG_NAME=$tag_name" >> "$GITHUB_ENV"
           echo "UPLOAD_TO_RELEASE=$upload_to_release" >> "$GITHUB_ENV"
 
       - name: Lint source
         run: npm run lint
+
+      - name: Unit tests
+        run: npm test
 
       - name: Build pacman package
         run: npm run pack:arch
@@ -108,26 +137,42 @@ jobs:
           test -n "$package_path"
           assets=("$package_path" "build/SHA256SUMS-arch.txt")
 
-          for attempt in $(seq 1 12); do
-            if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          attempts=180
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            attempts=1
+          fi
+
+          release_notes_are_human() {
+            local body body_without_marker compact
+            body="$(gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" --json body --jq '.body // ""' 2>/dev/null)" || return 1
+            body_without_marker="$(printf '%s' "$body" | sed 's/<!-- q-music-managed-release -->//g')"
+            if ! printf '%s' "$body_without_marker" | grep '[^[:space:]]' >/dev/null; then
+              return 1
+            fi
+            compact="$(printf '%s' "$body_without_marker" | tr -d '[:space:]')"
+            # 只拒绝正文整体就是 GitHub 自动生成的比较链接；人工正文中
+            # 额外附带比较链接不应被误判为占位说明。
+            if [[ "$compact" =~ ^\*\*FullChangelog\*\*:https://github\.com/[^/]+/[^/]+/compare/.+$ ]]; then
+              return 1
+            fi
+            return 0
+          }
+
+          for attempt in $(seq 1 "$attempts"); do
+            if release_notes_are_human; then
               gh release upload "$TAG_NAME" "${assets[@]}" \
                 --repo "$GITHUB_REPOSITORY" \
                 --clobber
               exit $?
             fi
 
-            if gh release create "$TAG_NAME" "${assets[@]}" \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "Q-music $TAG_NAME" \
-              --generate-notes \
-              --latest; then
-              exit 0
-            fi
-
-            echo "Release is being created by another workflow; retry $attempt/12."
+            echo "Waiting for a GitHub Release with human-written notes; retry $attempt/$attempts."
             sleep 10
           done
 
-          echo "Unable to create or update release '$TAG_NAME'." >&2
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "Release '$TAG_NAME' is missing or still has placeholder notes. Run the Windows release workflow first." >&2
+            exit 1
+          fi
+          echo "Release '$TAG_NAME' was not prepared; refusing to create it without human-written notes." >&2
           exit 1

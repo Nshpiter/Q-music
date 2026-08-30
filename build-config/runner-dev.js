@@ -23,6 +23,10 @@ let electronProcess = null
 let hotMiddlewareRenderer
 let hotMiddlewareRendererLyric
 
+// ResizeObserver 在窗口动画/开发工具调整尺寸时可能报告一个无害的循环告警。
+// 过滤它可以避免开发覆盖层遮住页面，同时保留其它运行时错误的提示。
+const shouldDisplayRuntimeError = error => !/ResizeObserver loop (?:completed with undelivered notifications|limit exceeded)/i.test(String(error?.message ?? error))
+
 
 function startRenderer() {
   return new Promise((resolve, reject) => {
@@ -57,7 +61,11 @@ function startRenderer() {
       },
       client: {
         logging: 'warn',
-        overlay: true,
+        overlay: {
+          warnings: false,
+          errors: true,
+          runtimeErrors: shouldDisplayRuntimeError,
+        },
       },
       setupMiddlewares(middlewares, devServer) {
         devServer.app.use(hotMiddlewareRenderer)
@@ -105,7 +113,11 @@ function startRendererLyric() {
       // },
       client: {
         logging: 'warn',
-        overlay: true,
+        overlay: {
+          warnings: false,
+          errors: true,
+          runtimeErrors: shouldDisplayRuntimeError,
+        },
       },
       setupMiddlewares(middlewares, devServer) {
         devServer.app.use(hotMiddlewareRenderer)

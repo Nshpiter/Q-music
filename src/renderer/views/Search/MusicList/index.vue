@@ -7,8 +7,8 @@
       :total="listInfo.total"
       :list="listInfo.list"
       :no-item="listInfo.noItemLabel"
-      :source-selector="sourceId == 'all'"
-      :source-tag="sourceId != 'all'"
+      :source-selector="props.sourceId == 'all'"
+      :source-tag="props.sourceId != 'all'"
       :source-options="getSourceOptions"
       :source-name="getSourceName"
       check-api-source

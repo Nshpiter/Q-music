@@ -20,6 +20,32 @@ import type {
 const cache = new Map<string, any>()
 const tagRequests = new Map<LX.OnlineSource, Promise<TagInfo>>()
 
+const wait = async(ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+const requestWithRetry = async<T>(factory: () => Promise<T>, validate: (result: T) => boolean, retryCount = 2): Promise<T> => {
+  let lastError: unknown
+  for (let attempt = 0; attempt <= retryCount; attempt++) {
+    try {
+      const result = await factory()
+      if (!validate(result)) throw new Error('Invalid song list response')
+      return result
+    } catch (error) {
+      lastError = error
+      if (attempt == retryCount) break
+      await wait(250 * (attempt + 1))
+    }
+  }
+  throw lastError
+}
+
+const isListResponse = (result: unknown): result is ListInfo => {
+  const value = result as Partial<ListInfo> | null | undefined
+  return Array.isArray(value?.list) && Number.isFinite(value?.limit)
+}
+const isListDetailResponse = (result: unknown): result is ListDetailInfo => {
+  const value = result as Partial<ListDetailInfo> | null | undefined
+  return Array.isArray(value?.list) && Number.isFinite(value?.limit)
+}
+
 export const setTags = (tagInfo: TagInfo, source: LX.OnlineSource) => {
   tags[source] = markRaw(tagInfo)
 }
@@ -121,7 +147,10 @@ export const getAndSetList = async(source: LX.OnlineSource, tabId: string, sortI
   listInfo.noItemLabel = window.i18n.t('list__loading')
   listInfo.key = key
   // clearList()
-  return musicSdk[source]?.songList.getList(sortId, tabId, page).then((result: ListInfo) => {
+  return requestWithRetry(
+    async() => musicSdk[source]?.songList.getList(sortId, tabId, page) as Promise<ListInfo>,
+    isListResponse,
+  ).then((result: ListInfo) => {
     cache.set(key, result)
     if (key != listInfo.key) return
     setList(result, tabId, sortId, page)
@@ -145,7 +174,10 @@ export const getListDetail = async(id: string, source: LX.OnlineSource, page: nu
   let key = `sdetail__${source}__${id}__${page}`
   if (!isRefresh && cache.has(key)) return cache.get(key)
 
-  return musicSdk[source]?.songList.getListDetail(id, page).then((result: ListDetailInfo) => {
+  return requestWithRetry(
+    async() => musicSdk[source]?.songList.getListDetail(id, page) as Promise<ListDetailInfo>,
+    isListDetailResponse,
+  ).then((result: ListDetailInfo) => {
     result.list = markRawList(deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[]))
     cache.set(key, result)
     return result
@@ -167,11 +199,14 @@ export const getListDetailAll = async(id: string, source: LX.OnlineSource, isRef
     if (isRefresh && cache.has(key)) cache.delete(key)
     return cache.has(key)
       ? Promise.resolve(cache.get(key))
-      : musicSdk[source]?.songList.getListDetail(id, page).then((result: ListDetailInfo) => {
+      : requestWithRetry(
+        async() => musicSdk[source]?.songList.getListDetail(id, page) as Promise<ListDetailInfo>,
+        isListDetailResponse,
+      ).then((result: ListDetailInfo) => {
         result.list = markRawList(deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[]))
         cache.set(key, result)
         return result
-      }) ?? Promise.reject(new Error('source not found' + source))
+      })
   }
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   return loadData(id, 1).then((result: ListDetailInfo) => {

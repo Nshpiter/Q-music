@@ -27,26 +27,36 @@ const source = ref('all')
 const searchType = ref(null)
 const page = ref(1)
 
+const normalizePage = value => {
+  const text = typeof value == 'number' ? String(value) : typeof value == 'string' ? value : ''
+  if (!/^\d+$/.test(text)) return 1
+  const normalized = Number(text)
+  return Number.isSafeInteger(normalized) && normalized > 0 ? normalized : 1
+}
+
+const normalizePageQuery = value => String(normalizePage(value))
+
 const verifyQueryParams = async(to, from, next) => {
   const validSources = new Set(['all', ...music.sources.map(item => item.id)])
   const _source = validSources.has(to.query.source) ? to.query.source : 'all'
   let _type = to.query.type
   let _page = to.query.page
+  const pageNeedsNormalization = _page != null && _page != normalizePageQuery(_page)
 
-  if (to.query.source != _source || _type == null) {
+  if (to.query.source != _source || _type == null || pageNeedsNormalization) {
     const setting = await getSearchSetting().catch(() => ({ ...DEFAULT_SETTING.search }))
     _type ??= setting.type
 
     next({
       path: to.path,
-      query: { ...to.query, source: _source, type: _type, page: _page },
+      query: { ...to.query, source: _source, type: _type, page: pageNeedsNormalization ? normalizePageQuery(_page) : _page },
     })
     return
   }
   source.value = _source
   searchType.value = _type
 
-  if (_page) page.value = parseInt(_page)
+  page.value = normalizePage(_page)
 
   searchText.value = to.query.text ?? ''
   if (to.query.text != null) {

@@ -40,14 +40,11 @@
                   <span v-if="item.meta._qualitys.flac24bit" class="no-select badge badge-theme-primary">{{ $t('tag__lossless_24bit') }}</span>
                   <span v-else-if="item.meta._qualitys.ape || item.meta._qualitys.flac || item.meta._qualitys.wav" class="no-select badge badge-theme-primary">{{ $t('tag__lossless') }}</span>
                   <span v-else-if="item.meta._qualitys['320k']" class="no-select badge badge-theme-secondary">{{ $t('tag__high_quality') }}</span>
-                  <select
-                    v-if="sourceSelector && sourceOptions(item).length > 1" :class="$style.sourceSelect" :value="item.source"
-                    :aria-label="$t('search__source_select')" @click.stop @change.stop="handleSourceChange($event, index)"
-                  >
-                    <option v-for="source in sourceOptions(item)" :key="source" :value="source">{{ sourceName(source) }}</option>
-                  </select>
-                  <source-icon v-else-if="sourceSelector" :class="$style.sourceSingle" :source="item.source" :size="19" :label="sourceName(item.source)" />
-                  <source-icon v-else-if="sourceTag" class="no-select" :source="item.source" :size="15" />
+                  <source-picker
+                    v-if="showSourceSelector" :value="item.source" :options="getSourceOptions(item)" :source-name="getSourceName"
+                    @change="handleSourceChange($event, index)"
+                  />
+                  <source-icon v-else-if="showSourceTag" class="no-select" :source="item.source" :size="15" />
                 </div>
                 <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
@@ -78,14 +75,11 @@
                   <span v-if="item.meta._qualitys.flac24bit" class="no-select badge badge-theme-primary">{{ $t('tag__lossless_24bit') }}</span>
                   <span v-else-if="item.meta._qualitys.ape || item.meta._qualitys.flac || item.meta._qualitys.wav" class="no-select badge badge-theme-primary">{{ $t('tag__lossless') }}</span>
                   <span v-else-if="item.meta._qualitys['320k']" class="no-select badge badge-theme-secondary">{{ $t('tag__high_quality') }}</span>
-                  <select
-                    v-if="sourceSelector && sourceOptions(item).length > 1" :class="$style.sourceSelect" :value="item.source"
-                    :aria-label="$t('search__source_select')" @click.stop @change.stop="handleSourceChange($event, index)"
-                  >
-                    <option v-for="source in sourceOptions(item)" :key="source" :value="source">{{ sourceName(source) }}</option>
-                  </select>
-                  <source-icon v-else-if="sourceSelector" :class="$style.sourceSingle" :source="item.source" :size="19" :label="sourceName(item.source)" />
-                  <source-icon v-else-if="sourceTag" class="no-select" :source="item.source" :size="15" />
+                  <source-picker
+                    v-if="showSourceSelector" :value="item.source" :options="getSourceOptions(item)" :source-name="getSourceName"
+                    @change="handleSourceChange($event, index)"
+                  />
+                  <source-icon v-else-if="showSourceTag" class="no-select" :source="item.source" :size="15" />
                 </div>
                 <div class="list-item-cell" style="flex: 0 0 24%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
                 <div class="list-item-cell" style="flex: 0 0 27%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
@@ -131,9 +125,10 @@ import useMusicAdd from './useMusicAdd'
 import useMusicActions from './useMusicActions'
 import { appSetting } from '@renderer/store/setting'
 import SourceIcon from '@renderer/components/common/SourceIcon.vue'
+import SourcePicker from '@renderer/components/common/SourcePicker.vue'
 export default {
   name: 'MaterialOnlineList',
-  components: { SourceIcon },
+  components: { SourceIcon, SourcePicker },
   props: {
     list: {
       type: Array,
@@ -181,6 +176,10 @@ export default {
   emits: ['show-menu', 'play-list', 'togglePage', 'source-change'],
   setup(props, { emit }) {
     const actionButtonsVisible = appSetting['list.actionButtonsVisible']
+    const showSourceSelector = computed(() => props.sourceSelector)
+    const showSourceTag = computed(() => props.sourceTag)
+    const getSourceOptions = item => props.sourceOptions(item)
+    const getSourceName = source => props.sourceName(source)
     const rightClickSelectedIndex = ref(-1)
     // 当前正在播放的歌曲 id，用于列表行高亮
     const playingId = computed(() => playMusicInfo.musicInfo?.id)
@@ -283,8 +282,8 @@ export default {
           break
       }
     }
-    const handleSourceChange = (event, index) => {
-      emit('source-change', { index, source: event.target.value })
+    const handleSourceChange = (source, index) => {
+      emit('source-change', { index, source })
     }
     const scrollToTop = () => {
       listRef.value.scrollTo(0, true)
@@ -321,6 +320,10 @@ export default {
 
       scrollToTop,
       actionButtonsVisible,
+      showSourceSelector,
+      showSourceTag,
+      getSourceOptions,
+      getSourceName,
     }
   },
 }
@@ -378,27 +381,4 @@ export default {
     color: var(--color-font-label);
   }
 }
-.sourceSelect {
-  max-width: 92px;
-  height: 24px;
-  margin-left: 7px;
-  padding: 0 22px 0 8px;
-  border: 1px solid var(--color-primary-alpha-700);
-  border-radius: 8px;
-  outline: none;
-  color: var(--color-primary-dark-100);
-  background-color: var(--color-primary-alpha-900);
-  cursor: pointer;
-  font: inherit;
-  font-size: 10px;
-}
-.sourceSingle {
-  margin-left: 8px;
-  padding: 0;
-  border-radius: 5px;
-  color: var(--color-font-label);
-  background: transparent;
-  font-size: 10px;
-}
-
 </style>

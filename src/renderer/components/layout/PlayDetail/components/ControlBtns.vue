@@ -266,10 +266,19 @@ export default {
     const selectPlaybackSource = musicInfo => {
       const current = currentMusicInfo.value
       if (!current || current.source == 'local') return
-      const currentSource = current.meta.toggleMusicInfo?.source ?? current.source
-      const nextSource = musicInfo?.source ?? current.source
-      if (currentSource == nextSource) return
-      current.meta.toggleMusicInfo = musicInfo
+      const original = current
+      const selected = musicInfo ?? null
+      const currentToggle = current.meta.toggleMusicInfo
+      const isOriginalSelection = selected && selected.source == original.source && selected.id == original.id
+      // 选择原始平台（或再次点当前平台）应清掉显式覆盖；不能只比较
+      // source，否则同一平台的不同歌曲会被误判为“无需切换”。
+      if (!selected || isOriginalSelection) {
+        if (!currentToggle) return
+        current.meta.toggleMusicInfo = null
+      } else {
+        if (currentToggle?.source == selected.source && currentToggle?.id == selected.id) return
+        current.meta.toggleMusicInfo = selected
+      }
       reloadCurrentMusic(appSetting['player.playQuality'])
     }
     const selectDetailLayout = layout => {

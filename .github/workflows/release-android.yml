@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release tag. Empty means v<Android package.json version>.'
+        description: 'Existing pushed release tag. Empty means v<Android package.json version>.'
         required: false
         type: string
   push:
@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-android-${{ github.ref }}
+  group: release-android-${{ inputs.tag_name || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -29,20 +29,52 @@ jobs:
       ORG_GRADLE_PROJECT_MYAPP_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
     steps:
-      - name: Check out Android source branch
+      - name: Check out release metadata
         uses: actions/checkout@v6
         with:
-          ref: android
-          path: mobile
+          path: release-metadata
+          fetch-depth: 0
 
       - name: Resolve release metadata
+        id: release-metadata
         shell: bash
+        env:
+          INPUT_TAG_NAME: ${{ inputs.tag_name }}
+          TRIGGER_SHA: ${{ github.sha }}
+          REF_TYPE: ${{ github.ref_type }}
         run: |
-          package_version="$(node -p "require('./mobile/package.json').version")"
+          package_version="$(node -p "require('./release-metadata/publish/mobile-version.json').version")"
+          desktop_version="$(node -p "require('./release-metadata/package.json').version")"
+          android_commit="$(node -p "require('./release-metadata/publish/mobile-version.json').commit")"
+          if [ "$desktop_version" != "$package_version" ]; then
+            echo "Root package version '$desktop_version' does not match mobile release metadata '$package_version'." >&2
+            exit 1
+          fi
+          EXPECTED_VERSION="$package_version" node <<'NODE'
+          const fs = require('node:fs')
+          const metadata = JSON.parse(fs.readFileSync('release-metadata/publish/mobile-version.json', 'utf8'))
+          const expectedVersion = process.env.EXPECTED_VERSION
+          const description = String(metadata.desc ?? '').trim()
+
+          if (metadata.version !== expectedVersion) {
+            throw new Error(`publish/mobile-version.json version '${metadata.version}' does not match its resolved version '${expectedVersion}'`)
+          }
+          if (description.length < 80 || !description.includes(expectedVersion) || /^\*\*Full Changelog\*\*:/i.test(description)) {
+            throw new Error('Android release notes must contain a human-readable description for the current version')
+          }
+          NODE
+          if ! printf '%s' "$android_commit" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "publish/mobile-version.json must pin a full Android commit SHA." >&2
+            exit 1
+          fi
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             tag_name="$GITHUB_REF_NAME"
           else
-            tag_name="${{ inputs.tag_name }}"
+            if [ "$REF_TYPE" != "tag" ]; then
+              echo "Manual Android release runs must be dispatched from the pushed release tag, not a branch." >&2
+              exit 1
+            fi
+            tag_name="$INPUT_TAG_NAME"
             if [ -z "$tag_name" ]; then
               tag_name="v$package_version"
             fi
@@ -54,8 +86,37 @@ jobs:
             exit 1
           fi
 
+          if ! tag_commit="$(git -C release-metadata rev-parse "$tag_name^{}" 2>/dev/null)"; then
+            echo "Release tag '$tag_name' does not exist in the checked-out repository. Push the tag first, then dispatch this workflow from that tag." >&2
+            exit 1
+          fi
+          if ! trigger_commit="$(git -C release-metadata rev-parse "$TRIGGER_SHA^{}" 2>/dev/null)"; then
+            echo "Unable to resolve the workflow trigger commit for release tag '$tag_name'." >&2
+            exit 1
+          fi
+          if [ "$tag_commit" != "$trigger_commit" ]; then
+            echo "Release tag '$tag_name' does not point to the workflow commit." >&2
+            exit 1
+          fi
+
           echo "PACKAGE_VERSION=$package_version" >> "$GITHUB_ENV"
           echo "TAG_NAME=$tag_name" >> "$GITHUB_ENV"
+          echo "android_commit=$android_commit" >> "$GITHUB_OUTPUT"
+
+      - name: Check out pinned Android source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.release-metadata.outputs.android_commit }}
+          path: mobile
+
+      - name: Validate Android source version
+        shell: bash
+        run: |
+          source_version="$(node -p "require('./mobile/package.json').version")"
+          if [ "$source_version" != "$PACKAGE_VERSION" ]; then
+            echo "Pinned Android source version '$source_version' does not match release metadata '$PACKAGE_VERSION'." >&2
+            exit 1
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -142,26 +203,42 @@ jobs:
             "$output_dir/SHA256SUMS-android.txt"
           )
 
-          for attempt in $(seq 1 12); do
-            if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          attempts=180
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            attempts=1
+          fi
+
+          release_notes_are_human() {
+            local body body_without_marker compact
+            body="$(gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" --json body --jq '.body // ""' 2>/dev/null)" || return 1
+            body_without_marker="$(printf '%s' "$body" | sed 's/<!-- q-music-managed-release -->//g')"
+            if ! printf '%s' "$body_without_marker" | grep '[^[:space:]]' >/dev/null; then
+              return 1
+            fi
+            compact="$(printf '%s' "$body_without_marker" | tr -d '[:space:]')"
+            # 只拒绝正文整体就是 GitHub 自动生成的比较链接；人工正文中
+            # 额外附带比较链接不应被误判为占位说明。
+            if [[ "$compact" =~ ^\*\*FullChangelog\*\*:https://github\.com/[^/]+/[^/]+/compare/.+$ ]]; then
+              return 1
+            fi
+            return 0
+          }
+
+          for attempt in $(seq 1 "$attempts"); do
+            if release_notes_are_human; then
               gh release upload "$TAG_NAME" "${assets[@]}" \
                 --repo "$GITHUB_REPOSITORY" \
                 --clobber
               exit $?
             fi
 
-            if gh release create "$TAG_NAME" "${assets[@]}" \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "Q-music $TAG_NAME" \
-              --generate-notes \
-              --latest; then
-              exit 0
-            fi
-
-            echo "Release is being created by another workflow; retry $attempt/12."
+            echo "Waiting for a GitHub Release with human-written notes; retry $attempt/$attempts."
             sleep 10
           done
 
-          echo "Unable to create or update release '$TAG_NAME'." >&2
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "Release '$TAG_NAME' is missing or still has placeholder notes. Run the Windows release workflow first." >&2
+            exit 1
+          fi
+          echo "Release '$TAG_NAME' was not prepared; refusing to create it without human-written notes." >&2
           exit 1

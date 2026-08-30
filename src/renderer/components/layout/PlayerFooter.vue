@@ -653,6 +653,30 @@ const handleImgError = () => {
   }
 }
 
+// 窄窗口下中间播放簇与右侧工具簇仍保持独立区域；工具簇允许横向滚动，
+// 避免固定宽度和大量按钮互相覆盖或被 overflow 裁掉。
+@media (max-width: 1100px) {
+  .detailFooter {
+    .centerControl {
+      left: clamp(32px, 5vw, 76px);
+      width: clamp(224px, 40vw, 420px);
+    }
+
+    .toolArea {
+      right: clamp(18px, 3vw, 34px);
+      max-width: min(47vw, 420px);
+      justify-content: flex-start;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+  }
+}
+
 :global(body.immersive-controls-hidden) .detailFooter {
   .centerControl,
   .toolArea {

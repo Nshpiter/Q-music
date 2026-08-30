@@ -43,7 +43,7 @@
 
 ## 项目说明
 
-Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前桌面端与 Android 端版本均为 `v0.3.18`；桌面端基于 LX Music Desktop `2.12.2`，主要重做了跨端界面、首页推荐、音乐账号接入、歌单同步、播放详情页、音频可视化与发布更新流程。
+Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。当前桌面端与 Android 端版本均为 `v0.3.21`；桌面端基于 LX Music Desktop `2.12.2`，主要重做了跨端界面、首页推荐、音乐账号接入、歌单同步、播放详情页、音频可视化与发布更新流程。
 
 本仓库不是 LX Music 官方仓库，也不代表原作者对本项目提供支持或背书。完整变更可查看 [更新日志](./publish/changeLog.md) 与 [二次修改说明](./MODIFICATIONS.md)。
 
@@ -57,12 +57,18 @@ Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop)
 
 Android 源码位于本仓库 [`android`](https://github.com/Nshpiter/Q-music/tree/android) 分支。Release 同时提供 SHA256 校验文件，Windows 客户端支持应用内检查更新。
 
+每个版本的发布说明维护在 [`publish/version.json`](./publish/version.json) 与
+[`publish/changeLog.md`](./publish/changeLog.md)；GitHub Release 由 Windows 发布工作流使用
+当前版本的人工说明创建，Android 与 Arch 工作流只上传对应平台资产。发布前会校验版本号、tag
+指向和三平台资产，避免出现只有自动比较链接或混合版本资产的 Release。
+
 ## 功能亮点
 
 - 液态玻璃界面：支持全局背景图、面板透明度与模糊程度实时调节，并提供清晰、平衡、沉浸三档外观预设。
 - 流畅模式：一键关闭实时毛玻璃采样，保留配色与层次，降低低功耗设备、远程桌面及部分 Linux 合成器的图形压力。
 - 主题化视觉：主题预览卡、磨砂菜单、胶囊标签和统一的导航选中态。
 - 聚合搜索：一个结果条目聚合多个音乐来源，可按歌曲选择可用来源，首页不堆叠来源标签。
+- 搜索排序：聚合搜索优先匹配原声/正式版本，结合平台原生名次、跨平台共识与专辑证据；明确搜索翻唱、混音等版本词时仍可精准筛选。
 - 智能播放线路：QQ 音乐与网易云音乐优先请求官方可用地址，失败后自动回退到自定义接口及跨源匹配，不改变其他音乐源行为。
 - 音乐账号：支持 QQ 音乐与网易云音乐授权状态检测、账号歌单读取及推荐来源切换。
 - 每日推荐：支持 QQ 音乐每日 30 首、私人雷达与网易云音乐推荐，并提供完整歌单详情、一键播放和换一批。
@@ -143,7 +149,7 @@ npm run pack:arch
 安装本地构建产物：
 
 ```bash
-sudo pacman -U ./build/Q-music_0.3.18_x64.pacman
+sudo pacman -U ./build/Q-music_0.3.21_x64.pacman
 ```
 
 pacman 安装由系统包管理器负责升级；应用内会提示新版本，但不会自行覆盖系统

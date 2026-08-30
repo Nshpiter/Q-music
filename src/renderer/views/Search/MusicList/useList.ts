@@ -38,18 +38,19 @@ export default () => {
   const handlePlayList = async(index: number) => {
     let targetSong = listInfo.value.list[index]
 
+    if (!targetSong) return
     if (!assertApiSupport(targetSong.source)) return
 
     const defaultListMusics = await getListMusics(LIST_IDS.DEFAULT)
 
     await addListMusics(LIST_IDS.DEFAULT, [targetSong])
 
-    let targetIndex = defaultListMusics.findIndex(s => s.id === targetSong.id)
+    let targetIndex = defaultListMusics.findIndex(s => s.id === targetSong.id && s.source === targetSong.source)
     if (targetIndex > -1) playList(LIST_IDS.DEFAULT, targetIndex)
   }
 
   const getSourceOptions = (musicInfo: LX.Music.MusicInfo) => {
-    return getAggregateSources(musicInfo).map(item => item.source)
+    return [...new Set(getAggregateSources(musicInfo).map(item => item.source))]
   }
 
   const getSourceName = (source: LX.OnlineSource) => window.i18n.t(`source_${source}` as any)
