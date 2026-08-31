@@ -1,8 +1,12 @@
 {
-  "version": "0.3.21",
-  "commit": "09c34aa2a68b7c4606fa4722ecc41bb283f8e18c",
-  "desc": "# Q-music Android 0.3.21\n\n### 播放线路与账号\n\n- 与桌面端统一官方线路、自定义音源和跨平台回退策略，减少连续切歌时误跳下一首。\n- 同步音质、来源标识和账号状态展示，保持登录失效时的安全清理。\n\n### 多端发布\n\n- 与 Windows、Arch Linux 统一升级至 0.3.21。\n- 生成 arm64-v8a 与通用签名安装包。",
+  "version": "0.3.22",
+  "commit": "d5bb00ddbef00bdda47f5dcc2f6d9fae850adcc1",
+  "desc": "# Q-music Android 0.3.22\n\n### 多端发布\n\n- 与 Windows、Arch Linux 统一版本号和 v0.3.22 发布标签。\n- 更新 Android 版本编码，并重新生成 arm64-v8a 与通用签名安装包。\n- 保留手机优先布局、账号同步、外部歌单导入和音质控制能力。",
   "history": [
+    {
+      "version": "0.3.21",
+      "desc": "# Q-music Android 0.3.21\n\n### 播放线路与账号\n\n- 与桌面端统一官方线路、自定义音源和跨平台回退策略，减少连续切歌时误跳下一首。\n- 同步音质、来源标识和账号状态展示，保持登录失效时的安全清理。\n\n### 多端发布\n\n- 与 Windows、Arch Linux 统一升级至 0.3.21。\n- 生成 arm64-v8a 与通用签名安装包。"
+    },
     {
       "version": "0.3.20",
       "desc": "# Q-music Android 0.3.20\n\n### 播放线路与缓存\n\n- 与桌面端统一官方线路、自定义音源及跨平台匹配的回退顺序，单条线路失败后继续尝试可用线路。\n- 隔离不同音源的缓存与失败状态，减少连续切歌时误跳下一首。\n\n### 多端发布\n\n- 与 Windows、Arch Linux 统一升级至 0.3.20。\n- 生成 arm64-v8a 与通用签名安装包。"

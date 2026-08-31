@@ -53,6 +53,8 @@ export interface PlaybackSourceInfo {
   resolvedSongId: string
   resolvedMediaId: string
   officialSourceId: string
+  /** 解析音源所使用的 API/缓存提供方，便于在播放面板中说明实际线路。 */
+  cacheProviderId?: string
 }
 
 export const playbackSourceInfo = ref<PlaybackSourceInfo | null>(null)

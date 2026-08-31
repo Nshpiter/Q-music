@@ -18,6 +18,8 @@ import {
   getLyricInfo as getLocalLyricInfo,
 } from './local'
 
+export { isCustomApiSource } from './utils'
+
 export interface MusicUrlResolvedInfo {
   requestedSource: LX.Source
   resolvedSource: LX.Source
@@ -31,6 +33,7 @@ export interface MusicUrlResolvedInfo {
 }
 
 export interface MusicUrlRequestOptions {
+  /** all 会遵循设置中的自定义 API 优先策略；显式值用于单次线路尝试。 */
   routeStrategy?: 'all' | 'official' | 'api'
   excludedUrls?: ReadonlySet<string>
   excludedRouteKeys?: ReadonlySet<string>

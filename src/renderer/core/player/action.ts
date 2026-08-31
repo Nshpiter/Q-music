@@ -13,7 +13,7 @@ import {
   removePlayedList,
 } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
-import { getMusicUrl, getPicPath, getLyricInfo } from '../music/index'
+import { getMusicUrl, getPicPath, getLyricInfo, isCustomApiSource } from '../music/index'
 import type { MusicUrlRequestOptions, MusicUrlResolvedInfo } from '../music/index'
 import { filterList } from './utils'
 import { requestMsg } from '@renderer/utils/message'
@@ -222,6 +222,7 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
         : (resolvedMusicInfo ? String(resolvedMusicInfo.meta.songId ?? '') : '')),
       resolvedMediaId: resolvedMusicInfo?.source == 'tx' ? (resolvedMusicInfo.meta.strMediaMid ?? '') : '',
       officialSourceId: resolvedMusicInfo?.source == 'wy' ? String(resolvedMusicInfo.meta.albumId ?? '') : '',
+      cacheProviderId: info.cacheProviderId,
     }
   }
 
@@ -236,11 +237,21 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
     const hasExplicitToggle = !!targetToggleMusicInfo && (targetToggleMusicInfo.id != onlineMusicInfo.id || targetToggleMusicInfo.source != onlineMusicInfo.source)
     const primaryMusicInfo = hasExplicitToggle ? targetToggleMusicInfo : onlineMusicInfo
     const exactCandidates = hasExplicitToggle ? [primaryMusicInfo, onlineMusicInfo] : [onlineMusicInfo]
+    const preferCustomApi = isCustomApiSource() && !hasExplicitToggle
     for (const candidate of exactCandidates) {
-      if (candidate.source == 'tx' || candidate.source == 'wy') {
-        attempts.push({ musicInfo: candidate, allowToggleSource: false, routeStrategy: 'official' })
+      // 自定义 API 是默认线路；手动点选平台时保留明确的平台优先意图，
+      // 官方失败后仍会尝试自定义 API。
+      if (preferCustomApi) {
+        attempts.push({ musicInfo: candidate, allowToggleSource: false, routeStrategy: 'api' })
+        if (candidate.source == 'tx' || candidate.source == 'wy') {
+          attempts.push({ musicInfo: candidate, allowToggleSource: false, routeStrategy: 'official' })
+        }
+      } else {
+        if (candidate.source == 'tx' || candidate.source == 'wy') {
+          attempts.push({ musicInfo: candidate, allowToggleSource: false, routeStrategy: 'official' })
+        }
+        attempts.push({ musicInfo: candidate, allowToggleSource: false, routeStrategy: 'api' })
       }
-      attempts.push({ musicInfo: candidate, allowToggleSource: false, routeStrategy: 'api' })
     }
     attempts.push({ musicInfo: primaryMusicInfo, allowToggleSource: true, routeStrategy: 'all' })
   }

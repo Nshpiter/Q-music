@@ -84,6 +84,7 @@ dd
           | {{ item.name }}
           span(v-if="item.desc" :class="$style.desc") {{ item.desc }}
           span(v-if="item.statusLabel" :class="$style.status") {{ item.statusLabel }}
+    div(:class="$style.sourcePreferenceTip") {{ $t('setting__basic_source_preference_tip') }}
     .p.gap-top
       base-btn.btn(min @click="isShowUserApiModal = true") {{ $t('setting__basic_source_user_api_btn') }}
 
@@ -444,6 +445,14 @@ export default {
 .performanceTip {
   max-width: 560px;
   margin: 6px 0 0 30px;
+  color: var(--color-font-label);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.sourcePreferenceTip {
+  max-width: 560px;
+  margin: 8px 0 0 30px;
   color: var(--color-font-label);
   font-size: 12px;
   line-height: 1.55;

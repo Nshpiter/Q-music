@@ -346,7 +346,25 @@ const QUALITY_FALLBACKS: LX.Quality[] = ['flac24bit', 'flac', 'wav', 'ape', '320
 const OFFICIAL_QUALITYS: LX.Quality[] = ['flac24bit', 'flac', '320k', '128k']
 const MUSIC_URL_REQUEST_TIMEOUT = 12_000
 
-export const getMusicUrlCacheProviderId = () => apiSource.value || 'no_api'
+export const getMusicUrlCacheProviderId = () => {
+  const configuredSource = appSetting['common.apiSource']
+  const activeSource = apiSource.value
+  // 设置变更通过 IPC 同步，activeSource 可能比设置值晚一个事件循环。
+  // 切换期间使用配置中的 provider id，避免误读上一个接口留下的缓存。
+  if (configuredSource && activeSource && configuredSource != activeSource) return configuredSource
+  return activeSource || configuredSource || 'no_api'
+}
+
+/**
+ * 自定义 API 是用户主动配置的音源，默认播放时应优先使用它。
+ *
+ * 这里不要用 `apiSource.value != 'temp'` 之类的白名单判断：内置接口列表
+ * 会随版本变化，而用户 API 的 id 始终带有 `user_api` 前缀。
+ */
+export const isCustomApiSource = (source?: string | null): boolean => {
+  const selectedSource = source ?? appSetting['common.apiSource'] ?? apiSource.value
+  return /^user_api(?:_|$)/.test(selectedSource ?? '')
+}
 
 const getQualityFallbacks = (quality: LX.Quality) => {
   const index = QUALITY_FALLBACKS.indexOf(quality)
@@ -360,7 +378,7 @@ export const getPlayQualityCandidates = (highQuality: LX.Quality, musicInfo: LX.
   // 自定义 API 的 qualitys 声明就是该接口可尝试的音质范围。
   // 与官方/内置接口不同，它不一定能在搜索结果的歌曲元数据中完整标注，
   // 因此不能再用歌曲元数据把自定义高音质提前过滤掉。
-  const isUserApi = /^user_api(?:_|$)/.test(apiSource.value ?? '')
+  const isUserApi = isCustomApiSource()
   if (!supportedQualitys?.length) {
     // 自定义接口刚切换或仍在初始化时 qualityList 可能暂时为空。
     // 不要立即把用户选择降成 128K：接口声明未知时先按自定义接口
@@ -523,7 +541,9 @@ const resolveOnlineMusicUrl = async({ musicInfo, quality, isRefresh, requestOpti
     return null
   }
 
-  if ((musicInfo.source == 'tx' || musicInfo.source == 'wy') && routeStrategy != 'api') {
+  const preferCustomApi = isCustomApiSource() && routeStrategy == 'all'
+  const tryOfficialRoute = async(): Promise<OnlineMusicUrlResult | null> => {
+    if ((musicInfo.source != 'tx' && musicInfo.source != 'wy') || routeStrategy == 'api') return null
     const officialQuality = getOfficialQuality(quality)
     const routeKey = createMusicRouteKey('official', musicInfo, officialQuality)
     if (!isRouteExcluded(routeKey)) {
@@ -558,108 +578,126 @@ const resolveOnlineMusicUrl = async({ musicInfo, quality, isRefresh, requestOpti
       }
       requestOptions.onRouteFailed?.(routeKey, failedUrl || undefined)
     }
+    return null
+  }
+
+  // 选择自定义 API 时，官方账号线路只作为兜底；未选择自定义 API 时
+  // 保持原有的官方优先行为，避免改变普通用户的播放习惯。
+  if (!preferCustomApi) {
+    const officialResult = await tryOfficialRoute()
+    if (officialResult) return officialResult
   }
 
   if (routeStrategy == 'official') throw new Error('official music URL unavailable')
-  const initialProviderId = getMusicUrlCacheProviderId()
-  const initialQualitys = getCacheQualityCandidates(quality)
-  const initialCachedResult = await tryCachedRoutes(initialProviderId, initialQualitys)
-  if (initialCachedResult) return initialCachedResult
-
-  const blockedProviderError = requestOptions.blockedApiProviders?.get(initialProviderId)
-  if (blockedProviderError) throw blockedProviderError
-  const apiInitRouteKey = `api-init:${initialProviderId}`
-  if (isRouteExcluded(apiInitRouteKey)) throw new Error('source init unavailable')
   try {
-    const isApiReady = await withTimeout(window.lx.apiInitPromise[0], MUSIC_URL_REQUEST_TIMEOUT, 'source init timeout', { signal: requestOptions.signal })
-    if (!isApiReady) throw new Error('source init failed')
-  } catch (error: any) {
-    if (error.message == requestMsg.cancelRequest) throw error
-    const failedProviderId = getMusicUrlCacheProviderId()
-    if (failedProviderId != initialProviderId) {
-      const failedProviderCachedResult = await tryCachedRoutes(failedProviderId, initialQualitys)
-      if (failedProviderCachedResult) return failedProviderCachedResult
-    }
-    const initError = error instanceof Error ? error : new Error('source init unavailable')
-    for (const targetProviderId of new Set([initialProviderId, failedProviderId])) {
-      requestOptions.blockedApiProviders?.set(targetProviderId, initError)
-      requestOptions.onRouteFailed?.(`api-init:${targetProviderId}`)
-    }
-    throw error
-  }
+    const initialProviderId = getMusicUrlCacheProviderId()
+    const initialQualitys = getCacheQualityCandidates(quality)
+    const initialCachedResult = await tryCachedRoutes(initialProviderId, initialQualitys)
+    if (initialCachedResult) return initialCachedResult
 
-  cacheProviderId = getMusicUrlCacheProviderId()
-  const targetQualitys = getPlayQualityCandidates(quality, musicInfo)
-  const apiProviderId = cacheProviderId
-  const cachedResult = await tryCachedRoutes(apiProviderId, targetQualitys)
-  if (cachedResult) return cachedResult
-
-  const currentBlockedProviderError = requestOptions.blockedApiProviders?.get(apiProviderId)
-  if (currentBlockedProviderError) throw currentBlockedProviderError
-  if (targetQualitys.every(targetQuality => isRouteExcluded(createMusicRouteKey('api', musicInfo, targetQuality, apiProviderId)))) {
-    throw new Error('music API routes exhausted')
-  }
-  let sourceApi: ReturnType<typeof apis>
-  try {
-    if (!assertApiSupport(musicInfo.source)) throw new Error('source not supported by current API')
-    sourceApi = apis(musicInfo.source)
-  } catch (error: any) {
-    if (error.message == requestMsg.cancelRequest) throw error
-    for (const targetQuality of targetQualitys) {
-      requestOptions.onRouteFailed?.(createMusicRouteKey('api', musicInfo, targetQuality, apiProviderId))
-    }
-    throw error
-  }
-  let lastError: Error | null = null
-  let rateLimitError: Error | null = null
-  for (const targetQuality of targetQualitys) {
-    const apiRouteKey = createMusicRouteKey('api', musicInfo, targetQuality, apiProviderId)
-    let failedUrl = ''
+    const blockedProviderError = requestOptions.blockedApiProviders?.get(initialProviderId)
+    if (blockedProviderError) throw blockedProviderError
+    const apiInitRouteKey = `api-init:${initialProviderId}`
+    if (isRouteExcluded(apiInitRouteKey)) throw new Error('source init unavailable')
     try {
-      if (isRouteExcluded(apiRouteKey)) continue
-      const request = sourceApi.getMusicUrl(toOldMusicInfo(musicInfo), targetQuality)
-      const { url: rawUrl, type } = await withTimeout(
-        request.promise as Promise<{ url: string, type: LX.Quality }>,
-        MUSIC_URL_REQUEST_TIMEOUT,
-        'music API request timeout',
-        { signal: requestOptions.signal, onCancel: request.canceleFn },
-      )
-      const url = normalizeOnlineMusicUrl(rawUrl)
-      failedUrl = url
-      if (isUrlExcluded(url)) throw new Error('music URL already failed')
-      return {
-        musicInfo,
-        url,
-        quality: type,
-        isFromCache: false,
-        isOfficial: false,
-        routeKey: apiRouteKey,
-        transportMode: 'api',
-        cacheProviderId: apiProviderId,
+      const isApiReady = await withTimeout(window.lx.apiInitPromise[0], MUSIC_URL_REQUEST_TIMEOUT, 'source init timeout', { signal: requestOptions.signal })
+      if (!isApiReady) throw new Error('source init failed')
+    } catch (error: any) {
+      if (error.message == requestMsg.cancelRequest) throw error
+      const failedProviderId = getMusicUrlCacheProviderId()
+      if (failedProviderId != initialProviderId) {
+        const failedProviderCachedResult = await tryCachedRoutes(failedProviderId, initialQualitys)
+        if (failedProviderCachedResult) return failedProviderCachedResult
       }
-    } catch (err: any) {
-      if (err.message == requestMsg.cancelRequest) throw err
-      lastError = err instanceof Error ? err : new Error('music API route failed')
-      if (err.message == requestMsg.tooManyRequests) {
-        rateLimitError = lastError
-        requestOptions.blockedApiProviders?.set(apiProviderId, lastError)
-        requestOptions.onRouteRateLimited?.(`api-provider:${apiProviderId}`)
-        for (const fallbackQuality of targetQualitys) {
-          requestOptions.onRouteRateLimited?.(createMusicRouteKey('api', musicInfo, fallbackQuality, apiProviderId))
+      const initError = error instanceof Error ? error : new Error('source init unavailable')
+      for (const targetProviderId of new Set([initialProviderId, failedProviderId])) {
+        requestOptions.blockedApiProviders?.set(targetProviderId, initError)
+        requestOptions.onRouteFailed?.(`api-init:${targetProviderId}`)
+      }
+      throw error
+    }
+
+    cacheProviderId = getMusicUrlCacheProviderId()
+    const targetQualitys = getPlayQualityCandidates(quality, musicInfo)
+    const apiProviderId = cacheProviderId
+    const cachedResult = await tryCachedRoutes(apiProviderId, targetQualitys)
+    if (cachedResult) return cachedResult
+
+    const currentBlockedProviderError = requestOptions.blockedApiProviders?.get(apiProviderId)
+    if (currentBlockedProviderError) throw currentBlockedProviderError
+    if (targetQualitys.every(targetQuality => isRouteExcluded(createMusicRouteKey('api', musicInfo, targetQuality, apiProviderId)))) {
+      throw new Error('music API routes exhausted')
+    }
+    let sourceApi: ReturnType<typeof apis>
+    try {
+      if (!assertApiSupport(musicInfo.source)) throw new Error('source not supported by current API')
+      sourceApi = apis(musicInfo.source)
+    } catch (error: any) {
+      if (error.message == requestMsg.cancelRequest) throw error
+      for (const targetQuality of targetQualitys) {
+        requestOptions.onRouteFailed?.(createMusicRouteKey('api', musicInfo, targetQuality, apiProviderId))
+      }
+      throw error
+    }
+    let lastError: Error | null = null
+    let rateLimitError: Error | null = null
+    for (const targetQuality of targetQualitys) {
+      const apiRouteKey = createMusicRouteKey('api', musicInfo, targetQuality, apiProviderId)
+      let failedUrl = ''
+      try {
+        if (isRouteExcluded(apiRouteKey)) continue
+        const request = sourceApi.getMusicUrl(toOldMusicInfo(musicInfo), targetQuality)
+        const { url: rawUrl, type } = await withTimeout(
+          request.promise as Promise<{ url: string, type: LX.Quality }>,
+          MUSIC_URL_REQUEST_TIMEOUT,
+          'music API request timeout',
+          { signal: requestOptions.signal, onCancel: request.canceleFn },
+        )
+        const url = normalizeOnlineMusicUrl(rawUrl)
+        failedUrl = url
+        if (isUrlExcluded(url)) throw new Error('music URL already failed')
+        return {
+          musicInfo,
+          url,
+          quality: type,
+          isFromCache: false,
+          isOfficial: false,
+          routeKey: apiRouteKey,
+          transportMode: 'api',
+          cacheProviderId: apiProviderId,
         }
-      } else {
-        requestOptions.onRouteFailed?.(apiRouteKey, failedUrl || undefined)
-        if (isMusicApiTransportFailure(err)) {
-          if (isMusicApiProviderTransportFailure(err)) requestOptions.blockedApiProviders?.set(apiProviderId, lastError)
+      } catch (err: any) {
+        if (err.message == requestMsg.cancelRequest) throw err
+        lastError = err instanceof Error ? err : new Error('music API route failed')
+        if (err.message == requestMsg.tooManyRequests) {
+          rateLimitError = lastError
+          requestOptions.blockedApiProviders?.set(apiProviderId, lastError)
+          requestOptions.onRouteRateLimited?.(`api-provider:${apiProviderId}`)
           for (const fallbackQuality of targetQualitys) {
-            requestOptions.onRouteFailed?.(createMusicRouteKey('api', musicInfo, fallbackQuality, apiProviderId))
+            requestOptions.onRouteRateLimited?.(createMusicRouteKey('api', musicInfo, fallbackQuality, apiProviderId))
           }
-          break
+        } else {
+          requestOptions.onRouteFailed?.(apiRouteKey, failedUrl || undefined)
+          if (isMusicApiTransportFailure(err)) {
+            if (isMusicApiProviderTransportFailure(err)) requestOptions.blockedApiProviders?.set(apiProviderId, lastError)
+            for (const fallbackQuality of targetQualitys) {
+              requestOptions.onRouteFailed?.(createMusicRouteKey('api', musicInfo, fallbackQuality, apiProviderId))
+            }
+            break
+          }
         }
       }
     }
+    throw rateLimitError ?? lastError ?? new Error('music API routes exhausted')
+  } catch (error: any) {
+    // 自定义 API 的所有线路都失败后，再尝试官方账号线路，保证“优先自定义”
+    // 不会退化成“只能自定义、失败就跳过歌曲”。
+    if (preferCustomApi && error.message != requestMsg.cancelRequest) {
+      const officialResult = await tryOfficialRoute()
+      if (officialResult) return officialResult
+    }
+    throw error
   }
-  throw rateLimitError ?? lastError ?? new Error('music API routes exhausted')
 }
 
 const isOfficialSource = (source: LX.Source) => source == 'tx' || source == 'wy'
@@ -676,6 +714,7 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
   const desiredQuality = quality ?? appSetting['player.playQuality']
   let rateLimitMessage = ''
   const strategy = requestOptions?.routeStrategy ?? 'all'
+  const preferCustomApi = isCustomApiSource()
   const candidates = musicInfos.filter((musicInfo, index, list) => {
     const key = createMusicCandidateKey(musicInfo)
     return !retryedMusic.includes(key) && list.findIndex(item => createMusicCandidateKey(item) == key) == index
@@ -703,11 +742,17 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
     return null
   }
 
+  // 自定义 API 是默认首选时，跨平台回退也保持同样的顺序：先尝试
+  // 自定义接口返回的所有候选，再使用官方账号线路兜底。
+  if (preferCustomApi && strategy != 'official') {
+    const result = await tryCandidates('api', candidates)
+    if (result) return result
+  }
   if (strategy != 'api') {
     const result = await tryCandidates('official', candidates.filter(item => isOfficialSource(item.source)))
     if (result) return result
   }
-  if (strategy != 'official') {
+  if (!preferCustomApi && strategy != 'official') {
     const result = await tryCandidates('api', candidates)
     if (result) return result
   }
