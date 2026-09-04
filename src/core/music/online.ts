@@ -9,6 +9,7 @@ import settingState from '@/store/setting/state'
 import {
   buildLyricInfo,
   getPlayQuality,
+  isCustomApiSource,
   handleGetOnlineLyricInfo,
   handleGetOnlineMusicUrl,
   handleGetOnlinePicUrl,
@@ -53,7 +54,7 @@ export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSou
   //   // return Promise.reject(new Error('该歌曲没有可播放的音频'))
   // }
   const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
-  if (musicInfo.source != 'tx' && musicInfo.source != 'wy') {
+  if (!isCustomApiSource() && musicInfo.source != 'tx' && musicInfo.source != 'wy') {
     const cachedUrl = await getStoreMusicUrl(musicInfo, targetQuality)
     if (cachedUrl && !isRefresh) return cachedUrl
   }

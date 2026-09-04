@@ -9,7 +9,7 @@ import searchState, { type InitState as SearchState } from '@/store/search/state
 import { setSearchText, setTipList, setTipListInfo } from '@/core/search/search'
 import { debounce } from '@/utils'
 
-export const ITEM_HEIGHT = scaleSizeH(36)
+export const ITEM_HEIGHT = scaleSizeH(44)
 
 export const debounceTipSearch = debounce((keyword: string, source: SearchState['temp_source'], callback: (list: string[]) => void) => {
   // console.log(reslutList)
@@ -70,6 +70,7 @@ export default forwardRef<TipListType, TipListProps>(({ onSearch }, ref) => {
 
   useImperativeHandle(ref, () => ({
     search(keyword, height) {
+      visibleListRef.current = true
       if (visible) handleSearch(keyword, height)
       else {
         setVisible(true)

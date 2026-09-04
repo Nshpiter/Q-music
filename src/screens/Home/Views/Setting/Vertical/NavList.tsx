@@ -26,7 +26,12 @@ const ListItem = memo(({ id, activeId, onPress }: {
 
   return (
     <View style={{ ...styles.listItem, backgroundColor: active ? theme['q-surface-tint'] : 'transparent' }}>
-      <TouchableOpacity style={styles.listName} onPress={handlePress}>
+      <TouchableOpacity
+        accessibilityRole="tab"
+        accessibilityState={{ selected: active }}
+        style={styles.listName}
+        onPress={handlePress}
+      >
         <Text numberOfLines={1} color={active ? theme['q-accent-text'] : theme['q-text-primary']}>{t(`setting_${id}`)}</Text>
       </TouchableOpacity>
     </View>
@@ -53,7 +58,7 @@ export default ({ onChangeId }: {
   }, [])
 
   return (
-    <ScrollView horizontal style={{ ...styles.container, borderBottomColor: theme['c-border-background'] }} contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps={'always'}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ ...styles.container, borderBottomColor: theme['c-border-background'] }} contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps={'always'}>
       {
         SETTING_SCREENS.map(id => <ListItem key={id} id={id} activeId={activeId} onPress={handleChangeId} />)
       }

@@ -13,13 +13,28 @@ export const handlePlay = async(id: string, list?: LX.Music.MusicInfoOnline[], i
   let isPlayingList = false
   // console.log(list)
   const listId = getListId(id)
-  if (!list?.length) list = (await getListDetail(id, 1)).list
+  if (!list?.length) {
+    try {
+      list = (await getListDetail(id, 1)).list
+    } catch (error) {
+      console.warn('[leaderboard] play list load failed', id, error)
+      toast(global.i18n.t('load_failed'))
+      return
+    }
+  }
   if (list?.length) {
     await setTempList(listId, [...list])
     void playList(LIST_IDS.TEMP, index)
     isPlayingList = true
   }
-  const fullList = await getListDetailAll(id)
+  let fullList: LX.Music.MusicInfoOnline[]
+  try {
+    fullList = await getListDetailAll(id)
+  } catch (error) {
+    console.warn('[leaderboard] complete list load failed', id, error)
+    if (!isPlayingList) toast(global.i18n.t('load_failed'))
+    return
+  }
   if (!fullList.length) return
   if (isPlayingList) {
     if (listState.tempListMeta.id == listId) {

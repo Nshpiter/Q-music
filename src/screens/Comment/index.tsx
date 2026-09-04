@@ -18,7 +18,7 @@ import { BorderWidths } from '@/theme'
 
 type ActiveId = 'hot' | 'new'
 
-const BAR_HEIGHT = scaleSizeH(34)
+const BAR_HEIGHT = scaleSizeH(44)
 
 const HeaderItem = ({ id, label, isActive, onPress }: {
   id: ActiveId
@@ -29,7 +29,7 @@ const HeaderItem = ({ id, label, isActive, onPress }: {
   const theme = useTheme()
   // console.log(theme)
   const components = useMemo(() => (
-    <TouchableOpacity style={styles.tabBtn} onPress={() => { !isActive && onPress(id) }}>
+    <TouchableOpacity accessibilityRole="tab" accessibilityState={{ selected: isActive }} style={styles.tabBtn} onPress={() => { !isActive && onPress(id) }}>
       <Text color={isActive ? theme['c-primary-font-active'] : theme['c-font']}>{label}</Text>
     </TouchableOpacity>
   ), [isActive, theme, label, onPress, id])
@@ -135,7 +135,7 @@ export default memo(({ componentId }: {
             {tabs.map(({ id, label }) => <HeaderItem id={id} label={label} key={id} isActive={activeId == id} onPress={toggleTab} />)}
           </View>
           <View>
-            <TouchableOpacity onPress={refreshComment} style={{ ...styles.btn, width: BAR_HEIGHT }}>
+            <TouchableOpacity accessibilityRole="button" onPress={refreshComment} style={{ ...styles.btn, width: BAR_HEIGHT }}>
               <Icon name="available_updates" size={20} color={theme['c-600']} />
             </TouchableOpacity>
           </View>

@@ -89,9 +89,9 @@ export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = tru
 
   onToggleSource()
   return getOtherSourceByLocal(musicInfo, async(otherSource) => {
-    return getOnlineOtherSourceMusicUrl({ musicInfos: [...otherSource], onToggleSource, isRefresh }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache }) => {
+    return getOnlineOtherSourceMusicUrl({ musicInfos: [...otherSource], onToggleSource, isRefresh }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache, isOfficial }) => {
       // saveLyric(musicInfo, data.lyricInfo)
-      if (!isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url)
+      if (!isFromCache && !isOfficial) void saveMusicUrl(targetMusicInfo, targetQuality, url)
 
       // TODO: save url ?
       return url

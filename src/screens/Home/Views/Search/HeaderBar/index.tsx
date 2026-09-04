@@ -63,7 +63,7 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
         }}
       >
         <View style={styles.selector}>
-          <SourceSelector ref={sourceSelectorRef} onSourceChange={onSourceChange} fontSize={12} center plain />
+          <SourceSelector ref={sourceSelectorRef} onSourceChange={onSourceChange} fontSize={12} center plain iconOnly />
         </View>
         <View style={{ ...styles.divider, backgroundColor: theme['q-outline'] }} />
         <SearchInput

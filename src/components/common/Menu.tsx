@@ -7,6 +7,7 @@ import Modal, { type ModalType } from './Modal'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
+import { Icon } from './Icon'
 import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import { qFloatingShadow } from '@/theme/ui'
 
@@ -17,7 +18,7 @@ const MENU_ITEM_HIT_SLOP = { left: 4, right: 4 } as const
 
 export interface Position { w: number, h: number, x: number, y: number, menuWidth?: number, menuHeight?: number }
 export interface MenuSize { width?: number, height?: number }
-export type Menus = Readonly<Array<{ action: string, label: string, disabled?: boolean }>>
+export type Menus = Readonly<Array<{ action: string, label: string, disabled?: boolean, icon?: React.ReactNode }>>
 
 const styles = createStyle({
   menu: {
@@ -35,6 +36,20 @@ const styles = createStyle({
     paddingRight: 12,
     borderRadius: 8,
     justifyContent: 'center',
+  },
+  menuItemContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  menuItemIcon: {
+    width: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  menuItemText: {
+    flex: 1,
   },
 })
 
@@ -87,7 +102,7 @@ const Menu = ({
     const bottomSpace = windowSize.height - buttonPosition.y - buttonPosition.h - 20
     const rightSpace = windowSize.width - buttonPosition.x - menuWidth
     const showInBottom = bottomSpace >= menuHeight
-    const showInRight = rightSpace >= menuWidth
+    const showInRight = rightSpace >= 20
     const frameStyle: {
       height: number
       width: number
@@ -137,12 +152,15 @@ const Menu = ({
                     key={menu.action}
                     style={{ ...styles.menuItem, width: menuItemStyle.width, height: menuItemStyle.height, opacity: 0.4 }}
                   >
-                    <Text style={{ textAlign: center ? 'center' : 'left' }} color={theme['q-text-secondary']} size={fontSize} numberOfLines={1}>{menu.label}</Text>
+                    <View style={styles.menuItemContent}>
+                      {menu.icon ? <View style={styles.menuItemIcon}>{menu.icon}</View> : null}
+                      <Text style={{ ...styles.menuItemText, textAlign: center && !menu.icon ? 'center' : 'left' }} color={theme['q-text-secondary']} size={fontSize} numberOfLines={1}>{menu.label}</Text>
+                    </View>
                   </View>
                 )
               : menu.action == activeId
                 ? (
-                    <View
+                    <TouchableHighlight
                       key={menu.action}
                       style={{
                         ...styles.menuItem,
@@ -150,9 +168,17 @@ const Menu = ({
                         height: menuItemStyle.height,
                         backgroundColor: theme['q-surface-tint'],
                       }}
+                      accessibilityRole="menuitem"
+                      underlayColor={theme['q-surface-tint']}
+                      hitSlop={MENU_ITEM_HIT_SLOP}
+                      onPress={() => { menuPress(menu) }}
                     >
-                      <Text style={{ textAlign: center ? 'center' : 'left' }} color={theme['q-accent-text']} size={fontSize} numberOfLines={1}>{menu.label}</Text>
-                    </View>
+                      <View style={styles.menuItemContent}>
+                        {menu.icon ? <View style={styles.menuItemIcon}>{menu.icon}</View> : null}
+                        <Text style={{ ...styles.menuItemText, textAlign: center && !menu.icon ? 'center' : 'left' }} color={theme['q-accent-text']} size={fontSize} numberOfLines={1}>{menu.label}</Text>
+                        <Icon name="checkbox-marked" color={theme['q-accent-text']} rawSize={16} />
+                      </View>
+                    </TouchableHighlight>
                   )
                 : (
                     <TouchableHighlight
@@ -160,9 +186,13 @@ const Menu = ({
                       style={{ ...styles.menuItem, width: menuItemStyle.width, height: menuItemStyle.height }}
                       underlayColor={theme['q-surface-tint']}
                       hitSlop={MENU_ITEM_HIT_SLOP}
+                      accessibilityRole="menuitem"
                       onPress={() => { menuPress(menu) }}
                     >
-                      <Text style={{ textAlign: center ? 'center' : 'left' }} color={theme['q-text-primary']} size={fontSize} numberOfLines={1}>{menu.label}</Text>
+                      <View style={styles.menuItemContent}>
+                        {menu.icon ? <View style={styles.menuItemIcon}>{menu.icon}</View> : null}
+                        <Text style={{ ...styles.menuItemText, textAlign: center && !menu.icon ? 'center' : 'left' }} color={theme['q-text-primary']} size={fontSize} numberOfLines={1}>{menu.label}</Text>
+                      </View>
                     </TouchableHighlight>
                   )
 

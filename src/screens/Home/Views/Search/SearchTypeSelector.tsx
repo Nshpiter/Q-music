@@ -44,6 +44,8 @@ export default () => {
       {
         list.map(t => (
           <TouchableOpacity
+            accessibilityRole="tab"
+            accessibilityState={{ selected: type == t.id }}
             activeOpacity={0.7}
             style={{
               ...styles.button,

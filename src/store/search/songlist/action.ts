@@ -35,6 +35,7 @@ let maxTotals: Partial<Record<LX.OnlineSource, number>> = {
 }
 const setLists = (results: SearchResult[], page: number, text: string): ListInfoItem[] => {
   let totals = []
+  let pages = []
   let limit = 0
   let list = []
   for (const source of results) {
@@ -42,10 +43,12 @@ const setLists = (results: SearchResult[], page: number, text: string): ListInfo
     totals.push(source.total)
     maxTotals[source.source] = source.total
     state.maxPages[source.source] = Math.ceil(source.total / source.limit)
+    pages.push(state.maxPages[source.source] ?? 0)
     limit = Math.max(source.limit, limit)
   }
 
   let listInfo = state.listInfos.all
+  state.maxPages.all = Math.max(0, ...pages)
   const total = Math.max(0, ...totals)
   if (page == 1 || (total && list.length)) listInfo.total = total
   else listInfo.total = limit * page
@@ -64,6 +67,7 @@ const setList = (datas: SearchResult, page: number, text: string): ListInfoItem[
   else listInfo.total = datas.limit * page
   listInfo.page = page
   listInfo.limit = datas.limit
+  state.maxPages[datas.source] = Math.ceil(datas.total / datas.limit)
   state.source = datas.source
   return listInfo.list
 }
@@ -92,5 +96,6 @@ export default {
     listInfo.key = null
     listInfo.tagId = ''
     listInfo.sortId = ''
+    state.maxPages[sourceId] = 0
   },
 }

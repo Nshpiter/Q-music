@@ -16,7 +16,7 @@ import Loading from '@/components/common/Loading'
 
 type FlatListType = FlatListProps<LX.List.MyListInfo>
 
-const ITEM_HEIGHT = scaleSizeH(40)
+const ITEM_HEIGHT = scaleSizeH(48)
 
 const ListItem = memo(({ item, index, activeId, onPress, onShowMenu }: {
   onPress: (item: LX.List.MyListInfo) => void
@@ -52,10 +52,10 @@ const ListItem = memo(({ item, index, activeId, onPress, onShowMenu }: {
           : null
       }
       { fetching ? <Loading color={active ? theme['c-primary-font'] : theme['c-font']} style={styles.loading} /> : null }
-      <TouchableOpacity style={styles.listName} onPress={handlePress}>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel={item.name} style={styles.listName} onPress={handlePress}>
         <Text numberOfLines={1} color={active ? theme['c-primary-font'] : theme['c-font']}>{item.name}</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.listMoreBtn}>
+      <TouchableOpacity accessibilityRole="button" onPress={handleShowMenu} ref={moreButtonRef} style={styles.listMoreBtn}>
         <Icon name="dots-vertical" color={theme['c-350']} size={12} />
       </TouchableOpacity>
     </View>
@@ -178,7 +178,7 @@ const styles = createStyle({
   // },
   listMoreBtn: {
     height: '100%',
-    width: 36,
+    width: 44,
     // height: 46,
     // paddingTop: 12,
     // paddingBottom: 12,

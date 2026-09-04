@@ -49,7 +49,7 @@ export default forwardRef<OpenListType, {}>((props, ref) => {
 
   return (
     <>
-      <Button style={styles.button} onPress={() => modalRef.current?.show(songlistInfoRef.current.source)}>
+      <Button accessibilityRole="button" style={styles.button} onPress={() => modalRef.current?.show(songlistInfoRef.current.source)}>
         <Text>{t('songlist_open')}</Text>
       </Button>
       <Modal ref={modalRef} onOpenId={handleOpenSonglist} />
@@ -59,6 +59,7 @@ export default forwardRef<OpenListType, {}>((props, ref) => {
 
 const styles = createStyle({
   button: {
+    minHeight: 48,
     // backgroundColor: '#ccc',
     alignItems: 'center',
     justifyContent: 'center',

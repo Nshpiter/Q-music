@@ -26,6 +26,7 @@ export default forwardRef<DailyRecommendType>((_, ref) => {
   const isUnmountedRef = useRef(false)
   const [list, setList] = useState<LX.Music.MusicInfoOnline[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => () => {
     isUnmountedRef.current = true
@@ -35,6 +36,7 @@ export default forwardRef<DailyRecommendType>((_, ref) => {
     sourceRef.current = source
     const requestId = ++requestIdRef.current
     setLoading(true)
+    setLoadError(false)
     try {
       const nextList = await getDailyRecommend(source, force)
       if (isUnmountedRef.current || requestId != requestIdRef.current) return
@@ -42,6 +44,7 @@ export default forwardRef<DailyRecommendType>((_, ref) => {
     } catch {
       if (isUnmountedRef.current || requestId != requestIdRef.current) return
       setList([])
+      setLoadError(true)
     } finally {
       if (!isUnmountedRef.current && requestId == requestIdRef.current) setLoading(false)
     }
@@ -75,34 +78,44 @@ export default forwardRef<DailyRecommendType>((_, ref) => {
           <Text size={12} style={styles.subtitle} color={theme['q-text-secondary']}>{t('search_daily_recommend_subtitle')}</Text>
         </View>
         <View style={styles.actions}>
-          <Button style={{ ...styles.action, backgroundColor: theme['q-surface-tint'] }} onPress={() => { void load(sourceRef.current, true) }}>
+          <Button disabled={loading} style={{ ...styles.action, backgroundColor: theme['q-surface-tint'] }} onPress={() => { void load(sourceRef.current, true) }}>
             <Text size={12} color={theme['q-accent-text']}>{t('search_daily_recommend_refresh')}</Text>
           </Button>
-          <Button style={{ ...styles.action, backgroundColor: theme['q-accent'] }} onPress={() => { void handlePlay() }}>
+          <Button disabled={loading || !list.length} style={{ ...styles.action, backgroundColor: theme['q-accent'] }} onPress={() => { void handlePlay() }}>
             <Text size={12} color={theme['q-on-accent']}>{t('search_daily_recommend_play')}</Text>
           </Button>
         </View>
       </View>
       {loading
         ? <View style={styles.state}><ActivityIndicator color={theme['q-accent']} /><Text size={12} color={theme['q-text-secondary']}>{t('search_daily_recommend_loading')}</Text></View>
-        : list.length
-          ? list.slice(0, 8).map((item, index) => (
-              <TouchableOpacity key={item.id} style={styles.item} activeOpacity={0.65} onPress={() => { void handlePlay(index) }}>
-                <View style={{ ...styles.cover, backgroundColor: theme['q-surface-tint'] }}>
-                  {item.meta.picUrl
-                    ? <Image source={{ uri: item.meta.picUrl }} style={styles.coverImage} />
-                    : <Icon name="album" color={theme['q-accent-text']} rawSize={18} />}
-                </View>
-                <View style={styles.musicInfo}>
-                  <Text numberOfLines={1} size={14} color={theme['q-text-primary']}>{item.name}</Text>
-                  <Text numberOfLines={1} size={11} color={theme['q-text-secondary']}>{item.singer}</Text>
-                </View>
-                <View style={{ ...styles.playFace, backgroundColor: theme['q-surface-tint'] }}>
-                  <Icon name="play" color={theme['q-accent-text']} rawSize={13} />
-                </View>
-              </TouchableOpacity>
-          ))
-          : <View style={styles.state}><Text size={12} color={theme['q-text-secondary']}>{t('search_daily_recommend_empty')}</Text></View>}
+        : loadError
+          ? (
+              <View style={styles.state}>
+                <Text size={12} color={theme['q-text-secondary']}>{t('load_failed')}</Text>
+                <Button style={{ ...styles.errorAction, backgroundColor: theme['q-surface-tint'] }} onPress={() => { void load(sourceRef.current, true) }}>
+                  <Icon name="available_updates" color={theme['q-accent-text']} rawSize={14} />
+                  <Text size={12} color={theme['q-accent-text']}>{t('list_retry')}</Text>
+                </Button>
+              </View>
+            )
+          : list.length
+            ? list.slice(0, 8).map((item, index) => (
+                <TouchableOpacity key={item.id} style={styles.item} activeOpacity={0.65} onPress={() => { void handlePlay(index) }}>
+                  <View style={{ ...styles.cover, backgroundColor: theme['q-surface-tint'] }}>
+                    {item.meta.picUrl
+                      ? <Image source={{ uri: item.meta.picUrl }} style={styles.coverImage} />
+                      : <Icon name="album" color={theme['q-accent-text']} rawSize={18} />}
+                  </View>
+                  <View style={styles.musicInfo}>
+                    <Text numberOfLines={1} size={14} color={theme['q-text-primary']}>{item.name}</Text>
+                    <Text numberOfLines={1} size={11} color={theme['q-text-secondary']}>{item.singer}</Text>
+                  </View>
+                  <View style={{ ...styles.playFace, backgroundColor: theme['q-surface-tint'] }}>
+                    <Icon name="play" color={theme['q-accent-text']} rawSize={13} />
+                  </View>
+                </TouchableOpacity>
+            ))
+            : <View style={styles.state}><Text size={12} color={theme['q-text-secondary']}>{t('search_daily_recommend_empty')}</Text></View>}
     </View>
   )
 })
@@ -135,7 +148,7 @@ const styles = createStyle({
     gap: 8,
   },
   action: {
-    minHeight: 34,
+    minHeight: 44,
     paddingLeft: 14,
     paddingRight: 14,
     borderRadius: 11,
@@ -178,5 +191,14 @@ const styles = createStyle({
     gap: 8,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  errorAction: {
+    minHeight: 40,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
   },
 })

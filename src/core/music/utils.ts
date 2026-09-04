@@ -215,19 +215,62 @@ export const getOnlineOtherSourcePicByLocal = async(musicInfo: LX.Music.MusicInf
 }
 
 export const TRY_QUALITYS_LIST = ['flac24bit', 'flac', '320k'] as const
-type TryQualityType = typeof TRY_QUALITYS_LIST[number]
-export const getPlayQuality = (highQuality: LX.Quality, musicInfo: LX.Music.MusicInfoOnline): LX.Quality => {
-  let type: LX.Quality = '128k'
-  if (TRY_QUALITYS_LIST.includes(highQuality as TryQualityType)) {
-    let list = global.lx.qualityList[musicInfo.source]
+const QUALITY_FALLBACKS: LX.Quality[] = ['flac24bit', 'flac', '320k', '128k']
 
-    let t = TRY_QUALITYS_LIST
-      .slice(TRY_QUALITYS_LIST.indexOf(highQuality as TryQualityType))
-      .find(q => musicInfo.meta._qualitys[q] && list?.includes(q))
+export const isCustomApiSource = (source = settingState.setting['common.apiSource']): boolean => {
+  return /^user_api(?:_|$)/.test(source ?? '')
+}
 
-    if (t) type = t
+export const getPlayQualityCandidates = (highQuality: LX.Quality, musicInfo: LX.Music.MusicInfoOnline): LX.Quality[] => {
+  const index = QUALITY_FALLBACKS.indexOf(highQuality)
+  const fallbacks = index < 0 ? ['128k'] as LX.Quality[] : QUALITY_FALLBACKS.slice(index)
+  const supportedQualitys = global.lx.qualityList[musicInfo.source]
+  const metadataQualitys = musicInfo.meta?._qualitys ?? {}
+  const isUserApi = isCustomApiSource()
+
+  if (!supportedQualitys?.length) {
+    if (isUserApi) return fallbacks
+    const candidates = fallbacks.filter(quality => quality == '128k' || !!metadataQualitys[quality])
+    return candidates.length ? candidates : ['128k']
   }
-  return type
+
+  const candidates = fallbacks.filter(quality => {
+    return supportedQualitys.includes(quality) && (isUserApi || quality == '128k' || !!metadataQualitys[quality])
+  })
+  if (candidates.length) return candidates
+
+  const lowestSupportedQuality = [...fallbacks].reverse().find(quality => supportedQualitys.includes(quality))
+  return [lowestSupportedQuality ?? '128k']
+}
+
+export const getPlayQuality = (highQuality: LX.Quality, musicInfo: LX.Music.MusicInfoOnline): LX.Quality => {
+  return getPlayQualityCandidates(highQuality, musicInfo)[0]
+}
+
+const getApiMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, isRefresh: boolean) => {
+  if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
+  if (!assertApiSupport(musicInfo.source)) throw new Error('source not supported by current API')
+
+  let lastError: unknown
+  for (const targetQuality of getPlayQualityCandidates(quality, musicInfo)) {
+    if (!isCustomApiSource()) {
+      const cachedUrl = await getStoreMusicUrl(musicInfo, targetQuality)
+      if (cachedUrl && !isRefresh) {
+        return { url: cachedUrl, quality: targetQuality, isFromCache: true }
+      }
+    }
+
+    try {
+      const { url, type } = await musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), targetQuality).promise as { url: string, type: LX.Quality }
+      if (!url?.trim()) throw new Error('empty music URL')
+      return { url, quality: type, isFromCache: false }
+    } catch (error: any) {
+      if (error.message == requestMsg.tooManyRequests) throw error
+      lastError = error
+      console.warn('[music] API quality unavailable', musicInfo.source, targetQuality, error)
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('music API routes exhausted')
 }
 
 export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggleSource, isRefresh, retryedSource = [] }: {
@@ -241,44 +284,39 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
   musicInfo: LX.Music.MusicInfoOnline
   quality: LX.Quality
   isFromCache: boolean
+  isOfficial?: boolean
 }> => {
-  if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
-
-  let musicInfo: LX.Music.MusicInfoOnline | null = null
-  let itemQuality: LX.Quality | null = null
-  // eslint-disable-next-line no-cond-assign
-  while (musicInfo = (musicInfos.shift()!)) {
+  let lastError: unknown
+  let musicInfo: LX.Music.MusicInfoOnline | undefined
+  const preferCustomApi = isCustomApiSource()
+  while ((musicInfo = musicInfos.shift())) {
     if (retryedSource.includes(musicInfo.source)) continue
     retryedSource.push(musicInfo.source)
-    if (!assertApiSupport(musicInfo.source)) continue
-    itemQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
-    if (!musicInfo.meta._qualitys[itemQuality]) continue
-
     console.log('try toggle to: ', musicInfo.source, musicInfo.name, musicInfo.singer, musicInfo.interval)
     onToggleSource(musicInfo)
-    break
-  }
-  if (!musicInfo || !itemQuality) throw new Error(global.i18n.t('toggle_source_failed'))
 
-  const cachedUrl = await getStoreMusicUrl(musicInfo, itemQuality)
-  if (cachedUrl && !isRefresh) return { url: cachedUrl, musicInfo, quality: itemQuality, isFromCache: true }
+    if (!preferCustomApi) {
+      const officialResult = await getOfficialMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh)
+      if (officialResult) return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
+    }
 
-  let reqPromise
-  try {
-    reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), itemQuality).promise
-  } catch (err: any) {
-    reqPromise = Promise.reject(err)
+    try {
+      const result = await getApiMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh)
+      return { musicInfo, ...result }
+    } catch (error: any) {
+      lastError = error
+      if (!preferCustomApi && error.message == requestMsg.tooManyRequests) throw error
+    }
+
+    if (preferCustomApi) {
+      const officialResult = await getOfficialMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh)
+      if (officialResult) return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
+      if ((lastError as Error | undefined)?.message == requestMsg.tooManyRequests) {
+        throw lastError instanceof Error ? lastError : new Error(requestMsg.tooManyRequests)
+      }
+    }
   }
-  // retryedSource.includes(musicInfo.source)
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  return reqPromise.then(({ url, type }: { url: string, type: LX.Quality }) => {
-    return { musicInfo, url, quality: type, isFromCache: false }
-    // eslint-disable-next-line @typescript-eslint/promise-function-async
-  }).catch((err: any) => {
-    if (err.message == requestMsg.tooManyRequests) throw err
-    console.log(err)
-    return getOnlineOtherSourceMusicUrl({ musicInfos, quality, onToggleSource, isRefresh, retryedSource })
-  })
+  throw lastError instanceof Error ? lastError : new Error(global.i18n.t('toggle_source_failed'))
 }
 
 /**
@@ -297,41 +335,38 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   isFromCache: boolean
   isOfficial?: boolean
 }> => {
-  const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
+  const targetQuality = quality ?? settingState.setting['player.playQuality']
+  const preferCustomApi = isCustomApiSource()
+  let routeError: any
 
-  const officialResult = await getOfficialMusicUrl(musicInfo, targetQuality, isRefresh)
-  if (officialResult) {
-    return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
+  if (!preferCustomApi) {
+    const officialResult = await getOfficialMusicUrl(musicInfo, targetQuality, isRefresh)
+    if (officialResult) return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
   }
 
-  if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
-
-  let reqPromise
   try {
-    reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), targetQuality).promise
+    const result = await getApiMusicUrl(musicInfo, targetQuality, isRefresh)
+    return { musicInfo, ...result }
   } catch (err: any) {
-    reqPromise = Promise.reject(err)
+    routeError = err
+    console.warn('[music] selected API route unavailable', musicInfo.source, err)
   }
-  return reqPromise.then(({ url, type }: { url: string, type: LX.Quality }) => {
-    return { musicInfo, url, quality: type, isFromCache: false }
-  }).catch(async(err: any) => {
-    console.log(err)
-    if (!allowToggleSource || err.message == requestMsg.tooManyRequests) throw err
-    onToggleSource()
-    // eslint-disable-next-line @typescript-eslint/promise-function-async
-    return getOtherSource(musicInfo).then(otherSource => {
-      // console.log('find otherSource', otherSource.length)
-      if (otherSource.length) {
-        return getOnlineOtherSourceMusicUrl({
-          musicInfos: [...otherSource],
-          onToggleSource,
-          quality,
-          isRefresh,
-          retryedSource: [musicInfo.source],
-        })
-      }
-      throw err
-    })
+
+  if (preferCustomApi) {
+    const officialResult = await getOfficialMusicUrl(musicInfo, targetQuality, isRefresh)
+    if (officialResult) return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
+  }
+
+  if (!allowToggleSource || routeError?.message == requestMsg.tooManyRequests) throw routeError
+  onToggleSource()
+  const otherSource = await getOtherSource(musicInfo)
+  if (!otherSource.length) throw routeError
+  return getOnlineOtherSourceMusicUrl({
+    musicInfos: [...otherSource],
+    onToggleSource,
+    quality: targetQuality,
+    isRefresh,
+    retryedSource: [musicInfo.source],
   })
 }
 

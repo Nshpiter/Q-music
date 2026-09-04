@@ -1,5 +1,5 @@
 import { memo, useState, useRef, useMemo, useEffect } from 'react'
-import { View, AppState } from 'react-native'
+import { View, AppState, StyleSheet, TouchableOpacity } from 'react-native'
 
 import Header from './components/Header'
 // import Aside from './components/Aside'
@@ -11,7 +11,9 @@ import Lyric from './Lyric'
 import { screenkeepAwake, screenUnkeepAwake } from '@/utils/nativeModules/utils'
 import commonState, { type InitState as CommonState } from '@/store/common/state'
 import { createStyle } from '@/utils/tools'
-// import { useTheme } from '@/store/theme/hook'
+import { useTheme } from '@/store/theme/hook'
+import { useI18n } from '@/lang'
+import Text from '@/components/common/Text'
 
 const LyricPage = ({ activeIndex }: { activeIndex: number }) => {
   const initedRef = useRef(false)
@@ -29,9 +31,11 @@ const LyricPage = ({ activeIndex }: { activeIndex: number }) => {
 
 // global.iskeep = false
 export default memo(({ componentId }: { componentId: string }) => {
-  // const theme = useTheme()
+  const theme = useTheme()
+  const t = useI18n()
   const [pageIndex, setPageIndex] = useState(0)
   const showLyricRef = useRef(false)
+  const pagerViewRef = useRef<PagerView>(null)
 
   const onPageSelected = ({ nativeEvent }: PagerViewOnPageSelectedEvent) => {
     setPageIndex(nativeEvent.position)
@@ -57,7 +61,7 @@ export default memo(({ componentId }: { componentId: string }) => {
 
     const handleComponentIdsChange = (ids: CommonState['componentIds']) => {
       if (ids.comment) screenUnkeepAwake()
-      else if (AppState.currentState == 'active') screenkeepAwake()
+      else if (showLyricRef.current && AppState.currentState == 'active') screenkeepAwake()
     }
 
     global.state_event.on('componentIdsUpdated', handleComponentIdsChange)
@@ -75,6 +79,7 @@ export default memo(({ componentId }: { componentId: string }) => {
       <Header />
       <View style={styles.container}>
         <PagerView
+          ref={pagerViewRef}
           onPageSelected={onPageSelected}
           // onPageScrollStateChanged={onPageScrollStateChanged}
           style={styles.pagerView}
@@ -86,10 +91,25 @@ export default memo(({ componentId }: { componentId: string }) => {
             <LyricPage activeIndex={pageIndex} />
           </View>
         </PagerView>
-        {/* <View style={styles.pageIndicator} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pageIndicator}>
-          <View style={{ ...styles.pageIndicatorItem, backgroundColor: pageIndex == 0 ? theme['c-primary-light-100-alpha-700'] : theme['c-primary-alpha-900'] }}></View>
-          <View style={{ ...styles.pageIndicatorItem, backgroundColor: pageIndex == 1 ? theme['c-primary-light-100-alpha-700'] : theme['c-primary-alpha-900'] }}></View>
-        </View> */}
+        <View
+          style={{ ...styles.pageIndicator, backgroundColor: theme['q-surface-base'], borderColor: theme['q-outline'] }}
+        >
+          {[t('play_detail_page_cover'), t('play_detail_page_lyric')].map((label, index) => {
+            const active = pageIndex == index
+            return (
+              <TouchableOpacity
+                key={label}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                style={{ ...styles.pageIndicatorItem, backgroundColor: active ? theme['q-accent'] : 'transparent' }}
+                activeOpacity={0.7}
+                onPress={() => { pagerViewRef.current?.setPage(index) }}
+              >
+                <Text size={12} color={active ? theme['q-on-accent'] : theme['q-text-secondary']}>{label}</Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
         <Player />
       </View>
     </>
@@ -104,18 +124,21 @@ const styles = createStyle({
   pagerView: {
     flex: 1,
   },
-  // pageIndicator: {
-  //   flex: 0,
-  //   flexDirection: 'row',
-  //   justifyContent: 'center',
-  //   paddingTop: 10,
-  //   // backgroundColor: 'rgba(0,0,0,0.1)',
-  // },
-  // pageIndicatorItem: {
-  //   height: 3,
-  //   width: '5%',
-  //   marginLeft: 2,
-  //   marginRight: 2,
-  //   borderRadius: 2,
-  // },
+  pageIndicator: {
+    width: 164,
+    height: 44,
+    marginTop: 4,
+    marginBottom: 4,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    padding: 3,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 13,
+  },
+  pageIndicatorItem: {
+    flex: 1,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 })

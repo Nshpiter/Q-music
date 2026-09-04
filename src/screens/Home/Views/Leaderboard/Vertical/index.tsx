@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { View } from 'react-native'
-import { createStyle } from '@/utils/tools'
+import { createStyle, toast } from '@/utils/tools'
 
 import MusicList, { type MusicListType } from '../MusicList'
 import { getLeaderboardSetting, saveLeaderboardSetting } from '@/utils/data'
@@ -28,7 +28,8 @@ export default () => {
   const isUnmountedRef = useRef(false)
   const boardsListRef = useRef<BoardsListType>(null)
   const headerBarRef = useRef<HeaderBarType>(null)
-  const boundInfo = useRef<{ source: LX.OnlineSource, id: string | null }>({ source: 'kw', id: null })
+  const boundInfo = useRef<{ source: LX.OnlineSource, id: string, name: string }>({ source: 'kw', id: '', name: '' })
+  const boardsRequestIdRef = useRef(0)
   // const [width, setWidth] = useState(0)
 
   const handleBoundChange = (source: LX.OnlineSource, id: string) => {
@@ -40,20 +41,30 @@ export default () => {
   }
   const onBoundChange: BoardsListProps['onBoundChange'] = (id) => {
     boundInfo.current.id = id
-    void getBoardsList(boundInfo.current.source).then(list => {
+    const source = boundInfo.current.source
+    const requestId = ++boardsRequestIdRef.current
+    void getBoardsList(source).then(list => {
+      if (isUnmountedRef.current || requestId != boardsRequestIdRef.current || boundInfo.current.source != source || boundInfo.current.id != id) return
       requestAnimationFrame(() => {
         const bound = list.find(l => l.id == id)
-        headerBarRef.current?.setBound(boundInfo.current.source, id, bound?.name ?? 'Unknown')
+        boundInfo.current.name = bound?.name ?? 'Unknown'
+        headerBarRef.current?.setBound(source, id, boundInfo.current.name)
       })
+    }).catch((error) => {
+      if (isUnmountedRef.current || requestId != boardsRequestIdRef.current || boundInfo.current.source != source || boundInfo.current.id != id) return
+      console.warn('[leaderboard] board name load failed', source, id, error)
+      boundInfo.current.name = id
+      headerBarRef.current?.setBound(source, id, id)
     })
-    handleBoundChange(boundInfo.current.source, id)
+    handleBoundChange(source, id)
     requestAnimationFrame(() => {
       drawer.current?.closeDrawer()
     })
   }
   const onPlay: BoardsListProps['onPlay'] = (id) => {
     boundInfo.current.id = id
-    void handlePlay(id, boardState.listDetailInfo.list)
+    const currentList = boardState.listDetailInfo.id == id ? boardState.listDetailInfo.list : undefined
+    void handlePlay(id, currentList)
   }
   const onCollect: BoardsListProps['onCollect'] = (id, name) => {
     boundInfo.current.id = id
@@ -65,17 +76,34 @@ export default () => {
     })
   }
   const onSourceChange: HeaderBarProps['onSourceChange'] = (source) => {
-    boundInfo.current.source = source
+    if (source == boundInfo.current.source) return
+    const previous = { ...boundInfo.current }
+    const requestId = ++boardsRequestIdRef.current
+    musicListRef.current?.showLoading()
     void getBoardsList(source).then(list => {
-      const id = list[0].id
-      const name = list[0].name
+      if (isUnmountedRef.current || requestId != boardsRequestIdRef.current) return
+      const firstBoard = list[0]
+      if (!firstBoard) throw new Error('empty leaderboard list')
+      const { id, name } = firstBoard
+      boundInfo.current = { source, id, name: name ?? 'Unknown' }
       requestAnimationFrame(() => {
         boardsListRef.current?.setList(list, id)
-        headerBarRef.current?.setBound(source, id, name ?? 'Unknown')
+        headerBarRef.current?.setBound(source, id, boundInfo.current.name)
         requestAnimationFrame(() => {
           handleBoundChange(source, id)
         })
       })
+    }).catch((error) => {
+      if (isUnmountedRef.current || requestId != boardsRequestIdRef.current) return
+      console.warn('[leaderboard] source switch failed', source, error)
+      boundInfo.current = previous
+      if (previous.id) {
+        headerBarRef.current?.setBound(previous.source, previous.id, previous.name)
+        musicListRef.current?.loadList(previous.source, previous.id)
+      } else {
+        musicListRef.current?.showError()
+      }
+      toast(global.i18n.t('load_failed'))
     })
   }
 
@@ -101,15 +129,26 @@ export default () => {
 
 
     isUnmountedRef.current = false
+    musicListRef.current?.showLoading()
     void getLeaderboardSetting().then(({ source, boardId }) => {
-      boundInfo.current.source = source
-      boundInfo.current.id = boardId
+      const requestId = ++boardsRequestIdRef.current
       void getBoardsList(source).then(list => {
-        const bound = list.find(l => l.id == boardId)
-        boardsListRef.current?.setList(list, boardId)
-        headerBarRef.current?.setBound(source, boardId, bound?.name ?? 'Unknown')
+        if (isUnmountedRef.current || requestId != boardsRequestIdRef.current) return
+        const bound = list.find(l => l.id == boardId) ?? list[0]
+        if (!bound) throw new Error('empty leaderboard list')
+        boundInfo.current = { source, id: bound.id, name: bound.name ?? 'Unknown' }
+        boardsListRef.current?.setList(list, bound.id)
+        headerBarRef.current?.setBound(source, bound.id, boundInfo.current.name)
+        musicListRef.current?.loadList(source, bound.id)
+      }).catch((error) => {
+        if (isUnmountedRef.current || requestId != boardsRequestIdRef.current) return
+        console.warn('[leaderboard] initial load failed', error)
+        musicListRef.current?.showError()
       })
-      musicListRef.current?.loadList(source, boardId)
+    }).catch((error) => {
+      if (isUnmountedRef.current) return
+      console.warn('[leaderboard] setting load failed', error)
+      musicListRef.current?.showError()
     })
 
     return () => {

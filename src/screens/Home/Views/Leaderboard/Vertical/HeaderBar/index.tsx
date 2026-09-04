@@ -48,7 +48,8 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onShowBound, onSourc
 const styles = createStyle({
   currentList: {
     flexDirection: 'row',
-    height: 38,
+    height: 48,
+    alignItems: 'center',
     zIndex: 2,
     // paddingRight: 10,
     borderBottomWidth: BorderWidths.normal,

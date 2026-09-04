@@ -8,6 +8,7 @@ import { useTheme } from '@/store/theme/hook'
 import { type Comment } from '../utils'
 import { useI18n } from '@/lang'
 import Text from '@/components/common/Text'
+import ContentState from '@/components/common/ContentState'
 
 type FlatListType = FlatListProps<Comment>
 
@@ -63,6 +64,7 @@ const List = forwardRef<ListType, ListProps>(({
       onRefresh={onRefresh} />
   ), [status, onRefresh, theme])
   const footerComponent = useMemo(() => {
+    if (!currentList.length) return null
     let label: FooterLabel
     switch (status) {
       case 'refreshing': return null
@@ -80,6 +82,20 @@ const List = forwardRef<ListType, ListProps>(({
         break
     }
     return <Footer label={label} onLoadMore={onLoadMore} />
+  }, [currentList.length, onLoadMore, status])
+
+  const emptyComponent = useMemo(() => {
+    switch (status) {
+      case 'loading':
+      case 'refreshing':
+        return <ContentState status="loading" />
+      case 'error':
+        return <ContentState status="error" onRetry={onLoadMore} />
+      case 'end':
+        return <ContentState status="empty" />
+      default:
+        return null
+    }
   }, [onLoadMore, status])
 
   return (
@@ -100,6 +116,7 @@ const List = forwardRef<ListType, ListProps>(({
       onEndReached={handleLoadMore}
       refreshControl={refreshControl}
       ListFooterComponent={footerComponent}
+      ListEmptyComponent={emptyComponent}
     />
   )
 })

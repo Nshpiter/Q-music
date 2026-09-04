@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react'
+import { useCallback, useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react'
 import { View, ScrollView } from 'react-native'
 
 import { createStyle } from '@/utils/tools'
@@ -6,7 +6,7 @@ import TagGroup, { type TagGroupProps } from './TagGroup'
 import { useI18n } from '@/lang'
 import { type TagInfo, type Source } from '@/store/songlist/state'
 import { getTags } from '@/core/songlist'
-import Text from '@/components/common/Text'
+import ContentState, { type ContentStatus } from '@/components/common/ContentState'
 // import { BorderWidths } from '@/theme'
 
 export interface ListProps {
@@ -23,6 +23,9 @@ export default forwardRef<ListType, ListProps>(({ onTagChange }, ref) => {
   const [list, setList] = useState<TagInfo['tags']>([])
   const t = useI18n()
   const prevSource = useRef('')
+  const sourceRef = useRef<Source>('kw')
+  const requestIdRef = useRef(0)
+  const [status, setStatus] = useState<ContentStatus | 'idle'>('idle')
 
   const isUnmountedRef = useRef(false)
   useEffect(() => {
@@ -32,30 +35,43 @@ export default forwardRef<ListType, ListProps>(({ onTagChange }, ref) => {
     }
   }, [])
 
+  const loadTag = useCallback((source: Source, id: string, force = false) => {
+    sourceRef.current = source
+    setActiveId(id)
+    if (!force && source == prevSource.current) return
+    const requestId = ++requestIdRef.current
+    setStatus('loading')
+    setList([])
+    void getTags(source).then(tagInfo => {
+      if (isUnmountedRef.current || requestId != requestIdRef.current || sourceRef.current != source) return
+      prevSource.current = source
+      setList([
+        { name: '', list: [{ name: t('songlist_tag_default'), id: '', parent_id: '', parent_name: '', source }] },
+        { name: t('songlist_tag_hot'), list: [...tagInfo.hotTag] },
+        ...tagInfo.tags,
+      ].filter(item => item.list.length))
+      setStatus('idle')
+    }).catch((error) => {
+      if (isUnmountedRef.current || requestId != requestIdRef.current) return
+      console.warn('[songlist] tag load failed', source, error)
+      setStatus('error')
+    })
+  }, [t])
+
   useImperativeHandle(ref, () => ({
     loadTag(source, id) {
-      if (id != activeId) setActiveId(id)
-      if (source != prevSource.current) {
-        setList([{ name: '', list: [{ name: t('songlist_tag_default'), id: '', parent_id: '', parent_name: '', source }] }])
-        void getTags(source).then(tagInfo => {
-          if (isUnmountedRef.current) return
-          prevSource.current = source
-          setList([
-            { name: '', list: [{ name: t('songlist_tag_default'), id: '', parent_id: '', parent_name: '', source }] },
-            { name: t('songlist_tag_hot'), list: [...tagInfo.hotTag] },
-            ...tagInfo.tags,
-          ].filter(t => t.list.length))
-        })
-      }
+      loadTag(source, id)
     },
-  }))
+  }), [loadTag])
 
 
   return (
     <ScrollView style={{ flexShrink: 1, flexGrow: 0 }} keyboardShouldPersistTaps={'always'}>
       <View style={styles.tagContainer} onStartShouldSetResponder={() => true}>
+        {status == 'loading' ? <ContentState status="loading" /> : null}
+        {status == 'error' ? <ContentState status="error" onRetry={() => { loadTag(sourceRef.current, activeId, true) }} /> : null}
         {
-          list.map((type, index) => (
+          status == 'idle' ? list.map((type, index) => (
             <TagGroup
               key={index}
               name={type.name}
@@ -63,16 +79,7 @@ export default forwardRef<ListType, ListProps>(({ onTagChange }, ref) => {
               activeId={activeId}
               onTagChange={onTagChange}
             />
-          ))
-        }
-        {
-          list.length == 1
-            ? (
-                <View style={styles.blankView}>
-                  <Text>{t('list_loading')}</Text>
-                </View>
-              )
-            : null
+          )) : null
         }
       </View>
     </ScrollView>
@@ -85,11 +92,5 @@ const styles = createStyle({
     paddingTop: 15,
     paddingLeft: 15,
     paddingBottom: 15,
-  },
-  blankView: {
-    paddingTop: '15%',
-    paddingBottom: '15%',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 })

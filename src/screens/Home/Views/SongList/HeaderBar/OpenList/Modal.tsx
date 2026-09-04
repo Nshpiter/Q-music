@@ -111,13 +111,14 @@ export default forwardRef<ModalType, ModalProps>(({ onOpenId }, ref) => {
 
 const styles = createStyle({
   content: {
+    width: '100%',
     flexGrow: 1,
     flexShrink: 1,
     flexDirection: 'column',
   },
   col: {
     flexDirection: 'row',
-    height: 38,
+    height: 44,
   },
   // selector: {
   //   borderTopLeftRadius: 4,
@@ -126,7 +127,7 @@ const styles = createStyle({
   input: {
     flexGrow: 1,
     flexShrink: 1,
-    minWidth: 290,
+    minWidth: 0,
     // borderRadius: 4,
     // borderTopRightRadius: 4,
     // borderBottomRightRadius: 4,

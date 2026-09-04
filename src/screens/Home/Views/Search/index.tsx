@@ -24,6 +24,13 @@ interface SearchInfo {
   searchType: 'music' | 'songlist'
 }
 
+const getAvailableSources = (type: SearchType) => type == 'music' ? searchMusicState.sources : searchSonglistState.sources
+const normalizeSource = (type: SearchType, source: SearchInfo['source']) => {
+  const sources = getAvailableSources(type)
+  if ((sources as readonly string[]).includes(source)) return source
+  return (sources as ReadonlyArray<SearchInfo['source']>).includes('all') ? 'all' : sources[0]
+}
+
 export default () => {
   const theme = useTheme()
   const headerBarRef = useRef<HeaderBarType>(null)
@@ -31,20 +38,21 @@ export default () => {
   const listRef = useRef<ListType>(null)
   const layoutHeightRef = useRef<number>(0)
   const searchInfo = useRef<SearchInfo>({ temp_source: 'kw', source: 'kw', searchType: 'music' })
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const showTipTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const tipSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     void getSearchSetting().then(info => {
       // info.type = 'music'
       searchInfo.current.temp_source = info.temp_source
-      searchInfo.current.source = info.source
+      searchInfo.current.source = normalizeSource(info.type, info.source)
       searchInfo.current.searchType = info.type
       switch (info.type) {
         case 'music':
-          headerBarRef.current?.setSourceList(searchMusicState.sources, info.source)
+          headerBarRef.current?.setSourceList(searchMusicState.sources, searchInfo.current.source)
           break
         case 'songlist':
-          headerBarRef.current?.setSourceList(searchSonglistState.sources, info.source)
+          headerBarRef.current?.setSourceList(searchSonglistState.sources, searchInfo.current.source)
           break
       }
       headerBarRef.current?.setText(searchState.searchText)
@@ -53,13 +61,18 @@ export default () => {
 
     const handleTypeChange = (type: SearchType) => {
       searchInfo.current.searchType = type
-      void saveSearchSetting({ type })
-      listRef.current?.loadList(searchState.searchText, searchInfo.current.source, type)
+      const source = normalizeSource(type, searchInfo.current.source)
+      searchInfo.current.source = source
+      headerBarRef.current?.setSourceList(getAvailableSources(type), source)
+      void saveSearchSetting({ type, source })
+      listRef.current?.loadList(searchState.searchText, source, type)
     }
     global.app_event.on('searchTypeChanged', handleTypeChange)
 
     return () => {
       global.app_event.off('searchTypeChanged', handleTypeChange)
+      if (showTipTimeoutRef.current) clearTimeout(showTipTimeoutRef.current)
+      if (tipSearchTimeoutRef.current) clearTimeout(tipSearchTimeoutRef.current)
     }
   }, [])
 
@@ -74,30 +87,37 @@ export default () => {
     listRef.current?.loadList(searchState.searchText, source, searchInfo.current.searchType)
   }
   const handleTipSearch: HeaderBarProps['onTipSearch'] = (text) => {
-    setTimeout(() => {
+    if (tipSearchTimeoutRef.current) clearTimeout(tipSearchTimeoutRef.current)
+    tipSearchTimeoutRef.current = setTimeout(() => {
+      tipSearchTimeoutRef.current = null
       searchTipListRef.current?.search(text, layoutHeightRef.current)
-    }, 500)
+    }, 260)
   }
   const handleHideTipList = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
+    if (showTipTimeoutRef.current) {
+      clearTimeout(showTipTimeoutRef.current)
+      showTipTimeoutRef.current = null
+    }
+    if (tipSearchTimeoutRef.current) {
+      clearTimeout(tipSearchTimeoutRef.current)
+      tipSearchTimeoutRef.current = null
     }
     searchTipListRef.current?.hide()
   }
   const handleSearch: HeaderBarProps['onSearch'] = (text) => {
+    const keyword = text.trim()
     handleHideTipList()
-    searchTipListRef.current?.search(text, layoutHeightRef.current)
-    headerBarRef.current?.setText(text)
+    headerBarRef.current?.setText(keyword)
     headerBarRef.current?.blur()
-    void addHistoryWord(text)
-    listRef.current?.loadList(text, searchInfo.current.source, searchInfo.current.searchType)
+    if (keyword) void addHistoryWord(keyword)
+    listRef.current?.loadList(keyword, searchInfo.current.source, searchInfo.current.searchType)
   }
   const handleShowTipList: HeaderBarProps['onShowTipList'] = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    timeoutRef.current = setTimeout(() => {
+    if (showTipTimeoutRef.current) clearTimeout(showTipTimeoutRef.current)
+    showTipTimeoutRef.current = setTimeout(() => {
+      showTipTimeoutRef.current = null
       searchTipListRef.current?.show(layoutHeightRef.current)
-    }, 500)
+    }, 100)
   }
   const handleFocusSearch = () => {
     headerBarRef.current?.focus()
@@ -133,7 +153,7 @@ const styles = createStyle({
     flex: 1,
   },
   typeTabs: {
-    height: 34,
+    height: 44,
     flexGrow: 0,
     flexShrink: 0,
     borderBottomWidth: StyleSheet.hairlineWidth,

@@ -76,10 +76,10 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch, onFocusSea
               </Button>
             </View>
             <View style={styles.content}>
-              <AccountConnect />
               <DailyRecommend ref={dailyRecommendRef} />
               { isShowHotSearch ? <HotSearch ref={hotSearchRef} onSearch={onSearch} /> : null }
               { isShowHistorySearch ? <HistorySearch ref={historySearchRef} onSearch={onSearch} /> : null }
+              <AccountConnect />
             </View>
           </ScrollView>
         )
