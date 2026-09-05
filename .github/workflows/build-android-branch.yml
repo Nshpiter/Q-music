@@ -1,0 +1,58 @@
+name: Build Android branch APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Android source branch or commit to build
+        required: false
+        default: android
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android standalone APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Android source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source_ref || 'android' }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;26.1.10909125"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint source
+        run: npm run lint
+
+      - name: Build APK
+        run: npm run pack:android:standalone
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v6
+        with:
+          name: q-music-android-${{ inputs.source_ref || 'android' }}
+          path: android/app/build/outputs/apk/standalone/*.apk
+          if-no-files-found: error
