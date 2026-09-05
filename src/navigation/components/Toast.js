@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import { useGetter } from '@/store'
 import { Navigation } from 'react-native-navigation'
+import Button from '@/components/common/Button'
 
 
 const Toast = ({ componentId }) => {
@@ -10,12 +11,13 @@ const Toast = ({ componentId }) => {
     <View style={styles.root}>
       <View style={{ ...styles.toast, backgroundColor: theme.secondary10 }}>
         <Text style={styles.text}>This a very important message!</Text>
-        <TouchableOpacity
+        <Button
+          accessibilityLabel="OK"
           style={styles.button}
           onPress={() => Navigation.dismissOverlay(componentId)}
         >
           <Text style={styles.buttonText}>OK</Text>
-        </TouchableOpacity>
+        </Button>
       </View>
     </View>
   )
@@ -42,6 +44,11 @@ const styles = StyleSheet.create({
   },
   button: {
     marginRight: 16,
+    minHeight: 40,
+    minWidth: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
   },
   buttonText: {
     color: 'white',

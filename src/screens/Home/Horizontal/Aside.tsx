@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Image, ScrollView, StyleSheet, View } from 'react-native'
 import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
@@ -9,6 +9,8 @@ import type { InitState } from '@/store/common/state'
 import { exitApp, setNavActiveId } from '@/core/common'
 import { useSettingValue } from '@/store/setting/hook'
 import { Q_UI } from '@/theme/ui'
+import { useI18n } from '@/lang'
+import Button from '@/components/common/Button'
 
 const NAV_WIDTH = 64
 
@@ -32,6 +34,7 @@ const MenuItem = ({ id, icon, onPress }: {
 }) => {
   const activeId = useNavActiveId()
   const theme = useTheme()
+  const t = useI18n()
   const active = activeId == id
   const iconContent = (
     <View
@@ -41,6 +44,7 @@ const MenuItem = ({ id, icon, onPress }: {
       }}
     >
       <Icon
+        accessible={false}
         name={icon}
         size={18}
         color={active ? '#fff' : theme['q-text-secondary']}
@@ -48,29 +52,28 @@ const MenuItem = ({ id, icon, onPress }: {
     </View>
   )
 
-  return active
-    ? (
-        <View style={styles.menuItem}>
-          <View
-            style={{
-              ...styles.activeItem,
-              backgroundColor: theme['q-surface-tint'],
-              borderColor: theme['c-primary-alpha-700'],
-            }}
-          >
-            {iconContent}
-          </View>
-        </View>
-      )
-    : (
-        <TouchableOpacity
-          activeOpacity={0.7}
-          style={styles.menuItem}
-          onPress={() => { onPress(id) }}
-        >
-          {iconContent}
-        </TouchableOpacity>
-      )
+  return (
+    <Button
+      accessibilityLabel={t(id)}
+      accessibilityState={{ selected: active }}
+      style={styles.menuItem}
+      onPress={() => { onPress(id) }}
+    >
+      <View
+        style={[
+          styles.activeItem,
+          active
+            ? {
+                backgroundColor: theme['q-surface-tint'],
+                borderColor: theme['c-primary-alpha-700'],
+              }
+            : { borderColor: 'transparent' },
+        ]}
+      >
+        {iconContent}
+      </View>
+    </Button>
+  )
 }
 
 export default memo(() => {

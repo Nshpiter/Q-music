@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { ScrollView, TouchableOpacity, View } from 'react-native'
+import { ScrollView, View } from 'react-native'
 
+import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
 import { useMyList } from '@/store/list/hook'
 import ListItem, { styles as listStyles } from './ListItem'
@@ -35,12 +36,13 @@ const EditListItem = ({ itemWidth }: {
 
   return (
     <View style={{ ...listStyles.listItem, width: itemWidth }}>
-      <TouchableOpacity
+      <Button
+        accessibilityLabel={t('list_create')}
         style={{ ...listStyles.button, borderColor: theme['c-primary-light-200-alpha-700'], borderStyle: 'dashed' }}
         onPress={() => { setEdit(true) }}
       >
         <Text style={{ opacity: isEdit ? 0 : 1 }} numberOfLines={1} size={14} color={theme['c-button-font']}>{t('list_create')}</Text>
-      </TouchableOpacity>
+      </Button>
       {
         isEdit
           ? <CreateUserList isEdit={isEdit} onHide={() => { setEdit(false) }} />
@@ -64,8 +66,8 @@ export default ({ musicInfo, onPress }: {
   }, [windowSize])
 
   return (
-    <ScrollView style={{ flexGrow: 0 }}>
-      <View style={styles.list} onStartShouldSetResponder={() => true}>
+    <ScrollView style={{ flexGrow: 0 }} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+      <View style={styles.list}>
         { allList.map(info => <ListItem key={info.id} listInfo={info} musicInfo={musicInfo} onPress={onPress} width={itemWidth} />) }
         <EditListItem itemWidth={itemWidth} />
       </View>

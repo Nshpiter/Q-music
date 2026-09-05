@@ -9,6 +9,7 @@ import songlistState from '@/store/songlist/state'
 import { useI18n } from '@/lang'
 import { useListInfo } from './state'
 import { Icon } from '@/components/common/Icon'
+import { Q_UI } from '@/theme/ui'
 
 export default memo(() => {
   const theme = useTheme()
@@ -35,6 +36,7 @@ export default memo(() => {
         }}
       >
         <Button
+          accessibilityLabel={t('collect_songlist')}
           onPress={handleCollection}
           style={styles.controlBtn}
         >
@@ -42,6 +44,7 @@ export default memo(() => {
           <Text style={styles.secondaryText} size={13} color={theme['q-accent-text']}>{t('collect_songlist')}</Text>
         </Button>
         <Button
+          accessibilityLabel={t('play_all')}
           onPress={handlePlayAll}
           style={{
             ...styles.controlBtn,
@@ -71,15 +74,15 @@ const styles = StyleSheet.create({
   group: {
     width: '100%',
     maxWidth: 560,
-    height: 44,
+    minHeight: Q_UI.touchSize,
     flex: 1,
     flexDirection: 'row',
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 8,
+    borderRadius: Q_UI.radius.control,
     overflow: 'hidden',
   },
   controlBtn: {
-    height: 44,
+    minHeight: Q_UI.touchSize,
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',

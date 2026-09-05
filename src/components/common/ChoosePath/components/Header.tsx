@@ -1,7 +1,6 @@
 import { memo, useCallback, useEffect, useRef } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View } from 'react-native'
 import Text from '@/components/common/Text'
-import { Icon } from '@/components/common/Icon'
 import { createStyle } from '@/utils/tools'
 import { getExternalStoragePaths, stat } from '@/utils/fs'
 import { useTheme } from '@/store/theme/hook'
@@ -10,6 +9,7 @@ import { useStatusbarHeight } from '@/store/common/hook'
 import NewFolderModal, { type NewFolderType } from './NewFolderModal'
 import OpenStorageModal, { type OpenDirModalType } from './OpenStorageModal'
 import type { PathItem } from './ListItem'
+import IconButton from '@/components/common/IconButton'
 
 
 export default memo(({
@@ -64,21 +64,36 @@ export default memo(({
         height: scaleSizeH(50) + statusBarHeight,
         paddingTop: statusBarHeight,
         backgroundColor: theme['c-content-background'],
-      }} onStartShouldSetResponder={() => true}>
+      }}>
         <View style={styles.titleContent}>
           <Text color={theme['c-primary-font']} numberOfLines={1}>{title}</Text>
           <Text style={styles.subTitle} color={theme['c-primary-font']} size={13} numberOfLines={1}>{path}</Text>
         </View>
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.actionBtn} onPress={openStorage}>
-            <Icon name="sd-card" color={theme['c-primary-font']} size={22} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={handleShowNewFolderModal}>
-            <Icon name="add_folder" color={theme['c-primary-font']} size={22} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={refresh}>
-            <Icon name="available_updates" color={theme['c-primary-font']} size={22} />
-          </TouchableOpacity>
+          <IconButton
+            name="sd-card"
+            iconSize={22}
+            iconColor={theme['c-primary-font']}
+            accessibilityLabel={global.i18n.t('open_storage_select_path')}
+            style={styles.actionBtn}
+            onPress={openStorage}
+          />
+          <IconButton
+            name="add_folder"
+            iconSize={22}
+            iconColor={theme['c-primary-font']}
+            accessibilityLabel={global.i18n.t('create_new_folder')}
+            style={styles.actionBtn}
+            onPress={handleShowNewFolderModal}
+          />
+          <IconButton
+            name="available_updates"
+            iconSize={22}
+            iconColor={theme['c-primary-font']}
+            accessibilityLabel={global.i18n.t('search_hot_search_refresh')}
+            style={styles.actionBtn}
+            onPress={refresh}
+          />
         </View>
       </View>
       <OpenStorageModal ref={openDirModalTypeRef} onOpenDir={onOpenDir} />
@@ -117,11 +132,12 @@ const styles = createStyle({
     // backgroundColor: 'rgba(0,0,0,0.2)',
   },
   actionBtn: {
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingLeft: 6,
-    paddingRight: 6,
-    marginLeft: 10,
+    width: 48,
+    minWidth: 48,
+    height: 48,
+    minHeight: 48,
+    marginLeft: 4,
+    borderRadius: 12,
   },
   newFolderContent: {
     flexShrink: 1,

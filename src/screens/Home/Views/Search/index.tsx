@@ -153,7 +153,7 @@ const styles = createStyle({
     flex: 1,
   },
   typeTabs: {
-    height: 44,
+    height: 48,
     flexGrow: 0,
     flexShrink: 0,
     borderBottomWidth: StyleSheet.hairlineWidth,

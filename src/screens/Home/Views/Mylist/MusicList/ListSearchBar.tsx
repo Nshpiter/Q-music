@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react'
-import { Animated, View, TouchableOpacity } from 'react-native'
+import { Animated, View } from 'react-native'
 
 import Text from '@/components/common/Text'
 import Input, { type InputType } from '@/components/common/Input'
@@ -8,6 +8,7 @@ import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
 import { BorderWidths } from '@/theme'
+import Button from '@/components/common/Button'
 
 interface SearchInputProps {
   onSearch: (keywork: string) => void
@@ -130,9 +131,9 @@ export default forwardRef<ListSearchBarType, ListSearchBarProps>(({ onSearch, on
         <View style={styles.content}>
           <SearchInput ref={searchInputRef} onSearch={onSearch} />
         </View>
-        <TouchableOpacity onPress={onExitSearch} style={styles.btn}>
+        <Button accessibilityLabel={t('list_select_cancel')} onPress={onExitSearch} style={styles.btn}>
           <Text color={theme['c-button-font']}>{t('list_select_cancel')}</Text>
-        </TouchableOpacity>
+        </Button>
       </Animated.View>
     )
   }, [animaStyle, onSearch, onExitSearch, theme, t])
@@ -160,7 +161,8 @@ const styles = createStyle({
     height: '100%',
   },
   btn: {
-    // flex: 1,
+    minWidth: 72,
+    minHeight: 48,
     paddingLeft: 15,
     paddingRight: 15,
     alignItems: 'center',

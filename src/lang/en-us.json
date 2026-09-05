@@ -40,6 +40,7 @@
   "deep_link_file_js_confirm_tip": "Are you sure you want to import the \"{name}\" Music API?",
   "deep_link_file_lxmc_confirm_tip": "Are you sure you want to import the \"{name}\" list file?",
   "delete": "Remove",
+  "more_actions": "More actions",
   "dialog_cancel": "No",
   "dialog_confirm": "OK",
   "disagree": "Deny",
@@ -132,6 +133,7 @@
   "list_select_range": "Range",
   "list_select_single": "Single",
   "list_select_unall": "Select none",
+  "list_search": "Search this list",
   "list_sort": "Sort Songs",
   "list_sort_modal_by_album": "Album",
   "list_sort_modal_by_down": "Descending",
@@ -394,6 +396,7 @@
   "setting_other_log_btn_clean": "Clear",
   "setting_other_log_btn_hide": "Close",
   "setting_other_log_btn_show": "View log",
+  "setting_open_nav": "Open settings category",
   "setting_other_log_sync_log": "Logging sync log",
   "setting_other_log_tip_clean_success": "Log cleanup complete",
   "setting_other_log_tip_null": "The log is empty~",
@@ -472,6 +475,7 @@
   "source_real_tx": "QQ Music",
   "source_real_wy": "NetEase Cloud Music",
   "source_real_spotify": "Spotify",
+  "source_select": "Choose music service",
   "stop": "Stop",
   "stopped": "Stopped",
   "storage_file_no_match": "The selected file does not meet the requirements!",
@@ -576,5 +580,6 @@
   "version_title_latest": "🎉 The current version is already the latest 🎊",
   "version_title_new": "🌟 New version found 🌟",
   "version_title_unknown": "❓ Failed to get the latest version information ❓",
-  "version_title_update": "🚀 App update 🚀"
+  "version_title_update": "🚀 App update 🚀",
+  "help": "Help"
 }

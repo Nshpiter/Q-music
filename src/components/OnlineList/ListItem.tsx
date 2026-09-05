@@ -1,6 +1,6 @@
 import { memo, useRef } from 'react'
-import { StyleSheet, View, TouchableOpacity } from 'react-native'
-// import Button from '@/components/common/Button'
+import { StyleSheet, View } from 'react-native'
+import Button, { type BtnType } from '@/components/common/Button'
 import Text from '@/components/common/Text'
 import Badge, { type BadgeType } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
@@ -47,7 +47,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   const isSelected = selectedList.includes(item)
   const isPlaying = playMusicInfo.musicInfo?.id == item.id
 
-  const moreButtonRef = useRef<TouchableOpacity>(null)
+  const moreButtonRef = useRef<BtnType>(null)
   const handleShowMenu = () => {
     if (moreButtonRef.current?.measure) {
       moreButtonRef.current.measure((fx, fy, width, height, px, py) => {
@@ -82,17 +82,23 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
                 borderBottomWidth: StyleSheet.hairlineWidth,
               },
       ]}>
-        <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }}>
+        <Button
+          accessibilityLabel={`${item.name} · ${singer}`}
+          accessibilityState={{ selected: isPlaying || isSelected }}
+          style={styles.listItemLeft}
+          onPress={() => { onPress(item, index) }}
+          onLongPress={() => { onLongPress(item, index) }}
+        >
           {
             isPlaying
-              ? <Icon style={styles.sn} name="play-outline" size={13} color={theme['q-accent-text']} />
+              ? <Icon accessible={false} style={styles.sn} name="play-outline" size={13} color={theme['q-accent-text']} />
               : <Text style={styles.sn} size={13} color={theme['q-text-secondary']}>{index + 1}</Text>
           }
           <View style={styles.itemInfo}>
             <Text style={isPlaying ? styles.playingTitle : undefined} color={isPlaying ? theme['q-accent-text'] : theme['c-font']} numberOfLines={1}>{item.name}</Text>
             <View style={styles.listItemSingle}>
               { tagInfo.type ? <Badge type={tagInfo.type}>{tagInfo.text}</Badge> : null }
-              { showSource ? <SourceLogo source={item.source} size={16} /> : null }
+              { showSource ? <SourceLogo source={item.source} size={18} style={styles.sourceLogo} /> : null }
               <Text style={styles.listItemSingleText} size={11} color={theme['q-text-secondary']} numberOfLines={1}>{singer}</Text>
             </View>
           </View>
@@ -101,10 +107,10 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
               <Text size={12} color={theme['q-text-secondary']} numberOfLines={1}>{item.interval}</Text>
             ) : null
           }
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.moreButton}>
-          <Icon name="dots-vertical" style={{ color: theme['q-text-secondary'] }} size={12} />
-        </TouchableOpacity>
+        </Button>
+        <Button accessibilityLabel={`${item.name} · ${global.i18n.t('more_actions')}`} onPress={handleShowMenu} ref={moreButtonRef} style={styles.moreButton}>
+          <Icon accessible={false} name="dots-vertical" style={{ color: theme['q-text-secondary'] }} size={14} />
+        </Button>
       </View>
     </View>
   )
@@ -175,6 +181,9 @@ const styles = createStyle({
     flexShrink: 1,
     fontWeight: '300',
   },
+  sourceLogo: {
+    marginRight: 6,
+  },
   listItemBadge: {
     // fontSize: 10,
     paddingLeft: 5,
@@ -188,7 +197,7 @@ const styles = createStyle({
     justifyContent: 'center',
   },
   moreButton: {
-    width: 44,
+    width: 48,
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',

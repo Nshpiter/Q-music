@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Image, ScrollView, StyleSheet, View } from 'react-native'
 import { useI18n } from '@/lang'
 import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
@@ -11,6 +11,7 @@ import { exitApp, setNavActiveId } from '@/core/common'
 import Text from '@/components/common/Text'
 import { useSettingValue } from '@/store/setting/hook'
 import { Q_UI } from '@/theme/ui'
+import Button from '@/components/common/Button'
 
 const Header = () => {
   const theme = useTheme()
@@ -52,6 +53,7 @@ const MenuItem = ({ id, icon, onPress }: {
         }}
       >
         <Icon
+          accessible={false}
           name={icon}
           size={18}
           color={active ? '#fff' : theme['q-text-secondary']}
@@ -68,28 +70,25 @@ const MenuItem = ({ id, icon, onPress }: {
     </>
   )
 
-  return active
-    ? (
-        <View
-          style={{
-            ...styles.menuItem,
-            backgroundColor: theme['q-surface-tint'],
-            borderColor: theme['c-primary-alpha-700'],
-            borderWidth: StyleSheet.hairlineWidth,
-          }}
-        >
-          {content}
-        </View>
-      )
-    : (
-        <TouchableOpacity
-          activeOpacity={0.7}
-          style={styles.menuItem}
-          onPress={() => { onPress(id) }}
-        >
-          {content}
-        </TouchableOpacity>
-      )
+  return (
+    <Button
+      accessibilityLabel={t(id)}
+      accessibilityState={{ selected: active }}
+      style={[
+        styles.menuItem,
+        active
+          ? {
+              backgroundColor: theme['q-surface-tint'],
+              borderColor: theme['c-primary-alpha-700'],
+              borderWidth: StyleSheet.hairlineWidth,
+            }
+          : null,
+      ]}
+      onPress={() => { onPress(id) }}
+    >
+      {content}
+    </Button>
+  )
 }
 
 export default memo(() => {

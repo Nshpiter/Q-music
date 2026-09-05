@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef } from 'react'
-import { View, TouchableOpacity, FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
+import { View, FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
 
@@ -13,6 +13,7 @@ import Text from '@/components/common/Text'
 import { type Position } from './ListMenu'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import Loading from '@/components/common/Loading'
+import Button, { type BtnType } from '@/components/common/Button'
 
 type FlatListType = FlatListProps<LX.List.MyListInfo>
 
@@ -26,7 +27,7 @@ const ListItem = memo(({ item, index, activeId, onPress, onShowMenu }: {
   onShowMenu: (item: LX.List.MyListInfo, index: number, position: { x: number, y: number, w: number, h: number }) => void
 }) => {
   const theme = useTheme()
-  const moreButtonRef = useRef<TouchableOpacity>(null)
+  const moreButtonRef = useRef<BtnType>(null)
   const fetching = useListFetching(item.id)
 
   const active = activeId == item.id
@@ -52,12 +53,23 @@ const ListItem = memo(({ item, index, activeId, onPress, onShowMenu }: {
           : null
       }
       { fetching ? <Loading color={active ? theme['c-primary-font'] : theme['c-font']} style={styles.loading} /> : null }
-      <TouchableOpacity accessibilityRole="button" accessibilityLabel={item.name} style={styles.listName} onPress={handlePress}>
+      <Button
+        accessibilityLabel={item.name}
+        accessibilityState={{ selected: active }}
+        style={styles.listName}
+        onPress={handlePress}
+      >
         <Text numberOfLines={1} color={active ? theme['c-primary-font'] : theme['c-font']}>{item.name}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity accessibilityRole="button" onPress={handleShowMenu} ref={moreButtonRef} style={styles.listMoreBtn}>
-        <Icon name="dots-vertical" color={theme['c-350']} size={12} />
-      </TouchableOpacity>
+      </Button>
+      <Button
+        accessibilityLabel={`${item.name} menu`}
+        accessibilityHint="Show list actions"
+        onPress={handleShowMenu}
+        ref={moreButtonRef}
+        style={styles.listMoreBtn}
+      >
+        <Icon accessible={false} name="dots-vertical" color={theme['c-350']} size={17} />
+      </Button>
     </View>
   )
 }, (prevProps, nextProps) => {
@@ -162,7 +174,8 @@ const styles = createStyle({
     marginLeft: 5,
   },
   listName: {
-    height: '100%',
+    height: ITEM_HEIGHT,
+    minHeight: 48,
     // height: 46,
     // paddingTop: 12,
     // paddingBottom: 12,
@@ -177,8 +190,10 @@ const styles = createStyle({
   //   fontSize: 14,
   // },
   listMoreBtn: {
-    height: '100%',
-    width: 44,
+    height: ITEM_HEIGHT,
+    minHeight: 48,
+    width: 48,
+    minWidth: 48,
     // height: 46,
     // paddingTop: 12,
     // paddingBottom: 12,

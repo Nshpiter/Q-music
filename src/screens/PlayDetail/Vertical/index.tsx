@@ -1,5 +1,5 @@
 import { memo, useState, useRef, useMemo, useEffect } from 'react'
-import { View, AppState, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, AppState, StyleSheet } from 'react-native'
 
 import Header from './components/Header'
 // import Aside from './components/Aside'
@@ -14,6 +14,8 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import Text from '@/components/common/Text'
+import Button from '@/components/common/Button'
+import { Q_UI } from '@/theme/ui'
 
 const LyricPage = ({ activeIndex }: { activeIndex: number }) => {
   const initedRef = useRef(false)
@@ -97,16 +99,16 @@ export default memo(({ componentId }: { componentId: string }) => {
           {[t('play_detail_page_cover'), t('play_detail_page_lyric')].map((label, index) => {
             const active = pageIndex == index
             return (
-              <TouchableOpacity
+              <Button
                 key={label}
                 accessibilityRole="tab"
+                accessibilityLabel={label}
                 accessibilityState={{ selected: active }}
                 style={{ ...styles.pageIndicatorItem, backgroundColor: active ? theme['q-accent'] : 'transparent' }}
-                activeOpacity={0.7}
                 onPress={() => { pagerViewRef.current?.setPage(index) }}
               >
                 <Text size={12} color={active ? theme['q-on-accent'] : theme['q-text-secondary']}>{label}</Text>
-              </TouchableOpacity>
+              </Button>
             )
           })}
         </View>
@@ -126,7 +128,7 @@ const styles = createStyle({
   },
   pageIndicator: {
     width: 164,
-    height: 44,
+    height: Q_UI.touchSize,
     marginTop: 4,
     marginBottom: 4,
     alignSelf: 'center',

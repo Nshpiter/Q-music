@@ -1,30 +1,41 @@
 import { memo } from 'react'
+import type { PressableStateCallbackType } from 'react-native'
 
 import Button, { type BtnProps } from '@/components/common/Button'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
+import { Q_UI } from '@/theme/ui'
 
 export interface ButtonProps extends BtnProps {
   size?: number
 }
 
-const CONTROL_HIT_SLOP = { top: 4, right: 4, bottom: 4, left: 4 } as const
-
-export default memo(({ disabled, size = 14, onPress, children, style }: ButtonProps) => {
+export default memo(({ disabled, size = 14, onPress, children, style, ...props }: ButtonProps) => {
   const theme = useTheme()
-
-  return (
-    <Button
-      style={[
-        style,
+  const buttonStyle = typeof style === 'function'
+    ? (state: PressableStateCallbackType) => [
         styles.button,
         {
           backgroundColor: theme['q-surface-tint'],
           borderColor: theme['c-primary-alpha-700'],
         },
-      ]}
-      hitSlop={CONTROL_HIT_SLOP}
+        style(state),
+      ]
+    : [
+        styles.button,
+        {
+          backgroundColor: theme['q-surface-tint'],
+          borderColor: theme['c-primary-alpha-700'],
+        },
+        style,
+      ]
+
+  return (
+    <Button
+      {...props}
+      style={buttonStyle}
+      hitSlop={props.hitSlop}
       onPress={onPress}
       disabled={disabled}
     >
@@ -35,12 +46,12 @@ export default memo(({ disabled, size = 14, onPress, children, style }: ButtonPr
 
 const styles = createStyle({
   button: {
-    minWidth: 44,
-    minHeight: 44,
+    minWidth: Q_UI.touchSize,
+    minHeight: Q_UI.touchSize,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: Q_UI.radius.control,
     marginRight: 10,
     alignItems: 'center',
     justifyContent: 'center',

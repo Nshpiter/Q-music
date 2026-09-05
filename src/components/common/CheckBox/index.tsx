@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View } from 'react-native'
 import CheckBox from './Checkbox'
 
 import { createStyle, tipDialog } from '@/utils/tools'
@@ -7,6 +7,8 @@ import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 import { useTheme } from '@/store/theme/hook'
 import Text from '../Text'
 import { Icon } from '../Icon'
+import Button from '../Button'
+import { Q_UI } from '@/theme/ui'
 
 export interface CheckBoxProps {
   check: boolean
@@ -61,12 +63,13 @@ export default ({ check, label, children, onChange, helpTitle, helpDesc, disable
       })
     }
     return (helpTitle ?? helpDesc) ? (
-      <TouchableOpacity
+      <Button
+        accessibilityLabel={helpTitle ?? helpDesc ?? global.i18n.t('help')}
         style={{ ...styles.helpBtn, backgroundColor: theme['q-surface-base'] }}
         onPress={handleShowHelp}
       >
-        <Icon size={14 * size} color={theme['q-text-secondary']} name="help" />
-      </TouchableOpacity>
+        <Icon accessible={false} size={14 * size} color={theme['q-text-secondary']} name="help" />
+      </Button>
     ) : null
   }, [helpTitle, helpDesc, size, theme])
 
@@ -78,17 +81,17 @@ export default ({ check, label, children, onChange, helpTitle, helpDesc, disable
     disabled
       ? (
           <View style={contentStyle}>
-            <CheckBox status={check ? 'checked' : 'unchecked'} variant={need ? 'radio' : 'checkbox'} disabled={true} tintColors={disabledTintColors} size={size} />
+            <CheckBox status={check ? 'checked' : 'unchecked'} variant={need ? 'radio' : 'checkbox'} disabled={true} tintColors={disabledTintColors} size={size} accessibilityLabel={label} />
             <View style={labelStyle}>{label ? <Text style={styles.name} color={theme['q-text-secondary']} size={14 * size}>{label}</Text> : children}</View>
             {helpComponent}
           </View>
         )
       : (
           <View style={contentStyle}>
-            <CheckBox status={check ? 'checked' : 'unchecked'} variant={need ? 'radio' : 'checkbox'} disabled={isDisabled} onPress={handleLabelPress} tintColors={tintColors} size={size} />
-            <TouchableOpacity style={labelStyle} activeOpacity={0.3} onPress={handleLabelPress}>
+            <CheckBox status={check ? 'checked' : 'unchecked'} variant={need ? 'radio' : 'checkbox'} disabled={isDisabled} onPress={handleLabelPress} tintColors={tintColors} size={size} accessibilityLabel={label} />
+            <Button accessibilityLabel={label} style={labelStyle} onPress={handleLabelPress} disabled={isDisabled}>
               {label ? <Text style={styles.name} color={theme['q-text-primary']} size={14 * size}>{label}</Text> : children}
-            </TouchableOpacity>
+            </Button>
             {helpComponent}
           </View>
         )
@@ -99,7 +102,7 @@ const styles = createStyle({
   content: {
     flexGrow: 0,
     flexShrink: 1,
-    minHeight: 40,
+    minHeight: Q_UI.touchSize,
     marginRight: 12,
     alignItems: 'center',
     flexDirection: 'row',
@@ -107,7 +110,7 @@ const styles = createStyle({
   label: {
     flexGrow: 0,
     flexShrink: 1,
-    minHeight: 40,
+    minHeight: Q_UI.touchSize,
     marginLeft: 3,
     paddingRight: 3,
     justifyContent: 'center',
@@ -116,8 +119,8 @@ const styles = createStyle({
     lineHeight: 20,
   },
   helpBtn: {
-    width: 32,
-    height: 32,
+    width: Q_UI.touchSize,
+    height: Q_UI.touchSize,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',

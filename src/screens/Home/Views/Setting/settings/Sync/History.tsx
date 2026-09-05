@@ -1,8 +1,6 @@
 import { memo, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react'
-import { View, TouchableOpacity, ScrollView } from 'react-native'
+import { View, ScrollView } from 'react-native'
 // import { gzip, ungzip } from 'pako'
-import { Icon } from '@/components/common/Icon'
-
 import Button from '../../components/Button'
 import { getSyncHostHistory, removeSyncHostHistory, setSyncHost } from '@/plugins/sync/data'
 import Popup, { type PopupType } from '@/components/common/Popup'
@@ -12,6 +10,9 @@ import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { useSettingValue } from '@/store/setting/hook'
 import { createStyle } from '@/utils/tools'
+import BaseButton from '@/components/common/Button'
+import IconButton from '@/components/common/IconButton'
+import { Q_UI } from '@/theme/ui'
 
 type SyncHistoryItem = Awaited<ReturnType<typeof getSyncHostHistory>>[number]
 
@@ -39,12 +40,22 @@ const HistoryListItem = ({ item, index, onRemove, onSelect }: {
 
   return (
     <View style={{ ...styles.listItem, borderBottomColor: theme['c-border-background'] }}>
-      <TouchableOpacity style={styles.listName} onPress={handleSetHost}>
+      <BaseButton
+        accessibilityLabel={item}
+        style={styles.listName}
+        onPress={handleSetHost}
+      >
         <Text numberOfLines={1}>{item}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={handleRemove} style={styles.listBtn}>
-        <Icon name="remove" color={theme['c-font-label']} size={12} />
-      </TouchableOpacity>
+      </BaseButton>
+      <IconButton
+        accessibilityLabel={`${global.i18n.t('delete')} ${item}`}
+        name="remove"
+        iconSize={16}
+        iconColor={theme['c-font-label']}
+        expandHitSlop={false}
+        style={styles.listBtn}
+        onPress={handleRemove}
+      />
     </View>
   )
 }
@@ -166,14 +177,19 @@ const styles = createStyle({
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 8,
+    minHeight: Q_UI.touchSize,
+    paddingVertical: 4,
     borderBottomWidth: BorderWidths.normal,
   },
   listName: {
     flex: 1,
+    minHeight: Q_UI.touchSize,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: 4,
   },
   listBtn: {
-    padding: 5,
+    width: Q_UI.touchSize,
+    height: Q_UI.touchSize,
   },
 })

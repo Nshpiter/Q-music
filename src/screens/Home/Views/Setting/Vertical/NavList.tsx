@@ -1,9 +1,10 @@
 import { memo, useCallback, useState } from 'react'
-import { View, TouchableOpacity, ScrollView } from 'react-native'
+import { View, ScrollView } from 'react-native'
 
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
+import Button from '@/components/common/Button'
 import { SETTING_SCREENS, type SettingScreenIds } from '../Main'
 import { useI18n } from '@/lang'
 import { BorderWidths } from '@/theme'
@@ -26,14 +27,15 @@ const ListItem = memo(({ id, activeId, onPress }: {
 
   return (
     <View style={{ ...styles.listItem, backgroundColor: active ? theme['q-surface-tint'] : 'transparent' }}>
-      <TouchableOpacity
+      <Button
         accessibilityRole="tab"
         accessibilityState={{ selected: active }}
-        style={styles.listName}
+        accessibilityLabel={t(`setting_${id}`)}
+        style={{ ...styles.listName, borderColor: active ? theme['q-outline'] : 'transparent' }}
         onPress={handlePress}
       >
         <Text numberOfLines={1} color={active ? theme['q-accent-text'] : theme['q-text-primary']}>{t(`setting_${id}`)}</Text>
-      </TouchableOpacity>
+      </Button>
     </View>
   )
 }, (prevProps, nextProps) => {
@@ -58,7 +60,7 @@ export default ({ onChangeId }: {
   }, [])
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ ...styles.container, borderBottomColor: theme['c-border-background'] }} contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps={'always'}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ ...styles.container, borderBottomColor: theme['c-border-background'] }} contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps="handled">
       {
         SETTING_SCREENS.map(id => <ListItem key={id} id={id} activeId={activeId} onPress={handleChangeId} />)
       }
@@ -69,7 +71,7 @@ export default ({ onChangeId }: {
 
 const styles = createStyle({
   container: {
-    height: 56,
+    height: Q_UI.touchSize + 10,
     flexGrow: 0,
     flexShrink: 0,
     borderBottomWidth: BorderWidths.normal,
@@ -86,7 +88,7 @@ const styles = createStyle({
 
   listItem: {
     // width: '33.33%',
-    height: 44,
+    height: Q_UI.touchSize,
     paddingLeft: 15,
     paddingRight: 15,
     // height: 'auto',
@@ -95,12 +97,16 @@ const styles = createStyle({
     paddingHorizontal: 5,
     // paddingVertical: 10,
     borderRadius: Q_UI.radius.control,
+    overflow: 'hidden',
     // backgroundColor: 'rgba(0,0,0,0.1)',
   },
   listName: {
+    minHeight: Q_UI.touchSize,
     justifyContent: 'center',
     alignItems: 'center',
     flex: 1,
+    borderWidth: 1,
+    borderRadius: Q_UI.radius.control,
     // paddingLeft: 5,
     // backgroundColor: 'rgba(0,0,0,0.1)',
   },

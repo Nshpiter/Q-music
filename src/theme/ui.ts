@@ -8,7 +8,17 @@ export const Q_UI = {
     player: 24,
   },
   touchSize: 48,
+  button: {
+    pressedOpacity: 0.72,
+    disabledOpacity: 0.38,
+  },
 } as const
+
+/**
+ * Extra hit area used by compact controls. The visual face can stay compact
+ * while the actionable target remains close to the Android 48dp guideline.
+ */
+export const Q_TOUCH_HIT_SLOP = { top: 4, right: 4, bottom: 4, left: 4 } as const
 
 export const qSoftShadow: ViewStyle = Platform.select<ViewStyle>({
   ios: {

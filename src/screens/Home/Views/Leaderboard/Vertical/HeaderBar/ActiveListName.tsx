@@ -1,9 +1,9 @@
 import { forwardRef, useImperativeHandle, useState } from 'react'
-import { TouchableOpacity } from 'react-native'
-
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
+import Button from '@/components/common/Button'
+import { Q_UI } from '@/theme/ui'
 
 export interface ActiveListNameProps {
   onShowBound: () => void
@@ -14,7 +14,7 @@ export interface ActiveListNameType {
 
 export default forwardRef<ActiveListNameType, ActiveListNameProps>(({ onShowBound }, ref) => {
   const theme = useTheme()
-  let [currentListName, setCurrentListName] = useState('')
+  const [currentListName, setCurrentListName] = useState('')
 
   useImperativeHandle(ref, () => ({
     setBound(id, name) {
@@ -23,9 +23,14 @@ export default forwardRef<ActiveListNameType, ActiveListNameProps>(({ onShowBoun
   }), [])
 
   return (
-    <TouchableOpacity onPress={onShowBound} style={styles.currentList}>
+    <Button
+      accessibilityLabel={currentListName || global.i18n.t('songlist_open')}
+      accessibilityHint={global.i18n.t('songlist_open')}
+      onPress={onShowBound}
+      style={styles.currentList}
+    >
       <Text numberOfLines={1} style={styles.currentListText} color={theme['c-button-font']}>{currentListName}</Text>
-    </TouchableOpacity>
+    </Button>
   )
 })
 
@@ -35,8 +40,11 @@ const styles = createStyle({
     flex: 1,
     flexDirection: 'row',
     paddingRight: 2,
-    // height: 36,
+    minHeight: Q_UI.touchSize,
+    height: Q_UI.touchSize,
     alignItems: 'center',
+    borderRadius: Q_UI.radius.control,
+    overflow: 'hidden',
     // backgroundColor: 'rgba(0,0,0,0.2)',
   },
   currentListIcon: {

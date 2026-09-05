@@ -78,7 +78,7 @@ export default memo(() => {
         showConfirm={!!logText}
         reverseBtn={true}
         >
-        <View onStartShouldSetResponder={() => true}>
+        <View>
           {
             logText
               ? <Text selectable size={13}>{ logText }</Text>

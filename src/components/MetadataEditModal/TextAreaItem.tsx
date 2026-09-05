@@ -1,11 +1,12 @@
 import { memo, useCallback } from 'react'
 
-import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import type { InputProps } from '@/components/common/Input'
 import Input from '@/components/common/Input'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
+import Button from '@/components/common/Button'
 
 
 export interface TextAreaItemProps extends InputProps {
@@ -28,12 +29,12 @@ export default memo(({ value, label, onOnlineMatch, onChanged, style, ...props }
         {
           onChanged ? (
             <View style={styles.btns}>
-              <TouchableOpacity onPress={handleRemove}>
+              <Button accessibilityLabel={global.i18n.t('metadata_edit_modal_form_remove_lyric')} style={styles.actionBtn} onPress={handleRemove}>
                 <Text size={13} color={theme['c-button-font']}>{global.i18n.t('metadata_edit_modal_form_remove_lyric')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={onOnlineMatch}>
+              </Button>
+              <Button accessibilityLabel={global.i18n.t('metadata_edit_modal_form_match_lyric')} style={styles.actionBtn} onPress={onOnlineMatch}>
                 <Text size={13} color={theme['c-button-font']}>{global.i18n.t('metadata_edit_modal_form_match_lyric')}</Text>
-              </TouchableOpacity>
+              </Button>
             </View>
           ) : null
         }
@@ -67,7 +68,17 @@ const styles = createStyle({
   },
   btns: {
     flexDirection: 'row',
-    gap: 15,
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 6,
+  },
+  actionBtn: {
+    minHeight: 40,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   textarea: {
     flexGrow: 1,

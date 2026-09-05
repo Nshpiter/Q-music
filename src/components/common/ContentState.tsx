@@ -33,7 +33,7 @@ export default ({ status, onRetry }: {
       >
         {status == 'loading'
           ? <ActivityIndicator color={theme['q-accent']} />
-          : <Icon name={status == 'error' ? 'close' : 'album'} color={theme['q-accent-text']} rawSize={23} />}
+          : <Icon accessible={false} name={status == 'error' ? 'close' : 'album'} color={theme['q-accent-text']} rawSize={23} />}
       </View>
       <Text style={styles.title} size={15} color={theme['q-text-primary']}>{title}</Text>
       {status == 'error' && onRetry
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     minWidth: 112,
-    minHeight: 44,
+    minHeight: 48,
     marginTop: 16,
     paddingHorizontal: 18,
     borderRadius: 14,

@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View } from 'react-native'
 
 import Section from '../components/Section'
 // import Button from './components/Button'
@@ -10,6 +10,8 @@ import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import Text from '@/components/common/Text'
 import { showPactModal } from '@/core/common'
+import Button from '@/components/common/Button'
+import { Q_TOUCH_HIT_SLOP } from '@/theme/ui'
 
 const PROJECT_URL = 'https://github.com/Nshpiter/Q-music'
 
@@ -63,21 +65,21 @@ export default memo(() => {
     <Section title={t('setting_about')}>
       <View style={styles.part}>
         <Text style={styles.text} >本软件完全免费，代码已开源。开源地址：</Text>
-        <TouchableOpacity onPress={openHomePage}>
+        <Button accessibilityLabel={PROJECT_URL} hitSlop={Q_TOUCH_HIT_SLOP} style={styles.linkButton} onPress={openHomePage}>
           <Text style={textLinkStyle}>{PROJECT_URL}</Text>
-        </TouchableOpacity>
+        </Button>
       </View>
       <View style={styles.part}>
         <Text style={styles.text}>最新版下载地址：</Text>
-        <TouchableOpacity onPress={openGHReleasePage}>
+        <Button accessibilityLabel="GitHub Releases" hitSlop={Q_TOUCH_HIT_SLOP} style={styles.linkButton} onPress={openGHReleasePage}>
           <Text style={textLinkStyle}>GitHub Releases</Text>
-        </TouchableOpacity>
+        </Button>
       </View>
       <View style={styles.part}>
         <Text style={styles.text}><Text style={styles.boldText}>本软件没有客服</Text>，遇到问题可到当前项目的 GitHub </Text>
-        <TouchableOpacity onPress={openIssuePage}>
+        <Button accessibilityLabel="提交 Issue" hitSlop={Q_TOUCH_HIT_SLOP} style={styles.linkButton} onPress={openIssuePage}>
           <Text style={textLinkStyle}>提交 Issue</Text>
-        </TouchableOpacity>
+        </Button>
         <Text style={styles.text}>。</Text>
       </View>
       <View style={styles.part}>
@@ -97,9 +99,9 @@ export default memo(() => {
       </View>
       <View style={styles.part}>
         <Text style={styles.text}>你已签署本软件的</Text>
-        <TouchableOpacity onPress={openPactModal}><Text style={styles.text} color={theme['c-primary-font']}>许可协议</Text></TouchableOpacity>
+        <Button accessibilityLabel="许可协议" hitSlop={Q_TOUCH_HIT_SLOP} style={styles.linkButton} onPress={openPactModal}><Text style={styles.text} color={theme['c-primary-font']}>许可协议</Text></Button>
         <Text style={styles.text}>，协议的在线版本在</Text>
-        <TouchableOpacity onPress={openPartPage}><Text style={textLinkStyle}>这里</Text></TouchableOpacity>
+        <Button accessibilityLabel="在线许可协议" hitSlop={Q_TOUCH_HIT_SLOP} style={styles.linkButton} onPress={openPartPage}><Text style={textLinkStyle}>这里</Text></Button>
         <Text style={styles.text}>。</Text>
       </View>
       <View style={styles.part}>
@@ -133,5 +135,11 @@ const styles = createStyle({
   },
   btn: {
     flexDirection: 'row',
+  },
+  linkButton: {
+    minHeight: 32,
+    paddingVertical: 4,
+    justifyContent: 'center',
+    borderRadius: 8,
   },
 })

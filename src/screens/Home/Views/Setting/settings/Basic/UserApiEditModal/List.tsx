@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import Text from '@/components/common/Text'
-import { View, TouchableOpacity, ScrollView } from 'react-native'
+import { View, ScrollView } from 'react-native'
 import { confirmDialog, createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
@@ -13,6 +13,7 @@ import { Icon } from '@/components/common/Icon'
 import settingState from '@/store/setting/state'
 import apiSourceInfo from '@/utils/musicSdk/api-source-info'
 import { setApiSource } from '@/core/apiSource'
+import Button from '@/components/common/Button'
 
 const formatVersionName = (version: string) => {
   return /^\d/.test(version) ? `v${version}` : version
@@ -56,9 +57,9 @@ const ListItem = ({ item, activeId, onRemove, onChangeAllowShowUpdateAlert }: {
         <CheckBox check={item.allowShowUpdateAlert} label={t('user_api_allow_show_update_alert')} onChange={changeAllowShowUpdateAlert} size={0.86} />
       </View>
       <View style={styles.listItemRight}>
-        <TouchableOpacity style={styles.btn} onPress={handleRemove}>
-          <Icon name="close" color={theme['c-button-font']} />
-        </TouchableOpacity>
+        <Button accessibilityLabel={`${t('delete')}: ${item.name}`} style={styles.btn} onPress={handleRemove}>
+          <Icon accessible={false} name="close" color={theme['c-button-font']} />
+        </Button>
       </View>
     </View>
   )
@@ -101,7 +102,7 @@ export default () => {
 
   return (
     <ScrollView style={styles.scrollView} keyboardShouldPersistTaps={'always'}>
-      <View onStartShouldSetResponder={() => true}>
+      <View>
         {
           userApiList.length
             ? userApiList.map((item) => {
@@ -152,7 +153,14 @@ const styles = createStyle({
   //   padding: 5,
   // },
   btn: {
-    padding: 10,
+    width: 48,
+    minWidth: 48,
+    height: 48,
+    minHeight: 48,
+    padding: 0,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
     // backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   tipText: {

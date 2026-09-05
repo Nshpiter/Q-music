@@ -1,12 +1,13 @@
 import { memo, useCallback, useRef } from 'react'
 
-import { TouchableOpacity, View } from 'react-native'
+import { View } from 'react-native'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
 import Image from '@/components/common/Image'
 import FileSelect, { type FileSelectType } from '@/components/common/FileSelect'
 import { BorderWidths } from '@/theme'
+import Button from '@/components/common/Button'
 
 
 export interface PicItemProps {
@@ -36,15 +37,15 @@ export default memo(({ value, label, onOnlineMatch, onChanged }: PicItemProps) =
       <View style={styles.header}>
         <Text style={styles.label} size={14}>{label}</Text>
         <View style={styles.btns}>
-          <TouchableOpacity onPress={handleRemoveFile}>
+          <Button accessibilityLabel={global.i18n.t('metadata_edit_modal_form_remove_pic')} style={styles.actionBtn} onPress={handleRemoveFile}>
             <Text size={13} color={theme['c-button-font']}>{global.i18n.t('metadata_edit_modal_form_remove_pic')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onOnlineMatch}>
+          </Button>
+          <Button accessibilityLabel={global.i18n.t('metadata_edit_modal_form_match_pic')} style={styles.actionBtn} onPress={onOnlineMatch}>
             <Text size={13} color={theme['c-button-font']}>{global.i18n.t('metadata_edit_modal_form_match_pic')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleShowSelectFile}>
+          </Button>
+          <Button accessibilityLabel={global.i18n.t('metadata_edit_modal_form_select_pic')} style={styles.actionBtn} onPress={handleShowSelectFile}>
             <Text size={13} color={theme['c-button-font']}>{global.i18n.t('metadata_edit_modal_form_select_pic')}</Text>
-          </TouchableOpacity>
+          </Button>
         </View>
       </View>
       <View style={styles.picContent}>
@@ -75,7 +76,17 @@ const styles = createStyle({
   },
   btns: {
     flexDirection: 'row',
-    gap: 15,
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 6,
+  },
+  actionBtn: {
+    minHeight: 40,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   picContent: {
     // backgroundColor: 'rgba(0,0,0,0.2)',

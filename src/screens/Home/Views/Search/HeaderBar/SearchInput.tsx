@@ -68,7 +68,9 @@ export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, on
       onClearText={handleClearText}
       onTouchStart={onTouchStart}
       clearBtn
+      clearButtonAccessibilityLabel={`${t('delete')} ${t('nav_search')}`}
       actionIcon="search-2"
+      actionAccessibilityLabel={t('nav_search')}
       onActionPress={handleSubmitPress}
       containerStyle={styles.container}
     />

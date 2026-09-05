@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ScrollView, TouchableOpacity } from 'react-native'
+import { ScrollView } from 'react-native'
 
 import { createStyle } from '@/utils/tools'
 import { type SearchType } from '@/store/search/state'
@@ -7,6 +7,7 @@ import { useI18n } from '@/lang'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
 import { getSearchSetting } from '@/utils/data'
+import Button from '@/components/common/Button'
 
 const SEARCH_TYPE_LIST = [
   'music',
@@ -43,10 +44,10 @@ export default () => {
     >
       {
         list.map(t => (
-          <TouchableOpacity
+          <Button
             accessibilityRole="tab"
+            accessibilityLabel={t.label}
             accessibilityState={{ selected: type == t.id }}
-            activeOpacity={0.7}
             style={{
               ...styles.button,
               borderBottomColor: type == t.id ? theme['c-primary-alpha-300'] : 'transparent',
@@ -61,7 +62,7 @@ export default () => {
             >
               {t.label}
             </Text>
-          </TouchableOpacity>
+          </Button>
         ))
       }
     </ScrollView>

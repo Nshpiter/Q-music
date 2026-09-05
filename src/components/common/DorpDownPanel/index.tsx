@@ -30,11 +30,16 @@ export default forwardRef<DorpDownPanelType, DorpDownPanelProps>(({
   }
 
   return (
-    <Button ref={buttonRef} onPress={showMenu}>
-      {children}
+    <>
+      {/* Keep the native modal outside Pressable.  Android can otherwise
+          treat the modal subtree as part of the trigger's responder and eat
+          the first tap inside the panel. */}
+      <Button ref={buttonRef} onPress={showMenu}>
+        {children}
+      </Button>
       <Panel ref={panelRef} onHide={onHide}>
         {PanelContent}
       </Panel>
-    </Button>
+    </>
   )
 })

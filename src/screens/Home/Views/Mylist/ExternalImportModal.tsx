@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 import Dialog, { type DialogType } from '@/components/common/Dialog'
 import Input from '@/components/common/Input'
 import Text from '@/components/common/Text'
@@ -10,6 +10,8 @@ import listState from '@/store/list/state'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle, toast } from '@/utils/tools'
 import SourceLogo from '@/components/SourceLogo'
+import Button from '@/components/common/Button'
+import { Q_UI } from '@/theme/ui'
 import {
   ExternalImportError,
   getDefaultImportListName,
@@ -225,10 +227,12 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
           {SOURCE_OPTIONS.map(item => {
             const active = source == item.id
             return (
-              <TouchableOpacity
+              <Button
                 key={item.id}
-                activeOpacity={0.7}
                 disabled={isLoading}
+                accessibilityRole="tab"
+                accessibilityLabel={item.name}
+                accessibilityState={{ selected: active, disabled: isLoading }}
                 onPress={() => { handleSourceChange(item.id) }}
                 style={[
                   styles.sourceButton,
@@ -246,7 +250,7 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
                 >
                   {item.name}
                 </Text>
-              </TouchableOpacity>
+              </Button>
             )
           })}
         </View>
@@ -295,9 +299,11 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
                 onChangeText={setSpotifyAccessToken}
                 placeholder={t('playlist_import_modal__spotify_token_placeholder')}
               />
-              <TouchableOpacity
-                activeOpacity={0.7}
+              <Button
                 disabled={isLoading}
+                accessibilityRole="checkbox"
+                accessibilityLabel={t('playlist_import_modal__spotify_liked')}
+                accessibilityState={{ checked: spotifySavedTracks, disabled: isLoading }}
                 onPress={() => { setSpotifySavedTracks(value => !value); setText('') }}
                 style={[
                   styles.optionRow,
@@ -317,13 +323,13 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
                   ]}
                 >
                   {spotifySavedTracks
-                    ? <Text size={11} color={theme['q-surface-raised']}>✓</Text>
+                    ? <Text accessible={false} size={11} color={theme['q-surface-raised']}>✓</Text>
                     : null}
                 </View>
                 <Text size={13} color={theme['q-text-primary']}>
                   {t('playlist_import_modal__spotify_liked')}
                 </Text>
-              </TouchableOpacity>
+              </Button>
             </>
           : null}
 
@@ -334,10 +340,12 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
           {targetOptions.map(item => {
             const active = target == item.id
             return (
-              <TouchableOpacity
+              <Button
                 key={item.id}
-                activeOpacity={0.7}
                 disabled={isLoading}
+                accessibilityRole="radio"
+                accessibilityLabel={item.name}
+                accessibilityState={{ checked: active, disabled: isLoading }}
                 onPress={() => { setTarget(item.id) }}
                 style={[
                   styles.optionRow,
@@ -354,13 +362,13 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
                   ]}
                 >
                   {active
-                    ? <View style={{ ...styles.radioInner, backgroundColor: theme['q-accent'] }} />
+                    ? <View accessible={false} style={{ ...styles.radioInner, backgroundColor: theme['q-accent'] }} />
                     : null}
                 </View>
                 <Text size={13} color={theme['q-text-primary']} numberOfLines={1}>
                   {item.name}
                 </Text>
-              </TouchableOpacity>
+              </Button>
             )
           })}
         </View>
@@ -398,8 +406,8 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
           backgroundColor: theme['q-surface-raised'],
         }}
       >
-        <TouchableOpacity
-          activeOpacity={0.7}
+        <Button
+          accessibilityLabel={t('cancel')}
           onPress={handleCancel}
           style={[
             styles.footerButton,
@@ -412,10 +420,11 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
           <Text size={13} color={theme['q-text-secondary']}>
             {t('cancel')}
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          activeOpacity={0.72}
+        </Button>
+        <Button
+          accessibilityLabel={isLoading ? t('playlist_import_modal__importing') : t('playlist_import_modal__submit')}
           disabled={!canSubmit}
+          accessibilityState={{ disabled: !canSubmit }}
           onPress={() => { void handleSubmit() }}
           style={[
             styles.footerButton,
@@ -432,7 +441,7 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
               ? t('playlist_import_modal__importing')
               : t('playlist_import_modal__submit')}
           </Text>
-        </TouchableOpacity>
+        </Button>
       </View>
     </Dialog>
   )
@@ -468,22 +477,26 @@ const styles = createStyle({
     justifyContent: 'center',
     width: '48%',
     flexGrow: 1,
-    height: 46,
+    minHeight: Q_UI.touchSize,
+    height: Q_UI.touchSize,
     borderRadius: 11,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 8,
+    overflow: 'hidden',
   },
   targetList: {
     gap: 8,
   },
   optionRow: {
-    minHeight: 42,
+    minHeight: Q_UI.touchSize,
+    height: Q_UI.touchSize,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
   },
   selectionMark: {
     width: 18,
@@ -520,7 +533,8 @@ const styles = createStyle({
   },
   footerButton: {
     minWidth: 84,
-    height: 40,
+    minHeight: Q_UI.touchSize,
+    height: Q_UI.touchSize,
     paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,

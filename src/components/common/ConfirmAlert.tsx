@@ -6,6 +6,7 @@ import { createStyle } from '@/utils/tools'
 import { useI18n } from '@/lang/index'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
+import { Q_UI } from '@/theme/ui'
 
 const BUTTON_HIT_SLOP = { top: 4, right: 4, bottom: 4, left: 4 } as const
 
@@ -33,7 +34,7 @@ const styles = createStyle({
   },
   btn: {
     flex: 1,
-    minHeight: 44,
+    minHeight: Q_UI.touchSize,
     paddingTop: 10,
     paddingBottom: 10,
     paddingLeft: 14,
@@ -107,6 +108,7 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
       </View>
       <View style={{ ...styles.btns, ...(reverseBtn ? styles.btnsReversedDirection : null) }}>
         <Button
+          accessibilityLabel={cancelText || t('cancel')}
           style={{
             ...styles.btn,
             backgroundColor: theme['q-surface-base'],
@@ -119,6 +121,7 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
         </Button>
         {showConfirm
           ? <Button
+              accessibilityLabel={confirmText || t('confirm')}
               style={{
                 ...styles.btn,
                 backgroundColor: theme['c-primary-dark-100'],

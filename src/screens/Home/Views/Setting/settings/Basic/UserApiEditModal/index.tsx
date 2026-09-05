@@ -1,6 +1,6 @@
 import { useRef, useImperativeHandle, forwardRef, useState } from 'react'
 import Text from '@/components/common/Text'
-import { View, TouchableOpacity } from 'react-native'
+import { View } from 'react-native'
 import { createStyle, openUrl } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
@@ -8,6 +8,7 @@ import Dialog, { type DialogType } from '@/components/common/Dialog'
 import Button from '@/components/common/Button'
 import List from './List'
 import ImportBtn from './ImportBtn'
+import { Q_TOUCH_HIT_SLOP } from '@/theme/ui'
 
 // interface UrlInputType {
 //   setText: (text: string) => void
@@ -111,9 +112,9 @@ export default forwardRef<UserApiEditModalType, {}>((props, ref) => {
                 <Text style={styles.tipsText} size={12}>
                   {t('user_api_readme')}
                 </Text>
-                <TouchableOpacity onPress={openFAQPage}>
+                <Button accessibilityLabel="FAQ" hitSlop={Q_TOUCH_HIT_SLOP} style={styles.linkButton} onPress={openFAQPage}>
                   <Text style={{ ...styles.tipsText, textDecorationLine: 'underline' }} size={12} color={theme['c-primary-font']}>FAQ</Text>
-                </TouchableOpacity>
+                </Button>
                 <View>
                   <Text style={styles.tipsText} size={12}>{t('user_api_note')}</Text>
                 </View>
@@ -170,6 +171,12 @@ const styles = createStyle({
     alignItems: 'center',
     borderRadius: 4,
     marginRight: 15,
+  },
+  linkButton: {
+    minHeight: 32,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+    borderRadius: 8,
   },
 })
 

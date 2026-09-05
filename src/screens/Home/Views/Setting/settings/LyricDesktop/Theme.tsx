@@ -2,9 +2,14 @@ import { updateSetting } from '@/core/common'
 import { setDesktopLyricColor } from '@/core/desktopLyric'
 import { useI18n } from '@/lang'
 import { memo } from 'react'
-import { StyleSheet, View, TouchableOpacity } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import SubTitle from '../../components/SubTitle'
+import Button from '@/components/common/Button'
+import Text from '@/components/common/Text'
+import { useSettingValue } from '@/store/setting/hook'
+import { useTheme } from '@/store/theme/hook'
+import { Q_UI } from '@/theme/ui'
 
 const themes = [
   ['#08e664', 'rgba(0,0,0,0.6)'],
@@ -19,21 +24,34 @@ const themes = [
 ] as const
 type Theme = typeof themes[number]
 
-const ThemeItem = ({ color, change }: {
+const ThemeItem = ({ color, index, selected, change }: {
   color: Theme
+  index: number
+  selected: boolean
   change: (color: Theme) => void
 }) => {
+  const theme = useTheme()
   return (
-    <TouchableOpacity style={styles.item} activeOpacity={0.5} onPress={() => { change(color) }}>
-      <View style={styles.colorContent}>
-        <View style={{ ...styles.image, backgroundColor: color[0] }}></View>
+    <Button
+      accessibilityLabel={`${global.i18n.t('setting_lyric_desktop_theme')} ${index + 1}`}
+      accessibilityState={{ selected }}
+      style={[
+        styles.item,
+        selected ? { backgroundColor: theme['q-surface-tint'], borderColor: theme['q-accent'] } : null,
+      ]}
+      onPress={() => { change(color) }}
+    >
+      <View style={[styles.colorContent, { borderColor: selected ? theme['q-accent'] : theme['q-outline'] }]}>
+        <View style={{ ...styles.image, backgroundColor: color[0] }} />
       </View>
-    </TouchableOpacity>
+      <Text accessible={false} style={styles.itemNumber} size={9} color={theme['q-text-secondary']}>{index + 1}</Text>
+    </Button>
   )
 }
 
 export default memo(() => {
   const t = useI18n()
+  const activeColor = useSettingValue('desktopLyric.style.lyricPlayedColor')
 
   const setThemeDesktopLyric = (color: Theme) => {
     // const shadowColor = 'rgba(0,0,0,0.6)'
@@ -46,7 +64,7 @@ export default memo(() => {
     <SubTitle title={t('setting_lyric_desktop_theme')}>
       <View style={styles.list}>
         {
-          themes.map((c, i) => <ThemeItem key={i.toString()} color={c} change={setThemeDesktopLyric} />)
+          themes.map((c, i) => <ThemeItem key={i.toString()} color={c} index={i} selected={activeColor == c[0]} change={setThemeDesktopLyric} />)
         }
       </View>
     </SubTitle>
@@ -60,23 +78,34 @@ const styles = StyleSheet.create({
   },
   item: {
     marginRight: 15,
-    marginTop: 5,
+    marginTop: 2,
     alignItems: 'center',
-    width: 26,
-    // backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'center',
+    width: Q_UI.touchSize,
+    height: Q_UI.touchSize,
+    minWidth: Q_UI.touchSize,
+    minHeight: Q_UI.touchSize,
+    borderRadius: Q_UI.radius.control,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
   },
   colorContent: {
-    width: 26,
-    height: 26,
-    borderRadius: 4,
-    // borderWidth: 1.6,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
   },
   image: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+    width: 26,
+    height: 26,
+    borderRadius: 6,
     elevation: 1,
+  },
+  itemNumber: {
+    position: 'absolute',
+    bottom: 1,
+    right: 3,
   },
 })

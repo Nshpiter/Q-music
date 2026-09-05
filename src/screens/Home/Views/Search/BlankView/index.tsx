@@ -71,8 +71,8 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch, onFocusSea
                 <Text style={styles.welcomeTitle} size={25} color={theme['q-text-primary']}>{t('search__welcome')}</Text>
                 <Text style={styles.welcomeSubtitle} size={13} color={theme['q-text-secondary']}>{t('search_welcome_subtitle')}</Text>
               </View>
-              <Button style={{ ...styles.searchAction, backgroundColor: theme['q-accent'] }} onPress={onFocusSearch}>
-                <Icon name="search-2" color={theme['q-on-accent']} rawSize={18} />
+              <Button accessibilityLabel={t('nav_search')} style={{ ...styles.searchAction, backgroundColor: theme['q-accent'] }} onPress={onFocusSearch}>
+                <Icon accessible={false} name="search-2" color={theme['q-on-accent']} rawSize={18} />
               </Button>
             </View>
             <View style={styles.content}>

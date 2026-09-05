@@ -124,7 +124,7 @@ export default forwardRef<MetadataEditType, MetadataEditProps>((props, ref) => {
           confirmText={processing ? global.i18n.t('metadata_edit_modal_processing') : global.i18n.t('metadata_edit_modal_confirm')}
           disabledConfirm={processing}
         >
-          <View style={styles.renameContent} onStartShouldSetResponder={() => true}>
+          <View style={styles.renameContent}>
             <Text style={styles.title}>{global.i18n.t('metadata_edit_modal_title')}</Text>
             <MetadataForm ref={metadataFormRef} />
           </View>

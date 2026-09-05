@@ -5,6 +5,7 @@ import { BorderWidths } from '@/theme'
 import { createStyle, toast } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useMusicExistsList } from '@/store/list/hook'
+import { Q_UI } from '@/theme/ui'
 
 export default ({ listInfo, onPress, musicInfo, width }: {
   listInfo: LX.List.MyListInfo
@@ -26,6 +27,7 @@ export default ({ listInfo, onPress, musicInfo, width }: {
   return (
     <View style={{ ...styles.listItem, width }}>
       <Button
+        accessibilityLabel={listInfo.name}
         style={{ ...styles.button, backgroundColor: theme['c-button-background'], borderColor: theme['c-primary-light-400-alpha-300'], opacity: isExists ? 0.4 : 1 }}
         onPress={handlePress}
       >
@@ -42,12 +44,13 @@ export const styles = createStyle({
     // backgroundColor: 'rgba(0,0,0,0.2)',
   },
   button: {
-    height: 36,
+    minHeight: Q_UI.touchSize,
+    height: Q_UI.touchSize,
     paddingLeft: 10,
     paddingRight: 10,
     marginRight: 10,
     marginBottom: 10,
-    borderRadius: 4,
+    borderRadius: Q_UI.radius.control,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useImperativeHandle, forwardRef, useState } from 'react'
-import { View, TouchableWithoutFeedback } from 'react-native'
+import { View } from 'react-native'
 import { useWindowSize } from '@/utils/hooks'
 
 import Modal, { type ModalType } from '@/components/common/Modal'
@@ -34,12 +34,9 @@ const styles = createStyle({
 
 const Panel = ({
   buttonPosition,
-  // panelStyle = {},
-  onHide,
   children,
 }: {
   buttonPosition: Position
-  onHide: () => void
   children: React.ReactNode | React.ReactNode[]
 }) => {
   // const dimensions = useWindowSize()
@@ -75,13 +72,9 @@ const Panel = ({
   }, [windowSize, buttonPosition])
 
   return (
-    <TouchableWithoutFeedback onPress={onHide}>
-      <View style={{ ...styles.menu, ...style }}>
-        <View onStartShouldSetResponder={() => true}>
-          {children}
-        </View>
-      </View>
-    </TouchableWithoutFeedback>
+    <View pointerEvents="box-none" style={{ ...styles.menu, ...style }}>
+      <View>{children}</View>
+    </View>
   )
 }
 export interface PanelProps {
@@ -113,10 +106,11 @@ export default forwardRef<PanelType, PanelProps>(({ onHide, keyHide, bgHide, chi
     },
   }))
 
-  // console.log(visible)
+  // Panel position is measured in page coordinates, so keep the modal
+  // edge-to-edge and avoid a second status-bar inset.
   return (
-    <Modal ref={modalRef} onHide={onHide} onStartShouldSetResponder={() => true} keyHide={keyHide} bgHide={bgHide}>
-      <Panel buttonPosition={position} onHide={() => modalRef.current?.setVisible(false)}>
+    <Modal statusBarPadding={false} ref={modalRef} onHide={onHide} keyHide={keyHide} bgHide={bgHide}>
+      <Panel buttonPosition={position}>
         {children}
       </Panel>
     </Modal>

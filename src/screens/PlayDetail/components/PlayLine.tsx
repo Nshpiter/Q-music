@@ -1,6 +1,7 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import { type NativeScrollEvent, type NativeSyntheticEvent, View, TouchableOpacity, Animated } from 'react-native'
+import { type NativeScrollEvent, type NativeSyntheticEvent, View, Animated } from 'react-native'
 import Text from '@/components/common/Text'
+import Button from '@/components/common/Button'
 import { createStyle } from '@/utils/tools'
 import { type Lines } from 'lrc-file-parser'
 import { useTheme } from '@/store/theme/hook'
@@ -85,9 +86,14 @@ export default forwardRef<PlayLineType, PlayLineProps>(({ onPlayLine }, ref) => 
       <Text style={styles.label} color={theme['c-primary-font']} size={13}>{timeLabel}</Text>
       <View style={styles.lineContent}>
         <View style={{ ...styles.line, borderBottomColor: theme['c-primary-alpha-700'] }} />
-        <TouchableOpacity style={styles.button} onPress={handlePlayLine}>
-          <Icon name="play" color={theme['c-button-font']} size={18} />
-        </TouchableOpacity>
+        <Button
+          accessibilityLabel={`${global.i18n.t('play')} ${timeLabel}`}
+          hitSlop={{ top: 14, right: 4, bottom: 14, left: 4 }}
+          style={styles.button}
+          onPress={handlePlayLine}
+        >
+          <Icon accessible={false} name="play" color={theme['c-button-font']} size={18} />
+        </Button>
       </View>
     </Animated.View>
   )
@@ -130,7 +136,9 @@ const styles = createStyle({
   },
   button: {
     flex: 0,
-    paddingLeft: 5,
-    paddingRight: 15,
+    width: 38,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })

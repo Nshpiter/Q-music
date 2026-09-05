@@ -125,7 +125,7 @@ export default forwardRef<OpenDirModalType, { onOpenDir: (dir: string) => Promis
       onConfirm={handleConfirmAlert}
       ref={confirmAlertRef}
     >
-      <View style={styles.newFolderContent} onStartShouldSetResponder={() => true}>
+      <View style={styles.newFolderContent}>
         <Text style={styles.newFolderTitle}>
           {
             paths.length > 1
@@ -138,7 +138,7 @@ export default forwardRef<OpenDirModalType, { onOpenDir: (dir: string) => Promis
           {
             paths.map(path => {
               return (
-                <Button style={styles.pathBtn} key={path} onPress={() => inputRef.current?.setPath(path)}>
+                <Button accessibilityLabel={path} style={styles.pathBtn} key={path} onPress={() => inputRef.current?.setPath(path)}>
                   <Text size={12}>{path}</Text>
                 </Button>
               )
@@ -148,11 +148,11 @@ export default forwardRef<OpenDirModalType, { onOpenDir: (dir: string) => Promis
             contentPaths.map(path => {
               return (
                 <View style={styles.listContentItem} key={path}>
-                  <Button style={styles.pathBtn} onPress={() => inputRef.current?.setPath(path)}>
+                  <Button accessibilityLabel={path} style={styles.pathBtn} onPress={() => inputRef.current?.setPath(path)}>
                     <Text size={12}>{path}</Text>
                   </Button>
-                  <Button style={styles.removeBtn} onPress={() => { removeSelectStoragePath(path) }}>
-                    <Icon color={theme['c-font-label']} name="close" size={12} />
+                  <Button accessibilityLabel={global.i18n.t('delete')} style={styles.removeBtn} onPress={() => { removeSelectStoragePath(path) }}>
+                    <Icon accessible={false} color={theme['c-font-label']} name="close" size={12} />
                   </Button>
                 </View>
               )
@@ -201,15 +201,21 @@ const styles = createStyle({
   },
   pathBtn: {
     paddingHorizontal: 5,
-    paddingVertical: 10,
+    minHeight: 48,
+    paddingVertical: 8,
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   removeBtn: {
     flex: 0,
+    width: 48,
+    minWidth: 48,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    padding: 0,
+    borderRadius: 12,
   },
   tips: {
     flexDirection: 'column',

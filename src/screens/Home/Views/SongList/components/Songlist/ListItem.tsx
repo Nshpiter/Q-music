@@ -1,11 +1,12 @@
 import { memo } from 'react'
-import { StyleSheet, View, TouchableOpacity } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { type ListInfoItem } from '@/store/songlist/state'
 import Text from '@/components/common/Text'
 import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { useTheme } from '@/store/theme/hook'
 import Image from '@/components/common/Image'
 import Badge from '@/components/common/Badge'
+import Button from '@/components/common/Button'
 
 export const ITEM_HEIGHT = 92
 
@@ -23,8 +24,8 @@ export default memo(({ item, index, showSource, onPress }: {
   const detail = [item.total, item.play_count, item.time].filter(Boolean).join(' · ')
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.66}
+    <Button
+      accessibilityLabel={item.name}
       style={styles.item}
       onPress={handlePress}
     >
@@ -58,7 +59,7 @@ export default memo(({ item, index, showSource, onPress }: {
           }
         </View>
       </View>
-    </TouchableOpacity>
+    </Button>
   )
 })
 

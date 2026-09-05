@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { View, TouchableOpacity, type ImageSourcePropType } from 'react-native'
+import { View, type ImageSourcePropType } from 'react-native'
 import { setTheme } from '@/core/theme'
 import { useI18n } from '@/lang'
 import { useSettingValue } from '@/store/setting/hook'
@@ -12,7 +12,8 @@ import { createStyle } from '@/utils/tools'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { Icon } from '@/components/common/Icon'
 import ImageBackground from '@/components/common/ImageBackground'
-import { qSurfaceShadow } from '@/theme/ui'
+import Button from '@/components/common/Button'
+import { Q_UI, qSurfaceShadow } from '@/theme/ui'
 
 const useActive = (id: string) => {
   const activeThemeId = useSettingValue('theme.id')
@@ -57,11 +58,11 @@ const ThemeItem = ({ id, name, color, image, setTheme, showAll }: {
 
   return (
     showAll || isActive ? (
-      <TouchableOpacity
+      <Button
         accessibilityRole="button"
+        accessibilityLabel={name}
         accessibilityState={{ selected: isActive }}
         style={{ ...styles.item, width: scaleSizeH(ITEM_WIDTH) }}
-        activeOpacity={0.72}
         onPress={() => { setTheme(id) }}
       >
         <View
@@ -76,7 +77,7 @@ const ThemeItem = ({ id, name, color, image, setTheme, showAll }: {
           {preview}
         </View>
         <Text style={[styles.name, isActive ? styles.nameActive : null]} size={12} color={isActive ? color : theme['q-text-primary']} numberOfLines={1}>{name}</Text>
-      </TouchableOpacity>
+      </Button>
     ) : null
   )
 }
@@ -91,14 +92,14 @@ const MoreBtn = ({ showAll, setShowAll }: {
   return (
     showAll ? null
       : (
-          <TouchableOpacity
+          <Button
+            accessibilityLabel={t('setting_basic_theme_more_btn_show')}
             style={{ ...styles.moreBtn, backgroundColor: theme['q-surface-tint'], borderColor: theme['c-primary-alpha-700'] }}
-            activeOpacity={0.72}
             onPress={() => { setShowAll(!showAll) }}
           >
             <Text style={styles.moreBtnText} size={13} color={theme['q-accent-text']} numberOfLines={1}>{t('setting_basic_theme_more_btn_show')}</Text>
             <Icon name="chevron-right" size={12} color={theme['q-accent-text']} />
-          </TouchableOpacity>
+          </Button>
         )
 
   )
@@ -172,6 +173,9 @@ const styles = createStyle({
   },
   item: {
     alignItems: 'center',
+    minHeight: Q_UI.touchSize,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   colorContent: {
     height: PREVIEW_HEIGHT,
@@ -212,7 +216,7 @@ const styles = createStyle({
     fontWeight: '700',
   },
   moreBtn: {
-    minHeight: 44,
+    minHeight: Q_UI.touchSize,
     paddingLeft: 14,
     paddingRight: 12,
     borderWidth: 1,

@@ -5,6 +5,7 @@ import { type TagInfoItem } from '@/store/songlist/state'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
+import { Q_UI } from '@/theme/ui'
 
 export interface TagGroupProps {
   name: string
@@ -23,24 +24,25 @@ export default ({ name, list, onTagChange, activeId }: TagGroupProps) => {
           : null
       }
       <View style={styles.tagTypeList}>
-        {list.map(item => (
-          activeId == item.id
-            ? (
-                <View style={{ ...styles.tagButton, backgroundColor: theme['c-button-background'] }} key={item.id}>
-                  <Text style={styles.tagButtonText} color={theme['c-primary-font-active']}>{item.name}</Text>
-                </View>
-              )
-            : (
-                <Button
-                  style={{ ...styles.tagButton, backgroundColor: theme['c-button-background'] }}
-                  key={item.id}
-                  onPress={() => { onTagChange(item.name, item.id) }}
-                >
-                  <Text style={styles.tagButtonText} color={theme['c-font']} >{item.name}</Text>
-                </Button>
-              )
-
-        ))}
+        {list.map(item => {
+          const active = activeId == item.id
+          return (
+            <Button
+              accessibilityRole="tab"
+              accessibilityLabel={item.name}
+              accessibilityState={{ selected: active }}
+              style={{
+                ...styles.tagButton,
+                backgroundColor: active ? theme['c-button-background-selected'] : theme['c-button-background'],
+                borderColor: active ? theme['c-primary-alpha-700'] : theme['c-border-background'],
+              }}
+              key={item.id}
+              onPress={() => { if (!active) onTagChange(item.name, item.id) }}
+            >
+              <Text style={styles.tagButtonText} color={active ? theme['c-primary-font-active'] : theme['c-font']} >{item.name}</Text>
+            </Button>
+          )
+        })}
       </View>
     </View>
   )
@@ -56,16 +58,19 @@ const styles = createStyle({
     flexWrap: 'wrap',
   },
   tagButton: {
-    // marginRight: 10,
-    borderRadius: 4,
+    minHeight: Q_UI.touchSize,
+    borderWidth: 1,
+    borderRadius: 12,
     marginRight: 10,
     marginBottom: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   tagButtonText: {
     fontSize: 13,
     paddingLeft: 12,
     paddingRight: 12,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingTop: 9,
+    paddingBottom: 9,
   },
 })

@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { ActivityIndicator, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 import { type Source, type InitState } from '@/store/hotSearch/state'
 import Button from '@/components/common/Button'
 import { getList } from '@/core/hotSearch'
@@ -7,7 +7,7 @@ import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
-import { qSurfaceShadow } from '@/theme/ui'
+import { Q_TOUCH_HIT_SLOP, qSurfaceShadow } from '@/theme/ui'
 import hotSearchActions from '@/store/hotSearch/action'
 import { Icon } from '@/components/common/Icon'
 
@@ -29,9 +29,10 @@ const ListItem = ({ keyword, onSearch }: {
   const theme = useTheme()
   return (
     <Button
+      accessibilityLabel={keyword}
+      hitSlop={Q_TOUCH_HIT_SLOP}
       style={{
         ...styles.button,
-        ...qSurfaceShadow,
         backgroundColor: theme['q-surface-tint'],
         borderColor: theme['c-primary-alpha-700'],
       }}
@@ -94,10 +95,10 @@ export default forwardRef<HotSearchType, ListProps>((props, ref) => {
     >
       <View style={styles.titleContent}>
         <Text style={styles.title} color={theme['q-text-primary']} size={14}>{t('search_hot_search')}</Text>
-        <TouchableOpacity style={styles.refreshBtn} onPress={() => { void load(sourceRef.current, true) }} disabled={loading}>
-          <Icon name="available_updates" color={theme['q-text-secondary']} size={14} />
+        <Button accessibilityLabel={t('search_hot_search_refresh')} hitSlop={Q_TOUCH_HIT_SLOP} style={styles.refreshBtn} onPress={() => { void load(sourceRef.current, true) }} disabled={loading}>
+          <Icon accessible={false} name="available_updates" color={theme['q-text-secondary']} size={15} />
           <Text color={theme['q-text-secondary']} size={12}>{t('search_hot_search_refresh')}</Text>
-        </TouchableOpacity>
+        </Button>
       </View>
       {loading && !list.length
         ? <View style={styles.state}><ActivityIndicator color={theme['q-accent']} /><Text color={theme['q-text-secondary']} size={12}>{t('search_hot_search_loading')}</Text></View>
@@ -119,6 +120,7 @@ const styles = createStyle({
     borderRadius: 20,
   },
   titleContent: {
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -127,8 +129,10 @@ const styles = createStyle({
     fontWeight: '700',
   },
   refreshBtn: {
-    minHeight: 32,
-    paddingLeft: 8,
+    minHeight: 40,
+    paddingLeft: 10,
+    paddingRight: 10,
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
@@ -151,13 +155,13 @@ const styles = createStyle({
   },
   button: {
     textAlign: 'center',
-    minHeight: 34,
-    paddingLeft: 12,
-    paddingRight: 12,
-    paddingTop: 7,
-    paddingBottom: 7,
+    minHeight: 40,
+    paddingLeft: 14,
+    paddingRight: 14,
+    paddingTop: 9,
+    paddingBottom: 9,
     borderWidth: 1,
-    borderRadius: 17,
+    borderRadius: 20,
     marginRight: 8,
     marginTop: 8,
     justifyContent: 'center',

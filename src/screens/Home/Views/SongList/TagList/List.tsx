@@ -67,7 +67,7 @@ export default forwardRef<ListType, ListProps>(({ onTagChange }, ref) => {
 
   return (
     <ScrollView style={{ flexShrink: 1, flexGrow: 0 }} keyboardShouldPersistTaps={'always'}>
-      <View style={styles.tagContainer} onStartShouldSetResponder={() => true}>
+      <View style={styles.tagContainer}>
         {status == 'loading' ? <ContentState status="loading" /> : null}
         {status == 'error' ? <ContentState status="error" onRetry={() => { loadTag(sourceRef.current, activeId, true) }} /> : null}
         {

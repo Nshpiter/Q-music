@@ -1,7 +1,8 @@
 import { forwardRef, useImperativeHandle, useState } from 'react'
-import { TouchableOpacity } from 'react-native'
+import { View } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
+import Button from '@/components/common/Button'
 import { BorderWidths } from '@/theme'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
@@ -28,10 +29,17 @@ export default forwardRef<HeaderType, HeaderProps>(({ onShowNavBar }, ref) => {
   }))
 
   return (
-    <TouchableOpacity onPress={onShowNavBar} style={{ ...styles.currentList, borderBottomColor: theme['c-border-background'] }}>
-      <Icon style={styles.currentListIcon} color={theme['c-button-font']} name="chevron-right" size={12} />
+    <Button
+      accessibilityLabel={t(`setting_${activeId}`)}
+      accessibilityHint={t('setting_open_nav') || undefined}
+      onPress={onShowNavBar}
+      style={{ ...styles.currentList, borderBottomColor: theme['c-border-background'] }}
+    >
+      <View style={styles.currentListIcon}>
+        <Icon accessible={false} color={theme['c-button-font']} name="chevron-right" size={12} />
+      </View>
       <Text numberOfLines={1} size={16} style={styles.currentListText} color={theme['c-button-font']}>{t(`setting_${activeId}`)}</Text>
-    </TouchableOpacity>
+    </Button>
   )
 })
 
@@ -40,14 +48,16 @@ const styles = createStyle({
   currentList: {
     flexDirection: 'row',
     paddingRight: 2,
-    height: 40,
+    minHeight: 48,
+    height: 48,
     alignItems: 'center',
     borderBottomWidth: BorderWidths.normal,
     // backgroundColor: 'rgba(0,0,0,0.2)',
   },
   currentListIcon: {
-    paddingLeft: 15,
-    paddingRight: 10,
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
     // paddingTop: 10,
     // paddingBottom: 0,
   },

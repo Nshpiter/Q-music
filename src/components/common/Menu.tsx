@@ -1,20 +1,20 @@
 import { useImperativeHandle, forwardRef, useMemo, useRef, useState, type Ref } from 'react'
-import { View, Animated, TouchableHighlight, StyleSheet } from 'react-native'
+import { View, Animated, StyleSheet } from 'react-native'
 import { useWindowSize } from '@/utils/hooks'
 
 import Modal, { type ModalType } from './Modal'
+import Button from './Button'
 
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
-import { Icon } from './Icon'
-import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
-import { qFloatingShadow } from '@/theme/ui'
+import { Q_UI, qFloatingShadow } from '@/theme/ui'
 
-const menuItemHeight = scaleSizeH(44)
-const menuItemWidth = scaleSizeW(100)
 const MENU_PADDING = 5
-const MENU_ITEM_HIT_SLOP = { left: 4, right: 4 } as const
+const MENU_EDGE_MARGIN = 8
+const MENU_MIN_WIDTH = 120
+const menuItemHeight = Q_UI.touchSize
+const menuItemWidth = 100
 
 export interface Position { w: number, h: number, x: number, y: number, menuWidth?: number, menuHeight?: number }
 export interface MenuSize { width?: number, height?: number }
@@ -23,33 +23,46 @@ export type Menus = Readonly<Array<{ action: string, label: string, disabled?: b
 const styles = createStyle({
   menu: {
     position: 'absolute',
+    minWidth: 1,
+    maxWidth: '100%',
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
   },
   menuContent: {
     padding: MENU_PADDING,
+    flexGrow: 1,
   },
   menuItem: {
-    minHeight: 44,
+    minHeight: Q_UI.touchSize,
     paddingLeft: 12,
     paddingRight: 12,
-    borderRadius: 8,
+    borderRadius: 9,
     justifyContent: 'center',
   },
   menuItemContent: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
   },
   menuItemIcon: {
     width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
   },
   menuItemText: {
     flex: 1,
+    minWidth: 0,
+  },
+  menuItemTrailing: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 6,
   },
 })
 
@@ -66,6 +79,15 @@ interface Props<M extends Menus = Menus> {
   activeId?: M[number]['action'] | null
 }
 
+const finiteOr = (value: number | undefined, fallback: number) => {
+  return typeof value == 'number' && Number.isFinite(value) ? value : fallback
+}
+
+const clamp = (value: number, min: number, max: number) => {
+  const upper = Math.max(min, max)
+  return Math.min(Math.max(value, min), upper)
+}
+
 const Menu = ({
   buttonPosition,
   menuSize,
@@ -80,58 +102,57 @@ const Menu = ({
 }: Props) => {
   const theme = useTheme()
   const windowSize = useWindowSize()
-  // const fadeAnim = useRef(new Animated.Value(0)).current
-  // console.log(buttonPosition)
 
   const menuItemStyle = useMemo(() => {
-    const menuWidth = width ?? menuSize.width ?? menuItemWidth
+    const requestedWidth = finiteOr(width ?? menuSize.width, menuItemWidth)
+    const windowWidth = finiteOr(windowSize.width, requestedWidth + MENU_EDGE_MARGIN * 2)
+    const availableWidth = Math.max(1, windowWidth - MENU_EDGE_MARGIN * 2)
+    const minMenuWidth = Math.min(MENU_MIN_WIDTH, availableWidth)
+    const menuWidth = Math.min(Math.max(requestedWidth, minMenuWidth), availableWidth)
+    const itemHeight = Math.max(Q_UI.touchSize, finiteOr(height ?? menuSize.height, menuItemHeight))
+
     return {
-      width: Math.max(menuWidth - MENU_PADDING * 2, 1),
-      height: Math.max(height ?? menuSize.height ?? menuItemHeight, menuItemHeight),
+      width: Math.max(1, menuWidth - MENU_PADDING * 2),
+      height: itemHeight,
       menuWidth,
     }
-  }, [menuSize, width, height])
+  }, [menuSize, width, height, windowSize.width])
 
   const menuStyle = useMemo(() => {
-    let menuHeight = menus.length * menuItemStyle.height + MENU_PADDING * 2
-    const topHeight = buttonPosition.y - 20
-    const bottomHeight = windowSize.height - buttonPosition.y - buttonPosition.h - 20
-    if (menuHeight > topHeight && menuHeight > bottomHeight) menuHeight = Math.max(topHeight, bottomHeight)
+    const contentHeight = menus.length * menuItemStyle.height + MENU_PADDING * 2
+    const windowHeight = finiteOr(windowSize.height, contentHeight + MENU_EDGE_MARGIN * 2)
+    const availableHeight = Math.max(1, windowHeight - MENU_EDGE_MARGIN * 2)
+    const menuHeight = Math.min(Math.max(contentHeight, 1), availableHeight)
+    const windowWidth = finiteOr(windowSize.width, menuItemStyle.menuWidth + MENU_EDGE_MARGIN * 2)
+    const menuWidth = Math.min(menuItemStyle.menuWidth, Math.max(1, windowWidth - MENU_EDGE_MARGIN * 2))
 
-    const menuWidth = menuItemStyle.menuWidth
-    const bottomSpace = windowSize.height - buttonPosition.y - buttonPosition.h - 20
-    const rightSpace = windowSize.width - buttonPosition.x - menuWidth
-    const showInBottom = bottomSpace >= menuHeight
-    const showInRight = rightSpace >= 20
-    const frameStyle: {
-      height: number
-      width: number
-      top: number
-      left?: number
-      right?: number
-    } = {
+    const bottomSpace = windowHeight - buttonPosition.y - buttonPosition.h - MENU_EDGE_MARGIN
+    const topSpace = buttonPosition.y - MENU_EDGE_MARGIN
+    const showInBottom = bottomSpace >= menuHeight || topSpace < menuHeight
+    const preferredTop = showInBottom
+      ? buttonPosition.y + buttonPosition.h
+      : buttonPosition.y - menuHeight
+    const top = clamp(preferredTop, MENU_EDGE_MARGIN, windowHeight - menuHeight - MENU_EDGE_MARGIN)
+
+    const preferredLeft = buttonPosition.x + menuWidth <= windowWidth - MENU_EDGE_MARGIN
+      ? buttonPosition.x
+      : buttonPosition.x + buttonPosition.w - menuWidth
+    const left = clamp(preferredLeft, MENU_EDGE_MARGIN, windowWidth - menuWidth - MENU_EDGE_MARGIN)
+
+    return {
       height: menuHeight,
-      top: showInBottom ? buttonPosition.y + buttonPosition.h : buttonPosition.y - menuHeight,
+      top,
       width: menuWidth,
+      left,
     }
-    if (showInRight) {
-      frameStyle.left = buttonPosition.x
-    } else {
-      frameStyle.right = windowSize.width - buttonPosition.x - buttonPosition.w
-    }
-    return frameStyle
   }, [menus.length, menuItemStyle, buttonPosition, windowSize])
 
   const menuPress = (menu: Menus[number]) => {
-    // if (menu.disabled) return
+    if (menu.disabled) return
     onPress(menu)
     onHide()
   }
 
-  // console.log('render menu')
-  // console.log(activeId)
-  // console.log(menuStyle)
-  // console.log(menuItemStyle)
   return (
     <View
       style={{
@@ -141,63 +162,63 @@ const Menu = ({
         backgroundColor: theme['q-surface-raised'],
         borderColor: theme['q-outline'],
       }}
-      onStartShouldSetResponder={() => true}
     >
-      <Animated.ScrollView contentContainerStyle={styles.menuContent} keyboardShouldPersistTaps={'always'}>
-        {
-          menus.map((menu, index) => (
-            menu.disabled
-              ? (
-                  <View
-                    key={menu.action}
-                    style={{ ...styles.menuItem, width: menuItemStyle.width, height: menuItemStyle.height, opacity: 0.4 }}
-                  >
-                    <View style={styles.menuItemContent}>
-                      {menu.icon ? <View style={styles.menuItemIcon}>{menu.icon}</View> : null}
-                      <Text style={{ ...styles.menuItemText, textAlign: center && !menu.icon ? 'center' : 'left' }} color={theme['q-text-secondary']} size={fontSize} numberOfLines={1}>{menu.label}</Text>
-                    </View>
+      <Animated.ScrollView
+        contentContainerStyle={styles.menuContent}
+        keyboardShouldPersistTaps="always"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        {menus.map(menu => (
+          menu.disabled
+            ? (
+                <View
+                  key={menu.action}
+                  accessible
+                  accessibilityRole="menuitem"
+                  accessibilityLabel={menu.label}
+                  accessibilityState={{ disabled: true }}
+                  style={{ ...styles.menuItem, minHeight: Q_UI.touchSize, width: menuItemStyle.width, height: menuItemStyle.height, opacity: 0.42 }}
+                >
+                  <View style={styles.menuItemContent}>
+                    {menu.icon ? <View style={styles.menuItemIcon}>{menu.icon}</View> : null}
+                    <Text style={{ ...styles.menuItemText, textAlign: center && !menu.icon ? 'center' : 'left' }} color={theme['q-text-secondary']} size={fontSize} numberOfLines={1} ellipsizeMode="tail">{menu.label}</Text>
                   </View>
-                )
-              : menu.action == activeId
-                ? (
-                    <TouchableHighlight
-                      key={menu.action}
-                      style={{
-                        ...styles.menuItem,
-                        width: menuItemStyle.width,
-                        height: menuItemStyle.height,
-                        backgroundColor: theme['q-surface-tint'],
-                      }}
-                      accessibilityRole="menuitem"
-                      underlayColor={theme['q-surface-tint']}
-                      hitSlop={MENU_ITEM_HIT_SLOP}
-                      onPress={() => { menuPress(menu) }}
+                </View>
+              )
+            : (
+                <Button
+                  key={menu.action}
+                  style={{
+                    ...styles.menuItem,
+                    minHeight: Q_UI.touchSize,
+                    width: menuItemStyle.width,
+                    height: menuItemStyle.height,
+                    ...(menu.action == activeId ? { backgroundColor: theme['q-surface-tint'] } : null),
+                  }}
+                  accessibilityRole="menuitem"
+                  accessibilityLabel={menu.label}
+                  accessibilityState={{ selected: menu.action == activeId }}
+                  onPress={() => { menuPress(menu) }}
+                >
+                  <View style={styles.menuItemContent}>
+                    {menu.icon ? <View style={styles.menuItemIcon}>{menu.icon}</View> : null}
+                    <Text
+                      style={{ ...styles.menuItemText, textAlign: center && !menu.icon ? 'center' : 'left' }}
+                      color={menu.action == activeId ? theme['q-accent-text'] : theme['q-text-primary']}
+                      size={fontSize}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
                     >
-                      <View style={styles.menuItemContent}>
-                        {menu.icon ? <View style={styles.menuItemIcon}>{menu.icon}</View> : null}
-                        <Text style={{ ...styles.menuItemText, textAlign: center && !menu.icon ? 'center' : 'left' }} color={theme['q-accent-text']} size={fontSize} numberOfLines={1}>{menu.label}</Text>
-                        <Icon name="checkbox-marked" color={theme['q-accent-text']} rawSize={16} />
-                      </View>
-                    </TouchableHighlight>
-                  )
-                : (
-                    <TouchableHighlight
-                      key={menu.action}
-                      style={{ ...styles.menuItem, width: menuItemStyle.width, height: menuItemStyle.height }}
-                      underlayColor={theme['q-surface-tint']}
-                      hitSlop={MENU_ITEM_HIT_SLOP}
-                      accessibilityRole="menuitem"
-                      onPress={() => { menuPress(menu) }}
-                    >
-                      <View style={styles.menuItemContent}>
-                        {menu.icon ? <View style={styles.menuItemIcon}>{menu.icon}</View> : null}
-                        <Text style={{ ...styles.menuItemText, textAlign: center && !menu.icon ? 'center' : 'left' }} color={theme['q-text-primary']} size={fontSize} numberOfLines={1}>{menu.label}</Text>
-                      </View>
-                    </TouchableHighlight>
-                  )
-
-          ))
-        }
+                      {menu.label}
+                    </Text>
+                    {menu.action == activeId
+                      ? <View style={styles.menuItemTrailing}><Text accessible={false} size={17} color={theme['q-accent-text']}>✓</Text></View>
+                      : null}
+                  </View>
+                </Button>
+              )
+        ))}
       </Animated.ScrollView>
     </View>
   )
@@ -220,17 +241,16 @@ export interface MenuType {
 }
 
 const Component = <M extends Menus>({ menus, width, height, activeId, onHide, onPress, fontSize, center }: MenuProps<M>, ref: Ref<MenuType>) => {
-  // console.log(visible)
   const modalRef = useRef<ModalType>(null)
   const [position, setPosition] = useState<Position>({ w: 0, h: 0, x: 0, y: 0 })
-  const [menuSize, setMenuSize] = useState<MenuSize>({ })
+  const [menuSize, setMenuSize] = useState<MenuSize>({})
   const hide = () => {
     modalRef.current?.setVisible(false)
   }
   useImperativeHandle(ref, () => ({
-    show(newPosition, menuSize) {
+    show(newPosition, newMenuSize) {
       setPosition(newPosition)
-      if (menuSize) setMenuSize(menuSize)
+      if (newMenuSize) setMenuSize(newMenuSize)
       modalRef.current?.setVisible(true)
     },
     hide() {
@@ -238,12 +258,13 @@ const Component = <M extends Menus>({ menus, width, height, activeId, onHide, on
     },
   }))
 
+  // Menu coordinates come from measure(pageX/pageY). The modal already
+  // renders edge-to-edge, so do not add a second status-bar inset.
   return (
-    <Modal onHide={onHide} ref={modalRef}>
+    <Modal statusBarPadding={false} onHide={onHide} ref={modalRef}>
       <Menu menus={menus} width={width} height={height} activeId={activeId} buttonPosition={position} menuSize={menuSize} onPress={onPress} onHide={hide} fontSize={fontSize} center={center} />
     </Modal>
   )
 }
 
-// export default forwardRef(Component) as ForwardRefFn<MenuType>
 export default forwardRef(Component) as <M extends Menus>(p: MenuProps<M> & { ref?: Ref<MenuType> }) => JSX.Element | null

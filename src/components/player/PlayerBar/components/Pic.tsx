@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity } from 'react-native'
+import { StyleSheet } from 'react-native'
 import { navigations } from '@/navigation'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import { scaleSizeH } from '@/utils/pixelRatio'
@@ -10,10 +10,19 @@ import { useCallback } from 'react'
 import { setLoadErrorPicUrl, setMusicInfo } from '@/core/player/playInfo'
 import { useTheme } from '@/store/theme/hook'
 import { Q_UI } from '@/theme/ui'
+import Button from '@/components/common/Button'
 
 const PIC_HEIGHT = Math.max(scaleSizeH(52), 52)
 
 const styles = StyleSheet.create({
+  button: {
+    width: PIC_HEIGHT,
+    height: PIC_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Q_UI.radius.cover,
+    overflow: 'hidden',
+  },
   image: {
     width: PIC_HEIGHT,
     height: PIC_HEIGHT,
@@ -49,14 +58,20 @@ export default ({ isHome }: { isHome: boolean }) => {
   }, [])
 
   return (
-    <TouchableOpacity onLongPress={handleLongPress} onPress={handlePress} activeOpacity={0.7} >
+    <Button
+      accessibilityLabel={musicInfo.id ? `${musicInfo.name} · ${musicInfo.singer}` : global.i18n.t('play_detail_setting_title')}
+      style={styles.button}
+      onLongPress={handleLongPress}
+      onPress={handlePress}
+      disabled={!musicInfo.id}
+    >
       <Image
         url={musicInfo.pic}
         nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic}
         style={{ ...styles.image, borderColor: theme['q-outline'] }}
         onError={handleError}
       />
-    </TouchableOpacity>
+    </Button>
   )
 }
 

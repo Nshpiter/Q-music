@@ -1,4 +1,5 @@
-import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
+import Button from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { useIsPlay } from '@/store/player/hook'
 import { useTheme } from '@/store/theme/hook'
@@ -8,17 +9,18 @@ import { useWindowSize } from '@/utils/hooks'
 
 const SECONDARY_FACE_SIZE = 32
 const PRIMARY_FACE_SIZE = 44
-const TOUCH_SIZE = 46
+const TOUCH_SIZE = 48
 
-const TransportButton = ({ icon, primary = false, onPress }: {
+const TransportButton = ({ icon, accessibilityLabel, primary = false, onPress }: {
   icon: string
+  accessibilityLabel: string
   primary?: boolean
   onPress: () => void
 }) => {
   const theme = useTheme()
   return (
-    <TouchableOpacity
-      activeOpacity={0.65}
+    <Button
+      accessibilityLabel={accessibilityLabel}
       style={styles.touchTarget}
       onPress={onPress}
     >
@@ -36,26 +38,27 @@ const TransportButton = ({ icon, primary = false, onPress }: {
         ]}
       >
         <Icon
+          accessible={false}
           name={icon}
           color={primary ? (theme.isDark ? '#252827' : '#fff') : theme['q-text-primary']}
           size={primary ? 20 : 18}
         />
       </View>
-    </TouchableOpacity>
+    </Button>
   )
 }
 
 const PlayPrevBtn = () => (
-  <TransportButton icon="prevMusic" onPress={() => { void playPrev() }} />
+  <TransportButton icon="prevMusic" accessibilityLabel={global.i18n.t('play_prev')} onPress={() => { void playPrev() }} />
 )
 
 const PlayNextBtn = () => (
-  <TransportButton icon="nextMusic" onPress={() => { void playNext() }} />
+  <TransportButton icon="nextMusic" accessibilityLabel={global.i18n.t('play_next')} onPress={() => { void playNext() }} />
 )
 
 const TogglePlayBtn = () => {
   const isPlay = useIsPlay()
-  return <TransportButton icon={isPlay ? 'pause' : 'play'} primary onPress={togglePlay} />
+  return <TransportButton icon={isPlay ? 'pause' : 'play'} accessibilityLabel={global.i18n.t(isPlay ? 'pause' : 'play')} primary onPress={togglePlay} />
 }
 
 export default () => {

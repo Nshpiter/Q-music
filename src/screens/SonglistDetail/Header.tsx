@@ -1,5 +1,5 @@
 import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react'
-import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import ButtonBar from './ActionBar'
 import { pop, useNavigationComponentDidAppear } from '@/navigation'
 import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
@@ -9,9 +9,9 @@ import Image from '@/components/common/Image'
 import { useListInfo } from './state'
 import { useAnimateOnecNumber } from '@/utils/hooks/useAnimateNumber'
 import { useStatusbarHeight } from '@/store/common/hook'
-import { Icon } from '@/components/common/Icon'
 import commonState from '@/store/common/state'
 import { useI18n } from '@/lang'
+import IconButton from '@/components/common/IconButton'
 
 const IMAGE_WIDTH = 76
 const COVER_RADIUS = 4
@@ -87,13 +87,15 @@ export const FixedHeader = () => {
       }}
     >
       <View style={styles.topBar}>
-        <TouchableOpacity
-          activeOpacity={0.65}
+        <IconButton
+          accessibilityLabel={t('back')}
+          name="chevron-left"
+          iconSize={20}
+          size={48}
           style={styles.backButton}
           onPress={() => { void pop(commonState.componentIds.songlistDetail!) }}
-        >
-          <Icon name="chevron-left" size={18} color={theme['q-text-primary']} />
-        </TouchableOpacity>
+          iconColor={theme['q-text-primary']}
+        />
         <Text style={styles.pageTitle} size={17} color={theme['q-text-primary']} numberOfLines={1}>
           {t('nav_songlist')}
         </Text>

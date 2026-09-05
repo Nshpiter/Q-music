@@ -2,20 +2,22 @@ import { useRef, useImperativeHandle, forwardRef, useState, useCallback, memo, u
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
 import Dialog, { type DialogType } from '@/components/common/Dialog'
-import { FlatList, TouchableOpacity, View, type FlatListProps as _FlatListProps } from 'react-native'
+import { FlatList, View, type FlatListProps as _FlatListProps } from 'react-native'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { useTheme } from '@/store/theme/hook'
 import { type DuplicateMusicItem, filterDuplicateMusic } from './utils'
 import { getListMusics, removeListMusics } from '@/core/list'
-import { Icon } from '@/components/common/Icon'
 import { useUnmounted } from '@/utils/hooks'
 import { playList } from '@/core/player/player'
 import { useI18n } from '@/lang'
 import { handleRemove } from '../MusicList/listAction'
 import Button from '@/components/common/Button'
+import IconButton from '@/components/common/IconButton'
+import { Q_UI } from '@/theme/ui'
+import SourceLogo from '@/components/SourceLogo'
 
 type FlatListProps = _FlatListProps<DuplicateMusicItem>
-const ITEM_HEIGHT = scaleSizeH(56)
+const ITEM_HEIGHT = Math.max(scaleSizeH(56), Q_UI.touchSize)
 
 const Title = ({ title }: {
   title: string
@@ -50,11 +52,16 @@ const ListItem = memo(({ info, index, onRemove, onPlay, selectedList, onPress }:
   const isSelected = selectedList.includes(info)
 
   return (
-    <View style={{ ...styles.listItem, height: ITEM_HEIGHT, backgroundColor: isSelected ? theme['c-primary-background-hover'] : 'rgba(0,0,0,0)' }} onStartShouldSetResponder={() => true}>
+    <View style={{ ...styles.listItem, height: ITEM_HEIGHT, backgroundColor: isSelected ? theme['c-primary-background-hover'] : 'rgba(0,0,0,0)' }}>
       {/* <View style={styles.listItemLabel}>
         <Text style={styles.sn} size={13} color={theme['c-300']}>{info.index + 1}</Text>
       </View> */}
-      <TouchableOpacity style={styles.listItemInfo} onPress={() => { onPress(info) }}>
+      <Button
+        accessibilityLabel={`${info.musicInfo.name} · ${info.musicInfo.singer}`}
+        accessibilityState={{ selected: isSelected }}
+        style={styles.listItemInfo}
+        onPress={() => { onPress(info) }}
+      >
         <Text color={theme['c-font']} size={14} numberOfLines={1}>{info.musicInfo.name}</Text>
         <View style={styles.listItemAlbum}>
           <Text color={theme['c-font']} size={12} numberOfLines={1}>
@@ -66,18 +73,30 @@ const ListItem = memo(({ info, index, onRemove, onPlay, selectedList, onPress }:
             }
           </Text>
         </View>
-      </TouchableOpacity>
+      </Button>
       <View style={styles.listItemLabel}>
-        <Text style={styles.listItemLabelText} size={13} color={theme['c-300']}>{ info.musicInfo.source }</Text>
+        {info.musicInfo.source != 'local' ? <SourceLogo source={info.musicInfo.source} size={18} style={styles.sourceLogo} /> : null}
         <Text style={styles.listItemLabelText} size={13} color={theme['c-300']}>{info.musicInfo.interval}</Text>
       </View>
       <View style={styles.listItemBtns}>
-        <Button style={styles.listItemBtn} onPress={() => { onPlay(info) }}>
-          <Icon name="play-outline" style={{ color: theme['c-button-font'] }} size={18} />
-        </Button>
-        <Button style={styles.listItemBtn} onPress={() => { onRemove(index) }}>
-          <Icon name="remove" style={{ color: theme['c-button-font'] }} size={18} />
-        </Button>
+        <IconButton
+          accessibilityLabel={`${global.i18n.t('play')} ${info.musicInfo.name}`}
+          name="play-outline"
+          iconSize={18}
+          iconColor={theme['c-button-font']}
+          expandHitSlop={false}
+          style={styles.listItemBtn}
+          onPress={() => { onPlay(info) }}
+        />
+        <IconButton
+          accessibilityLabel={`${global.i18n.t('delete')} ${info.musicInfo.name}`}
+          name="remove"
+          iconSize={18}
+          iconColor={theme['c-button-font']}
+          expandHitSlop={false}
+          style={styles.listItemBtn}
+          onPress={() => { onRemove(index) }}
+        />
       </View>
     </View>
   )
@@ -299,6 +318,9 @@ const styles = createStyle({
     // backgroundColor: 'rgba(0,0,0,0.2)',
     paddingLeft: 15,
     paddingRight: 5,
+    minHeight: Q_UI.touchSize,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   listItemAlbum: {
     flexDirection: 'row',
@@ -306,6 +328,9 @@ const styles = createStyle({
   },
   listItemLabel: {
     flex: 0,
+    minHeight: Q_UI.touchSize,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   listItemLabelText: {
     paddingHorizontal: 5,
@@ -317,7 +342,14 @@ const styles = createStyle({
     paddingHorizontal: 8,
   },
   listItemBtn: {
-    padding: 8,
+    width: Q_UI.touchSize,
+    minWidth: Q_UI.touchSize,
+    height: Q_UI.touchSize,
+    minHeight: Q_UI.touchSize,
+    borderRadius: Q_UI.radius.control,
+  },
+  sourceLogo: {
+    marginBottom: 2,
   },
   noitem: {
     paddingVertical: 35,

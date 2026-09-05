@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react'
-import { StyleSheet, TouchableOpacity } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
 import { BorderWidths } from '@/theme'
@@ -13,6 +13,8 @@ import Text from '@/components/common/Text'
 import { LIST_IDS } from '@/config/constant'
 import Loading from '@/components/common/Loading'
 import { useSettingValue } from '@/store/setting/hook'
+import Button from '@/components/common/Button'
+import IconButton from '@/components/common/IconButton'
 
 export interface ActiveListProps {
   onShowImport: () => void
@@ -60,14 +62,19 @@ export default forwardRef<ActiveListType, ActiveListProps>(({ onShowImport, onSh
   }, [])
 
   return (
-    <TouchableOpacity onPress={showList} onLongPress={onScrollToTop} style={{ ...styles.currentList, opacity: visibleBar ? 1 : 0, borderBottomColor: theme['c-border-background'] }}>
-      <Icon style={styles.currentListIcon} color={theme['c-button-font']} name="chevron-right" size={12} />
-      { fetching ? <Loading color={theme['c-button-font']} style={styles.loading} /> : null }
-      <Text style={styles.currentListText} numberOfLines={1} color={theme['c-button-font']}>{currentListName}</Text>
-      <TouchableOpacity
-        accessibilityRole="button"
+    <View style={{ ...styles.currentList, opacity: visibleBar ? 1 : 0, borderBottomColor: theme['c-border-background'] }}>
+      <Button
+        accessibilityLabel={currentListName}
+        onPress={showList}
+        onLongPress={onScrollToTop}
+        style={styles.currentListMain}
+      >
+        <Icon style={styles.currentListIcon} color={theme['c-button-font']} name="chevron-right" size={12} />
+        { fetching ? <Loading color={theme['c-button-font']} style={styles.loading} /> : null }
+        <Text style={styles.currentListText} numberOfLines={1} color={theme['c-button-font']}>{currentListName}</Text>
+      </Button>
+      <Button
         accessibilityLabel={global.i18n.t('playlist_import_modal__title')}
-        activeOpacity={0.7}
         style={{
           ...styles.importButton,
           backgroundColor: theme['q-surface-tint'],
@@ -75,15 +82,20 @@ export default forwardRef<ActiveListType, ActiveListProps>(({ onShowImport, onSh
         }}
         onPress={onShowImport}
       >
-        <Icon color={theme['q-accent-text']} name="download-2" size={15} />
+        <Icon accessible={false} color={theme['q-accent-text']} name="download-2" size={15} />
         <Text size={11} style={styles.importText} color={theme['q-accent-text']} numberOfLines={1}>
           {global.i18n.t('playlist_import_modal__title')}
         </Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.currentListBtns} onPress={onShowSearchBar}>
-        <Icon color={theme['c-button-font']} name="search-2" />
-      </TouchableOpacity>
-    </TouchableOpacity>
+      </Button>
+      <IconButton
+        accessibilityLabel={global.i18n.t('list_search')}
+        name="search-2"
+        iconSize={18}
+        iconColor={theme['c-button-font']}
+        style={styles.currentListBtns}
+        onPress={onShowSearchBar}
+      />
+    </View>
   )
 })
 
@@ -92,10 +104,20 @@ const styles = createStyle({
   currentList: {
     flexDirection: 'row',
     paddingRight: 2,
-    height: 36,
+    minHeight: 48,
+    height: 48,
     alignItems: 'center',
     borderBottomWidth: BorderWidths.normal,
     // backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  currentListMain: {
+    flex: 1,
+    minWidth: 0,
+    height: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    padding: 0,
   },
   currentListIcon: {
     paddingLeft: 15,
@@ -115,15 +137,17 @@ const styles = createStyle({
     marginRight: 5,
   },
   currentListBtns: {
-    width: 46,
+    width: 48,
+    minWidth: 48,
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100%',
+    height: 48,
     // backgroundColor: 'rgba(0,0,0,0.2)',
   },
   importButton: {
-    height: 32,
-    maxWidth: 132,
+    minHeight: 48,
+    height: 48,
+    maxWidth: 144,
     paddingHorizontal: 10,
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,

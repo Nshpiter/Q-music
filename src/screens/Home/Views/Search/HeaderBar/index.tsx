@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     flexShrink: 0,
-    height: 52,
+    height: 56,
     alignItems: 'center',
     zIndex: 2,
     paddingHorizontal: 12,
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   },
   searchControl: {
     flex: 1,
-    height: 44,
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
   selector: {
     flexShrink: 0,
-    height: 44,
+    height: 48,
   },
   divider: {
     width: StyleSheet.hairlineWidth,

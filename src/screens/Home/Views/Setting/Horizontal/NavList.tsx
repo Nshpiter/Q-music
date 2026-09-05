@@ -1,7 +1,8 @@
 import { memo, useRef, useState } from 'react'
-import { View, TouchableOpacity, FlatList, type FlatListProps } from 'react-native'
+import { View, FlatList, type FlatListProps } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
+import Button from '@/components/common/Button'
 
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
@@ -30,8 +31,10 @@ const ListItem = memo(({ id, activeId, onPress }: {
   }
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.7}
+    <Button
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={t(`setting_${id}`)}
       style={{
         ...styles.listItem,
         height: ITEM_HEIGHT,
@@ -48,7 +51,7 @@ const ListItem = memo(({ id, activeId, onPress }: {
       <View style={styles.listName}>
         <Text numberOfLines={1} size={15} color={active ? theme['q-accent-text'] : theme['q-text-primary']}>{t(`setting_${id}`)}</Text>
       </View>
-    </TouchableOpacity>
+    </Button>
   )
 }, (prevProps, nextProps) => {
   return !!(prevProps.id === nextProps.id &&

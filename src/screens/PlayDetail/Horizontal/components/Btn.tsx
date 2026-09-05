@@ -1,25 +1,37 @@
-import { TouchableOpacity } from 'react-native'
-import { Icon } from '@/components/common/Icon'
+import IconButton from '@/components/common/IconButton'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { scaleSizeW } from '@/utils/pixelRatio'
+import { Q_UI } from '@/theme/ui'
 
 import { HEADER_HEIGHT } from '@/config/constant'
 export const BTN_WIDTH = scaleSizeW(HEADER_HEIGHT)
 export const BTN_ICON_SIZE = 20
 
-export default ({ icon, size, color, onPress, onLongPress }: {
+export default ({ icon, size, color, onPress, onLongPress, accessibilityLabel, selected }: {
   icon: string
   size?: number
   color?: string
   onPress: () => void
   onLongPress?: () => void
+  accessibilityLabel: string
+  selected?: boolean
 }) => {
   const theme = useTheme()
   return (
-    <TouchableOpacity style={{ ...styles.cotrolBtn, width: BTN_WIDTH, height: BTN_WIDTH }} activeOpacity={0.5} onPress={onPress} onLongPress={onLongPress}>
-      <Icon name={icon} color={color ?? theme['c-550']} size={size ?? BTN_ICON_SIZE} />
-    </TouchableOpacity>
+    <IconButton
+      accessibilityLabel={accessibilityLabel}
+      selected={selected}
+      name={icon}
+      size={BTN_WIDTH}
+      iconSize={scaleSizeW(size ?? BTN_ICON_SIZE)}
+      iconColor={color ?? (selected ? theme['q-accent-text'] : theme['c-550'])}
+      radius={Q_UI.radius.control}
+      expandHitSlop={false}
+      style={styles.cotrolBtn}
+      onPress={onPress}
+      onLongPress={onLongPress}
+    />
   )
 }
 

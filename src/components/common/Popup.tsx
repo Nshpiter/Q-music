@@ -1,15 +1,12 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View } from 'react-native'
 
 import Modal, { type ModalType } from './Modal'
-import { Icon } from '@/components/common/Icon'
+import IconButton from '@/components/common/IconButton'
 import { useKeyboard } from '@/utils/hooks'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
-import { useStatusbarHeight } from '@/store/common/hook'
-
-const CONTROL_HIT_SLOP = { top: 8, right: 8, bottom: 8, left: 8 } as const
 
 const styles = createStyle({
   centeredView: {
@@ -25,7 +22,7 @@ const styles = createStyle({
   header: {
     flex: 0,
     flexDirection: 'row',
-    minHeight: 44,
+    minHeight: 48,
     alignItems: 'center',
     borderBottomWidth: 1,
   },
@@ -43,8 +40,8 @@ const styles = createStyle({
     right: 4,
     flexGrow: 0,
     flexShrink: 0,
-    height: 44,
-    width: 44,
+    height: 48,
+    width: 48,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -76,7 +73,6 @@ export default forwardRef<PopupType, PopupProps>(({
 }: PopupProps, ref) => {
   const theme = useTheme()
   const { keyboardShown, keyboardHeight } = useKeyboard()
-  const statusBarHeight = useStatusbarHeight()
 
   const modalRef = useRef<ModalType>(null)
 
@@ -87,13 +83,15 @@ export default forwardRef<PopupType, PopupProps>(({
   }))
 
   const closeBtnComponent = useMemo(() => closeBtn
-    ? <TouchableOpacity
+    ? <IconButton
+        accessibilityLabel={global.i18n.t('close')}
+        name="close"
+        iconSize={16}
+        variant="plain"
         style={styles.closeBtn}
-        hitSlop={CONTROL_HIT_SLOP}
         onPress={() => modalRef.current?.setVisible(false)}
-      >
-        <Icon name="close" style={{ color: theme['q-text-secondary'] }} size={16} />
-      </TouchableOpacity>
+        iconColor={theme['q-text-secondary']}
+      />
     : null, [closeBtn, theme])
 
   const [centeredViewStyle, modalViewStyle] = useMemo(() => {
@@ -131,7 +129,6 @@ export default forwardRef<PopupType, PopupProps>(({
             minWidth: '45%',
             maxWidth: '78%',
             height: '100%',
-            paddingTop: statusBarHeight,
             borderTopRightRadius: 22,
             borderBottomRightRadius: 22,
           },
@@ -151,7 +148,6 @@ export default forwardRef<PopupType, PopupProps>(({
             minWidth: '45%',
             maxWidth: '78%',
             height: '100%',
-            paddingTop: statusBarHeight,
             borderTopLeftRadius: 22,
             borderBottomLeftRadius: 22,
           },
@@ -176,11 +172,11 @@ export default forwardRef<PopupType, PopupProps>(({
           },
         ] as const
     }
-  }, [position, statusBarHeight])
+  }, [position])
 
   return (
     <Modal onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor={theme['q-scrim']} ref={modalRef}>
-      <View style={{ ...styles.centeredView, ...centeredViewStyle, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
+      <View pointerEvents="box-none" style={{ ...styles.centeredView, ...centeredViewStyle, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
         <View
           style={{
             ...styles.modalView,
@@ -188,7 +184,6 @@ export default forwardRef<PopupType, PopupProps>(({
             backgroundColor: theme['q-surface-raised'],
             borderColor: theme['q-outline'],
           }}
-          onStartShouldSetResponder={() => true}
         >
           <View
             style={{

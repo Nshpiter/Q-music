@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react'
-import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
 import SourceLogo from '@/components/SourceLogo'
@@ -12,6 +12,7 @@ import { usePlayMusicInfo } from '@/store/player/hook'
 import { useSettingValue } from '@/store/setting/hook'
 import { useTheme } from '@/store/theme/hook'
 import { useStatus, useUserApiList } from '@/store/userApi'
+import Button from '@/components/common/Button'
 
 const QUALITY_INFO: Partial<Record<LX.Quality, { name: 'standard' | 'high' | 'lossless' | 'hires', desc: string }>> = {
   '128k': { name: 'standard', desc: '128 kbps' },
@@ -71,28 +72,29 @@ export default memo(() => {
           const active = quality == id
           const available = !onlineMusic || getPlayQualityCandidates(id, onlineMusic)[0] == id
           return (
-            <TouchableOpacity
+            <Button
               key={id}
               accessibilityRole="radio"
+              accessibilityLabel={`${t(`play_detail_quality_${info.name}`)} · ${info.desc}`}
               accessibilityState={{ checked: active, disabled: !available }}
-              activeOpacity={0.72}
               disabled={!available}
-              style={{
-                ...styles.qualityItem,
-                opacity: available ? 1 : 0.42,
-                backgroundColor: active ? theme['q-surface-tint'] : theme['q-surface-base'],
-                borderColor: active ? theme['q-accent'] : theme['q-outline'],
-              }}
+              style={[
+                styles.qualityItem,
+                {
+                  backgroundColor: active ? theme['q-surface-tint'] : theme['q-surface-base'],
+                  borderColor: active ? theme['q-accent'] : theme['q-outline'],
+                },
+              ]}
               onPress={() => { handleChange(id, available) }}
             >
               <View style={styles.qualityTop}>
                 <Text size={14} style={styles.qualityName} color={active ? theme['q-accent-text'] : theme['q-text-primary']}>
                   {t(`play_detail_quality_${info.name}`)}
                 </Text>
-                {active ? <Icon name="checkbox-marked" color={theme['q-accent-text']} rawSize={17} /> : null}
+                {active ? <Icon accessible={false} name="checkbox-marked" color={theme['q-accent-text']} rawSize={17} /> : null}
               </View>
               <Text size={11} color={theme['q-text-secondary']}>{info.desc}</Text>
-            </TouchableOpacity>
+            </Button>
           )
         })}
       </View>

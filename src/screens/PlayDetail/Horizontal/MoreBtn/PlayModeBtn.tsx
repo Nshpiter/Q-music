@@ -6,6 +6,23 @@ import { useI18n } from '@/lang'
 import { updateSetting } from '@/core/common'
 import Btn from './Btn'
 
+type PlayModeMessage = 'play_list_loop' | 'play_list_random' | 'play_list_order' | 'play_single_loop' | 'play_single'
+
+const getPlayModeMessage = (mode: typeof MUSIC_TOGGLE_MODE_LIST[number]): PlayModeMessage => {
+  switch (mode) {
+    case MUSIC_TOGGLE_MODE.listLoop:
+      return 'play_list_loop'
+    case MUSIC_TOGGLE_MODE.random:
+      return 'play_list_random'
+    case MUSIC_TOGGLE_MODE.list:
+      return 'play_list_order'
+    case MUSIC_TOGGLE_MODE.singleLoop:
+      return 'play_single_loop'
+    default:
+      return 'play_single'
+  }
+}
+
 
 export default memo(() => {
   const togglePlayMethod = useSettingValue('player.togglePlayMethod')
@@ -16,25 +33,7 @@ export default memo(() => {
     if (++index >= MUSIC_TOGGLE_MODE_LIST.length) index = 0
     const mode = MUSIC_TOGGLE_MODE_LIST[index]
     updateSetting({ 'player.togglePlayMethod': mode })
-    let modeName: 'play_list_loop' | 'play_list_random' | 'play_list_order' | 'play_single_loop' | 'play_single'
-    switch (mode) {
-      case MUSIC_TOGGLE_MODE.listLoop:
-        modeName = 'play_list_loop'
-        break
-      case MUSIC_TOGGLE_MODE.random:
-        modeName = 'play_list_random'
-        break
-      case MUSIC_TOGGLE_MODE.list:
-        modeName = 'play_list_order'
-        break
-      case MUSIC_TOGGLE_MODE.singleLoop:
-        modeName = 'play_single_loop'
-        break
-      default:
-        modeName = 'play_single'
-        break
-    }
-    toast(t(modeName))
+    toast(t(getPlayModeMessage(mode)))
   }
 
   const playModeIcon = useMemo(() => {
@@ -59,5 +58,5 @@ export default memo(() => {
     return playModeIcon
   }, [togglePlayMethod])
 
-  return <Btn icon={playModeIcon} onPress={toggleNextPlayMode} />
+  return <Btn icon={playModeIcon} accessibilityLabel={t(getPlayModeMessage(togglePlayMethod))} onPress={toggleNextPlayMode} />
 })

@@ -1,10 +1,12 @@
-import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Linking, StyleSheet, View } from 'react-native'
 import Text from '@/components/common/Text'
 import SourceLogo from '@/components/SourceLogo'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
 import { qSurfaceShadow } from '@/theme/ui'
 import { createStyle, toast } from '@/utils/tools'
+import Button from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 
 const PROVIDERS = [
   { id: 'tx', nameKey: 'source_real_tx', url: 'https://y.qq.com/n/ryqq/profile' },
@@ -42,10 +44,9 @@ export default () => {
       </View>
       <View style={styles.providers}>
         {PROVIDERS.map(provider => (
-          <TouchableOpacity
+          <Button
             key={provider.id}
-            accessibilityRole="button"
-            activeOpacity={0.65}
+            accessibilityLabel={`${t(provider.nameKey)} · ${t('search_account_open_official')}`}
             style={{ ...styles.provider, backgroundColor: theme['q-surface-base'], borderColor: theme['q-outline'] }}
             onPress={() => { void openProvider(provider.url) }}
           >
@@ -54,8 +55,8 @@ export default () => {
               <Text size={13} style={styles.providerName} color={theme['q-text-primary']} numberOfLines={1}>{t(provider.nameKey)}</Text>
               <Text size={10} color={theme['q-text-secondary']}>{t('search_account_open_official')}</Text>
             </View>
-            <Text size={18} color={theme['q-text-secondary']}>›</Text>
-          </TouchableOpacity>
+            <Icon accessible={false} name="chevron-right" rawSize={15} color={theme['q-text-secondary']} />
+          </Button>
         ))}
       </View>
     </View>

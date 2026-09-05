@@ -22,7 +22,13 @@ export default memo(() => {
 
   return (
     <>
-      <Btn icon={enabledLyric ? 'lyric-on' : 'lyric-off'} onPress={update} onLongPress={updateLock} />
+      <Btn
+        icon={enabledLyric ? 'lyric-on' : 'lyric-off'}
+        accessibilityLabel={global.i18n.t('play_detail_page_lyric')}
+        selected={enabledLyric}
+        onPress={update}
+        onLongPress={updateLock}
+      />
       <DesktopLyricEnable ref={desktopLyricEnableRef} />
     </>
   )

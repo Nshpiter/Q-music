@@ -1,23 +1,6 @@
-// import { createStyle } from '@/utils/tools'
-import { useImperativeHandle, forwardRef, useState, useMemo } from 'react'
-import { Modal, TouchableWithoutFeedback, View, type ModalProps as _ModalProps } from 'react-native'
+import { useImperativeHandle, forwardRef, useState, useMemo, useRef, useCallback } from 'react'
+import { Modal as NativeModal, Pressable, StyleSheet, View, type ModalProps as _ModalProps } from 'react-native'
 import { useStatusbarHeight } from '@/store/common/hook'
-// import { useWindowSize } from '@/utils/hooks'
-
-// const styles = createStyle({
-//   container: {
-//     flex: 1,
-//   },
-//   // mask: {
-//   //   position: 'absolute',
-//   //   top: 0,
-//   //   left: 0,
-//   //   bottom: 0,
-//   //   right: 0,
-//   //   // width: '100%',
-//   //   // height: '100%',
-//   // },
-// })
 
 export interface ModalProps extends Omit<_ModalProps, 'visible'> {
   onHide?: () => void
@@ -54,33 +37,34 @@ export default forwardRef<ModalType, ModalProps>(({
   ...props
 }: ModalProps, ref) => {
   const [visible, setVisible] = useState(false)
-  // const { window: windowSize } = useWindowSize()
+  const visibleRef = useRef(false)
   const statusBarHeight = useStatusbarHeight()
-  const handleRequestClose = () => {
-    if (keyHide) {
-      setVisible(false)
-      onHide()
-    }
-  }
-  const handleBgClose = () => {
-    if (bgHide) {
-      setVisible(false)
-      onHide()
-    }
-  }
 
-  useImperativeHandle(ref, () => ({
-    setVisible(_visible) {
-      if (visible == _visible) return
-      setVisible(_visible)
-      if (!_visible) onHide()
-    },
-  }))
+  // Keep the imperative API and the native back-drop in one state transition.
+  // A ref avoids the stale `visible` value captured by the old imperative
+  // handle, which was especially noticeable after quickly opening/closing a
+  // menu on Android.
+  const setModalVisible = useCallback((nextVisible: boolean) => {
+    if (visibleRef.current == nextVisible) return
+    visibleRef.current = nextVisible
+    setVisible(nextVisible)
+    if (!nextVisible) onHide()
+  }, [onHide])
+
+  const handleRequestClose = useCallback(() => {
+    if (keyHide) setModalVisible(false)
+  }, [keyHide, setModalVisible])
+
+  const handleBgClose = useCallback(() => {
+    if (bgHide) setModalVisible(false)
+  }, [bgHide, setModalVisible])
+
+  useImperativeHandle(ref, () => ({ setVisible: setModalVisible }), [setModalVisible])
 
   const memoChildren = useMemo(() => children, [children])
 
   return (
-    <Modal
+    <NativeModal
       animationType="fade"
       transparent={true}
       hardwareAccelerated={true}
@@ -89,14 +73,33 @@ export default forwardRef<ModalType, ModalProps>(({
       onRequestClose={handleRequestClose}
       {...props}
     >
-      {/* <StatusBar /> */}
-      {/* <View style={{ flex: 1, paddingTop: statusBarPadding ? StatusBar.currentHeight : 0 }}> */}
-      <TouchableWithoutFeedback style={{ flex: 1, paddingTop: statusBarPadding ? statusBarHeight : 0 }} onPress={handleBgClose}>
-        <View style={{ flex: 1, backgroundColor: bgColor }}>
+      {/*
+       * Keep the backdrop and content as siblings.  Wrapping the content in
+       * TouchableWithoutFeedback made Android's responder system compete with
+       * every nested Pressable; a tap on a menu row could close the modal or be
+       * swallowed.  A behind-the-content Pressable gives us reliable outside
+       * taps without stealing events from descendants.
+       */}
+      <View style={styles.root}>
+        {bgHide
+          ? <Pressable
+              accessible={false}
+              importantForAccessibility="no"
+              onPress={handleBgClose}
+              style={[StyleSheet.absoluteFillObject, { backgroundColor: bgColor }]}
+            />
+          : <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { backgroundColor: bgColor }]} />
+        }
+        <View pointerEvents="box-none" style={{ flex: 1, paddingTop: statusBarPadding ? statusBarHeight : 0 }}>
           {memoChildren}
         </View>
-      </TouchableWithoutFeedback>
-      {/* </View> */}
-    </Modal>
+      </View>
+    </NativeModal>
   )
+})
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
 })

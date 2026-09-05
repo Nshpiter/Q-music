@@ -92,7 +92,7 @@ const styles = createStyle({
     borderRightWidth: BorderWidths.normal,
   },
   selector: {
-    height: 38,
+    height: 48,
   },
 })
 

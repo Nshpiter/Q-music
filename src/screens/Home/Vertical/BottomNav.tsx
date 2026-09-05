@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Keyboard, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Keyboard, StyleSheet, View } from 'react-native'
 import { NAV_MENUS } from '@/config/constant'
 import { setNavActiveId } from '@/core/common'
 import { useI18n } from '@/lang'
@@ -7,6 +7,7 @@ import { useNavActiveId } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
+import Button from '@/components/common/Button'
 
 const NavItem = ({ id, icon }: typeof NAV_MENUS[number]) => {
   const activeId = useNavActiveId()
@@ -15,10 +16,9 @@ const NavItem = ({ id, icon }: typeof NAV_MENUS[number]) => {
   const active = activeId == id
 
   return (
-    <TouchableOpacity
-      accessibilityRole="button"
+    <Button
+      accessibilityLabel={t(id)}
       accessibilityState={{ selected: active }}
-      activeOpacity={0.68}
       style={styles.touchTarget}
       onPress={() => {
         Keyboard.dismiss()
@@ -44,6 +44,7 @@ const NavItem = ({ id, icon }: typeof NAV_MENUS[number]) => {
           ]}
         >
           <Icon
+            accessible={false}
             name={icon}
             size={17}
             color={active ? theme['q-accent-text'] : theme['q-text-secondary']}
@@ -58,7 +59,7 @@ const NavItem = ({ id, icon }: typeof NAV_MENUS[number]) => {
           {t(id)}
         </Text>
       </View>
-    </TouchableOpacity>
+    </Button>
   )
 }
 

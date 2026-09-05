@@ -19,7 +19,7 @@ export default () => {
 
   return (
     <>
-      <Btn icon="add-music" onPress={handleShowMusicAddModal} />
+      <Btn icon="add-music" accessibilityLabel={global.i18n.t('add_to')} onPress={handleShowMusicAddModal} />
       <MusicAddModal ref={musicAddModalRef} />
     </>
   )

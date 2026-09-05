@@ -1,8 +1,6 @@
 import { memo, useRef } from 'react'
 
-import { View, StyleSheet, TouchableOpacity } from 'react-native'
-
-import { Icon } from '@/components/common/Icon'
+import { View, StyleSheet } from 'react-native'
 import { pop } from '@/navigation'
 import { useTheme } from '@/store/theme/hook'
 import { usePlayerMusicInfo } from '@/store/player/hook'
@@ -43,13 +41,11 @@ export default memo(() => {
   return (
     <View style={{ height: HEADER_HEIGHT }} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_header}>
       <View style={styles.container}>
-        <TouchableOpacity onPress={back} style={{ ...styles.button, width: HEADER_HEIGHT }}>
-          <Icon name="chevron-left" size={18} />
-        </TouchableOpacity>
+        <Btn icon="chevron-left" accessibilityLabel={global.i18n.t('back')} onPress={back} />
         <Title />
         <DesktopLyricBtn />
         <CommentBtn />
-        <Btn icon="slider" onPress={showSetting} />
+        <Btn icon="slider" accessibilityLabel={global.i18n.t('play_detail_setting_title')} onPress={showSetting} />
       </View>
       <SettingPopup ref={popupRef} position="left" direction="horizontal" />
     </View>
@@ -64,12 +60,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     // justifyContent: 'center',
     height: '100%',
-  },
-  button: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100%',
-    flex: 0,
   },
   titleContent: {
     flex: 1,

@@ -8,8 +8,9 @@ import musicSdk from '@/utils/musicSdk'
 import searchState, { type InitState as SearchState } from '@/store/search/state'
 import { setSearchText, setTipList, setTipListInfo } from '@/core/search/search'
 import { debounce } from '@/utils'
+import { Q_UI } from '@/theme/ui'
 
-export const ITEM_HEIGHT = scaleSizeH(44)
+export const ITEM_HEIGHT = Math.max(Q_UI.touchSize, Math.round(scaleSizeH(44)))
 
 export const debounceTipSearch = debounce((keyword: string, source: SearchState['temp_source'], callback: (list: string[]) => void) => {
   // console.log(reslutList)
@@ -99,7 +100,12 @@ export default forwardRef<TipListType, TipListProps>(({ onSearch }, ref) => {
 
   const renderItem: SearchTipListProps['renderItem'] = ({ item, index }) => {
     return (
-      <Button style={styles.item} onPress={() => { onSearch(item) }} key={index}>
+      <Button
+        style={styles.item}
+        accessibilityLabel={item}
+        onPress={() => { onSearch(item) }}
+        key={index}
+      >
         <Text numberOfLines={1}>{item}</Text>
       </Button>
     )

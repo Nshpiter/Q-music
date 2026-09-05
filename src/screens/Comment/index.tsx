@@ -1,8 +1,7 @@
 import { memo, useMemo, useEffect, useRef, useState, useCallback } from 'react'
-import { View, TouchableOpacity } from 'react-native'
+import { View } from 'react-native'
 import PagerView, { type PagerViewOnPageSelectedEvent } from 'react-native-pager-view'
 import Header from './components/Header'
-import { Icon } from '@/components/common/Icon'
 import CommentHot from './CommentHot'
 import CommentNew from './CommentNew'
 import { createStyle, toast } from '@/utils/tools'
@@ -15,10 +14,13 @@ import PageContent from '@/components/PageContent'
 import playerState from '@/store/player/state'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { BorderWidths } from '@/theme'
+import Button from '@/components/common/Button'
+import IconButton from '@/components/common/IconButton'
+import { Q_UI, Q_TOUCH_HIT_SLOP } from '@/theme/ui'
 
 type ActiveId = 'hot' | 'new'
 
-const BAR_HEIGHT = scaleSizeH(44)
+const BAR_HEIGHT = Math.max(scaleSizeH(44), Q_UI.touchSize)
 
 const HeaderItem = ({ id, label, isActive, onPress }: {
   id: ActiveId
@@ -29,9 +31,15 @@ const HeaderItem = ({ id, label, isActive, onPress }: {
   const theme = useTheme()
   // console.log(theme)
   const components = useMemo(() => (
-    <TouchableOpacity accessibilityRole="tab" accessibilityState={{ selected: isActive }} style={styles.tabBtn} onPress={() => { !isActive && onPress(id) }}>
+    <Button
+      accessibilityRole="tab"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: isActive }}
+      style={[styles.tabBtn, { borderBottomColor: isActive ? theme['c-primary-font-active'] : 'transparent' }]}
+      onPress={() => { !isActive && onPress(id) }}
+    >
       <Text color={isActive ? theme['c-primary-font-active'] : theme['c-font']}>{label}</Text>
-    </TouchableOpacity>
+    </Button>
   ), [isActive, theme, label, onPress, id])
 
   return components
@@ -134,11 +142,17 @@ export default memo(({ componentId }: {
           <View style={styles.left}>
             {tabs.map(({ id, label }) => <HeaderItem id={id} label={label} key={id} isActive={activeId == id} onPress={toggleTab} />)}
           </View>
-          <View>
-            <TouchableOpacity accessibilityRole="button" onPress={refreshComment} style={{ ...styles.btn, width: BAR_HEIGHT }}>
-              <Icon name="available_updates" size={20} color={theme['c-600']} />
-            </TouchableOpacity>
-          </View>
+          <IconButton
+            name="available_updates"
+            accessibilityLabel={t('search_hot_search_refresh')}
+            iconSize={20}
+            iconColor={theme['c-600']}
+            size={BAR_HEIGHT}
+            variant="plain"
+            expandHitSlop={false}
+            hitSlop={Q_TOUCH_HIT_SLOP}
+            onPress={refreshComment}
+          />
         </View>
         <PagerView
           ref={pagerViewRef}
@@ -155,7 +169,7 @@ export default memo(({ componentId }: {
         </PagerView>
       </View>
     )
-  }, [activeId, musicInfo, onPageSelected, refreshComment, setHotTotal, setNewTotal, tabs, theme, toggleTab])
+  }, [activeId, musicInfo, onPageSelected, refreshComment, setHotTotal, setNewTotal, tabs, theme, toggleTab, t])
 
   return (
     <PageContent>
@@ -197,18 +211,13 @@ const styles = createStyle({
     paddingLeft: 5,
   },
   tabBtn: {
-    // flex: 1,
-    paddingLeft: 10,
-    paddingRight: 10,
+    minWidth: 64,
+    minHeight: Q_UI.touchSize,
+    paddingLeft: 12,
+    paddingRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    height: '100%',
-  },
-  btn: {
-    // flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
+    borderBottomWidth: 2,
   },
   pagerView: {
     flex: 1,

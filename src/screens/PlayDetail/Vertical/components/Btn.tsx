@@ -1,20 +1,31 @@
-import { TouchableOpacity } from 'react-native'
-import { Icon } from '@/components/common/Icon'
+import IconButton from '@/components/common/IconButton'
 import { createStyle } from '@/utils/tools'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { HEADER_HEIGHT as _HEADER_HEIGHT } from '@/config/constant'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
-export default ({ icon, color, onPress }: {
+export default ({ icon, color, onPress, accessibilityLabel, selected }: {
   icon: string
   color?: string
   onPress: () => void
+  accessibilityLabel: string
+  selected?: boolean
 }) => {
   return (
-    <TouchableOpacity onPress={onPress} style={{ ...styles.button, width: HEADER_HEIGHT }}>
-      <Icon name={icon} color={color} size={18} />
-    </TouchableOpacity>
+    <IconButton
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={selected == null ? undefined : { selected }}
+      selected={selected}
+      name={icon}
+      size={HEADER_HEIGHT}
+      iconSize={18}
+      iconColor={color}
+      radius={12}
+      expandHitSlop={false}
+      style={styles.button}
+      onPress={onPress}
+    />
   )
 }
 

@@ -40,6 +40,7 @@
   "deep_link_file_js_confirm_tip": "確認要匯入自訂來源 API「{name}」嗎？",
   "deep_link_file_lxmc_confirm_tip": "確認要匯入清單檔案「{name}」嗎？",
   "delete": "移除",
+  "more_actions": "更多操作",
   "dialog_cancel": "我不",
   "dialog_confirm": "好的",
   "disagree": "我就不",
@@ -132,6 +133,7 @@
   "list_select_range": "區間",
   "list_select_single": "單選",
   "list_select_unall": "反選",
+  "list_search": "搜尋目前列表",
   "list_sort": "排序歌曲",
   "list_sort_modal_by_album": "專輯",
   "list_sort_modal_by_down": "降序",
@@ -394,6 +396,7 @@
   "setting_other_log_btn_clean": "清空",
   "setting_other_log_btn_hide": "關閉",
   "setting_other_log_btn_show": "查看日誌",
+  "setting_open_nav": "開啟設定分類",
   "setting_other_log_sync_log": "記錄同步日誌",
   "setting_other_log_tip_clean_success": "日誌清理完成",
   "setting_other_log_tip_null": "日誌是空的哦~",
@@ -472,6 +475,7 @@
   "source_real_tx": "QQ音樂",
   "source_real_wy": "網易雲音樂",
   "source_real_spotify": "Spotify",
+  "source_select": "選擇音樂平台",
   "stop": "停止",
   "stopped": "已停止",
   "storage_file_no_match": "選取的檔案不符合要求！",
@@ -576,5 +580,6 @@
   "version_title_latest": "🎉 目前版本已是最新 🎊",
   "version_title_new": "🌟 發現新版本 🌟",
   "version_title_unknown": "❓ 獲取最新版本資訊失敗 ❓",
-  "version_title_update": "🚀 軟體更新 🚀"
+  "version_title_update": "🚀 軟體更新 🚀",
+  "help": "說明"
 }

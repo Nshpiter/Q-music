@@ -1,5 +1,5 @@
-import { TouchableOpacity, View } from 'react-native'
-import { Icon } from '@/components/common/Icon'
+import { View } from 'react-native'
+import IconButton from '@/components/common/IconButton'
 import { useTheme } from '@/store/theme/hook'
 // import { useIsPlay } from '@/store/player/hook'
 import { playNext, playPrev, togglePlay } from '@/core/player/player'
@@ -16,9 +16,16 @@ const PrevBtn = ({ size }: { size: number }) => {
     void playPrev()
   }
   return (
-    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size }} activeOpacity={0.65} onPress={handlePlayPrev}>
-      <Icon name='prevMusic' color={theme['q-text-primary']} rawSize={size * 0.48} />
-    </TouchableOpacity>
+    <IconButton
+      accessibilityLabel={global.i18n.t('play_prev')}
+      name="prevMusic"
+      size={size}
+      iconSize={size * 0.48}
+      iconColor={theme['q-text-primary']}
+      radius={999}
+      style={styles.cotrolBtn}
+      onPress={handlePlayPrev}
+    />
   )
 }
 const NextBtn = ({ size }: { size: number }) => {
@@ -27,9 +34,16 @@ const NextBtn = ({ size }: { size: number }) => {
     void playNext()
   }
   return (
-    <TouchableOpacity style={{ ...styles.cotrolBtn, width: size, height: size }} activeOpacity={0.65} onPress={handlePlayNext}>
-      <Icon name='nextMusic' color={theme['q-text-primary']} rawSize={size * 0.48} />
-    </TouchableOpacity>
+    <IconButton
+      accessibilityLabel={global.i18n.t('play_next')}
+      name="nextMusic"
+      size={size}
+      iconSize={size * 0.48}
+      iconColor={theme['q-text-primary']}
+      radius={999}
+      style={styles.cotrolBtn}
+      onPress={handlePlayNext}
+    />
   )
 }
 
@@ -37,13 +51,16 @@ const TogglePlayBtn = ({ size }: { size: number }) => {
   const theme = useTheme()
   const isPlay = useIsPlay()
   return (
-    <TouchableOpacity
-      style={{ ...styles.cotrolBtn, ...styles.primaryBtn, ...qSoftShadow, width: size, height: size, backgroundColor: theme['q-accent'] }}
-      activeOpacity={0.68}
+    <IconButton
+      accessibilityLabel={global.i18n.t(isPlay ? 'pause' : 'play')}
+      name={isPlay ? 'pause' : 'play'}
+      size={size}
+      iconSize={size * 0.44}
+      iconColor={theme['q-on-accent']}
+      radius={999}
+      style={{ ...styles.cotrolBtn, ...styles.primaryBtn, ...qSoftShadow, backgroundColor: theme['q-accent'] }}
       onPress={togglePlay}
-    >
-      <Icon name={isPlay ? 'pause' : 'play'} color={theme['q-on-accent']} rawSize={size * 0.44} />
-    </TouchableOpacity>
+    />
   )
 }
 

@@ -41,8 +41,8 @@ export default forwardRef<SettingPopupType, SettingPopupProps>(({ direction, ...
     visible
       ? (
         <Popup ref={popupRef} title={t('play_detail_setting_title')} {...props}>
-          <ScrollView>
-            <View onStartShouldSetResponder={() => true}>
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <View>
               <SettingLyricProgress />
               <SettingVolume />
               <SettingPlaybackRate />

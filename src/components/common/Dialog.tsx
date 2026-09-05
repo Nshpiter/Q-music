@@ -1,8 +1,8 @@
 import { useImperativeHandle, forwardRef, useMemo, useRef } from 'react'
-import { StyleSheet, View, TouchableHighlight } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import Modal, { type ModalType } from './Modal'
-import { Icon } from '@/components/common/Icon'
+import IconButton from '@/components/common/IconButton'
 import { useKeyboard } from '@/utils/hooks'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
@@ -10,9 +10,7 @@ import Text from './Text'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { qFloatingShadow } from '@/theme/ui'
 
-const HEADER_HEIGHT = 44
-const CONTROL_HIT_SLOP = { top: 8, right: 8, bottom: 8, left: 8 } as const
-
+const HEADER_HEIGHT = 48
 const styles = createStyle({
   centeredView: {
     flex: 1,
@@ -50,6 +48,7 @@ const styles = createStyle({
     flexGrow: 0,
     flexShrink: 0,
     height: HEADER_HEIGHT,
+    width: HEADER_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -92,20 +91,21 @@ export default forwardRef<DialogType, DialogProps>(({
 
   const closeBtnComponent = useMemo(() => {
     return closeBtn
-      ? <TouchableHighlight
+      ? <IconButton
+          name="close"
+          accessibilityLabel={global.i18n.t('close')}
+          iconSize={16}
+          variant="plain"
           style={{ ...styles.closeBtn, width: scaleSizeH(HEADER_HEIGHT) }}
-          underlayColor={theme['q-surface-tint']}
-          hitSlop={CONTROL_HIT_SLOP}
+          iconColor={theme['q-text-secondary']}
           onPress={() => modalRef.current?.setVisible(false)}
-        >
-          <Icon name="close" color={theme['q-text-secondary']} size={16} />
-        </TouchableHighlight>
+        />
       : null
   }, [closeBtn, theme])
 
   return (
     <Modal onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor={scrim} ref={modalRef}>
-      <View style={{ ...styles.centeredView, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
+      <View pointerEvents="box-none" style={{ ...styles.centeredView, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
         <View
           style={{
             ...styles.modalView,
@@ -114,7 +114,6 @@ export default forwardRef<DialogType, DialogProps>(({
             backgroundColor: theme['q-surface-raised'],
             borderColor: lightEdge,
           }}
-          onStartShouldSetResponder={() => true}
         >
           <View
             style={{

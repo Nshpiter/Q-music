@@ -1,11 +1,13 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { ScrollView, TouchableOpacity } from 'react-native'
+import { ScrollView } from 'react-native'
 import songlistState, { type SortInfo, type Source } from '@/store/songlist/state'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
 import { BorderWidths } from '@/theme'
+import Button from '@/components/common/Button'
+import { Q_UI } from '@/theme/ui'
 
 export interface SortTabProps {
   onSortChange: (id: string) => void
@@ -44,9 +46,16 @@ export default forwardRef<SortTabType, SortTabProps>(({ onSortChange }, ref) => 
     <ScrollView ref={scrollViewRef} style={styles.container} keyboardShouldPersistTaps={'always'} horizontal>
       {
         sorts.map(s => (
-          <TouchableOpacity style={styles.button} onPress={() => { handleSortChange(s.id) }} key={s.id}>
+          <Button
+            accessibilityRole="tab"
+            accessibilityLabel={s.label}
+            accessibilityState={{ selected: activeId == s.id }}
+            style={styles.button}
+            onPress={() => { handleSortChange(s.id) }}
+            key={s.id}
+          >
             <Text style={{ ...styles.buttonText, borderBottomColor: activeId == s.id ? theme['c-primary-background-active'] : 'transparent' }} color={activeId == s.id ? theme['c-primary-font-active'] : theme['c-font']}>{s.label}</Text>
-          </TouchableOpacity>
+          </Button>
         ))
       }
     </ScrollView>
@@ -62,6 +71,7 @@ const styles = createStyle({
     // paddingRight: 5,
   },
   button: {
+    minHeight: Q_UI.touchSize,
     // height: 38,
     // lineHeight: 38,
     justifyContent: 'center',

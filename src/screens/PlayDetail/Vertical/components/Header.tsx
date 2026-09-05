@@ -46,10 +46,10 @@ export default memo(() => {
     <View style={{ height: HEADER_HEIGHT + statusBarHeight, paddingTop: statusBarHeight }} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_header}>
       <StatusBar />
       <View style={styles.container}>
-        <Btn icon="chevron-left" onPress={back} />
+        <Btn icon="chevron-left" accessibilityLabel={global.i18n.t('back')} onPress={back} />
         <Title />
         <TimeoutExitBtn />
-        <Btn icon="slider" onPress={showSetting} />
+        <Btn icon="slider" accessibilityLabel={global.i18n.t('play_detail_setting_title')} onPress={showSetting} />
       </View>
       <SettingPopup ref={popupRef} direction="vertical" />
     </View>

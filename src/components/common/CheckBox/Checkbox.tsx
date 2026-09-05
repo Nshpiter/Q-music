@@ -33,6 +33,8 @@ export interface Props {
     false: string
   }
   variant?: 'checkbox' | 'radio'
+  accessibilityLabel?: string
+  accessibilityHint?: string
 }
 
 const ANIMATION_DURATION = 200
@@ -47,6 +49,8 @@ const Checkbox = ({
   onPress,
   tintColors,
   variant = 'checkbox',
+  accessibilityLabel,
+  accessibilityHint,
   ...rest
 }: Props) => {
   const theme = useTheme()
@@ -76,7 +80,7 @@ const Checkbox = ({
   }, [selected, scaleAnim])
 
   const controlSize = 20 * size
-  const touchSize = Math.max(32, 32 * size)
+  const touchSize = Math.max(48, 32 * size)
   const controlRadius = variant === 'radio' ? controlSize / 2 : 7 * size
   const borderColor = selected ? tintColors.true : tintColors.false
 
@@ -87,13 +91,17 @@ const Checkbox = ({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole={variant === 'radio' ? 'radio' : 'checkbox'}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled, checked }}
       accessibilityLiveRegion="polite"
+      android_ripple={{ color: tintColors.true }}
       style={{
         ...styles.container,
         width: touchSize,
         height: touchSize,
         marginLeft: -(touchSize - controlSize) / 2,
+        opacity: disabled ? 0.48 : 1,
       }}
     >
       <View

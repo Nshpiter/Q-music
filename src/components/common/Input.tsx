@@ -1,19 +1,19 @@
 import { useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
-import { TextInput, View, TouchableOpacity, StyleSheet, type TextInputProps, type StyleProp, type ViewStyle } from 'react-native'
+import { TextInput, View, StyleSheet, type TextInputProps, type StyleProp, type ViewStyle } from 'react-native'
 import { Icon } from '@/components/common/Icon'
+import Button from '@/components/common/Button'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { setSpText } from '@/utils/pixelRatio'
-
-const CONTROL_HIT_SLOP = { top: 6, right: 6, bottom: 6, left: 6 } as const
+import { Q_UI } from '@/theme/ui'
 
 const styles = createStyle({
   content: {
     flexDirection: 'row',
     flexGrow: 1,
     flexShrink: 1,
-    height: 44,
-    minHeight: 44,
+    height: Q_UI.touchSize,
+    minHeight: Q_UI.touchSize,
     alignItems: 'center',
     borderWidth: 1,
     borderRadius: 12,
@@ -23,7 +23,7 @@ const styles = createStyle({
     borderRadius: 12,
     paddingTop: 0,
     paddingBottom: 0,
-    height: 44,
+    height: Q_UI.touchSize,
     paddingLeft: 14,
     paddingRight: 0,
     flexGrow: 1,
@@ -33,11 +33,11 @@ const styles = createStyle({
   clearBtnContent: {
     flexGrow: 0,
     flexShrink: 0,
-    width: 44,
+    width: Q_UI.touchSize,
   },
   clearBtn: {
-    width: 44,
-    height: 44,
+    width: Q_UI.touchSize,
+    height: Q_UI.touchSize,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -48,8 +48,10 @@ export interface InputProps extends TextInputProps {
   onChangeText?: (value: string) => void
   onClearText?: () => void
   clearBtn?: boolean
+  clearButtonAccessibilityLabel?: string
   actionIcon?: string
   onActionPress?: () => void
+  actionAccessibilityLabel?: string
   containerStyle?: StyleProp<ViewStyle>
   size?: number
 }
@@ -66,8 +68,10 @@ export default forwardRef<InputType, InputProps>(({
   onChangeText,
   onClearText,
   clearBtn,
+  clearButtonAccessibilityLabel,
   actionIcon,
   onActionPress,
+  actionAccessibilityLabel,
   containerStyle,
   style,
   size = 14,
@@ -153,18 +157,27 @@ export default forwardRef<InputType, InputProps>(({
       <Animated.View style={{ ...styles.clearBtnContent, transform: [{ scale: scaleClearBtn }] }}> */}
         {clearBtn && props.value
           ? <View style={styles.clearBtnContent}>
-              <TouchableOpacity style={styles.clearBtn} hitSlop={CONTROL_HIT_SLOP} onPress={clearText}>
-                <Icon name="remove" color={theme['q-text-secondary']} size={14} />
-              </TouchableOpacity>
+              <Button
+                accessibilityLabel={clearButtonAccessibilityLabel ?? global.i18n.t('delete')}
+                style={styles.clearBtn}
+                onPress={clearText}
+              >
+                <Icon accessible={false} name="remove" color={theme['q-text-secondary']} size={14} />
+              </Button>
             </View>
           : null
         }
         {
           actionIcon
             ? <View style={styles.clearBtnContent}>
-                <TouchableOpacity style={styles.clearBtn} hitSlop={CONTROL_HIT_SLOP} onPress={onActionPress}>
-                  <Icon name={actionIcon} color={theme['q-accent-text']} size={16} />
-                </TouchableOpacity>
+                <Button
+                  accessibilityLabel={actionAccessibilityLabel ?? actionIcon}
+                  disabled={!onActionPress}
+                  style={styles.clearBtn}
+                  onPress={onActionPress}
+                >
+                  <Icon accessible={false} name={actionIcon} color={theme['q-accent-text']} size={16} />
+                </Button>
               </View>
             : null
         }
