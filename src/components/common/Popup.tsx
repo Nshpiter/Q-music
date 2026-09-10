@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react'
-import { View } from 'react-native'
+import { View , StyleSheet } from 'react-native'
 
 import Modal, { type ModalType } from './Modal'
 import IconButton from '@/components/common/IconButton'
@@ -13,8 +13,8 @@ const styles = createStyle({
     flex: 1,
   },
   modalView: {
-    borderWidth: 1,
-    elevation: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    elevation: 10,
     flexGrow: 0,
     flexShrink: 1,
     overflow: 'hidden',
@@ -22,9 +22,9 @@ const styles = createStyle({
   header: {
     flex: 0,
     flexDirection: 'row',
-    minHeight: 48,
+    minHeight: 50,
     alignItems: 'center',
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   title: {
     flexShrink: 1,

@@ -2,6 +2,7 @@ import { useCallback, useRef, forwardRef, useImperativeHandle, useState } from '
 import { StyleSheet } from 'react-native'
 import Input, { type InputType, type InputProps } from '@/components/common/Input'
 import { useI18n } from '@/lang'
+import { useTheme } from '@/store/theme/hook'
 
 export interface SearchInputProps {
   onChangeText: (text: string) => void
@@ -18,7 +19,7 @@ export interface SearchInputType {
 }
 
 export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, onSubmit, onBlur, onTouchStart }, ref) => {
-  // const theme = useTheme()
+  const theme = useTheme()
   const t = useI18n()
   const [text, setText] = useState('')
   const inputRef = useRef<InputType>(null)
@@ -72,7 +73,11 @@ export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, on
       actionIcon="search-2"
       actionAccessibilityLabel={t('nav_search')}
       onActionPress={handleSubmitPress}
-      containerStyle={styles.container}
+      containerStyle={{
+        ...styles.container,
+        backgroundColor: theme.isDark ? theme['q-surface-raised'] : '#ffffff',
+        borderColor: theme['q-outline'],
+      }}
     />
   )
 })
@@ -80,8 +85,8 @@ export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, on
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    borderWidth: 0,
-    borderRadius: 0,
-    backgroundColor: 'transparent',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 999,
+    minHeight: 44,
   },
 })

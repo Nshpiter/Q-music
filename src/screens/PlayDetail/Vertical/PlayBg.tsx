@@ -3,7 +3,7 @@ import { Animated, StyleSheet, View } from 'react-native'
 
 import ImageBackground from '@/components/common/ImageBackground'
 import { defaultHeaders } from '@/components/common/Image'
-import { useBgPic } from '@/store/common/hook'
+import { usePlayerMusicInfo } from '@/store/player/hook'
 import { useSettingValue } from '@/store/setting/hook'
 import { useTheme } from '@/store/theme/hook'
 import { Q_BLUR_PRESETS } from '@/theme/ui'
@@ -19,7 +19,9 @@ const MIN_BLUR_RADIUS = 10
  */
 export default memo(() => {
   const theme = useTheme()
-  const pic = useBgPic()
+  // 播放页背景无条件跟随当前歌曲封面（对齐桌面端行为，不受全局“动态背景”开关影响）
+  const musicInfo = usePlayerMusicInfo()
+  const pic = musicInfo.pic ?? null
   const performanceMode = useSettingValue('theme.performanceMode')
   const blurLevel = useSettingValue('theme.blurLevel')
   const fade = useRef(new Animated.Value(0)).current

@@ -9,9 +9,14 @@ import { pop } from '@/navigation'
 import { isMusicAccountConnected, logoutMusicAccount } from '@/core/musicAccount'
 import type { MusicAccountProvider } from '@/core/musicAccount'
 
+// QQ：直接加载 ptlogin2 快捷登录页（与手游"游戏登录"同款页面），
+// 移动端 UA 下自带"手机 QQ 一键登录"大按钮，点击后以顶层导航拉起
+// wtloginmqq:// 协议——顶层导航才能被 onShouldStartLoadWithRequest 捕获并
+// 转交系统拉起 QQ App（iframe 内的登录框无法被捕获，故不能用官网登录弹窗）。
+// 授权成功回跳 y.qq.com，登录 cookie 落在 qq.com 系域名供官方线路读取。
 const LOGIN_URLS = {
-  tx: 'https://y.qq.com/n/ryqq/profile',
-  wy: 'https://music.163.com/#/login',
+  tx: 'https://xui.ptlogin2.qq.com/cgi-bin/xlogin?appid=100497308&daid=383&style=11&hide_border=1&self_reg=0&link_display=0&s_url=https%3A%2F%2Fy.qq.com%2F&default_url=https%3A%2F%2Fy.qq.com%2F&maskSZ=1',
+  wy: 'https://music.163.com/m/login',
 } as const
 
 const PROVIDERS: MusicAccountProvider[] = ['tx', 'wy']
