@@ -1,4 +1,4 @@
-import { View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
@@ -18,29 +18,25 @@ export default ({ title, children }: Props) => {
     <View style={styles.container}>
       <View
         style={{
-          ...styles.header,
+          ...styles.card,
           ...qSurfaceShadow,
           backgroundColor: theme['q-surface-raised'],
-          borderColor: theme.isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.68)',
+          borderColor: theme.isDark ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.62)',
         }}
       >
-        <Text
-          style={styles.title}
-          color={theme['q-text-primary']}
-          size={17}
-        >
-          {title}
-        </Text>
-      </View>
-      <View
-        style={{
-          ...styles.content,
-          ...qSurfaceShadow,
-          backgroundColor: theme['q-surface-base'],
-          borderColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.54)',
-        }}
-      >
-        {children}
+        <View style={styles.header}>
+          <View style={{ ...styles.titleAccent, backgroundColor: theme['q-accent'] }} />
+          <Text
+            style={styles.title}
+            color={theme['q-text-primary']}
+            size={16}
+          >
+            {title}
+          </Text>
+        </View>
+        <View style={styles.content}>
+          {children}
+        </View>
       </View>
     </View>
   )
@@ -49,25 +45,34 @@ export default ({ title, children }: Props) => {
 
 const styles = createStyle({
   container: {
-    marginBottom: 18,
+    marginBottom: 16,
   },
-  header: {
-    minHeight: 48,
-    paddingLeft: 16,
-    paddingRight: 16,
-    justifyContent: 'center',
-    marginBottom: 12,
-    borderWidth: 0.5,
-    borderRadius: 20,
-  },
-  title: {
-    fontWeight: '700',
-  },
-  content: {
-    borderWidth: 0.5,
+  card: {
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 18,
     paddingTop: 14,
     paddingBottom: 6,
     overflow: 'hidden',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 34,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingBottom: 8,
+  },
+  titleAccent: {
+    width: 4,
+    height: 16,
+    borderRadius: 2,
+    marginRight: 8,
+  },
+  title: {
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  content: {
+    paddingTop: 2,
   },
 })

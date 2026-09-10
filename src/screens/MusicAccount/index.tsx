@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Linking, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { WebView } from 'react-native-webview'
 
 import Text from '@/components/common/Text'
@@ -97,6 +97,23 @@ export default ({ componentId }: { componentId: string }) => {
           source={{ uri: LOGIN_URLS[provider] }}
           style={styles.webview}
           userAgent="Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+          onShouldStartLoadWithRequest={(request) => {
+            // 登录页的"一键登录"会尝试拉起 QQ/网易客户端（自定义 scheme），
+            // WebView 无法加载这类地址，转交系统打开对应 App 完成授权
+            if (/^https?:/i.test(request.url)) return true
+            void Linking.openURL(request.url).catch(() => {})
+            return false
+          }}
+          onOpenWindow={(event) => {
+            // QQ 互联可能通过新窗口发起授权，同样转交系统
+            const { targetUrl } = event.nativeEvent
+            if (targetUrl && !/^https?:/i.test(targetUrl)) {
+              void Linking.openURL(targetUrl).catch(() => {})
+              return
+            }
+            void Linking.openURL(targetUrl).catch(() => {})
+          }}
+          setSupportMultipleWindows
           onNavigationStateChange={() => {
             // 登录跳转完成后延迟刷新连接状态
             setTimeout(checkConnections, 1500)

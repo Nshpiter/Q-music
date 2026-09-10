@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
 import { View } from 'react-native'
 import PlayModeBtn from './PlayModeBtn'
@@ -9,6 +10,7 @@ import PlayQueue, { type PlayQueueType } from '@/components/player/PlayQueue'
 import Btn from './Btn'
 
 export default () => {
+  const t = useI18n()
   const queueRef = useRef<PlayQueueType>(null)
 
   return (
@@ -17,7 +19,7 @@ export default () => {
       <MusicAddBtn />
       <PlayModeBtn />
       <CommentBtn />
-      <Btn icon="play-outline" onPress={() => { queueRef.current?.show() }} />
+      <Btn icon="play-outline" accessibilityLabel={t('play_queue_title')} onPress={() => { queueRef.current?.show() }} />
       <PlayQueue ref={queueRef} />
     </View>
   )

@@ -1,4 +1,4 @@
-import { View } from 'react-native'
+import { Icon } from '@/components/common/Icon'
 import IconButton from '@/components/common/IconButton'
 import { useTheme } from '@/store/theme/hook'
 // import { useIsPlay } from '@/store/player/hook'
@@ -8,7 +8,12 @@ import { createStyle } from '@/utils/tools'
 import { useWindowSize } from '@/utils/hooks'
 import { BTN_WIDTH } from './MoreBtn/Btn'
 import { useMemo } from 'react'
-import { qSoftShadow } from '@/theme/ui'
+import { qFloatingShadow } from '@/theme/ui'
+import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import ImageBackground from '@/components/common/ImageBackground'
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const gradientPrimary = require('@/resources/images/gradient-primary.png')
 
 const PrevBtn = ({ size }: { size: number }) => {
   const theme = useTheme()
@@ -48,19 +53,25 @@ const NextBtn = ({ size }: { size: number }) => {
 }
 
 const TogglePlayBtn = ({ size }: { size: number }) => {
-  const theme = useTheme()
   const isPlay = useIsPlay()
   return (
-    <IconButton
+    <TouchableOpacity
       accessibilityLabel={global.i18n.t(isPlay ? 'pause' : 'play')}
-      name={isPlay ? 'pause' : 'play'}
-      size={size}
-      iconSize={size * 0.44}
-      iconColor={theme['q-on-accent']}
-      radius={999}
-      style={{ ...styles.cotrolBtn, ...styles.primaryBtn, ...qSoftShadow, backgroundColor: theme['q-accent'] }}
+      activeOpacity={0.82}
       onPress={togglePlay}
-    />
+      style={{ ...styles.cotrolBtn, width: size, height: size, borderRadius: size / 2, ...qFloatingShadow }}
+    >
+      <ImageBackground
+        source={gradientPrimary}
+        style={styles.primaryBg}
+        imageStyle={{ borderRadius: size / 2 }}
+      >
+        <View style={styles.primaryInnerHighlight} />
+        <View style={styles.primaryIconWrap}>
+          <Icon name={isPlay ? 'pause' : 'play'} size={size * 0.46} color="#ffffff" />
+        </View>
+      </ImageBackground>
+    </TouchableOpacity>
   )
 }
 
@@ -102,11 +113,29 @@ const styles = createStyle({
   cotrolBtn: {
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
 
     // backgroundColor: '#ccc',
     borderRadius: 999,
   },
-  primaryBtn: {
+  primaryBg: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryInnerHighlight: {
+    ...StyleSheet.absoluteFillObject,
     borderRadius: 999,
+    borderWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.42)',
+    borderLeftColor: 'rgba(255, 255, 255, 0.18)',
+    borderRightColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+  },
+  primaryIconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingLeft: 2, // 播放三角视觉居中补偿
   },
 })

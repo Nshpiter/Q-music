@@ -6,6 +6,10 @@ import { useTheme } from '@/store/theme/hook'
 import { playNext, playPrev, togglePlay } from '@/core/player/player'
 import { qSoftShadow } from '@/theme/ui'
 import { useWindowSize } from '@/utils/hooks'
+import ImageBackground from '@/components/common/ImageBackground'
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const gradientPrimary = require('@/resources/images/gradient-primary.png')
 
 const SECONDARY_FACE_SIZE = 32
 const PRIMARY_FACE_SIZE = 44
@@ -58,7 +62,19 @@ const PlayNextBtn = () => (
 
 const TogglePlayBtn = () => {
   const isPlay = useIsPlay()
-  return <TransportButton icon={isPlay ? 'pause' : 'play'} accessibilityLabel={global.i18n.t(isPlay ? 'pause' : 'play')} primary onPress={togglePlay} />
+  return (
+    <Button
+      accessibilityLabel={global.i18n.t(isPlay ? 'pause' : 'play')}
+      style={styles.touchTarget}
+      onPress={togglePlay}
+    >
+      <View style={[styles.buttonFace, styles.primaryFace, qSoftShadow]}>
+        <ImageBackground source={gradientPrimary} style={styles.primaryGradient} imageStyle={{ borderRadius: 999 }}>
+          <Icon accessible={false} name={isPlay ? 'pause' : 'play'} color="#ffffff" size={20} />
+        </ImageBackground>
+      </View>
+    </Button>
+  )
 }
 
 export default () => {
@@ -90,6 +106,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 999,
+    overflow: 'hidden',
+  },
+  primaryGradient: {
+    width: PRIMARY_FACE_SIZE,
+    height: PRIMARY_FACE_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   secondaryFace: {
     width: SECONDARY_FACE_SIZE,

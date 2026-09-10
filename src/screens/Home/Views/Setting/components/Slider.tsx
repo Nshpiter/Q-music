@@ -18,9 +18,9 @@ export default memo(({ value, minimumValue, maximumValue, onSlidingStart, onSlid
       style={[styles.slider, style]}
       minimumValue={minimumValue}
       maximumValue={maximumValue}
-      minimumTrackTintColor={theme['c-button-background-active']}
-      maximumTrackTintColor={theme['c-button-background']}
-      thumbTintColor={theme['c-primary-light-100']}
+      minimumTrackTintColor={theme['q-accent']}
+      maximumTrackTintColor={theme['q-outline']}
+      thumbTintColor={theme['q-accent']}
       disabled={disabled}
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
