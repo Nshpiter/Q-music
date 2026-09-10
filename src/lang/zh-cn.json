@@ -581,5 +581,22 @@
   "version_title_new": "🌟 发现新版本 🌟",
   "version_title_unknown": "❓ 获取最新版本信息失败 ❓",
   "version_title_update": "🚀 软件更新 🚀",
-  "help": "帮助"
+  "help": "帮助",
+  "download": "下载",
+  "download_status_waiting": "排队中...",
+  "download_status_error": "下载失败",
+  "download_status_completed": "已完成",
+  "play_queue_title": "播放队列",
+  "player__switching_quality": "正在切换音质...",
+  "setting_music_account_title": "官方账号（QQ/网易云）",
+  "setting_music_account_qq": "QQ 音乐",
+  "setting_music_account_netease": "网易云音乐",
+  "setting_music_account_connected": "已连接",
+  "setting_music_account_disconnected": "未连接",
+  "setting_music_account_logout": "退出登录",
+  "setting_music_account_tip": "登录后在网页中完成授权（可跳转 QQ App 一键登录），官方线路将优先尝试获取歌曲播放地址。",
+  "setting_basic_theme_blur_level": "毛玻璃强度",
+  "setting_basic_theme_blur_level_clear": "清晰",
+  "setting_basic_theme_blur_level_balance": "平衡",
+  "setting_basic_theme_blur_level_immersive": "沉浸"
 }

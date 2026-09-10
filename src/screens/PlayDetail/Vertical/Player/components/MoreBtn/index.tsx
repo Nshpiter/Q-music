@@ -1,17 +1,24 @@
+import { useRef } from 'react'
 import { createStyle } from '@/utils/tools'
 import { View } from 'react-native'
 import PlayModeBtn from './PlayModeBtn'
 import MusicAddBtn from './MusicAddBtn'
 import DesktopLyricBtn from './DesktopLyricBtn'
 import CommentBtn from './CommentBtn'
+import PlayQueue, { type PlayQueueType } from '@/components/player/PlayQueue'
+import Btn from './Btn'
 
 export default () => {
+  const queueRef = useRef<PlayQueueType>(null)
+
   return (
     <View style={styles.container}>
       <DesktopLyricBtn />
       <MusicAddBtn />
       <PlayModeBtn />
       <CommentBtn />
+      <Btn icon="play-outline" onPress={() => { queueRef.current?.show() }} />
+      <PlayQueue ref={queueRef} />
     </View>
   )
 }

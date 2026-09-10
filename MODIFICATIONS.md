@@ -3,6 +3,21 @@
 本工程基于 [LX Music Mobile](https://github.com/lyswhut/lx-music-mobile)
 `1.8.4` 修改。
 
+## 0.3.0 功能对齐（2026-09）
+
+与 Q-music 桌面端对齐的风格与功能改造：
+
+- 播放详情页重构为唱片机视觉：封面旋转（18 秒/圈、播放/暂停相位连续）、黑胶纹与唱针动画、封面虚化氛围背景与高光遮罩。
+- 新增毛玻璃强度三档设置（清晰/平衡/沉浸），动态背景模糊半径与叠色随档位变化；兼容既有流畅模式。
+- 播放详情页新增音质徽章快捷切换（STD/HQ/SQ/Hi-Res），换音质保留播放进度，音源无目标音质时自动沿 flac24bit→flac→320k→128k 降级并回显实际音质。
+- 排行榜请求增加结构校验、递增退避重试与在途请求去重，失败时展示错误占位。
+- 歌曲列表与来源选择使用各平台官方图标（打包本地 PNG，失败回退字母徽章）。
+- 新增播放队列弹层：查看当前播放列表、点击跳播、自动定位当前歌曲。
+- 新增歌曲下载：下载管理页（进度/速度/重试/删除）、列表菜单下载动作、文件写入公共 Music/QMusic 目录并触发媒体扫描（新增原生 `scanMediaFile`）。
+- 新增官方账号线路：应用内 WebView 登录 QQ 音乐/网易云音乐（QQ 支持跳转 App 一键授权），官方线路优先解析播放地址并带 5 分钟 URL 缓存，未登录或失败自动回退音源 SDK（新增原生 `getWebCookie`/`clearWebCookie`）。
+- 新增依赖 `react-native-webview`；`minSdkVersion` 由 21 提升至 24。
+- 修复 `run-gradle.js` 在 Windows 11（NoDefaultCurrentDirectoryInExePath）下无法调用 gradlew.bat 的问题。
+
 ## 品牌与标识
 
 - 应用名称调整为 Q-music。

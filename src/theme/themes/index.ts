@@ -151,6 +151,8 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     'q-on-accent': getContrastText(accent),
     'q-outline': outline,
     'q-scrim': theme.isDark ? 'rgba(0, 0, 0, 0.64)' : 'rgba(40, 50, 66, 0.32)',
+    'q-playdetail-bg': theme.isDark ? '#161a1d' : '#fbfcf7',
+    'q-playdetail-highlight': theme.isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.40)',
     'bg-image': bgImg,
   } as const
 }

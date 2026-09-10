@@ -35,7 +35,7 @@ const CommentFloor = memo(({ comment, isLast }: {
     if (!comment.reply?.length) return null
     const endIndex = comment.reply.length - 1
     return (
-      <View style={{ ...styles.replyFloor, borderTopColor: theme['c-list-header-border-bottom'] }}>
+      <View style={{ ...styles.replyFloor, backgroundColor: theme['c-primary-alpha-900'] }}>
         {
           comment.reply.map((c, index) => (
             <CommentFloor comment={c} isLast={index === endIndex} key={`${comment.id}_${c.id}`} />
@@ -147,8 +147,9 @@ const styles = createStyle({
     marginTop: GAP,
     marginLeft: 20,
     borderTopWidth: BorderWidths.normal,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
-    borderStyle: 'dashed',
+    borderRadius: 10,
+    paddingTop: 2,
+    paddingHorizontal: 10,
   },
 })
 
@@ -156,7 +157,7 @@ const stylesRaw = StyleSheet.create({
   avatar: {
     height: avatarWidth,
     width: avatarWidth,
-    borderRadius: 4,
+    borderRadius: 10,
   },
 })
 

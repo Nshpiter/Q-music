@@ -14,6 +14,18 @@ export const Q_UI = {
   },
 } as const
 
+export type QBlurLevel = 'clear' | 'balance' | 'immersive'
+
+/**
+ * 毛玻璃三档预设，取值对齐桌面端 glassPresets：
+ * 清晰 52%/8px、平衡 30%/18px、沉浸 16%/30px
+ */
+export const Q_BLUR_PRESETS: Record<QBlurLevel, { radius: number, overlayAlpha: number }> = {
+  clear: { radius: 8, overlayAlpha: 0.52 },
+  balance: { radius: 18, overlayAlpha: 0.30 },
+  immersive: { radius: 30, overlayAlpha: 0.16 },
+}
+
 /**
  * Extra hit area used by compact controls. The visual face can stay compact
  * while the actionable target remains close to the Android 48dp guideline.

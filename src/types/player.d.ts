@@ -15,6 +15,7 @@ declare global {
         name: string
         singer: string
         album: string
+        quality?: LX.Quality | null
       }
 
       interface LyricInfo extends LX.Music.LyricInfo {

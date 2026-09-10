@@ -581,5 +581,22 @@
   "version_title_new": "🌟 New version found 🌟",
   "version_title_unknown": "❓ Failed to get the latest version information ❓",
   "version_title_update": "🚀 App update 🚀",
-  "help": "Help"
+  "help": "Help",
+  "download": "Download",
+  "download_status_waiting": "Queued...",
+  "download_status_error": "Download failed",
+  "download_status_completed": "Completed",
+  "play_queue_title": "Play queue",
+  "player__switching_quality": "Switching audio quality...",
+  "setting_music_account_title": "Official accounts (QQ/NetEase)",
+  "setting_music_account_qq": "QQ Music",
+  "setting_music_account_netease": "NetEase Cloud Music",
+  "setting_music_account_connected": "Connected",
+  "setting_music_account_disconnected": "Disconnected",
+  "setting_music_account_logout": "Log out",
+  "setting_music_account_tip": "After signing in via the in-app web page (supports one-tap QQ App authorization), official routes are tried first to resolve playback URLs.",
+  "setting_basic_theme_blur_level": "Glass blur intensity",
+  "setting_basic_theme_blur_level_clear": "Clear",
+  "setting_basic_theme_blur_level_balance": "Balanced",
+  "setting_basic_theme_blur_level_immersive": "Immersive"
 }

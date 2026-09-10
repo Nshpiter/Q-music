@@ -19,7 +19,7 @@ import {
   clearTempPlayeList,
   removeTempPlayList,
 } from '@/core/player/tempPlayList'
-import { getMusicUrl, getPicPath, getLyricInfo } from '@/core/music'
+import { getMusicPlayUrlInfo, getPicPath, getLyricInfo } from '@/core/music'
 import { requestMsg } from '@/utils/message'
 import { getRandom } from '@/utils/common'
 import { filterList } from './utils'
@@ -28,6 +28,7 @@ import { checkIgnoringBatteryOptimization, checkNotificationPermission, debounce
 import { LIST_IDS } from '@/config/constant'
 import { addListMusics, removeListMusics } from '@/core/list'
 import { addDislikeInfo } from '@/core/dislikeList'
+import { updateSetting } from '@/core/common'
 
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
 
@@ -101,12 +102,12 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
   // const type = getPlayType(settingState.setting['player.isPlayHighQuality'], musicInfo)
   let toggleMusicInfo = ('progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo).meta.toggleMusicInfo
 
-  return (toggleMusicInfo ? getMusicUrl({
+  return (toggleMusicInfo ? getMusicPlayUrlInfo({
     musicInfo: toggleMusicInfo,
     isRefresh,
     allowToggleSource: false,
   }) : Promise.reject(new Error('not found'))).catch(async() => {
-    return getMusicUrl({
+    return getMusicPlayUrlInfo({
       musicInfo,
       isRefresh,
       onToggleSource(mInfo) {
@@ -114,9 +115,11 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
         setStatusText(global.i18n.t('toggle_source_try'))
       },
     })
-  }).then(url => {
+  }).then(({ url, quality }) => {
     if (global.lx.isPlayedStop || diffCurrentMusicInfo(musicInfo)) return null
 
+    // 回写实际播放音质（音源降级后可能与请求档位不同）
+    setMusicInfo({ quality })
     return url
   }).catch(async err => {
     // console.log('err', err.message)
@@ -151,6 +154,21 @@ export const setMusicUrl = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
       clearLoadTimeout()
     }
   })
+}
+
+/**
+ * 切换播放音质：写入全局音质设置后，对当前歌曲重新解析 URL，
+ * 播放进度由 setMusicUrl 内部的续播机制（progress.nowPlayTime）恢复
+ */
+export const setPlayQuality = (quality: LX.Quality) => {
+  if (settingState.setting['player.playQuality'] == quality) return
+  updateSetting({ 'player.playQuality': quality })
+
+  const musicInfo = playerState.playMusicInfo.musicInfo
+  if (!musicInfo) return
+
+  setStatusText(global.i18n.t('player__switching_quality'))
+  setMusicUrl(musicInfo, true)
 }
 
 // 恢复上次播放的状态

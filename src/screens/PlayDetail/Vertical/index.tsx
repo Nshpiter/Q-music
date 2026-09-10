@@ -8,6 +8,7 @@ import Player from './Player'
 import PagerView, { type PagerViewOnPageSelectedEvent } from 'react-native-pager-view'
 import Pic from './Pic'
 import Lyric from './Lyric'
+import PlayBg from './PlayBg'
 import { screenkeepAwake, screenUnkeepAwake } from '@/utils/nativeModules/utils'
 import commonState, { type InitState as CommonState } from '@/store/common/state'
 import { createStyle } from '@/utils/tools'
@@ -78,6 +79,7 @@ export default memo(({ componentId }: { componentId: string }) => {
 
   return (
     <>
+      <PlayBg />
       <Header />
       <View style={styles.container}>
         <PagerView

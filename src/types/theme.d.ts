@@ -289,6 +289,8 @@ declare global {
       'q-on-accent': string
       'q-outline': string
       'q-scrim': string
+      'q-playdetail-bg': string
+      'q-playdetail-highlight': string
       'bg-image'?: ImageSourcePropType
     }
 

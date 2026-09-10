@@ -286,6 +286,8 @@ const state: InitState = {
     'q-on-accent': '#212121',
     'q-outline': 'rgba(40, 50, 66, 0.14)',
     'q-scrim': 'rgba(40, 50, 66, 0.32)',
+    'q-playdetail-bg': '#fbfcf7',
+    'q-playdetail-highlight': 'rgba(255, 255, 255, 0.40)',
 
     'bg-image-position': 'center',
     'bg-image-size': 'cover',

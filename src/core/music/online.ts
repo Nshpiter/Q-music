@@ -67,6 +67,30 @@ export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSou
   })
 }
 
+/**
+ * 获取播放 URL 并附带实际音质（音源降级/官方线路后可能与请求档位不同）
+ */
+export const getMusicPlayUrlInfo = async({ musicInfo, quality, isRefresh, allowToggleSource = true, onToggleSource = () => {} }: {
+  musicInfo: LX.Music.MusicInfoOnline
+  quality?: LX.Quality
+  isRefresh: boolean
+  allowToggleSource?: boolean
+  onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+}): Promise<{ url: string, quality: LX.Quality }> => {
+  const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
+  if (!isCustomApiSource() && musicInfo.source != 'tx' && musicInfo.source != 'wy') {
+    const cachedUrl = await getStoreMusicUrl(musicInfo, targetQuality)
+    if (cachedUrl && !isRefresh) return { url: cachedUrl, quality: targetQuality }
+  }
+
+  return handleGetOnlineMusicUrl({ musicInfo, quality, onToggleSource, isRefresh, allowToggleSource }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache, isOfficial }) => {
+    if (isOfficial) return { url, quality: targetQuality }
+    if (targetMusicInfo.id != musicInfo.id && !isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url)
+    void saveMusicUrl(musicInfo, targetQuality, url)
+    return { url, quality: targetQuality }
+  })
+}
+
 export const getPicUrl = async({ musicInfo, listId, isRefresh, allowToggleSource = true, onToggleSource = () => {} }: {
   musicInfo: LX.Music.MusicInfoOnline
   listId?: string | null

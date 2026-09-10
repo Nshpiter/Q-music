@@ -80,6 +80,7 @@ const defaultSetting: LX.AppSetting = {
   'theme.dynamicBg': false,
   'theme.fontShadow': false,
   'theme.performanceMode': false,
+  'theme.blurLevel': 'balance',
 }
 
 

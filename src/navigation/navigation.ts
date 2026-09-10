@@ -6,6 +6,7 @@ import {
   PLAY_DETAIL_SCREEN,
   SONGLIST_DETAIL_SCREEN,
   COMMENT_SCREEN,
+  MUSIC_ACCOUNT_SCREEN,
   // SETTING_SCREEN,
 } from './screenNames'
 
@@ -380,6 +381,37 @@ export function pushCommentScreen(componentId: string) {
                 },
               },
             },
+          },
+        },
+      },
+    })
+  })
+}
+
+export function pushMusicAccountScreen(componentId: string) {
+  requestAnimationFrame(() => {
+    const theme = themeState.theme
+
+    void Navigation.push(componentId, {
+      component: {
+        name: MUSIC_ACCOUNT_SCREEN,
+        options: {
+          topBar: {
+            visible: false,
+            height: 0,
+            drawBehind: false,
+          },
+          statusBar: {
+            drawBehind: true,
+            visible: true,
+            style: getStatusBarStyle(theme.isDark),
+            backgroundColor: 'transparent',
+          },
+          navigationBar: {
+            backgroundColor: theme['c-content-background'],
+          },
+          layout: {
+            componentBackgroundColor: theme['c-content-background'],
           },
         },
       },

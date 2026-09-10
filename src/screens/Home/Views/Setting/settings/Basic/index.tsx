@@ -14,6 +14,7 @@ import IsHomePageScroll from './IsHomePageScroll'
 import IsAllowProgressBarSeek from './IsAllowProgressBarSeek'
 import IsUseSystemFileSelector from './IsUseSystemFileSelector'
 import IsAlwaysKeepStatusbarHeight from './IsAlwaysKeepStatusbarHeight'
+import MusicAccountEntry from './MusicAccountEntry'
 import { useI18n } from '@/lang/i18n'
 
 export default memo(() => {
@@ -35,6 +36,7 @@ export default memo(() => {
       <ShareType />
       <Source />
       <SourceName />
+      <MusicAccountEntry />
     </Section>
   )
 })

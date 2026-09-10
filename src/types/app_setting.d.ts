@@ -112,6 +112,11 @@ declare global {
       'theme.performanceMode': boolean
 
       /**
+       * 毛玻璃强度：清晰/平衡/沉浸
+       */
+      'theme.blurLevel': 'clear' | 'balance' | 'immersive'
+
+      /**
        * 启动时自动播放歌曲
        */
       'player.startupAutoPlay': boolean

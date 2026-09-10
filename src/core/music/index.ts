@@ -4,6 +4,7 @@
 
 import {
   getMusicUrl as getOnlineMusicUrl,
+  getMusicPlayUrlInfo as getOnlineMusicPlayUrlInfo,
   getPicUrl as getOnlinePicUrl,
   getLyricInfo as getOnlineLyricInfo,
 } from './online'
@@ -38,6 +39,32 @@ export const getMusicUrl = async({
     return getLocalMusicUrl({ musicInfo, isRefresh, onToggleSource, allowToggleSource })
   } else {
     return getOnlineMusicUrl({ musicInfo, isRefresh, quality, onToggleSource, allowToggleSource })
+  }
+}
+
+/**
+ * 获取播放 URL 并附带实际音质（音源降级后可能与请求档位不同）
+ * 本地/下载源无音质概念，固定返回 128k 标记
+ */
+export const getMusicPlayUrlInfo = async({
+  musicInfo,
+  quality,
+  isRefresh = false,
+  onToggleSource,
+  allowToggleSource,
+}: {
+  musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
+  isRefresh?: boolean
+  quality?: LX.Quality
+  onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+  allowToggleSource?: boolean
+}): Promise<{ url: string, quality: LX.Quality }> => {
+  if ('progress' in musicInfo) {
+    return getDownloadMusicUrl({ musicInfo, isRefresh, onToggleSource, allowToggleSource }).then(url => ({ url, quality: '128k' as const }))
+  } else if (musicInfo.source == 'local') {
+    return getLocalMusicUrl({ musicInfo, isRefresh, onToggleSource, allowToggleSource }).then(url => ({ url, quality: '128k' as const }))
+  } else {
+    return getOnlineMusicPlayUrlInfo({ musicInfo, isRefresh, quality, onToggleSource, allowToggleSource })
   }
 }
 

@@ -581,5 +581,22 @@
   "version_title_new": "🌟 發現新版本 🌟",
   "version_title_unknown": "❓ 獲取最新版本資訊失敗 ❓",
   "version_title_update": "🚀 軟體更新 🚀",
-  "help": "說明"
+  "help": "說明",
+  "download": "下載",
+  "download_status_waiting": "排隊中...",
+  "download_status_error": "下載失敗",
+  "download_status_completed": "已完成",
+  "play_queue_title": "播放佇列",
+  "player__switching_quality": "正在切換音質...",
+  "setting_music_account_title": "官方帳號（QQ/網易雲）",
+  "setting_music_account_qq": "QQ 音樂",
+  "setting_music_account_netease": "網易雲音樂",
+  "setting_music_account_connected": "已連接",
+  "setting_music_account_disconnected": "未連接",
+  "setting_music_account_logout": "登出",
+  "setting_music_account_tip": "登入後在網頁中完成授權（可跳轉 QQ App 一鍵登入），官方線路將優先嘗試獲取歌曲播放地址。",
+  "setting_basic_theme_blur_level": "毛玻璃強度",
+  "setting_basic_theme_blur_level_clear": "清晰",
+  "setting_basic_theme_blur_level_balance": "平衡",
+  "setting_basic_theme_blur_level_immersive": "沉浸"
 }

@@ -5,6 +5,7 @@ import Theme from './Theme'
 import IsAutoTheme from './IsAutoTheme'
 import IsHideBgDark from './IsHideBgDark'
 import IsDynamicBg from './IsDynamicBg'
+import BlurLevel from './BlurLevel'
 import IsFontShadow from './IsFontShadow'
 import PerformanceMode from './PerformanceMode'
 // import { useI18n } from '@/lang/i18n'
@@ -16,6 +17,7 @@ export default memo(() => {
       <IsAutoTheme />
       <IsHideBgDark />
       <IsDynamicBg />
+      <BlurLevel />
       <PerformanceMode />
       <IsFontShadow />
     </>

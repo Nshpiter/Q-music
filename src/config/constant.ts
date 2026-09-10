@@ -103,11 +103,22 @@ export const NAV_MENUS = [
   { id: 'nav_songlist', icon: 'album' },
   { id: 'nav_top', icon: 'leaderboard' },
   { id: 'nav_love', icon: 'love' },
-  // { id: 'download', icon: 'download-2' },
+  { id: 'download', icon: 'download-2' },
   { id: 'nav_setting', icon: 'setting' },
 ] as const
 
 export type NAV_ID_Type = typeof NAV_MENUS[number]['id']
+
+/** 音质档位徽章文案，对齐桌面端 PlayerQualityMenu */
+export const QUALITY_BADGE: Record<LX.Quality, string> = {
+  '128k': 'STD',
+  '192k': 'HQ',
+  '320k': 'HQ',
+  flac: 'SQ',
+  ape: 'SQ',
+  wav: 'SQ',
+  flac24bit: 'Hi-Res',
+} as const
 
 export const LXM_FILE_EXT_RXP = ['json', 'lxmc', 'bin']
 export const USER_API_SOURCE_FILE_EXT_RXP = ['js']

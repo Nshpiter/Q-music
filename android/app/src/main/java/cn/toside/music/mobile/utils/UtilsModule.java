@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Rect;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -49,6 +50,35 @@ public class UtilsModule extends ReactContextBaseJavaModule {
   @Override
   public String getName() {
     return "UtilsModule";
+  }
+
+  @ReactMethod
+  public void scanMediaFile(String filePath, Promise promise) {
+    try {
+      MediaScannerConnection.scanFile(reactContext, new String[]{ filePath }, null,
+        (path, uri) -> promise.resolve(uri != null ? uri.toString() : null));
+    } catch (Exception e) {
+      promise.reject("Utils", "scanMediaFile failed for '" + filePath + "'", e);
+    }
+  }
+
+  @ReactMethod
+  public void getWebCookie(String url, Promise promise) {
+    try {
+      promise.resolve(android.webkit.CookieManager.getInstance().getCookie(url));
+    } catch (Exception e) {
+      promise.reject("Utils", "getWebCookie failed for '" + url + "'", e);
+    }
+  }
+
+  @ReactMethod
+  public void clearWebCookie(String url, Promise promise) {
+    try {
+      // App 内 WebView 的 CookieManager 仅服务官方账号登录，退出时整体清空
+      android.webkit.CookieManager.getInstance().removeAllCookies(value -> promise.resolve(null));
+    } catch (Exception e) {
+      promise.reject("Utils", "clearWebCookie failed for '" + url + "'", e);
+    }
   }
 
   @ReactMethod
