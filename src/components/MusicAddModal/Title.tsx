@@ -10,7 +10,7 @@ export default ({ musicInfo, isMove }: {
   const theme = useTheme()
   const t = useI18n()
   return (
-    <Text style={styles.title}>
+    <Text style={styles.title} size={15} numberOfLines={2}>
       {t(isMove ? 'list_add_title_first_move' : 'list_add_title_first_add')} <Text color={theme['c-primary-font']}>{musicInfo.name}</Text> {t('list_add_title_last')}
     </Text>
   )
@@ -19,7 +19,8 @@ export default ({ musicInfo, isMove }: {
 const styles = createStyle({
   title: {
     textAlign: 'center',
-    paddingTop: 15,
+    paddingTop: 0,
+    paddingHorizontal: 20,
     paddingBottom: 15,
   },
 })

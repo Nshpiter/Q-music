@@ -11,4 +11,19 @@
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">@bool/app_window_light_system_bars</item>
     </style>
 
+    <!-- RN 0.73 弹窗在深色主题下无法清除继承的亮色系统栏标记。
+         先以浅色图标初始化，再由 RN 从当前 Activity 同步实际标记；
+         透明导航栏沿用下层页面，避免队列/菜单底部出现白色断层。 -->
+    <style name="Theme.FullScreenDialog">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
+    </style>
+
 </resources>

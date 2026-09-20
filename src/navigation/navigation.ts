@@ -388,13 +388,14 @@ export function pushCommentScreen(componentId: string) {
   })
 }
 
-export function pushMusicAccountScreen(componentId: string) {
+export function pushMusicAccountScreen(componentId: string, initialProvider: 'tx' | 'wy' = 'tx') {
   requestAnimationFrame(() => {
     const theme = themeState.theme
 
     void Navigation.push(componentId, {
       component: {
         name: MUSIC_ACCOUNT_SCREEN,
+        passProps: { initialProvider },
         options: {
           topBar: {
             visible: false,

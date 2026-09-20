@@ -34,7 +34,7 @@ const ListItem = memo(({ id, activeId, onPress }: {
         style={{ ...styles.listName, borderColor: active ? theme['q-outline'] : 'transparent' }}
         onPress={handlePress}
       >
-        <Text numberOfLines={1} color={active ? theme['q-accent-text'] : theme['q-text-primary']}>{t(`setting_${id}`)}</Text>
+        <Text size={13} numberOfLines={1} color={active ? theme['q-accent-text'] : theme['q-text-primary']}>{t(`setting_${id}`)}</Text>
       </Button>
     </View>
   )
@@ -89,14 +89,12 @@ const styles = createStyle({
   listItem: {
     // width: '33.33%',
     height: Q_UI.touchSize,
-    paddingLeft: 15,
-    paddingRight: 15,
     // height: 'auto',
     // flexDirection: 'row',
     // alignItems: 'center',
     paddingHorizontal: 5,
     // paddingVertical: 10,
-    borderRadius: Q_UI.radius.control,
+    borderRadius: 24,
     overflow: 'hidden',
     // backgroundColor: 'rgba(0,0,0,0.1)',
   },
@@ -105,8 +103,9 @@ const styles = createStyle({
     justifyContent: 'center',
     alignItems: 'center',
     flex: 1,
-    borderWidth: 1,
-    borderRadius: Q_UI.radius.control,
+    paddingHorizontal: 12,
+    borderWidth: 0,
+    borderRadius: 24,
     // paddingLeft: 5,
     // backgroundColor: 'rgba(0,0,0,0.1)',
   },

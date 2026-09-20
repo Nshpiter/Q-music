@@ -1,37 +1,22 @@
-import { Linking, StyleSheet, View } from 'react-native'
+import { View } from 'react-native'
 import Text from '@/components/common/Text'
 import SourceLogo from '@/components/SourceLogo'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
-import { qSurfaceShadow } from '@/theme/ui'
-import { createStyle, toast } from '@/utils/tools'
+import { createStyle } from '@/utils/tools'
 import Button from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-
-const PROVIDERS = [
-  { id: 'tx', nameKey: 'source_real_tx', url: 'https://y.qq.com/n/ryqq/profile' },
-  { id: 'wy', nameKey: 'source_real_wy', url: 'https://music.163.com/#/login' },
-  { id: 'kg', nameKey: 'source_real_kg', url: 'https://www.kugou.com/' },
-  { id: 'spotify', nameKey: 'source_real_spotify', url: 'https://accounts.spotify.com/login' },
-] as const
+import { pushMusicAccountScreen } from '@/navigation/navigation'
+import commonState from '@/store/common/state'
 
 export default () => {
   const theme = useTheme()
   const t = useI18n()
 
-  const openProvider = async(url: string) => {
-    try {
-      await Linking.openURL(url)
-    } catch {
-      toast(t('search_account_open_failed'))
-    }
-  }
-
   return (
     <View
       style={{
         ...styles.container,
-        ...qSurfaceShadow,
         backgroundColor: theme['q-surface-raised'],
         borderColor: theme['q-outline'],
       }}
@@ -39,33 +24,31 @@ export default () => {
       <View style={styles.header}>
         <View style={styles.copy}>
           <Text size={17} style={styles.title} color={theme['q-text-primary']}>{t('search_account_title')}</Text>
-          <Text size={11} style={styles.subtitle} color={theme['q-text-secondary']}>{t('search_account_subtitle')}</Text>
+          <Text size={12} style={styles.subtitle} color={theme['q-text-secondary']}>{t('mobile_account_hint')}</Text>
         </View>
       </View>
-      <View style={styles.providers}>
-        {PROVIDERS.map(provider => (
-          <Button
-            key={provider.id}
-            accessibilityLabel={`${t(provider.nameKey)} · ${t('search_account_open_official')}`}
-            style={{ ...styles.provider, backgroundColor: theme['q-surface-base'], borderColor: theme['q-outline'] }}
-            onPress={() => { void openProvider(provider.url) }}
-          >
-            <SourceLogo source={provider.id} size={32} />
-            <View style={styles.providerCopy}>
-              <Text size={13} style={styles.providerName} color={theme['q-text-primary']} numberOfLines={1}>{t(provider.nameKey)}</Text>
-              <Text size={10} color={theme['q-text-secondary']}>{t('search_account_open_official')}</Text>
-            </View>
-            <Icon accessible={false} name="chevron-right" rawSize={15} color={theme['q-text-secondary']} />
-          </Button>
-        ))}
-      </View>
+      <Button
+        accessibilityLabel={t('setting_music_account_title')}
+        style={{ ...styles.accountAction, backgroundColor: theme['q-surface-tint'] }}
+        onPress={() => {
+          if (commonState.componentIds.home) pushMusicAccountScreen(commonState.componentIds.home)
+        }}
+      >
+        <View style={styles.accountLogos}>
+          <SourceLogo source="tx" size={24} />
+          <SourceLogo source="wy" size={24} />
+        </View>
+        <Text size={13} style={styles.copy} color={theme['q-accent-text']}>{t('setting_music_account_title')}</Text>
+        <Icon accessible={false} name="chevron-right" rawSize={18} color={theme['q-accent-text']} />
+      </Button>
     </View>
   )
 }
 
 const styles = createStyle({
+  accountAction: { minHeight: 56, paddingHorizontal: 12, borderRadius: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  accountLogos: { flexDirection: 'row', gap: 4 },
   container: {
-    minHeight: 176,
     marginBottom: 12,
     paddingVertical: 15,
     paddingHorizontal: 16,
@@ -86,29 +69,5 @@ const styles = createStyle({
   subtitle: {
     marginTop: 4,
     lineHeight: 16,
-  },
-  providers: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  provider: {
-    width: '47%',
-    flexGrow: 1,
-    minHeight: 58,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 15,
-    paddingHorizontal: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  providerCopy: {
-    flex: 1,
-    minWidth: 0,
-    marginLeft: 9,
-  },
-  providerName: {
-    marginBottom: 2,
-    fontWeight: '600',
   },
 })

@@ -86,7 +86,12 @@ export const handleSync = (listInfo: LX.List.UserListInfo) => {
     if (!isSync) return
     void syncSourceList(listInfo).then(() => {
       toast(global.i18n.t('list_update_success', { name: listInfo.name }))
-    }).catch(() => {
+    }).catch((error: unknown) => {
+      if (listInfo.sourceListId?.startsWith('account:')) {
+        const reason = error instanceof Error ? error.message : ''
+        toast(global.i18n.t(reason == 'login_required' || reason == 'account_changed' ? 'account_lists_login_expired' : reason == 'incomplete' ? 'account_lists_incomplete' : 'account_lists_failed'))
+        return
+      }
       toast(global.i18n.t('list_update_error', { name: listInfo.name }))
     })
   })

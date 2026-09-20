@@ -8,7 +8,6 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
 import { scaleSizeH } from '@/utils/pixelRatio'
-import { qFloatingShadow } from '@/theme/ui'
 
 const HEADER_HEIGHT = 48
 const styles = createStyle({
@@ -80,8 +79,7 @@ export default forwardRef<DialogType, DialogProps>(({
   const theme = useTheme()
   const { keyboardShown, keyboardHeight } = useKeyboard()
   const modalRef = useRef<ModalType>(null)
-  const lightEdge = theme.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.76)'
-  const scrim = theme.isDark ? 'rgba(6,12,10,0.48)' : 'rgba(238,248,243,0.56)'
+  const lightEdge = theme['q-outline']
 
   useImperativeHandle(ref, () => ({
     setVisible(visible: boolean) {
@@ -104,22 +102,22 @@ export default forwardRef<DialogType, DialogProps>(({
   }, [closeBtn, theme])
 
   return (
-    <Modal onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor={scrim} ref={modalRef}>
+    <Modal onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor={theme['q-scrim']} ref={modalRef}>
       <View pointerEvents="box-none" style={{ ...styles.centeredView, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
         <View
           style={{
             ...styles.modalView,
-            ...qFloatingShadow,
             height,
-            backgroundColor: theme['q-surface-raised'],
+            backgroundColor: theme['c-content-background'],
             borderColor: lightEdge,
           }}
         >
           <View
             style={{
               ...styles.header,
-              backgroundColor: theme.isDark ? theme['q-surface-tint'] : 'rgba(255,255,255,0.42)',
+              backgroundColor: theme['c-content-background'],
               borderBottomColor: lightEdge,
+              borderBottomWidth: title ? StyleSheet.hairlineWidth : 0,
             }}
           >
             <Text style={styles.title} size={15} color={theme['q-text-primary']} numberOfLines={1}>{title}</Text>

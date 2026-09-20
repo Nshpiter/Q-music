@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native'
 import { navigations } from '@/navigation'
 import { usePlayerMusicInfo } from '@/store/player/hook'
-import { useTheme } from '@/store/theme/hook'
+import { useGlassColors } from '@/components/common/GlassSurface'
 import commonState from '@/store/common/state'
 import playerState from '@/store/player/state'
 import Text from '@/components/common/Text'
@@ -11,7 +11,7 @@ import Button from '@/components/common/Button'
 
 export default ({ isHome }: { isHome: boolean }) => {
   const musicInfo = usePlayerMusicInfo()
-  const theme = useTheme()
+  const colors = useGlassColors()
 
   const handlePress = () => {
     // console.log('')
@@ -39,8 +39,8 @@ export default ({ isHome }: { isHome: boolean }) => {
       onPress={handlePress}
       disabled={!musicInfo.id}
     >
-      <Text style={styles.title} size={15} color={theme['q-text-primary']} numberOfLines={1}>{title}</Text>
-      <Text style={styles.singer} size={12} color={theme['q-text-secondary']} numberOfLines={1}>{singer}</Text>
+      <Text style={styles.title} size={13} color={colors.primary} numberOfLines={1}>{title}</Text>
+      <Text style={styles.singer} size={10} color={colors.secondary} numberOfLines={1}>{singer}</Text>
     </Button>
   )
 }
@@ -48,11 +48,13 @@ export default ({ isHome }: { isHome: boolean }) => {
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: 52,
+    overflow: 'hidden',
+    minWidth: 0,
+    height: 48,
     justifyContent: 'center',
   },
   title: {
-    fontWeight: '700',
+    fontWeight: '600',
   },
   singer: {
     marginTop: 3,

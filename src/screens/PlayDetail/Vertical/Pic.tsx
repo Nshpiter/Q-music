@@ -3,7 +3,7 @@ import { View } from 'react-native'
 // import { useLayout } from '@/utils/hooks'
 import { createStyle } from '@/utils/tools'
 import { usePlayerMusicInfo } from '@/store/player/hook'
-import { useWindowSize } from '@/utils/hooks'
+import { useLayout, useWindowSize } from '@/utils/hooks'
 import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { useNavigationComponentDidAppear } from '@/navigation'
 import { HEADER_HEIGHT } from './components/Header'
@@ -12,7 +12,6 @@ import { useStatusbarHeight } from '@/store/common/hook'
 import commonState from '@/store/common/state'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
-import { qSoftShadow } from '@/theme/ui'
 
 
 export default ({ componentId }: { componentId: string }) => {
@@ -20,6 +19,7 @@ export default ({ componentId }: { componentId: string }) => {
   const { width: winWidth, height: winHeight } = useWindowSize()
   const statusBarHeight = useStatusbarHeight()
   const theme = useTheme()
+  const { onLayout, height: availableHeight } = useLayout()
 
   const [animated, setAnimated] = useState(!!commonState.componentIds.playDetail)
   const [pic, setPic] = useState(musicInfo.pic)
@@ -33,23 +33,24 @@ export default ({ componentId }: { componentId: string }) => {
   // console.log('render pic')
 
   const style = useMemo(() => {
-    const imgWidth = Math.min(winWidth * 0.76, (winHeight - statusBarHeight - HEADER_HEIGHT) * 0.43)
+    const imageSpace = availableHeight > 0 ? Math.max(72, availableHeight - Math.max(108, 100 * global.lx.fontSize)) : winHeight
+    const imgWidth = Math.min(winWidth * 0.76, (winHeight - statusBarHeight - HEADER_HEIGHT) * 0.43, imageSpace)
     return {
       width: imgWidth,
       height: imgWidth,
-      borderRadius: 24,
+      borderRadius: 18,
     }
-  }, [statusBarHeight, winHeight, winWidth])
+  }, [availableHeight, statusBarHeight, winHeight, winWidth])
 
   return (
-    <View style={styles.container}>
-      <View style={{ ...styles.content, ...qSoftShadow, elevation: animated ? 5 : 0 }}>
+    <View style={styles.container} onLayout={onLayout}>
+      <View style={styles.content}>
         <Image url={pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={style} />
       </View>
       <View style={styles.trackInfo}>
-        <Text size={22} style={styles.title} color={theme['q-text-primary']} numberOfLines={1}>{musicInfo.name}</Text>
-        <Text size={14} color={theme['q-text-secondary']} numberOfLines={1}>{musicInfo.singer}</Text>
-        {musicInfo.album
+        <Text size={20} style={styles.title} color={theme['q-text-primary']} numberOfLines={1}>{musicInfo.name}</Text>
+        <Text size={13} color={theme['q-text-secondary']} numberOfLines={1}>{musicInfo.singer}</Text>
+        {musicInfo.album && musicInfo.album != musicInfo.name
           ? <Text size={12} style={styles.album} color={theme['q-text-secondary']} numberOfLines={1}>{musicInfo.album}</Text>
           : null}
       </View>
@@ -68,13 +69,13 @@ const styles = createStyle({
   content: {
     // elevation: 3,
     backgroundColor: 'rgba(0,0,0,0)',
-    borderRadius: 24,
+    borderRadius: 18,
     overflow: 'hidden',
   },
   trackInfo: {
-    width: '82%',
-    alignItems: 'center',
-    marginTop: 22,
+    width: '76%',
+    alignItems: 'flex-start',
+    marginTop: 20,
   },
   title: {
     fontWeight: '700',

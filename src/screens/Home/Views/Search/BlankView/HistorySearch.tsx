@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { View } from 'react-native'
+import { ScrollView, View } from 'react-native'
 import { type InitState } from '@/store/hotSearch/state'
 import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
@@ -8,7 +8,7 @@ import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { clearHistoryList, getSearchHistory, removeHistoryWord } from '@/core/search/search'
 import IconButton from '@/components/common/IconButton'
-import { Q_TOUCH_HIT_SLOP, qSurfaceShadow } from '@/theme/ui'
+import { Q_TOUCH_HIT_SLOP } from '@/theme/ui'
 
 
 export type List = NonNullable<InitState['sourceList'][keyof InitState['sourceList']]>
@@ -62,7 +62,7 @@ export default forwardRef<HistorySearchType, HistorySearchProps>((props, ref) =>
       void getSearchHistory().then((list) => {
         if (isUnmountedRef.current) return
         setList(list)
-      })
+      }).catch(() => { if (!isUnmountedRef.current) setList([]) })
     },
   }), [])
 
@@ -75,6 +75,7 @@ export default forwardRef<HistorySearchType, HistorySearchProps>((props, ref) =>
     setList(list => {
       list = [...list]
       const index = list.indexOf(keyword)
+      if (index < 0) return list
       list.splice(index, 1)
       removeHistoryWord(index)
       return list
@@ -82,45 +83,41 @@ export default forwardRef<HistorySearchType, HistorySearchProps>((props, ref) =>
   }, [])
 
   return (
-    list.length
-      ? (
-          <View
-            style={{
-              ...styles.card,
-              ...qSurfaceShadow,
-              backgroundColor: theme['q-surface-raised'],
-              borderColor: theme['q-outline'],
-            }}
-          >
-            <View style={styles.titleContent}>
-              <Text style={styles.title} color={theme['q-text-primary']} size={14}>{t('search_history_search')}</Text>
-              <IconButton
-                accessibilityLabel={`${t('delete')} ${t('search_history_search')}`}
-                name="eraser"
-                size={40}
-                iconSize={16}
-                iconColor={theme['q-text-secondary']}
-                variant="tonal"
-                onPress={handleClear}
-                style={styles.titleBtn}
-              />
-            </View>
-            <View style={styles.list}>
-              {
-                list.map(keyword => <ListItem keyword={keyword} key={keyword} onSearch={props.onSearch} onRemove={handleRemove} />)
-              }
-            </View>
-          </View>
-        )
-      : null
+    <View
+      style={{
+        ...styles.card,
+        backgroundColor: theme['q-surface-raised'],
+        borderColor: theme['q-outline'],
+      }}
+    >
+      <View style={styles.titleContent}>
+        <Text style={styles.title} color={theme['q-text-primary']} size={14}>{t('search_history_search')}</Text>
+        {list.length ? <IconButton
+          accessibilityLabel={`${t('delete')} ${t('search_history_search')}`}
+          name="eraser"
+          size={40}
+          iconSize={16}
+          iconColor={theme['q-text-secondary']}
+          variant="tonal"
+          onPress={handleClear}
+          style={styles.titleBtn}
+        /> : null}
+      </View>
+      {!list.length ? <Text size={12} color={theme['q-text-secondary']} style={{ lineHeight: 20, paddingVertical: 8 }}>{t('search_history_empty')}</Text> : null}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.list}>
+        {
+          list.map(keyword => <ListItem keyword={keyword} key={keyword} onSearch={props.onSearch} onRemove={handleRemove} />)
+        }
+      </ScrollView>
+    </View>
   )
 })
 
 
 const styles = createStyle({
   card: {
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 10,
+    paddingBottom: 12,
     paddingLeft: 16,
     paddingRight: 16,
     borderWidth: 1,
@@ -140,7 +137,6 @@ const styles = createStyle({
   },
   list: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
   },
   button: {
     textAlign: 'center',

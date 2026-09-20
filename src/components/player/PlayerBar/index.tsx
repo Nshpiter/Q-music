@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useKeyboard } from '@/utils/hooks'
 
@@ -6,38 +6,28 @@ import Pic from './components/Pic'
 import Title from './components/Title'
 import PlayInfo from './components/PlayInfo'
 import ControlBtn from './components/ControlBtn'
-import { useTheme } from '@/store/theme/hook'
 import { useSettingValue } from '@/store/setting/hook'
-import { Q_UI, qSoftShadow } from '@/theme/ui'
+import { Q_UI } from '@/theme/ui'
 import { usePlayerMusicInfo } from '@/store/player/hook'
+import GlassSurface from '@/components/common/GlassSurface'
 
 
 export default memo(({ isHome = false }: { isHome?: boolean }) => {
   // const { onLayout, ...layout } = useLayout()
   const { keyboardShown } = useKeyboard()
-  const theme = useTheme()
   const autoHidePlayBar = useSettingValue('common.autoHidePlayBar')
   const musicInfo = usePlayerMusicInfo()
+  const [compact, setCompact] = useState(false)
 
   const playerComponent = useMemo(() => (
-    <View
-      style={{
-        ...styles.container,
-        ...qSoftShadow,
-        backgroundColor: theme['q-surface-raised'],
-        borderColor: theme['c-primary-alpha-800'],
-      }}
+    <GlassSurface
+      radius={Q_UI.radius.miniPlayer}
+      onLayout={event => { setCompact(event.nativeEvent.layout.width < 330) }}
+      style={styles.container}
     >
-      <View
-        pointerEvents="none"
-        style={{
-          ...styles.innerHighlight,
-          borderTopColor: theme.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.72)',
-        }}
-      />
       <View style={styles.topRow}>
-        <Pic isHome={isHome} />
-        <View style={styles.trackInfo}>
+        {!compact ? <Pic isHome={isHome} /> : null}
+        <View style={[styles.trackInfo, compact && styles.compactInfo]}>
           <Title isHome={isHome} />
         </View>
         <View style={styles.controls}>
@@ -45,8 +35,8 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
         </View>
       </View>
       <PlayInfo isHome={isHome} />
-    </View>
-  ), [theme, isHome])
+    </GlassSurface>
+  ), [isHome, compact])
 
   // console.log('render pb')
 
@@ -56,37 +46,33 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 104,
-    paddingTop: 10,
-    paddingBottom: 8,
-    paddingHorizontal: 12,
-    marginLeft: 10,
-    marginRight: 10,
+    minHeight: 58,
+    paddingTop: 2,
+    paddingBottom: 0,
+    paddingHorizontal: 8,
+    marginLeft: 14,
+    marginRight: 14,
     marginBottom: 8,
-    borderRadius: Q_UI.radius.player,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: Q_UI.radius.miniPlayer,
     overflow: 'hidden',
   },
-  innerHighlight: {
-    position: 'absolute',
-    top: 1,
-    left: 18,
-    right: 18,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
   topRow: {
-    minHeight: 52,
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
   },
   trackInfo: {
     flex: 1,
+    flexBasis: 0,
     flexShrink: 1,
     paddingLeft: 10,
     paddingRight: 2,
     minWidth: 0,
+    overflow: 'hidden',
   },
+  compactInfo: { paddingLeft: 2 },
   controls: {
+    width: 176,
     flexShrink: 0,
     alignItems: 'center',
   },

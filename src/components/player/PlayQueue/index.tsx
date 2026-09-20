@@ -15,7 +15,7 @@ export interface PlayQueueType {
   show: () => void
 }
 
-const ITEM_HEIGHT = 48
+const ITEM_HEIGHT = 64
 
 const QueueItem = ({ id, index, name, singer, isActive, onPress }: {
   id: string
@@ -28,6 +28,9 @@ const QueueItem = ({ id, index, name, singer, isActive, onPress }: {
   const theme = useTheme()
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={`${name} · ${singer}`}
+      accessibilityState={{ selected: isActive }}
       style={{ ...styles.item, backgroundColor: isActive ? theme['q-surface-tint'] : 'transparent', borderRadius: isActive ? Q_UI.radius.item : 0 }}
       activeOpacity={0.6}
       onPress={() => { onPress(id, index) }}
@@ -82,11 +85,12 @@ const PlayQueue = forwardRef<PlayQueueType>((_, ref) => {
   return (
     visible
       ? (
-        <Popup ref={popupRef} title={t('play_queue_title')}>
+        <Popup ref={popupRef} title={`${t('play_queue_title')} · ${list.length}`}>
           <FlatList
             ref={listRef}
             style={styles.list}
             data={list}
+            ListEmptyComponent={<Text style={styles.empty}>{t('mobile_queue_empty')}</Text>}
             keyExtractor={item => item.id}
             getItemLayout={(_, index) => ({ length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index })}
             renderItem={({ item, index }) => (
@@ -107,6 +111,7 @@ const PlayQueue = forwardRef<PlayQueueType>((_, ref) => {
 })
 
 const styles = createStyle({
+  empty: { padding: 28, textAlign: 'center' },
   list: {
     maxHeight: 420,
   },
@@ -114,7 +119,7 @@ const styles = createStyle({
     height: ITEM_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 20,
   },
   index: {
     width: 30,

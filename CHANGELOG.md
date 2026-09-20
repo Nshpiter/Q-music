@@ -6,6 +6,25 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [Q-music Android 0.4.3](https://github.com/Nshpiter/Q-music/compare/v0.4.2...v0.4.3) - 2026-09-20
+
+### 新增
+
+- QQ 音乐、网易云账号歌单导入与更新，包含分页、账号隔离和失败保护。
+- 每日精选接入平台账号推荐，支持独立选择平台、QQ 官方日推授权和真实来源标识。
+- 底部导航及播放条采用统一的实时玻璃材质、曲面折射和弹性选中动效。
+
+### 优化与修复
+
+- 统一移动端播放控件、歌词详情、弹层和列表排版，修复长歌名挤占切歌按钮。
+- 修复 QQ 同机授权后的登录衔接，平台账号入口仅保留 QQ 音乐与网易云。
+- 移除播放详情中的桌面歌词按钮，简化首页重复搜索入口。
+- 修复搜索历史空状态、热搜聚合刷新缓存与慢平台阻塞。
+- QQ 日推授权使用本机加密存储，不参与备份或歌单导出。
+- 提高 Android versionCode 至 33，便于覆盖升级。
+
+以下保留上游 LX Music Mobile 的历史更新记录。
+
 ## [1.8.4](https://github.com/lyswhut/lx-music-mobile/compare/v1.8.3...v1.8.4) - 2026-05-01
 
 我们很高兴地宣布新项目 Any Listen 的桌面版已发布，目前已支持列表跟随本地文件自动更新、加载并播放WebDAV上的歌曲等功能，更多功能仍在积极开发中，桌面版与Web版将同步更新。

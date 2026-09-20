@@ -18,7 +18,7 @@ export default memo(() => {
     <>
       <Btn
         icon="music_time"
-        accessibilityLabel={global.i18n.t('play_detail_setting_title')}
+        accessibilityLabel={global.i18n.t('timeout_exit_tip_off')}
         selected={timeInfo.active}
         color={timeInfo.active ? theme['c-primary-font-active'] : theme['c-font']}
         onPress={handleShow}

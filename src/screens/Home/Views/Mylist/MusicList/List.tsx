@@ -1,6 +1,6 @@
 import { playList } from '@/core/player/player'
 import { useMemo, useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react'
-import { FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
+import { FlatList, View, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
 
 import listState from '@/store/list/state'
 import playerState from '@/store/player/state'
@@ -14,6 +14,13 @@ import type { Position } from './ListMenu'
 import type { SelectMode } from './MultipleModeBar'
 import { useActiveListId } from '@/store/list/hook'
 import { useSettingValue } from '@/store/setting/hook'
+import Button from '@/components/common/Button'
+import Text from '@/components/common/Text'
+import { Icon } from '@/components/common/Icon'
+import { useTheme } from '@/store/theme/hook'
+import { useI18n } from '@/lang'
+import { setNavActiveId } from '@/core/common'
+import { useDockInset } from '@/components/common/DockInset'
 
 type FlatListType = FlatListProps<LX.Music.MusicInfo>
 
@@ -45,7 +52,10 @@ const usePlayIndex = () => {
 
 
 const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, onSelectAll }, ref) => {
-  // const t = useI18n()
+  const t = useI18n()
+  const dockInset = useDockInset()
+  const theme = useTheme()
+  const [loaded, setLoaded] = useState(false)
   const flatListRef = useRef<FlatList>(null)
   const [currentList, setList] = useState<LX.List.ListMusics>([])
   const listFirstScrollRef = useRef(false)
@@ -105,6 +115,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
     const updateList = (id: string) => {
       if (currentListIdRef.current == id) return
       isUpdateingList = true
+      setLoaded(false)
       setList([])
       currentListIdRef.current = id
       void Promise.all([getListMusics(id), getListPosition(id)]).then(([list, position]) => {
@@ -113,6 +124,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
           selectedListRef.current = []
           setSelectedList([])
           setList([...list])
+          setLoaded(true)
           requestAnimationFrame(() => {
             isUpdateingList = false
             listFirstScrollRef.current = true
@@ -273,7 +285,16 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       ref={flatListRef}
       onScroll={handleScroll}
       style={styles.list}
+      contentContainerStyle={{ paddingBottom: dockInset }}
       data={currentList}
+      ListEmptyComponent={loaded
+        ? <View style={styles.empty}>
+            <View style={{ ...styles.emptyIcon, backgroundColor: theme['q-surface-tint'] }}><Icon name="album" rawSize={34} color={theme['q-accent-text']} /></View>
+            <Text size={17} color={theme['q-text-primary']}>{t('mobile_library_empty')}</Text>
+            <Text size={12} color={theme['q-text-secondary']} style={styles.emptyHint}>{t('mobile_library_empty_hint')}</Text>
+            <Button style={{ ...styles.explore, backgroundColor: theme['q-accent'] }} onPress={() => { setNavActiveId('nav_search') }}><Text size={13} color={theme['q-on-accent']}>{t('mobile_discover')}</Text></Button>
+          </View>
+        : null}
       maxToRenderPerBatch={4}
       numColumns={rowInfo.current.rowNum}
       horizontal={false}
@@ -290,6 +311,10 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
 })
 
 const styles = createStyle({
+  empty: { paddingHorizontal: 24, paddingVertical: 48, alignItems: 'center', gap: 12 },
+  emptyIcon: { width: 76, height: 76, borderRadius: 26, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  emptyHint: { textAlign: 'center', lineHeight: 20 },
+  explore: { marginTop: 8, minHeight: 48, paddingHorizontal: 32, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   container: {
     flex: 1,
   },

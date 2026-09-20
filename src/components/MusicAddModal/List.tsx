@@ -3,6 +3,7 @@ import { ScrollView, View } from 'react-native'
 
 import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
+import { Icon } from '@/components/common/Icon'
 import { useMyList } from '@/store/list/hook'
 import ListItem, { styles as listStyles } from './ListItem'
 import CreateUserList from './CreateUserList'
@@ -10,7 +11,6 @@ import { useWindowSize } from '@/utils/hooks'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
-import { scaleSizeW } from '@/utils/pixelRatio'
 
 const styles = createStyle({
   list: {
@@ -23,7 +23,6 @@ const styles = createStyle({
     // justifyContent: 'center',
   },
 })
-const MIN_WIDTH = scaleSizeW(150)
 const PADDING = styles.list.paddingLeft + styles.list.paddingRight
 
 
@@ -41,6 +40,7 @@ const EditListItem = ({ itemWidth }: {
         style={{ ...listStyles.button, borderColor: theme['c-primary-light-200-alpha-700'], borderStyle: 'dashed' }}
         onPress={() => { setEdit(true) }}
       >
+        <Icon accessible={false} name="add_folder" rawSize={20} color={theme['q-accent-text']} />
         <Text style={{ opacity: isEdit ? 0 : 1 }} numberOfLines={1} size={14} color={theme['c-button-font']}>{t('list_create')}</Text>
       </Button>
       {
@@ -59,10 +59,7 @@ export default ({ musicInfo, onPress }: {
   const windowSize = useWindowSize()
   const allList = useMyList()
   const itemWidth = useMemo(() => {
-    let w = Math.floor(windowSize.width * 0.9 - PADDING)
-    let n = Math.floor(w / MIN_WIDTH)
-    if (n > 10) n = 10
-    return Math.floor((w - 1) / n)
+    return Math.floor(Math.min(windowSize.width * 0.9, 380) - PADDING - 1)
   }, [windowSize])
 
   return (

@@ -7,6 +7,7 @@ import DrawerLayoutFixed, { type DrawerLayoutFixedType } from '@/components/comm
 import { COMPONENT_IDS } from '@/config/constant'
 import { scaleSizeW } from '@/utils/pixelRatio'
 import type { InitState as CommonState } from '@/store/common/state'
+import LibraryShortcuts from './LibraryShortcuts'
 
 const MAX_WIDTH = scaleSizeW(400)
 
@@ -64,6 +65,7 @@ export default () => {
       drawerBackgroundColor={theme['c-content-background']}
       style={{ elevation: 1 }}
     >
+      <LibraryShortcuts />
       <MusicList />
     </DrawerLayoutFixed>
   )

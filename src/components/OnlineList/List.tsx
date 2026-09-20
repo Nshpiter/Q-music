@@ -14,6 +14,7 @@ import Text from '@/components/common/Text'
 import { handlePlay } from './listAction'
 import { useSettingValue } from '@/store/setting/hook'
 import ContentState from '@/components/common/ContentState'
+import { useDockInset } from '@/components/common/DockInset'
 
 type FlatListType = FlatListProps<LX.Music.MusicInfoOnline>
 
@@ -60,6 +61,7 @@ const List = forwardRef<ListType, ListProps>(({
   // const t = useI18n()
   const theme = useTheme()
   const flatListRef = useRef<FlatList>(null)
+  const dockInset = useDockInset()
   const [currentList, setList] = useState<LX.Music.MusicInfoOnline[]>([])
   const [showSource, setShowSource] = useState(false)
   const isMultiSelectModeRef = useRef(false)
@@ -249,6 +251,7 @@ const List = forwardRef<ListType, ListProps>(({
     <FlatList
       ref={flatListRef}
       style={styles.list}
+      contentContainerStyle={{ paddingBottom: dockInset }}
       data={currentList}
       numColumns={rowInfo.current.rowNum}
       horizontal={false}

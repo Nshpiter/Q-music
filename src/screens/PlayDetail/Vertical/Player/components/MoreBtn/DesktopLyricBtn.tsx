@@ -24,7 +24,8 @@ export default memo(() => {
     <>
       <Btn
         icon={enabledLyric ? 'lyric-on' : 'lyric-off'}
-        accessibilityLabel={global.i18n.t('play_detail_page_lyric')}
+        label={global.i18n.t('mobile_desktop_lyric')}
+        accessibilityLabel={global.i18n.t('mobile_desktop_lyric')}
         selected={enabledLyric}
         onPress={update}
         onLongPress={updateLock}

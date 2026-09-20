@@ -5,7 +5,6 @@ import { View, StyleSheet } from 'react-native'
 import { pop } from '@/navigation'
 import StatusBar from '@/components/common/StatusBar'
 import { useTheme } from '@/store/theme/hook'
-import { usePlayerMusicInfo } from '@/store/player/hook'
 import Text from '@/components/common/Text'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { HEADER_HEIGHT as _HEADER_HEIGHT, NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
@@ -20,13 +19,11 @@ export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
 const Title = () => {
   const theme = useTheme()
-  const musicInfo = usePlayerMusicInfo()
 
 
   return (
     <View style={styles.titleContent}>
-      <Text numberOfLines={1} style={styles.title}>{musicInfo.name}</Text>
-      <Text numberOfLines={1} style={styles.title} size={12} color={theme['c-font-label']}>{musicInfo.singer}</Text>
+      <Text numberOfLines={1} style={styles.title} size={12} color={theme['q-text-secondary']}>{global.i18n.t('mobile_now_playing')}</Text>
     </View>
   )
 }
@@ -46,7 +43,7 @@ export default memo(() => {
     <View style={{ height: HEADER_HEIGHT + statusBarHeight, paddingTop: statusBarHeight }} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_header}>
       <StatusBar />
       <View style={styles.container}>
-        <Btn icon="chevron-left" accessibilityLabel={global.i18n.t('back')} onPress={back} />
+        <Btn icon="chevron-down" accessibilityLabel={global.i18n.t('back')} onPress={back} />
         <Title />
         <TimeoutExitBtn />
         <Btn icon="slider" accessibilityLabel={global.i18n.t('play_detail_setting_title')} onPress={showSetting} />
@@ -65,13 +62,15 @@ const styles = StyleSheet.create({
   },
   titleContent: {
     flex: 1,
-    paddingHorizontal: 5,
-    // alignItems: 'center',
+    paddingLeft: HEADER_HEIGHT + 5,
+    paddingRight: 5,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     // flex: 1,
-    // textAlign: 'center',
+    textAlign: 'center',
+    letterSpacing: 1,
   },
   icon: {
     paddingLeft: 4,

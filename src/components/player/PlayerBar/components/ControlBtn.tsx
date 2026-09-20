@@ -1,126 +1,27 @@
 import { StyleSheet, View } from 'react-native'
-import Button from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
+import { useRef } from 'react'
 import { useIsPlay } from '@/store/player/hook'
-import { useTheme } from '@/store/theme/hook'
 import { playNext, playPrev, togglePlay } from '@/core/player/player'
-import { qSoftShadow } from '@/theme/ui'
-import { useWindowSize } from '@/utils/hooks'
-import ImageBackground from '@/components/common/ImageBackground'
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const gradientPrimary = require('@/resources/images/gradient-primary.png')
-
-const SECONDARY_FACE_SIZE = 32
-const PRIMARY_FACE_SIZE = 44
-const TOUCH_SIZE = 48
-
-const TransportButton = ({ icon, accessibilityLabel, primary = false, onPress }: {
-  icon: string
-  accessibilityLabel: string
-  primary?: boolean
-  onPress: () => void
-}) => {
-  const theme = useTheme()
-  return (
-    <Button
-      accessibilityLabel={accessibilityLabel}
-      style={styles.touchTarget}
-      onPress={onPress}
-    >
-      <View
-        style={[
-          styles.buttonFace,
-          primary ? styles.primaryFace : styles.secondaryFace,
-          primary
-            ? {
-                ...qSoftShadow,
-                backgroundColor: theme.isDark ? '#f4f6f5' : '#252827',
-                borderColor: theme.isDark ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.68)',
-              }
-            : null,
-        ]}
-      >
-        <Icon
-          accessible={false}
-          name={icon}
-          color={primary ? (theme.isDark ? '#252827' : '#fff') : theme['q-text-primary']}
-          size={primary ? 20 : 18}
-        />
-      </View>
-    </Button>
-  )
-}
-
-const PlayPrevBtn = () => (
-  <TransportButton icon="prevMusic" accessibilityLabel={global.i18n.t('play_prev')} onPress={() => { void playPrev() }} />
-)
-
-const PlayNextBtn = () => (
-  <TransportButton icon="nextMusic" accessibilityLabel={global.i18n.t('play_next')} onPress={() => { void playNext() }} />
-)
-
-const TogglePlayBtn = () => {
-  const isPlay = useIsPlay()
-  return (
-    <Button
-      accessibilityLabel={global.i18n.t(isPlay ? 'pause' : 'play')}
-      style={styles.touchTarget}
-      onPress={togglePlay}
-    >
-      <View style={[styles.buttonFace, styles.primaryFace, qSoftShadow]}>
-        <ImageBackground source={gradientPrimary} style={styles.primaryGradient} imageStyle={{ borderRadius: 999 }}>
-          <Icon accessible={false} name={isPlay ? 'pause' : 'play'} color="#ffffff" size={20} />
-        </ImageBackground>
-      </View>
-    </Button>
-  )
-}
+import PlayQueue, { type PlayQueueType } from '@/components/player/PlayQueue'
+import TransportButton from '@/components/player/TransportButton'
+import { useGlassColors } from '@/components/common/GlassSurface'
 
 export default () => {
-  const { width } = useWindowSize()
-  const compact = width < 380
-
-  return (
-    <View style={styles.container}>
-      {compact ? null : <PlayPrevBtn />}
-      <TogglePlayBtn />
-      <PlayNextBtn />
+  const isPlay = useIsPlay()
+  const colors = useGlassColors()
+  const queueRef = useRef<PlayQueueType>(null)
+  return <View style={styles.container}>
+    <TransportButton color={colors.primary} icon="prevMusic" label={global.i18n.t('play_prev')} size={44} iconSize={17} onPress={() => { void playPrev() }} />
+    <View style={styles.primaryTarget}>
+      <TransportButton color={colors.primary} icon={isPlay ? 'pause' : 'play'} label={global.i18n.t(isPlay ? 'pause' : 'play')} primary size={44} faceSize={30} iconSize={15} onPress={togglePlay} />
     </View>
-  )
+    <TransportButton color={colors.primary} icon="nextMusic" label={global.i18n.t('play_next')} size={44} iconSize={17} onPress={() => { void playNext() }} />
+    <TransportButton color={colors.primary} icon="menu" label={global.i18n.t('play_queue_title')} size={44} iconSize={19} onPress={() => { queueRef.current?.show() }} />
+    <PlayQueue ref={queueRef} />
+  </View>
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 1,
-  },
-  touchTarget: {
-    width: TOUCH_SIZE,
-    height: TOUCH_SIZE,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonFace: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  primaryGradient: {
-    width: PRIMARY_FACE_SIZE,
-    height: PRIMARY_FACE_SIZE,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  secondaryFace: {
-    width: SECONDARY_FACE_SIZE,
-    height: SECONDARY_FACE_SIZE,
-  },
-  primaryFace: {
-    width: PRIMARY_FACE_SIZE,
-    height: PRIMARY_FACE_SIZE,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
+  container: { flexDirection: 'row', alignItems: 'center' },
+  primaryTarget: { width: 44, height: 48, alignItems: 'center', justifyContent: 'center' },
 })

@@ -11,6 +11,10 @@ import SearchInput, { type SearchInputType, type SearchInputProps } from './Sear
 import { useTheme } from '@/store/theme/hook'
 import { type Source as MusicSource } from '@/store/search/music/state'
 import { type Source as SonglistSource } from '@/store/search/songlist/state'
+import Button from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
+import { setNavActiveId } from '@/core/common'
+import { useI18n } from '@/lang'
 
 type Sources = Readonly<Array<MusicSource | SonglistSource>>
 type SourceSelectorProps = _SourceSelectorProps<Sources>
@@ -36,6 +40,7 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
   const sourceSelectorRef = useRef<SourceSelectorType>(null)
   const searchInputRef = useRef<SearchInputType>(null)
   const theme = useTheme()
+  const t = useI18n()
 
   useImperativeHandle(ref, () => ({
     setSourceList(list, source) {
@@ -74,20 +79,23 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
           onTouchStart={onShowTipList}
         />
       </View>
+      <Button accessibilityLabel={t('nav_setting')} style={styles.settings} onPress={() => { setNavActiveId('nav_setting') }}>
+        <Icon name="setting" rawSize={22} color={theme['q-text-primary']} />
+      </Button>
     </View>
   )
 })
 
 const styles = StyleSheet.create({
+  settings: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   searchBar: {
     flexDirection: 'row',
     flexShrink: 0,
-    height: 56,
+    height: 64,
     alignItems: 'center',
     zIndex: 2,
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   searchControl: {
     flex: 1,
@@ -95,7 +103,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 24,
     overflow: 'hidden',
   },
   selector: {

@@ -2,6 +2,7 @@ import { forwardRef, useImperativeHandle, useState } from 'react'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
+import { Icon } from '@/components/common/Icon'
 import Button from '@/components/common/Button'
 import { Q_UI } from '@/theme/ui'
 
@@ -30,6 +31,7 @@ export default forwardRef<ActiveListNameType, ActiveListNameProps>(({ onShowBoun
       style={styles.currentList}
     >
       <Text numberOfLines={1} style={styles.currentListText} color={theme['c-button-font']}>{currentListName}</Text>
+      <Icon accessible={false} name="chevron-down" rawSize={15} color={theme['q-text-secondary']} />
     </Button>
   )
 })
@@ -39,7 +41,8 @@ const styles = createStyle({
   currentList: {
     flex: 1,
     flexDirection: 'row',
-    paddingRight: 2,
+    paddingRight: 16,
+    paddingLeft: 12,
     minHeight: Q_UI.touchSize,
     height: Q_UI.touchSize,
     alignItems: 'center',

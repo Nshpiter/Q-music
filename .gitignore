@@ -73,3 +73,6 @@ buck-out/
 
 # testing
 /coverage
+
+# Local emulator captures, QA packages and build verification logs
+/artifacts/

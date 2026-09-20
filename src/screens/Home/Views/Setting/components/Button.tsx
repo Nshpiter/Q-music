@@ -5,7 +5,7 @@ import Button, { type BtnProps } from '@/components/common/Button'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
-import { Q_UI, qSurfaceShadow } from '@/theme/ui'
+import { Q_UI } from '@/theme/ui'
 
 type ButtonProps = BtnProps
 
@@ -14,7 +14,6 @@ export default memo(({ disabled, onPress, children, style, ...props }: ButtonPro
   const buttonStyle = typeof style === 'function'
     ? (state: PressableStateCallbackType) => [
         styles.button,
-        qSurfaceShadow,
         {
           backgroundColor: theme['q-surface-tint'],
           borderColor: theme['c-primary-alpha-700'],
@@ -23,7 +22,6 @@ export default memo(({ disabled, onPress, children, style, ...props }: ButtonPro
       ]
     : [
         styles.button,
-        qSurfaceShadow,
         {
           backgroundColor: theme['q-surface-tint'],
           borderColor: theme['c-primary-alpha-700'],
@@ -50,7 +48,7 @@ const styles = createStyle({
     paddingRight: 16,
     paddingTop: 10,
     paddingBottom: 10,
-    borderWidth: 1,
+    borderWidth: 0,
     borderRadius: 12,
     marginRight: 10,
     alignItems: 'center',

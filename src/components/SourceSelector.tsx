@@ -108,7 +108,8 @@ const styles = StyleSheet.create({
   sourceButton: {
     height: Q_UI.touchSize,
     minHeight: Q_UI.touchSize,
-    minWidth: 96,
+    minWidth: 136,
+    width: 136,
     maxWidth: 164,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 14,

@@ -3,7 +3,6 @@ import { StyleSheet, View } from 'react-native'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
-import { qSurfaceShadow } from '@/theme/ui'
 
 
 interface Props {
@@ -19,9 +18,8 @@ export default ({ title, children }: Props) => {
       <View
         style={{
           ...styles.card,
-          ...qSurfaceShadow,
           backgroundColor: theme['q-surface-raised'],
-          borderColor: theme.isDark ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.62)',
+          borderColor: theme['q-outline'],
         }}
       >
         <View style={styles.header}>

@@ -5,7 +5,6 @@ import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
-import { qSurfaceShadow } from '@/theme/ui'
 
 export type ContentStatus = 'loading' | 'error' | 'empty'
 
@@ -27,15 +26,15 @@ export default ({ status, onRetry }: {
       <View
         style={{
           ...styles.iconFace,
-          backgroundColor: theme['q-surface-tint'],
+          backgroundColor: 'transparent',
           borderColor: theme['q-outline'],
         }}
       >
         {status == 'loading'
           ? <ActivityIndicator color={theme['q-accent']} />
-          : <Icon accessible={false} name={status == 'error' ? 'close' : 'album'} color={theme['q-accent-text']} rawSize={23} />}
+          : <Icon accessible={false} name={status == 'error' ? 'available_updates' : 'album'} color={theme['q-text-secondary']} rawSize={28} />}
       </View>
-      <Text style={styles.title} size={15} color={theme['q-text-primary']}>{title}</Text>
+      <Text style={styles.title} size={13} color={theme['q-text-secondary']}>{title}</Text>
       {status == 'error' && onRetry
         ? (
             <Button
@@ -43,13 +42,11 @@ export default ({ status, onRetry }: {
               accessibilityLabel={t('list_retry')}
               style={{
                 ...styles.retryButton,
-                ...qSurfaceShadow,
-                backgroundColor: theme['q-accent'],
+                backgroundColor: theme['q-surface-tint'],
               }}
               onPress={onRetry}
             >
-              <Icon name="available_updates" color={theme['q-on-accent']} rawSize={15} />
-              <Text size={13} color={theme['q-on-accent']}>{t('list_retry')}</Text>
+              <Text size={13} color={theme['q-accent-text']}>{t('list_retry')}</Text>
             </Button>
           )
         : null}
@@ -68,13 +65,12 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 18,
-    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     marginTop: 14,
-    fontWeight: '600',
+    fontWeight: '400',
     textAlign: 'center',
   },
   retryButton: {
@@ -82,7 +78,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
     marginTop: 16,
     paddingHorizontal: 18,
-    borderRadius: 14,
+    borderRadius: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

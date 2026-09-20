@@ -4,7 +4,6 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { scaleSizeW, scaleSizeH } from '@/utils/pixelRatio'
 import { useDrag } from '@/utils/hooks'
-import { Icon } from '@/components/common/Icon'
 // import { AppColors } from '@/theme'
 
 
@@ -17,7 +16,7 @@ const DefaultBar = memo(() => {
 const BufferedBar = memo(({ progress }: { progress: number }) => {
   // console.log(bufferedProgress)
   const theme = useTheme()
-  return <View style={{ ...styles.progressBar, backgroundColor: theme['q-accent'], position: 'absolute', width: `${progress * 100}%`, left: 0, top: 0 }}></View>
+  return <View style={{ ...styles.progressBar, backgroundColor: theme['q-surface-tint'], position: 'absolute', width: `${progress * 100}%`, left: 0, top: 0 }}></View>
 })
 
 
@@ -72,42 +71,46 @@ const Progress = ({ progress, duration, buffered }: {
   const [draging, setDraging] = useState(false)
   const [dragProgress, setDragProgress] = useState(0)
   // console.log(progress)
-  const progressStr: `${number}%` = `${progress * 100}%`
+  const progressStr: `${number}%` = `${duration > 0 && Number.isFinite(progress) ? Math.max(0, Math.min(progress, 1)) * 100 : 0}%`
 
   const progressDotStyle = useMemo(() => {
+    const size = draging ? progressDotSize * 1.6 : progressDotSize
     return {
-      width: progressDotSize,
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      backgroundColor: theme['q-text-primary'],
       position: 'absolute',
-      right: -progressDotSize / 2,
-      top: -(progressDotSize - progressHeightSize) / 2,
+      right: -size / 2,
+      top: -(size - progressHeightSize) / 2,
     } as const
-  }, [])
+  }, [draging, theme])
 
   const durationRef = useRef(duration)
   useEffect(() => {
     durationRef.current = duration
   }, [duration])
   const onSetProgress = useCallback((progress: number) => {
-    global.app_event.setProgress(progress * durationRef.current)
+    if (durationRef.current > 0) global.app_event.setProgress(progress * durationRef.current)
   }, [])
 
   return (
     <View style={styles.progress}>
       <View>
         <DefaultBar />
-        <BufferedBar progress={buffered} />
+        <BufferedBar progress={duration > 0 && Number.isFinite(buffered) ? Math.max(0, Math.min(buffered, 1)) : 0} />
         {
           draging
             ? (
                 <>
                   <View style={{ ...styles.progressBar, backgroundColor: theme['q-accent'], width: progressStr, position: 'absolute', left: 0, top: 0 }} />
                   <View style={{ ...styles.progressBar, backgroundColor: theme['q-accent'], width: `${dragProgress * 100}%`, position: 'absolute', left: 0, top: 0 }}>
-                    <Icon name="full_stop" color={theme['q-on-accent']} rawSize={progressDotSize} style={progressDotStyle} />
+                    <View style={progressDotStyle} />
                   </View>
                 </>
               ) : (
                 <View style={{ ...styles.progressBar, backgroundColor: theme['q-accent'], width: progressStr, position: 'absolute', left: 0, top: 0 }}>
-                  <Icon name="full_stop" color={theme['q-on-accent']} rawSize={progressDotSize} style={progressDotStyle} />
+                  <View style={progressDotStyle} />
                 </View>
               )
         }
@@ -124,7 +127,7 @@ const progressContentPadding = 10
 const progressHeight = 3.6
 const progressContentHeight = progressContentPadding * 2 + progressHeight
 const progressHeightSize = scaleSizeH(progressHeight)
-let progressDotSize = scaleSizeW(progressContentHeight * 0.8)
+const progressDotSize = scaleSizeW(8)
 const styles = createStyle({
   progress: {
     width: '100%',

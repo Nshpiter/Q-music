@@ -9,6 +9,7 @@ import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import ContentState from '@/components/common/ContentState'
+import { useDockInset } from '@/components/common/DockInset'
 
 type FlatListType = FlatListProps<ListInfoItem>
 
@@ -26,6 +27,7 @@ export interface ListType {
 
 export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenDetail }, ref) => {
   const flatListRef = useRef<FlatList>(null)
+  const dockInset = useDockInset()
   const [currentList, setList] = useState<ListInfoItem[]>([])
   const [showSource, setShowSource] = useState(false)
   const [status, setStatus] = useState<Status>('idle')
@@ -111,7 +113,7 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
       <FlatList
         ref={flatListRef}
         style={styles.list}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 8 + dockInset }]}
         data={currentList}
         maxToRenderPerBatch={10}
         windowSize={8}

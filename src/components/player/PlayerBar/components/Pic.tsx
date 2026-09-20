@@ -1,7 +1,6 @@
 import { StyleSheet } from 'react-native'
 import { navigations } from '@/navigation'
 import { usePlayerMusicInfo } from '@/store/player/hook'
-import { scaleSizeH } from '@/utils/pixelRatio'
 import commonState from '@/store/common/state'
 import playerState from '@/store/player/state'
 import { LIST_IDS, NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
@@ -12,21 +11,22 @@ import { useTheme } from '@/store/theme/hook'
 import { Q_UI } from '@/theme/ui'
 import Button from '@/components/common/Button'
 
-const PIC_HEIGHT = Math.max(scaleSizeH(52), 52)
+const PIC_HEIGHT = 34
 
 const styles = StyleSheet.create({
   button: {
+    flexShrink: 0,
     width: PIC_HEIGHT,
     height: PIC_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Q_UI.radius.cover,
+    borderRadius: Q_UI.radius.item,
     overflow: 'hidden',
   },
   image: {
     width: PIC_HEIGHT,
     height: PIC_HEIGHT,
-    borderRadius: Q_UI.radius.cover,
+    borderRadius: Q_UI.radius.item,
     borderWidth: 1,
   },
 })
@@ -61,6 +61,7 @@ export default ({ isHome }: { isHome: boolean }) => {
     <Button
       accessibilityLabel={musicInfo.id ? `${musicInfo.name} · ${musicInfo.singer}` : global.i18n.t('play_detail_setting_title')}
       style={styles.button}
+      hitSlop={5}
       onLongPress={handleLongPress}
       onPress={handlePress}
       disabled={!musicInfo.id}

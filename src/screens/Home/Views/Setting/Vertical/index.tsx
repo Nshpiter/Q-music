@@ -4,11 +4,13 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 import Main, { type MainType } from '../Main'
 import NavList from './NavList'
 import { useTheme } from '@/store/theme/hook'
+import { useDockInset } from '@/components/common/DockInset'
 
 export default () => {
   const mainRef = useRef<MainType>(null)
   const scrollRef = useRef<ScrollView>(null)
   const theme = useTheme()
+  const dockInset = useDockInset()
 
   const handleChangeId = (id: Parameters<MainType['setActiveId']>[0]) => {
     mainRef.current?.setActiveId(id)
@@ -23,7 +25,7 @@ export default () => {
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 28 + dockInset }]}
         keyboardShouldPersistTaps="handled"
       >
         <Main ref={mainRef} />

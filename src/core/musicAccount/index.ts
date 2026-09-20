@@ -20,6 +20,9 @@ export const logoutMusicAccount = async(provider: MusicAccountProvider) => {
   const { clearProviderCookies } = await import('./cookies')
   await clearProviderCookies(provider)
   clearOfficialUrlCache()
+  const { clearDailyCache, clearQQDailyKey } = await import('./daily')
+  clearDailyCache()
+  if (provider == 'tx') await clearQQDailyKey()
 }
 
 const getOfficialQualityFallbacks = (quality: LX.Quality): LX.Quality[] => {

@@ -1,36 +1,28 @@
 import hotSearchState, { type Source } from '@/store/hotSearch/state'
-import hotSearchActions, { type Lists } from '@/store/hotSearch/action'
+import hotSearchActions from '@/store/hotSearch/action'
 import musicSdk from '@/utils/musicSdk'
 
-export const getList = async(source: Source): Promise<string[]> => {
-  if (source == 'all') {
-    let task = []
-    for (const source of hotSearchState.sources) {
-      if (source == 'all') continue
-      task.push(
-        hotSearchState.sourceList[source]?.length
-          ? Promise.resolve({ source, list: hotSearchState.sourceList[source] })
-          : ((musicSdk[source]?.hotSearch.getList() as Promise<Lists[number]>) ?? Promise.reject(new Error('source not found: ' + source))).catch((err: any) => {
-              console.log(err)
-              return { source, list: [] }
-            }),
-      )
-    }
-    return Promise.all(task).then((results: Lists) => {
-      return hotSearchActions.setList(source, results)
-    })
-  } else {
-    if (hotSearchState.sourceList[source]?.length) return hotSearchState.sourceList[source]
-    if (!musicSdk[source]?.hotSearch) {
-      hotSearchActions.setList(source, [])
-      return []
-    }
-    return musicSdk[source]?.hotSearch.getList().catch((err: any) => {
-      console.log(err)
-      return { source, list: [] }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    }).then(data => hotSearchActions.setList(source, data.list))
+// 聚合热搜对每个平台单独限时，慢平台不能拖住其他平台的结果。
+const loadSource = async(source: LX.OnlineSource) => {
+  const cached = hotSearchState.sourceList[source]
+  if (cached?.length) return { source, list: cached }
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    const list = await Promise.race([
+      musicSdk[source]?.hotSearch?.getList().then((data: { list: string[] }) => data.list) ?? Promise.resolve([]),
+      new Promise<string[]>(resolve => { timer = setTimeout(() => { resolve([]) }, 8000) }),
+    ])
+    return { source, list }
+  } catch {
+    return { source, list: [] }
+  } finally {
+    if (timer) clearTimeout(timer)
   }
 }
-
-
+export const getList = async(source: Source): Promise<string[]> => {
+  if (source == 'all') {
+    const sources = hotSearchState.sources.filter((item): item is LX.OnlineSource => item != 'all')
+    return hotSearchActions.setList(source, await Promise.all(sources.map(loadSource)))
+  }
+  return hotSearchActions.setList(source, (await loadSource(source)).list)
+}

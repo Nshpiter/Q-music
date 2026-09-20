@@ -1,5 +1,5 @@
-import { memo, useState, useRef, useMemo, useEffect } from 'react'
-import { View, AppState, StyleSheet } from 'react-native'
+import { memo, useState, useRef, useEffect } from 'react'
+import { View, AppState } from 'react-native'
 
 import Header from './components/Header'
 // import Aside from './components/Aside'
@@ -14,20 +14,17 @@ import commonState, { type InitState as CommonState } from '@/store/common/state
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
-import Text from '@/components/common/Text'
 import Button from '@/components/common/Button'
-import { Q_UI } from '@/theme/ui'
 
 const LyricPage = ({ activeIndex }: { activeIndex: number }) => {
   const initedRef = useRef(false)
-  const lyric = useMemo(() => <Lyric />, [])
   switch (activeIndex) {
     // case 3:
     case 1:
       if (!initedRef.current) initedRef.current = true
-      return lyric
+      return <Lyric active />
     default:
-      return initedRef.current ? lyric : null
+      return initedRef.current ? <Lyric active={false} /> : null
   }
   // return activeIndex == 0 || activeIndex == 1 ? setting : null
 }
@@ -95,9 +92,7 @@ export default memo(({ componentId }: { componentId: string }) => {
             <LyricPage activeIndex={pageIndex} />
           </View>
         </PagerView>
-        <View
-          style={{ ...styles.pageIndicator, backgroundColor: theme['q-surface-base'], borderColor: theme['q-outline'] }}
-        >
+        <View style={styles.pageIndicator}>
           {[t('play_detail_page_cover'), t('play_detail_page_lyric')].map((label, index) => {
             const active = pageIndex == index
             return (
@@ -106,10 +101,11 @@ export default memo(({ componentId }: { componentId: string }) => {
                 accessibilityRole="tab"
                 accessibilityLabel={label}
                 accessibilityState={{ selected: active }}
-                style={{ ...styles.pageIndicatorItem, backgroundColor: active ? theme['q-accent'] : 'transparent' }}
+                style={styles.pageIndicatorItem}
+                ripple={null}
                 onPress={() => { pagerViewRef.current?.setPage(index) }}
               >
-                <Text size={12} color={active ? theme['q-on-accent'] : theme['q-text-secondary']}>{label}</Text>
+                <View style={{ width: active ? 14 : 4, height: 4, borderRadius: 2, backgroundColor: active ? theme['q-text-primary'] : theme['q-outline'] }} />
               </Button>
             )
           })}
@@ -129,19 +125,13 @@ const styles = createStyle({
     flex: 1,
   },
   pageIndicator: {
-    width: 164,
-    height: Q_UI.touchSize,
-    marginTop: 4,
-    marginBottom: 4,
+    height: 24,
     alignSelf: 'center',
     flexDirection: 'row',
-    padding: 3,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 13,
   },
   pageIndicatorItem: {
-    flex: 1,
-    borderRadius: 10,
+    width: 36,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },

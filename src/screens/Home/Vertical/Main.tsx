@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react'
-import { View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import Search from '../Views/Search'
 import SongList from '../Views/SongList'
 import Mylist from '../Views/Mylist'
@@ -12,6 +12,8 @@ import PagerView, { type PageScrollStateChangedNativeEvent, type PagerViewOnPage
 import { setNavActiveId } from '@/core/common'
 import settingState from '@/store/setting/state'
 import Header from './Header'
+import { useNavActiveId } from '@/store/common/hook'
+import { useTheme } from '@/store/theme/hook'
 
 const hideKeys = [
   'list.isShowAlbumName',
@@ -218,8 +220,10 @@ const indexMap = [
 ] as const
 
 const Main = () => {
+  const activeId = useNavActiveId()
+  const theme = useTheme()
   const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null)
-  let activeIndexRef = useRef(viewMap[commonState.navActiveId])
+  let activeIndexRef = useRef(Math.min(viewMap[commonState.navActiveId], 3))
   // const isScrollingRef = useRef(false)
   // const scrollPositionRef = useRef(-1)
 
@@ -239,6 +243,7 @@ const Main = () => {
   // }, [setNavActiveIndex])
 
   const onPageSelected = useCallback(({ nativeEvent }: PagerViewOnPageSelectedEvent) => {
+    if (commonState.navActiveId == 'download' || commonState.navActiveId == 'nav_setting') return
     // console.log(nativeEvent)
     activeIndexRef.current = nativeEvent.position
     if (activeIndexRef.current != viewMap[commonState.navActiveId]) {
@@ -270,6 +275,7 @@ const Main = () => {
   useEffect(() => {
     const handleUpdate = (id: CommonState['navActiveId']) => {
       const index = viewMap[id]
+      if (index > 3) return
       if (activeIndexRef.current == index) return
       activeIndexRef.current = index
       pagerViewRef.current?.setPageWithoutAnimation(index)
@@ -313,14 +319,6 @@ const Main = () => {
         <Header />
         <MylistPage />
       </View>
-      <View collapsable={false} key="download" style={styles.pageStyle}>
-        <Header />
-        <DownloadPage />
-      </View>
-      <View collapsable={false} key="nav_setting" style={styles.pageStyle}>
-        <Header />
-        <SettingPage />
-      </View>
       {/* <View collapsable={false} key="nav_search" style={styles.pageStyle}>
         <Search />
       </View>
@@ -339,7 +337,14 @@ const Main = () => {
     </PagerView>
   ), [onPageScrollStateChanged, onPageSelected])
 
-  return component
+  const secondary = activeId == 'download' || activeId == 'nav_setting'
+  return <View style={styles.pageStyle}>
+    <View collapsable={false} style={styles.pageStyle} pointerEvents={secondary ? 'none' : 'auto'} accessibilityElementsHidden={secondary} importantForAccessibility={secondary ? 'no-hide-descendants' : 'auto'}>{component}</View>
+    {secondary ? <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: theme['c-content-background'] }}>
+      <Header />
+      {activeId == 'download' ? <DownloadPage /> : <SettingPage />}
+    </View> : null}
+  </View>
 }
 
 const styles = createStyle({

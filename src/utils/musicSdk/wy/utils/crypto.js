@@ -30,7 +30,8 @@ const rsaEncrypt = (buffer, key) => {
 
 export const weapi = object => {
   const text = JSON.stringify(object)
-  const secretKey = String(Math.random()).substring(2, 18)
+  // 必须固定为 16 字节，浮点数字符串偶尔不足 16 位，会导致 AES 请求失败。
+  const secretKey = Array.from({ length: 16 }, () => Math.floor(Math.random() * 10)).join('')
   return {
     params: aesEncrypt(btoa(aesEncrypt(Buffer.from(text).toString('base64'), AES_MODE.CBC_128_PKCS7Padding, presetKey, iv)), AES_MODE.CBC_128_PKCS7Padding, btoa(secretKey), iv),
     encSecKey: rsaEncrypt(Buffer.from(secretKey).reverse(), publicKey).toString('hex'),

@@ -74,9 +74,8 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     flexShrink: 0,
-    borderRadius: 4,
+    borderRadius: 12,
     overflow: 'hidden',
-    elevation: 1,
   },
   coverImage: {
     width: 70,
@@ -85,7 +84,7 @@ const styles = StyleSheet.create({
   content: {
     minWidth: 0,
     flex: 1,
-    paddingLeft: 10,
+    paddingLeft: 14,
     paddingRight: 4,
   },
   title: {

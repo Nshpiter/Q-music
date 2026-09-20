@@ -32,6 +32,8 @@ export default {
     return setList(source, list as string[])
   },
   clearList(source: Source) {
-    state.sourceList[source] = []
+    if (source == 'all') {
+      for (const item of state.sources) state.sourceList[item] = []
+    } else state.sourceList[source] = []
   },
 }

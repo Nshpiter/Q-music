@@ -11,7 +11,6 @@ import commonState from '@/store/common/state'
 import CommentBtn from './CommentBtn'
 import Btn from './Btn'
 import SettingPopup, { type SettingPopupType } from '../../components/SettingPopup'
-import DesktopLyricBtn from './DesktopLyricBtn'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
@@ -43,7 +42,6 @@ export default memo(() => {
       <View style={styles.container}>
         <Btn icon="chevron-left" accessibilityLabel={global.i18n.t('back')} onPress={back} />
         <Title />
-        <DesktopLyricBtn />
         <CommentBtn />
         <Btn icon="slider" accessibilityLabel={global.i18n.t('play_detail_setting_title')} onPress={showSetting} />
       </View>

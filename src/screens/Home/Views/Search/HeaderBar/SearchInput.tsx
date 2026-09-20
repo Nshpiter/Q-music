@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native'
 import Input, { type InputType, type InputProps } from '@/components/common/Input'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
+import { useWindowSize } from '@/utils/hooks'
 
 export interface SearchInputProps {
   onChangeText: (text: string) => void
@@ -21,6 +22,7 @@ export interface SearchInputType {
 export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, onSubmit, onBlur, onTouchStart }, ref) => {
   const theme = useTheme()
   const t = useI18n()
+  const { width } = useWindowSize()
   const [text, setText] = useState('')
   const inputRef = useRef<InputType>(null)
 
@@ -60,7 +62,12 @@ export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, on
   return (
     <Input
       ref={inputRef}
-      placeholder={t('nav_search')}
+      placeholder={t(width < 360 ? 'mobile_search' : 'mobile_search_hint')}
+      accessibilityLabel={t('mobile_search_hint')}
+      numberOfLines={1}
+      multiline={false}
+      returnKeyType="search"
+      blurOnSubmit
       value={text}
       onChangeText={handleChangeText}
       // style={{ ...styles.input, backgroundColor: theme['c-primary-input-background'] }}
@@ -69,13 +76,13 @@ export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, on
       onClearText={handleClearText}
       onTouchStart={onTouchStart}
       clearBtn
-      clearButtonAccessibilityLabel={`${t('delete')} ${t('nav_search')}`}
+      clearButtonAccessibilityLabel={`${t('delete')} ${t('mobile_search')}`}
       actionIcon="search-2"
-      actionAccessibilityLabel={t('nav_search')}
+      actionAccessibilityLabel={t('mobile_search')}
       onActionPress={handleSubmitPress}
       containerStyle={{
         ...styles.container,
-        backgroundColor: theme.isDark ? theme['q-surface-raised'] : '#ffffff',
+        backgroundColor: 'transparent',
         borderColor: theme['q-outline'],
       }}
     />
@@ -85,7 +92,7 @@ export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, on
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 0,
     borderRadius: 999,
     minHeight: 44,
   },

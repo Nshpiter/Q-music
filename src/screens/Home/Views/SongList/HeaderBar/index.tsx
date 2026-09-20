@@ -47,19 +47,22 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSortChange, onTagC
 
   return (
     <View style={styles.searchBar}>
-      <SortTab ref={sortTabRef} onSortChange={onSortChange} />
-      <Tag ref={tagRef} onTagChange={onTagChange} />
-      <OpenList ref={openListRef} />
-      <SourceSelector ref={sourceSelectorRef} onSourceChange={onSourceChange} />
+      <View style={styles.row}>
+        <SortTab ref={sortTabRef} onSortChange={onSortChange} />
+        <SourceSelector ref={sourceSelectorRef} onSourceChange={onSourceChange} />
+      </View>
+      <View style={styles.row}>
+        <Tag ref={tagRef} onTagChange={onTagChange} />
+        <OpenList ref={openListRef} />
+      </View>
     </View>
   )
 })
 
 const styles = createStyle({
   searchBar: {
-    flexDirection: 'row',
-    height: 48,
-    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingBottom: 4,
     zIndex: 2,
     // paddingRight: 10,
     // borderBottomWidth: BorderWidths.normal,
@@ -67,4 +70,5 @@ const styles = createStyle({
   selector: {
     width: 86,
   },
+  row: { flexDirection: 'row', minHeight: 44, alignItems: 'center', justifyContent: 'space-between' },
 })

@@ -1,7 +1,7 @@
 import { View } from 'react-native'
 import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
-import { BorderWidths } from '@/theme'
+import { Icon } from '@/components/common/Icon'
 import { createStyle, toast } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useMusicExistsList } from '@/store/list/hook'
@@ -28,10 +28,12 @@ export default ({ listInfo, onPress, musicInfo, width }: {
     <View style={{ ...styles.listItem, width }}>
       <Button
         accessibilityLabel={listInfo.name}
-        style={{ ...styles.button, backgroundColor: theme['c-button-background'], borderColor: theme['c-primary-light-400-alpha-300'], opacity: isExists ? 0.4 : 1 }}
+        style={{ ...styles.button, backgroundColor: theme['q-surface-tint'], opacity: isExists ? 0.4 : 1 }}
         onPress={handlePress}
       >
-        <Text numberOfLines={1} size={14} color={theme['c-button-font']}>{listInfo.name}</Text>
+        <Icon accessible={false} name="album" rawSize={20} color={theme['q-accent-text']} />
+        <Text style={{ flex: 1 }} numberOfLines={1} size={14} color={theme['q-text-primary']}>{listInfo.name}</Text>
+        <Icon accessible={false} name="chevron-right" rawSize={16} color={theme['q-text-secondary']} />
       </Button>
     </View>
   )
@@ -45,15 +47,16 @@ export const styles = createStyle({
   },
   button: {
     minHeight: Q_UI.touchSize,
-    height: Q_UI.touchSize,
-    paddingLeft: 10,
-    paddingRight: 10,
+    height: 56,
+    flexDirection: 'row',
+    gap: 12,
+    paddingLeft: 16,
+    paddingRight: 16,
     marginRight: 10,
     marginBottom: 10,
     borderRadius: Q_UI.radius.control,
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: BorderWidths.normal1,
+    justifyContent: 'flex-start',
   },
 })

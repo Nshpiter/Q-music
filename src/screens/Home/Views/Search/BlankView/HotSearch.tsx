@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { ActivityIndicator, View } from 'react-native'
+import { ActivityIndicator, ScrollView, View } from 'react-native'
 import { type Source, type InitState } from '@/store/hotSearch/state'
 import Button from '@/components/common/Button'
 import { getList } from '@/core/hotSearch'
@@ -7,7 +7,7 @@ import Text from '@/components/common/Text'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
-import { Q_TOUCH_HIT_SLOP, qSurfaceShadow } from '@/theme/ui'
+import { Q_TOUCH_HIT_SLOP } from '@/theme/ui'
 import hotSearchActions from '@/store/hotSearch/action'
 import { Icon } from '@/components/common/Icon'
 
@@ -88,7 +88,6 @@ export default forwardRef<HotSearchType, ListProps>((props, ref) => {
     <View
       style={{
         ...styles.card,
-        ...qSurfaceShadow,
         backgroundColor: theme['q-surface-raised'],
         borderColor: theme['q-outline'],
       }}
@@ -103,7 +102,7 @@ export default forwardRef<HotSearchType, ListProps>((props, ref) => {
       {loading && !list.length
         ? <View style={styles.state}><ActivityIndicator color={theme['q-accent']} /><Text color={theme['q-text-secondary']} size={12}>{t('search_hot_search_loading')}</Text></View>
         : list.length
-          ? <View style={styles.list}>{list.map(keyword => <ListItem keyword={keyword} key={keyword} onSearch={props.onSearch} />)}</View>
+          ? <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.list}>{list.map(keyword => <ListItem keyword={keyword} key={keyword} onSearch={props.onSearch} />)}</ScrollView>
           : <Text style={styles.empty} color={theme['q-text-secondary']} size={12}>{t('search_hot_search_empty')}</Text>}
     </View>
   )
@@ -112,8 +111,8 @@ export default forwardRef<HotSearchType, ListProps>((props, ref) => {
 
 const styles = createStyle({
   card: {
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 10,
+    paddingBottom: 12,
     paddingLeft: 16,
     paddingRight: 16,
     borderWidth: 1,
@@ -151,7 +150,6 @@ const styles = createStyle({
   },
   list: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
   },
   button: {
     textAlign: 'center',

@@ -14,6 +14,7 @@ import { type Position } from './ListMenu'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import Loading from '@/components/common/Loading'
 import Button, { type BtnType } from '@/components/common/Button'
+import { useDockInset } from '@/components/common/DockInset'
 
 type FlatListType = FlatListProps<LX.List.MyListInfo>
 
@@ -86,6 +87,7 @@ export default ({ onShowMenu }: {
   onShowMenu: (info: { listInfo: LX.List.MyListInfo, index: number }, position: Position) => void
 }) => {
   const flatListRef = useRef<FlatList>(null)
+  const dockInset = useDockInset()
   const allList = useMyList()
   const activeListId = useActiveListId()
 
@@ -129,6 +131,7 @@ export default ({ onShowMenu }: {
 
   return (
     <FlatList
+      contentContainerStyle={{ paddingBottom: dockInset }}
       ref={flatListRef}
       onScroll={handleScroll}
       style={styles.container}

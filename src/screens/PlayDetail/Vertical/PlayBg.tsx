@@ -14,8 +14,8 @@ const BG_OPACITY = 0.88
 const MIN_BLUR_RADIUS = 10
 
 /**
- * 播放详情页专属氛围背景：当前封面虚化 + 高光遮罩 + 主题底色。
- * 流畅模式或无封面时不渲染，回落到全局 PageContent 的主题背景。
+ * 封面提供氛围色，整页遮罩保证歌名、歌词和操作按钮的对比度。
+ * 流畅模式和无封面时使用同一底色，避免全局背景干扰阅读。
  */
 export default memo(() => {
   const theme = useTheme()
@@ -41,20 +41,18 @@ export default memo(() => {
     }).start()
   }, [fade, pic, performanceMode])
 
-  if (!pic || performanceMode) return null
-
   return (
     <View style={styles.root} pointerEvents="none">
       <View style={{ ...styles.base, backgroundColor: theme['q-playdetail-bg'] }} />
-      <Animated.View style={{ ...styles.picWrap, opacity: fade }}>
+      {pic && !performanceMode ? <Animated.View style={{ ...styles.picWrap, opacity: fade }}>
         <ImageBackground
           style={{ ...styles.pic }}
           source={{ uri: pic, headers: defaultHeaders }}
           resizeMode="cover"
           blurRadius={blurRadius}
         />
-      </Animated.View>
-      <View style={{ ...styles.highlight, backgroundColor: theme['q-playdetail-highlight'] }} />
+      </Animated.View> : null}
+      <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: theme.isDark ? 'rgba(22,26,29,0.86)' : 'rgba(251,252,247,0.90)' }} />
     </View>
   )
 })
@@ -75,15 +73,5 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     opacity: BG_OPACITY,
     transform: [{ scale: BG_SCALE }],
-  },
-  highlight: {
-    position: 'absolute',
-    top: -60,
-    left: '10%',
-    right: '10%',
-    height: '52%',
-    borderBottomLeftRadius: 999,
-    borderBottomRightRadius: 999,
-    opacity: 0.9,
   },
 })

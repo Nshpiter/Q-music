@@ -1,4 +1,4 @@
-import { buildCookieHeader, getProviderCookies, isQQLoginCookieValid } from './cookies'
+import { buildCookieHeader, getProviderCookies, getQQCredentials, isQQLoginCookieValid } from './cookies'
 
 /** 音质降级顺序（官方线路仅支持此四档），对齐桌面端 getQualityFallbacks */
 const QQ_QUALITY_FALLBACKS: LX.Quality[] = ['flac24bit', 'flac', '320k', '128k']
@@ -23,9 +23,10 @@ const requestQQMusicU = async<T extends object>(requests: Record<string, unknown
   const cookies = await getProviderCookies('tx')
   if (!isQQLoginCookieValid(cookies)) throw new Error('login_required')
 
-  // qm_keyst 即登录态凭证 authst
+  // 与连接状态共用凭证归一化，兼容 qqmusic_key 等新版网页授权 Cookie。
+  const { uin, authst } = getQQCredentials(cookies)
   const body = {
-    comm: { uin: cookies.uin, format: 'json', ct: 24, cv: 0, authst: cookies.qm_keyst },
+    comm: { uin, format: 'json', ct: 24, cv: 0, authst },
     ...requests,
   }
   const { signal, cleanup } = createTimeoutSignal()

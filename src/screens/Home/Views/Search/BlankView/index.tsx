@@ -9,13 +9,14 @@ import HistorySearch, { type HistorySearchType } from './HistorySearch'
 import HotSearch, { type HotSearchType } from './HotSearch'
 import Button from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-import { qFloatingShadow } from '@/theme/ui'
-import DailyRecommend, { type DailyRecommendType } from './DailyRecommend'
-import AccountConnect from './AccountConnect'
+import { setNavActiveId } from '@/core/common'
+import DailyRecommend from './DailyRecommend'
+import { useDockInset } from '@/components/common/DockInset'
+import { pushMusicAccountScreen } from '@/navigation/navigation'
+import commonState from '@/store/common/state'
 
 interface BlankViewProps {
   onSearch: (keyword: string) => void
-  onFocusSearch: () => void
 }
 type Source = LX.OnlineSource | 'all'
 
@@ -23,19 +24,18 @@ export interface BlankViewType {
   show: (source: Source) => void
 }
 
-export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch, onFocusSearch }, ref) => {
+export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch }, ref) => {
   const [visible, setVisible] = useState(false)
   const hotSearchRef = useRef<HotSearchType>(null)
   const historySearchRef = useRef<HistorySearchType>(null)
-  const dailyRecommendRef = useRef<DailyRecommendType>(null)
   const sourceRef = useRef<Source>('all')
   const isShowHotSearch = useSettingValue('search.isShowHotSearch')
   const isShowHistorySearch = useSettingValue('search.isShowHistorySearch')
   const t = useI18n()
   const theme = useTheme()
+  const dockInset = useDockInset()
 
   const handleShow = useCallback(() => {
-    dailyRecommendRef.current?.show(sourceRef.current)
     hotSearchRef.current?.show(sourceRef.current)
     historySearchRef.current?.show()
   }, [])
@@ -57,29 +57,38 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch, onFocusSea
   return (
     visible
       ? (
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 + dockInset }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             <View
               style={{
                 ...styles.welcomeCard,
-                ...qFloatingShadow,
-                backgroundColor: theme['q-surface-raised'],
-                borderColor: theme['q-outline'],
               }}
             >
               <View style={styles.welcomeCopy}>
-                <Text style={styles.eyebrow} size={10} color={theme['q-accent-text']}>FOR YOU</Text>
+                <Text style={styles.eyebrow} size={10} color={theme['q-accent-text']}>Q MUSIC / FOR YOU</Text>
                 <Text style={styles.welcomeTitle} size={25} color={theme['q-text-primary']}>{t('search__welcome')}</Text>
                 <Text style={styles.welcomeSubtitle} size={13} color={theme['q-text-secondary']}>{t('search_welcome_subtitle')}</Text>
               </View>
-              <Button accessibilityLabel={t('nav_search')} style={{ ...styles.searchAction, backgroundColor: theme['q-accent'] }} onPress={onFocusSearch}>
-                <Icon accessible={false} name="search-2" color={theme['q-on-accent']} rawSize={18} />
+            </View>
+            <View style={styles.shortcuts}>
+              {([
+                { id: 'nav_love', icon: 'love' },
+                { id: 'nav_top', icon: 'leaderboard' },
+                { id: 'nav_songlist', icon: 'album' },
+              ] as const).map(item => (
+                <Button key={item.id} accessibilityLabel={t(item.id)} style={styles.shortcut} onPress={() => { setNavActiveId(item.id) }}>
+                  <View style={{ ...styles.shortcutIcon, backgroundColor: theme['q-surface-tint'] }}><Icon accessible={false} name={item.icon} rawSize={21} color={theme['q-accent-text']} /></View>
+                  <Text size={12} color={theme['q-text-primary']}>{t(item.id)}</Text>
+                </Button>
+              ))}
+              <Button accessibilityLabel={t('account_lists_entry')} style={styles.shortcut} onPress={() => { if (commonState.componentIds.home) pushMusicAccountScreen(commonState.componentIds.home) }}>
+                <View style={{ ...styles.shortcutIcon, backgroundColor: theme['q-surface-tint'] }}><Icon accessible={false} name="available_updates" rawSize={21} color={theme['q-accent-text']} /></View>
+                <Text size={12} color={theme['q-text-primary']}>{t('account_lists_entry')}</Text>
               </Button>
             </View>
             <View style={styles.content}>
-              <DailyRecommend ref={dailyRecommendRef} />
-              { isShowHotSearch ? <HotSearch ref={hotSearchRef} onSearch={onSearch} /> : null }
               { isShowHistorySearch ? <HistorySearch ref={historySearchRef} onSearch={onSearch} /> : null }
-              <AccountConnect />
+              { isShowHotSearch ? <HotSearch ref={hotSearchRef} onSearch={onSearch} /> : null }
+              <DailyRecommend />
             </View>
           </ScrollView>
         )
@@ -91,27 +100,27 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch, onFocusSea
 
 const styles = createStyle({
   scrollContent: {
-    paddingTop: 14,
+    paddingTop: 6,
     paddingBottom: 32,
     paddingLeft: 16,
     paddingRight: 16,
   },
   content: {
-    gap: 12,
+    gap: 18,
   },
+  shortcuts: { flexDirection: 'row', gap: 4, marginBottom: 22 },
+  shortcut: { flex: 1, minHeight: 72, gap: 8, borderRadius: 16, alignItems: 'center', justifyContent: 'center', paddingVertical: 4 },
+  shortcutIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   welcomeCard: {
-    minHeight: 126,
-    paddingVertical: 22,
-    paddingHorizontal: 20,
-    marginBottom: 14,
+    minHeight: 82,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    marginBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 26,
   },
   welcomeCopy: {
     flex: 1,
-    paddingRight: 12,
   },
   eyebrow: {
     marginBottom: 6,
@@ -124,13 +133,5 @@ const styles = createStyle({
   welcomeSubtitle: {
     marginTop: 7,
     lineHeight: 20,
-  },
-  searchAction: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
   },
 })

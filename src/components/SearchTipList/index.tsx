@@ -4,6 +4,7 @@ import { StyleSheet, View, Animated } from 'react-native'
 // import { AppColors } from '@/theme'
 import { useTheme } from '@/store/theme/hook'
 import List, { type ItemT, type ListProps, type ListType } from './List'
+import { useDockInset } from '@/components/common/DockInset'
 // import InsetShadow from 'react-native-inset-shadow'
 
 export interface SearchTipListProps<T> extends ListProps<T> {
@@ -18,6 +19,7 @@ const noop = () => {}
 
 const Component = <T extends ItemT<T>>({ onPressBg = noop, ...props }: SearchTipListProps<T>, ref: Ref<SearchTipListType<T>>) => {
   const theme = useTheme()
+  const dockInset = useDockInset()
   const translateY = useRef(new Animated.Value(0)).current
   const scaleY = useRef(new Animated.Value(0)).current
   const [visible, setVisible] = useState(false)
@@ -37,7 +39,7 @@ const Component = <T extends ItemT<T>>({ onPressBg = noop, ...props }: SearchTip
       })
     },
     setHeight(height) {
-      heightRef.current = height
+      heightRef.current = Math.max(0, height - dockInset)
     },
   }))
 
@@ -104,6 +106,8 @@ const Component = <T extends ItemT<T>>({ onPressBg = noop, ...props }: SearchTip
     <Animated.View
       style={{
         ...styles.anima,
+        height: undefined,
+        bottom: dockInset,
         transform: [
           { translateY },
           { scaleY },
@@ -114,7 +118,7 @@ const Component = <T extends ItemT<T>>({ onPressBg = noop, ...props }: SearchTip
       </View>
       <View style={styles.blank} onTouchStart={onPressBg}></View>
     </Animated.View>
-  ), [onPressBg, props, scaleY, theme, translateY])
+  ), [dockInset, onPressBg, props, scaleY, theme, translateY])
 
   return !visible && animatePlayed ? null : component
 }

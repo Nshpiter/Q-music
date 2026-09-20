@@ -1,7 +1,13 @@
 import { Platform, type ViewStyle } from 'react-native'
 
 export const Q_UI = {
+  motion: {
+    press: { stiffness: 520, damping: 32, mass: 0.7 },
+    settle: { stiffness: 320, damping: 28, mass: 0.85 },
+  },
   radius: {
+    miniPlayer: 22,
+    dock: 28,
     item: 10,
     control: 12,
     cover: 14,

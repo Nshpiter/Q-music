@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FlatList, TouchableOpacity, View } from 'react-native'
 
 import Text from '@/components/common/Text'
@@ -12,6 +12,10 @@ import { deleteDownloadTask, retryDownload } from '@/core/download/worker'
 import type { DownloadTaskInfo } from '@/core/download/types'
 import { QUALITY_BADGE } from '@/config/constant'
 import { Q_UI } from '@/theme/ui'
+import { useBackHandler } from '@/utils/hooks/useBackHandler'
+import { setNavActiveId } from '@/core/common'
+import commonState from '@/store/common/state'
+import { useDockInset } from '@/components/common/DockInset'
 
 const TaskItem = ({ task, onDelete, onRetry }: {
   task: DownloadTaskInfo
@@ -82,9 +86,15 @@ const TaskItem = ({ task, onDelete, onRetry }: {
 }
 
 export default () => {
+  const dockInset = useDockInset()
   const theme = useTheme()
   const t = useI18n()
   const [tasks, setTasks] = useState<DownloadTaskInfo[]>([])
+  useBackHandler(useCallback(() => {
+    if (commonState.navActiveId != 'download' || Object.keys(commonState.componentIds).length != 1) return false
+    setNavActiveId('nav_love')
+    return true
+  }, []))
 
   useEffect(() => {
     const unsubscribe = subscribeDownloadTasks(setTasks)
@@ -97,6 +107,7 @@ export default () => {
         tasks.length
           ? (
             <FlatList
+              contentContainerStyle={{ paddingBottom: dockInset + 8 }}
               style={styles.list}
               data={tasks}
               keyExtractor={item => item.id}

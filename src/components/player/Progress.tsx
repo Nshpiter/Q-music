@@ -76,7 +76,7 @@ export const ProgressPlain = ({ progress, duration, buffered, paddingTop }: {
   // const { progress } = usePlayTimeBuffer()
   const theme = useTheme()
   // console.log(progress)
-  const progressStr: `${number}%` = `${progress * 100}%`
+  const progressStr: `${number}%` = `${duration > 0 && Number.isFinite(progress) ? Math.max(0, Math.min(progress, 1)) * 100 : 0}%`
 
   const durationRef = useRef(duration)
   useEffect(() => {
@@ -87,7 +87,7 @@ export const ProgressPlain = ({ progress, duration, buffered, paddingTop }: {
     <View style={{ ...styles.progress, paddingTop }}>
       <View style={{ flex: 1 }}>
         <DefaultBar />
-        <BufferedBar progress={buffered} />
+        <BufferedBar progress={duration > 0 && Number.isFinite(buffered) ? Math.max(0, Math.min(buffered, 1)) : 0} />
         <View style={{ ...styles.progressBar, backgroundColor: theme['q-accent'], width: progressStr, position: 'absolute', left: 0, top: 0 }} />
       </View>
       <View style={styles.pressBar} />
@@ -106,21 +106,21 @@ const Progress = ({ progress, duration, buffered, paddingTop }: {
   const [draging, setDraging] = useState(false)
   const [dragProgress, setDragProgress] = useState(0)
   // console.log(progress)
-  const progressStr: `${number}%` = `${progress * 100}%`
+  const progressStr: `${number}%` = `${duration > 0 && Number.isFinite(progress) ? Math.max(0, Math.min(progress, 1)) * 100 : 0}%`
 
   const durationRef = useRef(duration)
   useEffect(() => {
     durationRef.current = duration
   }, [duration])
   const onSetProgress = useCallback((progress: number) => {
-    global.app_event.setProgress(progress * durationRef.current)
+    if (durationRef.current > 0) global.app_event.setProgress(progress * durationRef.current)
   }, [])
 
   return (
     <View style={{ ...styles.progress, paddingTop }}>
       <View style={{ flex: 1 }}>
         <DefaultBar />
-        <BufferedBar progress={buffered} />
+        <BufferedBar progress={duration > 0 && Number.isFinite(buffered) ? Math.max(0, Math.min(buffered, 1)) : 0} />
         {
           draging
             ? (

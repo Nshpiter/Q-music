@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react'
-import { View , StyleSheet } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 
 import Modal, { type ModalType } from './Modal'
 import IconButton from '@/components/common/IconButton'
@@ -181,14 +181,14 @@ export default forwardRef<PopupType, PopupProps>(({
           style={{
             ...styles.modalView,
             ...modalViewStyle,
-            backgroundColor: theme['q-surface-raised'],
+            backgroundColor: theme['c-content-background'],
             borderColor: theme['q-outline'],
           }}
         >
           <View
             style={{
               ...styles.header,
-              backgroundColor: theme['q-surface-tint'],
+              backgroundColor: theme['c-content-background'],
               borderBottomColor: theme['q-outline'],
             }}
           >

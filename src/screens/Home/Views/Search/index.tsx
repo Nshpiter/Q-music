@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { type LayoutChangeEvent, StyleSheet, View } from 'react-native'
 
 // import music from '@/utils/musicSdk'
@@ -7,6 +7,7 @@ import { type LayoutChangeEvent, StyleSheet, View } from 'react-native'
 // import MusicList from './components/MusicList'
 import HeaderBar, { type HeaderBarProps, type HeaderBarType } from './HeaderBar'
 import searchState, { type SearchType } from '@/store/search/state'
+import searchActions from '@/store/search/action'
 import searchMusicState from '@/store/search/music/state'
 import searchSonglistState from '@/store/search/songlist/state'
 import { getSearchSetting, saveSearchSetting } from '@/utils/data'
@@ -16,6 +17,8 @@ import List, { type ListType } from './List'
 import { addHistoryWord } from '@/core/search/search'
 import SearchTypeSelector from './SearchTypeSelector'
 import { useTheme } from '@/store/theme/hook'
+import { useBackHandler } from '@/utils/hooks/useBackHandler'
+import commonState from '@/store/common/state'
 
 
 interface SearchInfo {
@@ -33,6 +36,8 @@ const normalizeSource = (type: SearchType, source: SearchInfo['source']) => {
 
 export default () => {
   const theme = useTheme()
+  const [hasQuery, setHasQuery] = useState(!!searchState.searchText.trim())
+  const [hasDraft, setHasDraft] = useState(false)
   const headerBarRef = useRef<HeaderBarType>(null)
   const searchTipListRef = useRef<TipListType>(null)
   const listRef = useRef<ListType>(null)
@@ -60,6 +65,7 @@ export default () => {
     })
 
     const handleTypeChange = (type: SearchType) => {
+      setHasQuery(!!searchState.searchText.trim())
       searchInfo.current.searchType = type
       const source = normalizeSource(type, searchInfo.current.source)
       searchInfo.current.source = source
@@ -82,11 +88,13 @@ export default () => {
   }
 
   const handleSourceChange: HeaderBarProps['onSourceChange'] = (source) => {
+    setHasQuery(!!searchState.searchText.trim())
     searchInfo.current.source = source
     void saveSearchSetting({ source })
     listRef.current?.loadList(searchState.searchText, source, searchInfo.current.searchType)
   }
   const handleTipSearch: HeaderBarProps['onTipSearch'] = (text) => {
+    setHasDraft(!!text.trim())
     if (tipSearchTimeoutRef.current) clearTimeout(tipSearchTimeoutRef.current)
     tipSearchTimeoutRef.current = setTimeout(() => {
       tipSearchTimeoutRef.current = null
@@ -106,6 +114,9 @@ export default () => {
   }
   const handleSearch: HeaderBarProps['onSearch'] = (text) => {
     const keyword = text.trim()
+    setHasQuery(!!keyword)
+    setHasDraft(false)
+    searchActions.setSearchText(keyword)
     handleHideTipList()
     headerBarRef.current?.setText(keyword)
     headerBarRef.current?.blur()
@@ -119,9 +130,13 @@ export default () => {
       searchTipListRef.current?.show(layoutHeightRef.current)
     }, 100)
   }
-  const handleFocusSearch = () => {
-    headerBarRef.current?.focus()
-  }
+
+  useBackHandler(useCallback(() => {
+    if ((!hasQuery && !hasDraft) || commonState.navActiveId != 'nav_search' || Object.keys(commonState.componentIds).length != 1) return false
+    handleSearch('')
+    return true
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasQuery, hasDraft]))
 
   return (
     <View style={styles.container}>
@@ -133,12 +148,12 @@ export default () => {
         onHideTipList={handleHideTipList}
         onShowTipList={handleShowTipList}
       />
-      <View style={{ ...styles.typeTabs, borderBottomColor: theme['q-outline'] }}>
+      <View style={{ ...styles.typeTabs, display: hasQuery ? 'flex' : 'none', borderBottomColor: theme['q-outline'] }}>
         <SearchTypeSelector />
       </View>
       <View style={styles.content} onLayout={handleLayout}>
         <TipList ref={searchTipListRef} onSearch={handleSearch} />
-        <List ref={listRef} onSearch={handleSearch} onFocusSearch={handleFocusSearch} />
+        <List ref={listRef} onSearch={handleSearch} />
       </View>
     </View>
   )
