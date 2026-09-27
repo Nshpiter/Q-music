@@ -13,7 +13,7 @@ import { isMusicAccountConnected, logoutMusicAccount, type MusicAccountProvider 
 import { getLoginAppUrl, getQQCallbackUrl, isQQCallback, LOGIN_URLS } from '@/core/musicAccount/login'
 import { isQQLoginPage, QQ_AUTH_BRIDGE, QQ_RESUME_AUTH, QQ_START_AUTH, QQ_STOP_AUTH } from '@/core/musicAccount/qqAuthorization'
 import Playlists from './Playlists'
-import { isQQDailyOrigin, QQ_DAILY_BRIDGE } from '@/core/musicAccount/dailyAuthorization'
+import { isQQDailyOrigin, QQ_DAILY_BRIDGE, QQ_DAILY_USER_AGENT } from '@/core/musicAccount/dailyAuthorization'
 
 const PROVIDERS: MusicAccountProvider[] = ['tx', 'wy']
 
@@ -127,7 +127,7 @@ export const LoginPage = ({ provider, connected, onConnected, initialUrl = LOGIN
         source={{ uri: url }}
         style={styles.webview}
         originWhitelist={['*']}
-        userAgent="Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+        userAgent={onDailyKey ? QQ_DAILY_USER_AGENT : 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'}
         onShouldStartLoadWithRequest={request => {
           if (isQQCallback(request.url)) {
             webview.current?.injectJavaScript(QQ_RESUME_AUTH)

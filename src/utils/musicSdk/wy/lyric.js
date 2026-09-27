@@ -183,6 +183,10 @@ const parseTools = {
             // } else info.tlyric = lines.join('\n')
           }
         }
+        if (!info.tlyric && tlrc) {
+          const lines = this.parseHeaderInfo(tlrc)
+          if (lines) info.tlyric = this.fixTimeTag(result.lyric, lines.join('\n')) || lines.join('\n')
+        }
         if (yrlrc) {
           const lines = this.parseHeaderInfo(yrlrc)
           if (lines) {

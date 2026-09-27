@@ -51,7 +51,7 @@ export default ({ provider, onClose, onChanged, onLogin }: {
     } catch (error) {
       if (!alive.current || controller.signal.aborted) return
       const reason = error instanceof Error ? error.message : ''
-      setNotice(t(reason == 'login_required' || reason == 'account_changed' ? 'daily_login_needed' : reason == 'credential_storage' ? 'daily_key_storage' : 'daily_key_failed'))
+      setNotice(t(reason == 'login_required' || reason == 'account_changed' ? 'daily_login_needed' : reason == 'credential_storage' ? 'daily_key_storage' : reason == 'invalid_key' ? 'daily_key_invalid' : 'daily_key_unavailable'))
     } finally {
       busy.current = false
       if (alive.current) setSaving(false)

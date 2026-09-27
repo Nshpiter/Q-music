@@ -20,6 +20,7 @@ import {
   removeTempPlayList,
 } from '@/core/player/tempPlayList'
 import { getMusicPlayUrlInfo, getPicPath, getLyricInfo } from '@/core/music'
+import { findMatchedTranslation } from '@/core/music/online'
 import { requestMsg } from '@/utils/message'
 import { getRandom } from '@/utils/common'
 import { filterList } from './utils'
@@ -63,6 +64,22 @@ const { addDelayNextTimeout: addLoadTimeout, clearDelayNextTimeout: clearLoadTim
 const createGettingUrlId = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem) => {
   const tInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo.meta.toggleMusicInfo : musicInfo.meta.toggleMusicInfo
   return `${musicInfo.id}_${tInfo?.id ?? ''}`
+}
+const applyLyricInfo = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, lyricInfo: LX.Player.LyricInfo) => {
+  setMusicInfo({
+    lrc: lyricInfo.lyric,
+    tlrc: lyricInfo.tlyric,
+    lxlrc: lyricInfo.lxlyric,
+    rlrc: lyricInfo.rlyric,
+    rawlrc: lyricInfo.rawlrcInfo.lyric,
+  })
+  global.app_event.lyricUpdated()
+  if ('progress' in musicInfo || musicInfo.source == 'local' || lyricInfo.tlyric) return
+  void findMatchedTranslation(musicInfo, lyricInfo).then(translation => {
+    if (!translation || musicInfo.id != playerState.playMusicInfo.musicInfo?.id || playerState.musicInfo.tlrc) return
+    setMusicInfo({ tlrc: translation })
+    global.app_event.lyricUpdated()
+  })
 }
 /**
  * 检查音乐信息是否已更改
@@ -196,14 +213,7 @@ const handleRestorePlay = async(restorePlayInfo: LX.Player.SavedPlayInfo) => {
 
   void getLyricInfo({ musicInfo }).then((lyricInfo) => {
     if (musicInfo.id != playMusicInfo.musicInfo?.id) return
-    setMusicInfo({
-      lrc: lyricInfo.lyric,
-      tlrc: lyricInfo.tlyric,
-      lxlrc: lyricInfo.lxlyric,
-      rlrc: lyricInfo.rlyric,
-      rawlrc: lyricInfo.rawlrcInfo.lyric,
-    })
-    global.app_event.lyricUpdated()
+    applyLyricInfo(musicInfo, lyricInfo)
   }).catch((err) => {
     console.log(err)
     if (musicInfo.id != playMusicInfo.musicInfo?.id) return
@@ -228,14 +238,7 @@ const debouncePlay = debounceBackgroundTimer((musicInfo: LX.Player.PlayMusic) =>
 
   void getLyricInfo({ musicInfo }).then((lyricInfo) => {
     if (musicInfo.id != playerState.playMusicInfo.musicInfo?.id) return
-    setMusicInfo({
-      lrc: lyricInfo.lyric,
-      tlrc: lyricInfo.tlyric,
-      lxlrc: lyricInfo.lxlyric,
-      rlrc: lyricInfo.rlyric,
-      rawlrc: lyricInfo.rawlrcInfo.lyric,
-    })
-    global.app_event.lyricUpdated()
+    applyLyricInfo(musicInfo, lyricInfo)
   }).catch((err) => {
     console.log(err)
     if (musicInfo.id != playerState.playMusicInfo.musicInfo?.id) return

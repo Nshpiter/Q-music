@@ -19,8 +19,8 @@ const NativeGlass = Platform.OS == 'android' ? requireNativeComponent<NativeGlas
 export const useGlassColors = () => {
   const theme = useTheme()
   return theme.isDark
-    ? { primary: '#f8fafc', secondary: '#e2e8f0', active: '#ffffff' }
-    : { primary: '#202824', secondary: '#29362f', active: theme['q-accent-text'] }
+    ? { primary: '#f8fafc', secondary: '#cfddda', active: '#ffffff' }
+    : { primary: '#252b30', secondary: '#4d5a60', active: '#202b31' }
 }
 
 // 导航与迷你播放器共用真实背景采样和材质，文字作为原生玻璃的子节点保持清晰。

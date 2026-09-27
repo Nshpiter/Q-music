@@ -31,13 +31,14 @@ const styles = StyleSheet.create({
   },
 })
 
-export default ({ isHome }: { isHome: boolean }) => {
+export default ({ isHome, onOpenDetail }: { isHome: boolean, onOpenDetail?: () => void }) => {
   const musicInfo = usePlayerMusicInfo()
   const theme = useTheme()
   const handlePress = () => {
     // console.log('')
     // console.log(playMusicInfo)
     if (!musicInfo.id) return
+    if (onOpenDetail) { onOpenDetail(); return }
     navigations.pushPlayDetailScreen(commonState.componentIds.home!)
 
     // toast(global.i18n.t('play_detail_todo_tip'), 'long')
@@ -59,6 +60,7 @@ export default ({ isHome }: { isHome: boolean }) => {
 
   return (
     <Button
+      ripple={null}
       accessibilityLabel={musicInfo.id ? `${musicInfo.name} · ${musicInfo.singer}` : global.i18n.t('play_detail_setting_title')}
       style={styles.button}
       hitSlop={5}

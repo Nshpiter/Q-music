@@ -248,6 +248,7 @@
   "play_detail_setting_volume": "音量大小",
   "play_detail_page_cover": "封面",
   "play_detail_page_lyric": "歌詞",
+  "play_detail_bilingual": "雙語",
   "play_detail_setting_quality": "播放音質",
   "play_detail_quality_standard": "標準",
   "play_detail_quality_high": "高品質",
@@ -664,6 +665,8 @@
   "daily_key_saving": "正在驗證授權…",
   "daily_key_saved": "已啟用官方每日推薦，正在重新整理歌曲。",
   "daily_key_failed": "授權暫時無法驗證，請檢查 Key 或網路後重試。",
+  "daily_key_invalid": "Key 無效或已過期，請在 QQ 音樂重新授權。",
+  "daily_key_unavailable": "暫時無法連線 QQ 音樂驗證服務，請稍後重試。",
   "daily_key_storage": "本機安全儲存暫不可用，請重新啟動應用程式後重試。",
   "daily_login_needed": "請先登入 QQ 音樂帳號，再進行推薦授權。",
   "daily_preference_failed": "無法儲存推薦平台，下次啟動可能恢復預設。",
@@ -671,6 +674,9 @@
   "daily_fallback_unavailable": "帳號推薦暫不可用，目前顯示本機精選",
   "daily_radar_fallback": "官方日推暫不可用，已切換帳號雷達",
   "search_history_empty": "尚無搜尋記錄。開啟後搜尋的關鍵字會保存在這裡。",
+  "search_history_more": "展開搜尋記錄",
+  "search_history_less": "收起搜尋記錄",
+  "search_back_home": "返回發現首頁",
   "daily_refresh": "重新整理推薦",
   "daily_authorization_tip": "在 QQ 音樂官方頁面完成推薦授權，產生 Key 後會自動驗證並儲存。"
 }

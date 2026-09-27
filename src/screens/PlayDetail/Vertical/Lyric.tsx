@@ -11,6 +11,9 @@ import { Icon } from '@/components/common/Icon'
 import { setSpText } from '@/utils/pixelRatio'
 import { useMotion } from '@/utils/useMotion'
 import { useI18n } from '@/lang'
+import { updateSetting } from '@/core/common'
+import { toggleTranslation } from '@/core/lyric'
+import Button from '@/components/common/Button'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
 
 type FlatListType = FlatListProps<Line>
@@ -55,6 +58,7 @@ export default ({ active = true }: { active?: boolean }) => {
   const { line } = useLrcPlay(active)
   const fontSize = useSettingValue('playDetail.vertical.style.lrcFontSize')
   const showProgress = useSettingValue('playDetail.isShowLyricProgressSetting')
+  const showTranslation = useSettingValue('player.isShowLyricTranslation')
   const [height, setHeight] = useState(0)
   const flatListRef = useRef<FlatList<Line>>(null)
   const playLineRef = useRef<PlayLineType>(null)
@@ -174,6 +178,19 @@ export default ({ active = true }: { active?: boolean }) => {
         <Text size={13} style={styles.trackTitle} color={theme['q-text-primary']} numberOfLines={1}>{musicInfo.name}</Text>
         <Text size={11} color={theme['q-text-secondary']} numberOfLines={1}>{musicInfo.singer}</Text>
       </View>
+      {musicInfo.tlrc ? <Button
+        accessibilityLabel={t('setting_play_show_translation')}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: showTranslation }}
+        style={[styles.translationButton, { backgroundColor: showTranslation ? theme['q-surface-tint'] : theme['q-surface-raised'], borderColor: showTranslation ? theme['q-accent'] : theme['q-outline'] }]}
+        onPress={() => {
+          updateSetting({ 'player.isShowLyricTranslation': !showTranslation })
+          void toggleTranslation(!showTranslation)
+        }}
+      >
+        <Icon accessible={false} name="translation" rawSize={18} color={showTranslation ? theme['q-accent-text'] : theme['q-text-secondary']} />
+        <Text size={11} color={showTranslation ? theme['q-accent-text'] : theme['q-text-secondary']}>{t('play_detail_bilingual')}</Text>
+      </Button> : null}
     </View>
     <View style={styles.page} onLayout={onLayout}>
       {lyricLines.length ? <FlatList
@@ -211,6 +228,7 @@ const styles = createStyle({
   cover: { width: 34, height: 34, borderRadius: 8 },
   trackText: { flex: 1, minWidth: 0, marginLeft: 10 },
   trackTitle: { fontWeight: '600', marginBottom: 3 },
+  translationButton: { minWidth: 74, height: 36, paddingHorizontal: 8, marginLeft: 10, borderRadius: 18, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
   line: { paddingVertical: 14 },
   lineText: { fontWeight: '700' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', opacity: 0.65 },

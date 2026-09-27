@@ -76,7 +76,7 @@ export default memo(({ componentId }: { componentId: string }) => {
 
   return (
     <>
-      <PlayBg />
+      <PlayBg lyricActive={pageIndex == 1} />
       <Header />
       <View style={styles.container}>
         <PagerView

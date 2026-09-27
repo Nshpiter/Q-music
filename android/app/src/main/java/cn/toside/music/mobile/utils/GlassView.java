@@ -1,8 +1,10 @@
 package cn.toside.music.mobile.utils;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.animation.ValueAnimator;
 import android.graphics.Bitmap;
+import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
@@ -11,7 +13,9 @@ import android.graphics.Outline;
 import android.graphics.Path;
 import android.graphics.RadialGradient;
 import android.graphics.RectF;
+import android.graphics.RuntimeShader;
 import android.graphics.Shader;
+import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -24,7 +28,7 @@ import com.facebook.react.uimanager.util.ReactFindViewUtil;
 /** 小面积实时玻璃：仅在窗口重绘时采样本应用背景，排除所有玻璃及其文字，避免重影。 */
 public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreDrawListener {
   private static boolean sampling;
-  private static final float SCALE = 6f;
+  private static final float SCALE = 4f;
   private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
   private final Path clip = new Path();
   private final Path selectionClip = new Path();
@@ -39,6 +43,9 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
   private final int[] location = new int[2];
   private final int[] rootLocation = new int[2];
   private Bitmap backdrop;
+  private Bitmap lensBackdrop;
+  private LensShader lensShader;
+  private boolean shaderUnavailable;
   private int[] pixels;
   private int[] scratch;
   private boolean glassEnabled = true;
@@ -68,7 +75,7 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
     });
   }
 
-  public void setSelection(boolean value) { selectionEnabled = value; selectionView = null; invalidate(); }
+  public void setSelection(boolean value) { selectionEnabled = value; selectionView = null; releaseBackdrop(); invalidate(); }
   public void setGlassEnabled(boolean value) { glassEnabled = value; releaseBackdrop(); invalidate(); }
   public void setDark(boolean value) { dark = value; invalidate(); }
   public void setMotionEnabled(boolean value) { motionEnabled = value; if (touchAnimator != null) touchAnimator.cancel(); touchLight = 0; invalidate(); }
@@ -106,6 +113,8 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
   private void releaseBackdrop() {
     // 交给 GC 释放，避免 RenderThread 仍引用上一帧位图时被提前 recycle。
     backdrop = null;
+    lensBackdrop = null;
+    lensShader = null;
     pixels = null;
     scratch = null;
     lastCapture = 0;
@@ -134,6 +143,7 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
       if (backdrop == null || backdrop.getWidth() != w || backdrop.getHeight() != h) {
         releaseBackdrop();
         backdrop = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        lensBackdrop = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         pixels = new int[w * h];
         scratch = new int[w * h];
       }
@@ -152,6 +162,7 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
       for (int pass = 0; pass < 3; pass++) {
         blurPass(pixels, scratch, w, h, boxRadius, true);
         blurPass(scratch, pixels, w, h, boxRadius, false);
+        if (pass == 0 && lensBackdrop != null) lensBackdrop.setPixels(pixels, 0, w, 0, 0, w, h);
       }
       backdrop.setPixels(pixels, 0, w, 0, 0, w, h);
       lastCapture = now;
@@ -200,29 +211,42 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
     paint.setStyle(Paint.Style.FILL);
     paint.setColor(Color.WHITE);
     if (glassEnabled && backdrop != null) {
-      float pad = (float) Math.ceil(blur * 2);
-      canvas.drawBitmap(backdrop, null, new RectF(-pad, -pad, getWidth() + pad, getHeight() + pad), paint);
-      drawLens(canvas, bounds, radius, 7 * getResources().getDisplayMetrics().density);
+      if (!drawShaderLens(canvas, bounds, radius, 10 * getResources().getDisplayMetrics().density, true)) {
+        float pad = (float) Math.ceil(blur * 2);
+        canvas.drawBitmap(backdrop, null, new RectF(-pad, -pad, getWidth() + pad, getHeight() + pad), paint);
+        drawLens(canvas, lensBackdrop, bounds, radius, 10 * getResources().getDisplayMetrics().density);
+      }
     }
-    paint.setColor(dark ? Color.argb(glassEnabled && backdrop != null ? 126 : 255, 26, 31, 34) : Color.argb(glassEnabled && backdrop != null ? 66 : 255, 250, 252, 251));
+    paint.setColor(dark ? Color.argb(glassEnabled && backdrop != null ? 96 : 255, 24, 27, 30) : Color.argb(glassEnabled && backdrop != null ? 42 : 255, 248, 249, 250));
     canvas.drawRect(bounds, paint);
     if (glassEnabled) {
       paint.setShader(new LinearGradient(0, 0, getWidth() * 0.75f, getHeight(), new int[] {
-        Color.argb(dark ? 18 : 58, 255, 255, 255), Color.TRANSPARENT, Color.argb(dark ? 12 : 32, 142, 193, 189),
+        Color.argb(dark ? 18 : 48, 255, 255, 255), Color.TRANSPARENT, Color.argb(dark ? 12 : 22, 205, 218, 225),
       }, new float[] {0, 0.52f, 1}, Shader.TileMode.CLAMP));
       canvas.drawRect(bounds, paint);
       if (touchLight > 0.01f) {
-        paint.setShader(new RadialGradient(touchX, touchY, Math.max(getHeight() * 1.6f, 1), new int[] {Color.argb((int) (touchLight * (dark ? 22 : 85)), 255, 255, 255), Color.TRANSPARENT}, null, Shader.TileMode.CLAMP));
+        paint.setShader(new RadialGradient(touchX, touchY, Math.max(getHeight() * 1.7f, 1), new int[] {
+          Color.TRANSPARENT,
+          Color.argb((int) (touchLight * (dark ? 22 : 36)), dark ? 215 : 74, dark ? 229 : 88, dark ? 236 : 100),
+          Color.argb((int) (touchLight * (dark ? 58 : 100)), 255, 255, 255),
+          Color.TRANSPARENT,
+        }, new float[] {0, 0.3f, 0.56f, 1}, Shader.TileMode.CLAMP));
         canvas.drawRect(bounds, paint);
       }
       paint.setShader(new LinearGradient(0, 0, getWidth() * 0.6f, getHeight(), new int[] {
-        Color.argb(dark ? 140 : 245, 255, 255, 255), Color.argb(dark ? 42 : 95, 142, 167, 163), Color.argb(dark ? 85 : 205, 255, 255, 255),
+        Color.argb(dark ? 140 : 245, 255, 255, 255), Color.argb(dark ? 45 : 90, 170, 183, 191), Color.argb(dark ? 85 : 205, 255, 255, 255),
       }, null, Shader.TileMode.CLAMP));
       paint.setStyle(Paint.Style.STROKE);
       paint.setStrokeWidth(getResources().getDisplayMetrics().density * 0.85f);
       RectF rim = new RectF(bounds);
       rim.inset(paint.getStrokeWidth() / 2, paint.getStrokeWidth() / 2);
       canvas.drawRoundRect(rim, radius, radius, paint);
+      paint.setShader(new LinearGradient(0, 0, getWidth() * 0.5f, getHeight(), new int[] {
+        Color.argb(dark ? 48 : 118, 255, 255, 255), Color.TRANSPARENT, Color.argb(dark ? 24 : 42, 75, 88, 100),
+      }, null, Shader.TileMode.CLAMP));
+      paint.setStrokeWidth(getResources().getDisplayMetrics().density * 0.6f);
+      rim.inset(getResources().getDisplayMetrics().density * 1.4f, getResources().getDisplayMetrics().density * 1.4f);
+      canvas.drawRoundRect(rim, Math.max(0, radius - getResources().getDisplayMetrics().density * 1.4f), Math.max(0, radius - getResources().getDisplayMetrics().density * 1.4f), paint);
     }
     paint.setShader(null);
     paint.setStyle(Paint.Style.FILL);
@@ -231,12 +255,12 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
     canvas.restoreToCount(save);
   }
 
-  // 复用同一张背景位图，以圆角矩形的法线弯曲网格；不另建位图或额外采样。
-  private void drawLens(Canvas canvas, RectF rect, float corner, float depth) {
-    if (backdrop == null || !glassEnabled) return;
+  // 旧系统回退到网格折射，仍复用本次采样的背景，不额外抓屏。
+  private void drawLens(Canvas canvas, Bitmap source, RectF rect, float corner, float depth) {
+    if (source == null || !glassEnabled) return;
     float pad = (float) Math.ceil(blur * 2);
     float halfW = rect.width() / 2, halfH = rect.height() / 2;
-    float edge = Math.min(corner, 12 * getResources().getDisplayMetrics().density);
+    float edge = Math.min(corner, Math.max(8 * getResources().getDisplayMetrics().density, depth));
     int offset = 0;
     for (int row = 0; row <= 16; row++) {
       float y = -pad + (getHeight() + pad * 2) * row / 16;
@@ -251,13 +275,23 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
         float ny = length > 0.001f ? oy / length : (qx > qy ? 0 : 1);
         float t = Math.max(0, Math.min(1, -distance / Math.max(edge, 1)));
         float bend = distance <= 0 ? depth * (float) Math.sin(t * Math.PI) : 0;
-        lensMesh[offset++] = x - Math.signum(px) * nx * bend;
-        lensMesh[offset++] = y - Math.signum(py) * ny * bend;
+        float sampleX = x - Math.signum(px) * nx * bend;
+        float sampleY = y - Math.signum(py) * ny * bend;
+        if (touchLight > 0.01f) {
+          float dx = x - touchX, dy = y - touchY;
+          float touchDistance = (float) Math.hypot(dx, dy);
+          float reach = Math.max(getHeight() * 1.5f, 1);
+          float ripple = (float) Math.exp(-touchDistance * touchDistance / (reach * reach)) * touchLight * 8 * getResources().getDisplayMetrics().density;
+          sampleX += dx / Math.max(touchDistance, 1) * ripple;
+          sampleY += dy / Math.max(touchDistance, 1) * ripple;
+        }
+        lensMesh[offset++] = sampleX;
+        lensMesh[offset++] = sampleY;
       }
     }
     paint.setShader(null);
     paint.setColor(Color.WHITE);
-    canvas.drawBitmapMesh(backdrop, 40, 16, lensMesh, 0, null, 0, paint);
+    canvas.drawBitmapMesh(source, 40, 16, lensMesh, 0, null, 0, paint);
   }
 
   private void drawSelection(Canvas canvas) {
@@ -269,28 +303,113 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
     float y = selectionView.getY() + h * (1 - sy) / 2;
     selectionBounds.set(x, y, x + w * sx, y + h * sy);
     float corner = selectionBounds.height() / 2;
+    float flow = Math.min(1, Math.max(0, (sx - 1) * 3));
     selectionClip.reset();
     selectionClip.addRoundRect(selectionBounds, corner, corner, Path.Direction.CW);
     int save = canvas.save();
     canvas.clipPath(selectionClip);
-    drawLens(canvas, selectionBounds, corner, 9 * density);
+    float depth = (17 + 8 * Math.max(0, sx - 1)) * density;
+    boolean shaderDrawn = drawShaderLens(canvas, selectionBounds, corner, depth, false);
+    if (!shaderDrawn) {
+      drawLens(canvas, lensBackdrop != null ? lensBackdrop : backdrop, selectionBounds, corner, depth);
+    }
     paint.setShader(null);
-    paint.setColor(dark ? Color.argb(92, 116, 140, 135) : Color.argb(105, 239, 255, 247));
+    paint.setColor(dark ? Color.argb(78, 22, 28, 34) : Color.argb(shaderDrawn ? 48 : 166, 255, 255, 255));
+    canvas.drawRect(selectionBounds, paint);
+    float highlightX = selectionBounds.centerX() - selectionBounds.width() * (0.18f - flow * 0.08f);
+    paint.setShader(new RadialGradient(highlightX, y + h * 0.04f, Math.max(w * (0.85f - flow * 0.18f), 1),
+      new int[] { Color.argb((int) ((dark ? 42 : 74) + flow * (dark ? 80 : 95)), 255, 255, 255), Color.TRANSPARENT }, null, Shader.TileMode.CLAMP));
     canvas.drawRect(selectionBounds, paint);
     paint.setShader(new LinearGradient(x, y, x + w, y + h,
-      new int[] { Color.argb(dark ? 42 : 138, 255, 255, 255), Color.TRANSPARENT, Color.argb(dark ? 12 : 42, 255, 255, 255) },
+      new int[] { Color.argb(dark ? 28 : 48, 255, 255, 255), Color.TRANSPARENT, Color.argb(dark ? 18 : 27, 30, 45, 55) },
       new float[] {0, 0.55f, 1}, Shader.TileMode.CLAMP));
     canvas.drawRect(selectionBounds, paint);
     paint.setShader(new LinearGradient(x, y, x + w * 0.65f, y + h,
-      new int[] { Color.argb(dark ? 150 : 245, 255, 255, 255), Color.argb(35, 109, 146, 137), Color.argb(dark ? 78 : 185, 255, 255, 255) },
+      new int[] { Color.argb(dark ? 190 : 245, 255, 255, 255), Color.argb(62, 155, 177, 188), Color.argb(dark ? 110 : 210, 255, 255, 255) },
       null, Shader.TileMode.CLAMP));
     paint.setStyle(Paint.Style.STROKE);
-    paint.setStrokeWidth(density);
-    selectionBounds.inset(density / 2, density / 2);
-    canvas.drawRoundRect(selectionBounds, corner, corner, paint);
+    paint.setStrokeWidth(density * 1.1f);
+    canvas.drawPath(selectionClip, paint);
     paint.setShader(null);
+    paint.setColor(dark ? Color.argb(110, 25, 35, 45) : Color.argb(108, 71, 91, 105));
+    paint.setStrokeWidth(density * 0.7f);
+    canvas.drawPath(selectionClip, paint);
     paint.setStyle(Paint.Style.FILL);
     canvas.restoreToCount(save);
+  }
+
+  private boolean drawShaderLens(Canvas canvas, RectF rect, float corner, float depth, boolean surface) {
+    if (Build.VERSION.SDK_INT < 33 || shaderUnavailable || !canvas.isHardwareAccelerated() || lensBackdrop == null) return false;
+    try {
+      if (lensShader == null) lensShader = new LensShader(lensBackdrop);
+      lensShader.draw(canvas, paint, rect, (float) Math.ceil(blur * 2), SCALE, corner, depth,
+        touchX, touchY, surface ? touchLight : 0, getHeight() * 1.5f, dark, surface,
+        surface ? null : selectionClip);
+      return true;
+    } catch (RuntimeException error) {
+      shaderUnavailable = true;
+      lensShader = null;
+      Log.w("QGlassView", "Lens shader unavailable; using mesh lens", error);
+      return false;
+    }
+  }
+
+  @TargetApi(33)
+  private static final class LensShader {
+    private static final String SOURCE =
+      "uniform shader image;\n" +
+      "uniform float2 rectStart;\n" +
+      "uniform float2 rectSize;\n" +
+      "uniform float2 sampleInfo;\n" +
+      "uniform float2 touchPoint;\n" +
+      "uniform float corner;\n" +
+      "uniform float bend;\n" +
+      "uniform float touchStrength;\n" +
+      "uniform float touchRadius;\n" +
+      "uniform float darkMode;\n" +
+      "uniform float surfaceMode;\n" +
+      "half4 main(float2 p) {\n" +
+      "  float2 relative = p - rectStart - rectSize * 0.5;\n" +
+      "  float2 q = abs(relative) - (rectSize * 0.5 - corner);\n" +
+      "  float distance = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - corner;\n" +
+      "  float2 normal = sign(relative) * max(q, 0.0) / max(length(max(q, 0.0)), 0.001);\n" +
+      "  float edge = clamp(-distance / max(corner * 0.72, 1.0), 0.0, 1.0);\n" +
+      "  float warp = sin(edge * 3.14159265) * bend;\n" +
+      "  float2 touchDelta = p - touchPoint;\n" +
+      "  float touchDistance = length(touchDelta);\n" +
+      "  float ripple = exp(-touchDistance * touchDistance / max(touchRadius * touchRadius, 1.0)) * touchStrength * bend * 0.65;\n" +
+      "  float2 samplePoint = p - normal * warp + touchDelta / max(touchDistance, 1.0) * ripple;\n" +
+      "  half4 color = image.eval((samplePoint + sampleInfo.x) / sampleInfo.y);\n" +
+      "  float luma = dot(color.rgb, half3(0.2126, 0.7152, 0.0722));\n" +
+      "  color.rgb = darkMode > 0.5 ? max(color.rgb - half3(max(luma - 0.26, 0.0)), half3(0.0)) : min(color.rgb + half3(max((surfaceMode > 0.5 ? 0.60 : 0.67) - luma, 0.0)), half3(1.0));\n" +
+      "  float rim = pow(1.0 - edge, 2.0);\n" +
+      "  float gleam = ripple * 0.008 + rim * 0.13;\n" +
+      "  return half4(min(color.rgb + half3(gleam), half3(1.0)), 1.0);\n" +
+      "}\n";
+    private final RuntimeShader shader = new RuntimeShader(SOURCE);
+
+    LensShader(Bitmap image) {
+      shader.setInputShader("image", new BitmapShader(image, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP));
+    }
+
+    void draw(Canvas canvas, Paint paint, RectF rect, float pad, float scale, float corner, float bend,
+      float touchX, float touchY, float touchStrength, float touchRadius, boolean dark, boolean surface, Path shape) {
+      shader.setFloatUniform("rectStart", rect.left, rect.top);
+      shader.setFloatUniform("rectSize", rect.width(), rect.height());
+      shader.setFloatUniform("sampleInfo", pad, scale);
+      shader.setFloatUniform("touchPoint", touchX, touchY);
+      shader.setFloatUniform("corner", corner);
+      shader.setFloatUniform("bend", bend);
+      shader.setFloatUniform("touchStrength", touchStrength);
+      shader.setFloatUniform("touchRadius", touchRadius);
+      shader.setFloatUniform("darkMode", dark ? 1 : 0);
+      shader.setFloatUniform("surfaceMode", surface ? 1 : 0);
+      paint.setShader(shader);
+      paint.setColor(Color.WHITE);
+      if (shape == null) canvas.drawRect(rect, paint);
+      else canvas.drawPath(shape, paint);
+      paint.setShader(null);
+    }
   }
 
   @Override public boolean dispatchTouchEvent(MotionEvent event) {
@@ -300,7 +419,7 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
       if (touchAnimator != null) touchAnimator.cancel();
       if (event.getActionMasked() == MotionEvent.ACTION_UP || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
         touchAnimator = ValueAnimator.ofFloat(touchLight, 0);
-        touchAnimator.setDuration(260);
+        touchAnimator.setDuration(380);
         touchAnimator.addUpdateListener(value -> { touchLight = (float) value.getAnimatedValue(); invalidate(); });
         touchAnimator.start();
       } else {

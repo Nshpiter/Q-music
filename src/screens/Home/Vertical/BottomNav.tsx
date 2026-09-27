@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import { Animated, Easing, Keyboard, Pressable, StyleSheet, View } from 'react-native'
+import { Animated, Keyboard, Pressable, StyleSheet, View } from 'react-native'
 import { setNavActiveId } from '@/core/common'
 import { useI18n } from '@/lang'
 import { useNavActiveId } from '@/store/common/hook'
@@ -23,10 +23,17 @@ const NavItem = ({ id, icon, label }: typeof MOBILE_NAV[number]) => {
   const active = activeId == id || (id == 'nav_love' && (activeId == 'download' || activeId == 'nav_setting'))
   const motion = useMotion()
   const scale = useRef(new Animated.Value(1)).current
+  const selectedScale = useRef(new Animated.Value(active ? 1.07 : 1)).current
   useEffect(() => {
     if (!motion) { scale.stopAnimation(); scale.setValue(1) }
     return () => { scale.stopAnimation() }
   }, [motion, scale])
+  useEffect(() => {
+    selectedScale.stopAnimation()
+    if (motion) Animated.spring(selectedScale, { toValue: active ? 1.07 : 1, stiffness: 280, damping: 25, useNativeDriver: true }).start()
+    else selectedScale.setValue(active ? 1.07 : 1)
+    return () => { selectedScale.stopAnimation() }
+  }, [active, motion, selectedScale])
   const press = (pressed: boolean) => {
     scale.stopAnimation()
     if (!motion) scale.setValue(1)
@@ -46,7 +53,7 @@ const NavItem = ({ id, icon, label }: typeof MOBILE_NAV[number]) => {
         setNavActiveId(id)
       }}
     >
-      <Animated.View style={[styles.item, { transform: [{ scale }] }]}>
+      <Animated.View style={[styles.item, { transform: [{ scale: Animated.multiply(scale, selectedScale) }] }]}>
         <View style={styles.iconFace}>
           <Icon
             accessible={false}
@@ -73,30 +80,34 @@ export default memo(() => {
   const motion = useMotion()
   const [width, setWidth] = useState(0)
   const lastLayout = useRef(0)
-  const position = useRef(new Animated.Value(0)).current
-  const stretch = useRef(new Animated.Value(0)).current
+  const previousIndex = useRef(0)
+  const leftEdge = useRef(new Animated.Value(0)).current
+  const rightEdge = useRef(new Animated.Value(0)).current
   const cellWidth = Math.max(0, (width - 12) / MOBILE_NAV.length)
+  const pillWidth = Math.max(0, cellWidth - 4)
   const index = Math.max(0, MOBILE_NAV.findIndex(item => item.id == activeId || (item.id == 'nav_love' && (activeId == 'download' || activeId == 'nav_setting'))))
+  const span = Animated.subtract(rightEdge, leftEdge)
   useEffect(() => {
     const target = 8 + cellWidth * index
-    position.stopAnimation()
-    stretch.stopAnimation()
+    const movingRight = index >= previousIndex.current
+    leftEdge.stopAnimation()
+    rightEdge.stopAnimation()
     if (!motion || lastLayout.current != width) {
-      position.setValue(target)
-      stretch.setValue(0)
+      leftEdge.setValue(target)
+      rightEdge.setValue(target + pillWidth)
     } else {
-      // 位移与形变分离，原生线程插值；连续点击从当前帧接续，不跳回旧位置。
+      // 两端以不同速度追随目标，跨越时拉伸，抵达后自然收拢。
+      const leading = { stiffness: 390, damping: 27, mass: 0.72, useNativeDriver: true }
+      const trailing = { stiffness: 205, damping: 23, mass: 0.82, useNativeDriver: true }
       Animated.parallel([
-        Animated.spring(position, { toValue: target, ...Q_UI.motion.settle, useNativeDriver: true, overshootClamping: true }),
-        Animated.sequence([
-          Animated.timing(stretch, { toValue: 1, duration: 110, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-          Animated.spring(stretch, { toValue: 0, stiffness: 240, damping: 22, mass: 0.7, useNativeDriver: true }),
-        ]),
+        Animated.spring(leftEdge, { toValue: target, ...(movingRight ? trailing : leading) }),
+        Animated.spring(rightEdge, { toValue: target + pillWidth, ...(movingRight ? leading : trailing) }),
       ]).start()
     }
     lastLayout.current = width
-    return () => { position.stopAnimation(); stretch.stopAnimation() }
-  }, [cellWidth, index, motion, position, stretch, width])
+    previousIndex.current = index
+    return () => { leftEdge.stopAnimation(); rightEdge.stopAnimation() }
+  }, [cellWidth, index, leftEdge, motion, pillWidth, rightEdge, width])
 
   return (
     <GlassSurface
@@ -105,12 +116,12 @@ export default memo(() => {
       onLayout={event => { setWidth(event.nativeEvent.layout.width) }}
       style={styles.container}
     >
-      {cellWidth > 4 ? <Animated.View nativeID="qmusic-glass-selection" collapsable={false} pointerEvents="none" style={[styles.activePill, {
-        width: cellWidth - 4,
+      {pillWidth > 0 ? <Animated.View nativeID="qmusic-glass-selection" collapsable={false} pointerEvents="none" style={[styles.activePill, {
+        width: pillWidth,
         transform: [
-          { translateX: position },
-          { scaleX: stretch.interpolate({ inputRange: [0, 1], outputRange: [1, 1.075] }) },
-          { scaleY: stretch.interpolate({ inputRange: [0, 1], outputRange: [1, 0.955] }) },
+          { translateX: Animated.divide(Animated.subtract(Animated.add(leftEdge, rightEdge), pillWidth), 2) },
+          { scaleX: span.interpolate({ inputRange: [0, pillWidth, pillWidth * 1.6], outputRange: [0.9, 1, 1.24], extrapolate: 'clamp' }) },
+          { scaleY: span.interpolate({ inputRange: [0, pillWidth, pillWidth * 1.6], outputRange: [1, 1, 0.98], extrapolate: 'clamp' }) },
         ],
       }]} /> : null}
       {MOBILE_NAV.map(item => <NavItem key={item.id} {...item} />)}

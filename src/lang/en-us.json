@@ -248,6 +248,7 @@
   "play_detail_setting_volume": "Volume",
   "play_detail_page_cover": "Cover",
   "play_detail_page_lyric": "Lyrics",
+  "play_detail_bilingual": "Bilingual",
   "play_detail_setting_quality": "Playback quality",
   "play_detail_quality_standard": "Standard",
   "play_detail_quality_high": "High quality",
@@ -664,6 +665,8 @@
   "daily_key_saving": "Verifying authorization…",
   "daily_key_saved": "Official daily recommendations enabled. Refreshing songs.",
   "daily_key_failed": "Unable to verify authorization. Check the key and connection, then retry.",
+  "daily_key_invalid": "The key is invalid or expired. Authorize again on QQ Music.",
+  "daily_key_unavailable": "Cannot reach QQ Music's verification service. Try again later.",
   "daily_key_storage": "Secure storage is unavailable. Restart the app and retry.",
   "daily_login_needed": "Sign in to QQ Music before authorizing recommendations.",
   "daily_preference_failed": "Could not save your preference. The next launch may use the default.",
@@ -671,6 +674,9 @@
   "daily_fallback_unavailable": "Account recommendations unavailable. Showing local picks",
   "daily_radar_fallback": "Official daily picks unavailable. Showing account radar",
   "search_history_empty": "No search history yet. Searches made while this setting is enabled appear here.",
+  "search_history_more": "Show search history",
+  "search_history_less": "Show less history",
+  "search_back_home": "Back to Discover",
   "daily_refresh": "Refresh recommendations",
   "daily_authorization_tip": "Complete recommendation authorization on QQ Music. The generated key is verified and saved automatically."
 }

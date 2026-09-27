@@ -248,6 +248,7 @@
   "play_detail_setting_volume": "音量大小",
   "play_detail_page_cover": "封面",
   "play_detail_page_lyric": "歌词",
+  "play_detail_bilingual": "双语",
   "play_detail_setting_quality": "播放音质",
   "play_detail_quality_standard": "标准",
   "play_detail_quality_high": "高品质",
@@ -664,6 +665,8 @@
   "daily_key_saving": "正在验证授权…",
   "daily_key_saved": "已启用官方每日推荐，正在刷新歌曲。",
   "daily_key_failed": "授权暂时无法验证，请检查 Key 或网络后重试。",
+  "daily_key_invalid": "Key 无效或已过期，请在 QQ 音乐重新授权。",
+  "daily_key_unavailable": "暂时无法连接 QQ 音乐验证服务，请稍后重试。",
   "daily_key_storage": "本机安全存储暂不可用，请重启应用后重试。",
   "daily_login_needed": "请先登录 QQ 音乐账号，再进行推荐授权。",
   "daily_preference_failed": "未能保存推荐平台，下次启动可能恢复默认。",
@@ -671,6 +674,9 @@
   "daily_fallback_unavailable": "账号推荐暂不可用，当前展示本地精选",
   "daily_radar_fallback": "官方日推暂不可用，已切换账号雷达",
   "search_history_empty": "还没有搜索记录。开启后搜索的关键词会保存在这里。",
+  "search_history_more": "展开历史记录",
+  "search_history_less": "收起历史记录",
+  "search_back_home": "返回发现主页",
   "daily_refresh": "刷新推荐",
   "daily_authorization_tip": "在 QQ 音乐官方页面完成推荐授权，生成 Key 后会自动验证并保存。"
 }

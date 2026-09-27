@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { Image, StyleSheet, View } from 'react-native'
 import { useKeyboard } from '@/utils/hooks'
 
 import Pic from './components/Pic'
@@ -10,14 +10,16 @@ import { useSettingValue } from '@/store/setting/hook'
 import { Q_UI } from '@/theme/ui'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import GlassSurface from '@/components/common/GlassSurface'
+import { defaultHeaders } from '@/components/common/Image'
 
 
-export default memo(({ isHome = false }: { isHome?: boolean }) => {
+export default memo(({ isHome = false, onOpenDetail }: { isHome?: boolean, onOpenDetail?: () => void }) => {
   // const { onLayout, ...layout } = useLayout()
   const { keyboardShown } = useKeyboard()
   const autoHidePlayBar = useSettingValue('common.autoHidePlayBar')
   const musicInfo = usePlayerMusicInfo()
   const [compact, setCompact] = useState(false)
+  const artworkUri = musicInfo.pic?.startsWith('/') ? `file://${musicInfo.pic}` : musicInfo.pic
 
   const playerComponent = useMemo(() => (
     <GlassSurface
@@ -25,10 +27,11 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
       onLayout={event => { setCompact(event.nativeEvent.layout.width < 330) }}
       style={styles.container}
     >
+      {artworkUri ? <Image source={{ uri: artworkUri, headers: defaultHeaders }} resizeMode="cover" blurRadius={24} style={styles.ambientArt} /> : null}
       <View style={styles.topRow}>
-        {!compact ? <Pic isHome={isHome} /> : null}
+        {!compact ? <Pic isHome={isHome} onOpenDetail={onOpenDetail} /> : null}
         <View style={[styles.trackInfo, compact && styles.compactInfo]}>
-          <Title isHome={isHome} />
+          <Title isHome={isHome} onOpenDetail={onOpenDetail} />
         </View>
         <View style={styles.controls}>
           <ControlBtn />
@@ -36,7 +39,7 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
       </View>
       <PlayInfo isHome={isHome} />
     </GlassSurface>
-  ), [isHome, compact])
+  ), [artworkUri, isHome, compact, onOpenDetail])
 
   // console.log('render pb')
 
@@ -45,6 +48,10 @@ export default memo(({ isHome = false }: { isHome?: boolean }) => {
 
 
 const styles = StyleSheet.create({
+  ambientArt: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.11,
+  },
   container: {
     minHeight: 58,
     paddingTop: 2,
@@ -72,7 +79,7 @@ const styles = StyleSheet.create({
   },
   compactInfo: { paddingLeft: 2 },
   controls: {
-    width: 176,
+    width: 164,
     flexShrink: 0,
     alignItems: 'center',
   },

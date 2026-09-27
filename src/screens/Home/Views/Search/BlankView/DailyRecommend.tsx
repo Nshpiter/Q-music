@@ -4,27 +4,33 @@ import { LIST_IDS } from '@/config/constant'
 import { getAccountDaily, getDailyProvider, setDailyProvider, type DailyRecommendation } from '@/core/musicAccount/daily'
 import type { MusicAccountProvider } from '@/core/musicAccount'
 import { useNavigationComponentDidAppear } from '@/navigation'
-import { pushMusicAccountScreen } from '@/navigation/navigation'
+import { pushMusicAccountScreen, pushPlayDetailScreen } from '@/navigation/navigation'
 import commonState from '@/store/common/state'
 import DailySettings from './DailySettings'
 import { setTempList } from '@/core/list'
-import { playList } from '@/core/player/player'
+import { playList, togglePlay } from '@/core/player/player'
+import { useIsPlay, usePlayMusicInfo } from '@/store/player/hook'
+import PlayerBar from '@/components/player/PlayerBar'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
 import { Q_TOUCH_HIT_SLOP, Q_UI } from '@/theme/ui'
 import { createStyle, toast } from '@/utils/tools'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, AppState, FlatList, Modal, SafeAreaView, ScrollView, View } from 'react-native'
+import { ActivityIndicator, AppState, FlatList, InteractionManager, Modal, SafeAreaView, ScrollView, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import DailyArtwork from './DailyArtwork'
 
 export default () => {
   const t = useI18n()
   const theme = useTheme()
+  const isPlay = useIsPlay()
+  const playMusicInfo = usePlayMusicInfo()
   const sourceRef = useRef<MusicAccountProvider>('tx')
   const ready = useRef(false)
   const requestIdRef = useRef(0)
   const request = useRef<AbortController>()
+  const pendingSource = useRef<MusicAccountProvider>()
+  const shownSource = useRef<MusicAccountProvider>()
   const isUnmountedRef = useRef(false)
   const [provider, setProvider] = useState<MusicAccountProvider>('tx')
   const [result, setResult] = useState<DailyRecommendation>()
@@ -37,14 +43,15 @@ export default () => {
   const playbackPending = useRef(false)
 
   const load = useCallback(async(source: MusicAccountProvider, force = false) => {
+    if (!force && pendingSource.current == source && request.current && !request.current.signal.aborted) return
     request.current?.abort()
     const controller = new AbortController()
     request.current = controller
+    pendingSource.current = source
     const requestId = ++requestIdRef.current
     setLoading(true)
     setLoadError(false)
-    setResult(undefined)
-    setList([])
+    if (shownSource.current != source) { setResult(undefined); setList([]) }
     let timeout: ReturnType<typeof setTimeout> | undefined
     try {
       const next = await Promise.race([
@@ -54,14 +61,19 @@ export default () => {
         }),
       ])
       if (isUnmountedRef.current || requestId != requestIdRef.current) return
+      shownSource.current = source
       setList(next.list)
       setResult(next)
     } catch {
       if (isUnmountedRef.current || requestId != requestIdRef.current) return
-      setLoadError(true)
+      if (shownSource.current != source) setLoadError(true)
     } finally {
       if (timeout) clearTimeout(timeout)
-      if (!isUnmountedRef.current && requestId == requestIdRef.current) setLoading(false)
+      if (requestId == requestIdRef.current) {
+        request.current = undefined
+        pendingSource.current = undefined
+        if (!isUnmountedRef.current) setLoading(false)
+      }
     }
   }, [])
   useEffect(() => {
@@ -95,7 +107,8 @@ export default () => {
     setSettingsVisible(false)
     if (commonState.componentIds.home) pushMusicAccountScreen(commonState.componentIds.home, sourceRef.current)
   }
-  const sourceLabel = t(loading ? 'search_daily_recommend_loading' : loadError ? 'load_failed' : result?.kind == 'official_daily' ? 'daily_official_daily' : result?.kind == 'radar' ? 'daily_radar' : result?.kind == 'netease_daily' ? 'daily_netease_daily' : 'daily_local')
+  const sourceLabel = t(loading && !result ? 'search_daily_recommend_loading' : loadError ? 'load_failed' : result?.kind == 'official_daily' ? 'daily_official_daily' : result?.kind == 'radar' ? 'daily_radar' : result?.kind == 'netease_daily' ? 'daily_netease_daily' : 'daily_local')
+  const playingDaily = list.some(item => item.id == playMusicInfo.musicInfo?.id)
 
   const handlePlay = useCallback(async(index = 0) => {
     if (!list.length || playbackPending.current) return
@@ -112,6 +125,12 @@ export default () => {
       if (!isUnmountedRef.current) setStartingPlayback(false)
     }
   }, [list, t])
+  const openPlayDetail = useCallback(() => {
+    setDetailVisible(false)
+    void InteractionManager.runAfterInteractions(() => {
+      if (commonState.componentIds.home) pushPlayDetailScreen(commonState.componentIds.home)
+    })
+  }, [])
 
   const renderCover = (item?: LX.Music.MusicInfoOnline) => <DailyArtwork item={item} />
 
@@ -146,12 +165,12 @@ export default () => {
         <Button accessibilityLabel={t('daily_refresh')} disabled={loading || startingPlayback} style={{ ...styles.action, backgroundColor: theme['q-surface-tint'] }} onPress={() => { void load(sourceRef.current, true) }}>
           <Text size={12} color={theme['q-accent-text']}>{t('daily_refresh')}</Text>
         </Button>
-        <Button accessibilityLabel={t('search_daily_recommend_play')} disabled={loading || !list.length || startingPlayback} style={{ ...styles.action, backgroundColor: theme['q-accent'] }} onPress={() => { void handlePlay() }}>
+        <Button accessibilityLabel={t('search_daily_recommend_play')} disabled={!list.length || startingPlayback} style={{ ...styles.action, backgroundColor: theme['q-accent'] }} onPress={() => { void handlePlay() }}>
           <Icon accessible={false} name="play" rawSize={14} color={theme['q-on-accent']} />
           <Text size={12} color={theme['q-on-accent']}>{t('search_daily_recommend_play')}</Text>
         </Button>
       </View>
-      {loading
+      {loading && !list.length
         ? <View style={styles.state}><ActivityIndicator color={theme['q-accent']} /><Text size={12} color={theme['q-text-secondary']}>{t('search_daily_recommend_loading')}</Text></View>
         : loadError
           ? (
@@ -185,8 +204,8 @@ export default () => {
               <Text size={28} color={theme['q-text-primary']}>‹</Text>
             </Button>
             <View style={styles.titleContent}><Text size={20} color={theme['q-text-primary']}>{t('search_daily_recommend')}</Text><Text size={11} color={theme['q-text-secondary']}>{sourceLabel}</Text></View>
-            <Button disabled={!list.length || startingPlayback} style={styles.closeButton} accessibilityLabel={t('search_daily_recommend_play')} onPress={() => { void handlePlay() }}>
-              <Icon name="play" rawSize={22} color={theme['q-accent-text']} />
+            <Button disabled={!list.length || startingPlayback} style={styles.closeButton} accessibilityLabel={t(playingDaily && isPlay ? 'pause' : 'search_daily_recommend_play')} onPress={() => { if (playingDaily) togglePlay(); else void handlePlay() }}>
+              <Icon name={playingDaily && isPlay ? 'pause' : 'play'} rawSize={22} color={theme['q-accent-text']} />
             </Button>
           </View>
           <FlatList
@@ -197,17 +216,18 @@ export default () => {
             keyExtractor={item => `${item.source}_${item.id}`}
             ListEmptyComponent={<Text color={theme['q-text-secondary']}>{t(loading ? 'search_daily_recommend_loading' : loadError ? 'load_failed' : 'search_daily_recommend_empty')}</Text>}
             renderItem={({ item, index }) => (
-              <Button disabled={startingPlayback} accessibilityLabel={`${t('play')} · ${item.name} · ${item.singer}`} style={styles.item} onPress={() => { void handlePlay(index) }}>
+              <Button disabled={startingPlayback} accessibilityLabel={`${t(playMusicInfo.musicInfo?.id == item.id && isPlay ? 'pause' : 'play')} · ${item.name} · ${item.singer}`} style={styles.item} onPress={() => { if (playMusicInfo.musicInfo?.id == item.id) togglePlay(); else void handlePlay(index) }}>
                 <Text size={12} style={styles.trackNumber} color={theme['q-text-secondary']}>{String(index + 1).padStart(2, '0')}</Text>
                 <View style={styles.rowCover}>{renderCover(item)}</View>
                 <View style={styles.musicInfo}>
                   <Text numberOfLines={1} size={15} color={theme['q-text-primary']}>{item.name}</Text>
                   <Text numberOfLines={1} size={12} color={theme['q-text-secondary']}>{item.singer}</Text>
                 </View>
-                <Icon name="play" rawSize={16} color={theme['q-accent-text']} />
+                <Icon name={playMusicInfo.musicInfo?.id == item.id && isPlay ? 'pause' : 'play'} rawSize={16} color={theme['q-accent-text']} />
               </Button>
             )}
           />
+          <PlayerBar onOpenDetail={openPlayDetail} />
         </SafeAreaView>
       </Modal>
     </View>

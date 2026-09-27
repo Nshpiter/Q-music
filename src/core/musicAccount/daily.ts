@@ -47,22 +47,29 @@ export const getQQDailyKeyStatus = async() => {
   try { return { configured: !!owner && !!await credentialStore.getQQDailyKey(owner), available: true } } catch { return { configured: false, available: false } }
 }
 
-export const requestQQOfficialDailyIds = async(key: string, signal?: AbortSignal): Promise<string[]> => {
-  const result = await request('https://a.y.qq.com/discover/daily-mix', {}, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ params: {}, comm: { skill_version: '0.0.3' } }),
-  }, signal)
-  if (result.ret != 0 || (result.sub_ret != null && result.sub_ret != 0) || !Array.isArray(result.songlist)) fail()
+export const requestQQOfficialDailyIds = async(session: AccountSession, key: string, signal?: AbortSignal): Promise<string[]> => {
+  let result: Record<string, any>
+  try {
+    result = await request('https://a.y.qq.com/discover/daily-mix', session.cookies, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ params: {}, comm: { skill_version: '0.0.3' } }),
+    }, signal)
+  } catch (error) {
+    if (error instanceof Error && error.message == 'login_required') fail('invalid_key')
+    throw error
+  }
+  if ((result.ret != null && result.ret != 0) || (result.sub_ret != null && result.sub_ret != 0)) fail('invalid_key')
+  if (!Array.isArray(result.songlist)) fail('unavailable')
   const rows: Array<{ songMid?: string }> = result.songlist
   return [...new Set(rows.map(item => item.songMid ?? '').filter(id => /^[a-zA-Z0-9]+$/.test(id)))].slice(0, 30)
 }
 export const saveQQDailyKey = async(value: string, signal?: AbortSignal) => {
   const key = value.trim()
-  if (!/^qmk-[A-Za-z0-9_-]{12,1024}$/.test(key)) fail('invalid_key')
+  if (!/^qmk-[A-Za-z0-9_-]+$/.test(key)) fail('invalid_key')
   if (!credentialStore) fail('credential_storage')
   const session = await openAccountSession('tx')
-  const ids = await requestQQOfficialDailyIds(key, signal)
+  const ids = await requestQQOfficialDailyIds(session, key, signal)
   if (!ids.length) fail('invalid_key')
   await assertAccountSession(session)
   aborted(signal)
@@ -71,35 +78,48 @@ export const saveQQDailyKey = async(value: string, signal?: AbortSignal) => {
 }
 
 const qqTracks = async(session: AccountSession, ids: string[], signal?: AbortSignal) => {
-  const tracks: LX.Music.MusicInfoOnline[] = []
-  for (let offset = 0; offset < ids.length; offset += 6) {
-    aborted(signal)
-    const batch = await Promise.all(ids.slice(offset, offset + 6).map(async id => {
-      try {
-        const response = await qqRequest(session, { detail: { module: 'music.pf_song_detail_svr', method: 'get_song_detail_yqq', param: { song_type: 0, song_mid: id } } }, signal, 19)
-        const track = response.detail.data.track_info
-        if (!track?.mid || !track.file?.media_mid || !track.album) return null
-        return toNewMusicInfo(qqSongList.filterListDetail([track])[0]) as LX.Music.MusicInfoOnline
-      } catch { return null }
-    }))
-    tracks.push(...batch.filter((item): item is LX.Music.MusicInfoOnline => item != null))
-  }
+  const groups = Array.from({ length: Math.ceil(ids.length / 10) }, (_, index) => ids.slice(index * 10, index * 10 + 10))
+  const batches = await Promise.all(groups.map(async group => {
+    const calls = Object.fromEntries(group.map((id, index) => [`detail_${index}`, { module: 'music.pf_song_detail_svr', method: 'get_song_detail_yqq', param: { song_type: 0, song_mid: id } }]))
+    try {
+      const response = await qqRequest(session, calls, signal, 19)
+      return group.map((_, index) => response[`detail_${index}`]?.data?.track_info)
+    } catch {
+      aborted(signal)
+      // 个别歌曲详情失败时仍保留同批其他歌曲。
+      return Promise.all(group.map(async id => {
+        try {
+          const response = await qqRequest(session, { detail: { module: 'music.pf_song_detail_svr', method: 'get_song_detail_yqq', param: { song_type: 0, song_mid: id } } }, signal, 19)
+          return response.detail.data.track_info
+        } catch { return null }
+      }))
+    }
+  }))
   aborted(signal)
-  return tracks
+  return batches.flat().filter(track => track?.mid && track.file?.media_mid && track.album).map(track => toNewMusicInfo(qqSongList.filterListDetail([track])[0]) as LX.Music.MusicInfoOnline)
 }
 const qqRadar = async(session: AccountSession, signal?: AbortSignal) => {
   const ids = new Set<string>()
-  for (let page = 1; page <= 4 && ids.size < 30; page++) {
-    const result = await qqRequest(session, { radio: { module: 'music.recommend.TrackRelationServer', method: 'GetRadarSong', param: { Page: page } } }, signal, 19)
-    const data = result.radio.data
-    const rows = [data.VecSongs, data.tracks, data.track, data.songList, data.vec_song, data.List].find(Array.isArray) as Array<Record<string, any>> | undefined
-    if (!rows?.length) break
-    for (const row of rows) {
-      const track = row.Track ?? row.track_info ?? row
-      const id = String(track.mid ?? track.songmid ?? '')
-      if (/^[a-zA-Z0-9]+$/.test(id)) ids.add(id)
+  const fetchPage = async(page: number) => {
+    try {
+      const result = await qqRequest(session, { radio: { module: 'music.recommend.TrackRelationServer', method: 'GetRadarSong', param: { Page: page } } }, signal, 19)
+      const data = result.radio.data
+      return [data.VecSongs, data.tracks, data.track, data.songList, data.vec_song, data.List].find(Array.isArray) as Array<Record<string, any>> | undefined
+    } catch { return undefined }
+  }
+  for (const pages of [[1, 2], [3, 4]]) {
+    aborted(signal)
+    const results = await Promise.all(pages.map(fetchPage))
+    for (const rows of results) {
+      for (const row of rows ?? []) {
+        const track = row.Track ?? row.track_info ?? row
+        const id = String(track.mid ?? track.songmid ?? '')
+        if (/^[a-zA-Z0-9]+$/.test(id)) ids.add(id)
+        if (ids.size == 30) break
+      }
       if (ids.size == 30) break
     }
+    if (ids.size == 30 || !results.some(rows => rows?.length)) break
   }
   return qqTracks(session, [...ids], signal)
 }
@@ -137,7 +157,7 @@ export const getAccountDaily = async(provider: MusicAccountProvider, force = fal
     } else {
       if (key) {
         try {
-          const ids = await requestQQOfficialDailyIds(key, signal)
+          const ids = await requestQQOfficialDailyIds(session, key, signal)
           const list = await qqTracks(session, ids, signal)
           if (list.length) result = { provider, kind: 'official_daily', reason: '', list }
         } catch {}

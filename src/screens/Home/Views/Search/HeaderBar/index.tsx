@@ -21,11 +21,13 @@ type SourceSelectorProps = _SourceSelectorProps<Sources>
 type SourceSelectorType = _SourceSelectorType<Sources>
 
 export interface HeaderBarProps {
+  showBack: boolean
+  onBack: () => void
   onSourceChange: SourceSelectorProps['onSourceChange']
   onTipSearch: SearchInputProps['onChangeText']
   onSearch: SearchInputProps['onSubmit']
   onHideTipList: SearchInputProps['onBlur']
-  onShowTipList: SearchInputProps['onTouchStart']
+  onShowTipList: SearchInputProps['onFocusText']
 }
 
 export interface HeaderBarType {
@@ -36,7 +38,7 @@ export interface HeaderBarType {
 }
 
 
-export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTipSearch, onSearch, onHideTipList, onShowTipList }, ref) => {
+export default forwardRef<HeaderBarType, HeaderBarProps>(({ showBack, onBack, onSourceChange, onTipSearch, onSearch, onHideTipList, onShowTipList }, ref) => {
   const sourceSelectorRef = useRef<SourceSelectorType>(null)
   const searchInputRef = useRef<SearchInputType>(null)
   const theme = useTheme()
@@ -60,6 +62,9 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
 
   return (
     <View style={{ ...styles.searchBar, borderBottomColor: theme['q-outline'] }}>
+      {showBack ? <Button accessibilityLabel={t('search_back_home')} style={styles.back} onPress={onBack}>
+        <Icon name="chevron-left" rawSize={22} color={theme['q-text-primary']} />
+      </Button> : null}
       <View
         style={{
           ...styles.searchControl,
@@ -76,17 +81,18 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ onSourceChange, onTi
           onChangeText={onTipSearch}
           onSubmit={onSearch}
           onBlur={onHideTipList}
-          onTouchStart={onShowTipList}
+          onFocusText={onShowTipList}
         />
       </View>
-      <Button accessibilityLabel={t('nav_setting')} style={styles.settings} onPress={() => { setNavActiveId('nav_setting') }}>
+      {!showBack ? <Button accessibilityLabel={t('nav_setting')} style={styles.settings} onPress={() => { setNavActiveId('nav_setting') }}>
         <Icon name="setting" rawSize={22} color={theme['q-text-primary']} />
-      </Button>
+      </Button> : null}
     </View>
   )
 })
 
 const styles = StyleSheet.create({
+  back: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   settings: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   searchBar: {
     flexDirection: 'row',

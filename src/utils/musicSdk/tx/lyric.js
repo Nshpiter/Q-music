@@ -15,7 +15,7 @@ export default {
       if (body.code != 0 || !body.lyric) return Promise.reject(new Error('Get lyric failed'))
       return {
         lyric: decodeName(b64DecodeUnicode(body.lyric)),
-        tlyric: decodeName(b64DecodeUnicode(body.trans)),
+        tlyric: body.trans ? decodeName(b64DecodeUnicode(body.trans)) : '',
       }
     })
     return requestObj

@@ -6,6 +6,17 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [Q-music Android 0.4.4](https://github.com/Nshpiter/Q-music/compare/v0.4.3...v0.4.4) - 2026-09-28
+
+### 优化与修复
+
+- 搜索框聚焦后显示历史记录，补齐从搜索结果返回发现页的入口。
+- 歌词页背景跟随封面与播放状态缓慢变化，优化歌词和控件的阅读对比度。
+- 增强 QQ 音乐与网易云的双语歌词获取，并在可确认同曲时补充跨平台译文。
+- 修复 QQ 每日 30 首密钥验证，优化日推歌曲详情的批量获取速度。
+- 细化底部导航、迷你播放条和歌曲行的玻璃材质与切换动效。
+- 提高 Android versionCode 至 34，支持覆盖升级。
+
 ## [Q-music Android 0.4.3](https://github.com/Nshpiter/Q-music/compare/v0.4.2...v0.4.3) - 2026-09-20
 
 ### 新增

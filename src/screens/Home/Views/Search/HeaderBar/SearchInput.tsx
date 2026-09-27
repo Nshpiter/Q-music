@@ -9,7 +9,7 @@ export interface SearchInputProps {
   onChangeText: (text: string) => void
   onSubmit: (text: string) => void
   onBlur: () => void
-  onTouchStart: () => void
+  onFocusText: (text: string) => void
 }
 
 export interface SearchInputType {
@@ -19,7 +19,7 @@ export interface SearchInputType {
   blur: () => void
 }
 
-export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, onSubmit, onBlur, onTouchStart }, ref) => {
+export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, onSubmit, onBlur, onFocusText }, ref) => {
   const theme = useTheme()
   const t = useI18n()
   const { width } = useWindowSize()
@@ -74,7 +74,7 @@ export default forwardRef<SearchInputType, SearchInputProps>(({ onChangeText, on
       onBlur={onBlur}
       onSubmitEditing={handleSubmit}
       onClearText={handleClearText}
-      onTouchStart={onTouchStart}
+      onFocus={() => { onFocusText(text) }}
       clearBtn
       clearButtonAccessibilityLabel={`${t('delete')} ${t('mobile_search')}`}
       actionIcon="search-2"

@@ -5,7 +5,6 @@ import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { ScrollView, View } from 'react-native'
-import HistorySearch, { type HistorySearchType } from './HistorySearch'
 import HotSearch, { type HotSearchType } from './HotSearch'
 import Button from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -27,24 +26,21 @@ export interface BlankViewType {
 export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch }, ref) => {
   const [visible, setVisible] = useState(false)
   const hotSearchRef = useRef<HotSearchType>(null)
-  const historySearchRef = useRef<HistorySearchType>(null)
   const sourceRef = useRef<Source>('all')
   const isShowHotSearch = useSettingValue('search.isShowHotSearch')
-  const isShowHistorySearch = useSettingValue('search.isShowHistorySearch')
   const t = useI18n()
   const theme = useTheme()
   const dockInset = useDockInset()
 
   const handleShow = useCallback(() => {
     hotSearchRef.current?.show(sourceRef.current)
-    historySearchRef.current?.show()
   }, [])
 
   useEffect(() => {
     if (!visible) return
     const frameId = requestAnimationFrame(handleShow)
     return () => { cancelAnimationFrame(frameId) }
-  }, [visible, isShowHotSearch, isShowHistorySearch, handleShow])
+  }, [visible, isShowHotSearch, handleShow])
 
   useImperativeHandle(ref, () => ({
     show(source) {
@@ -86,7 +82,6 @@ export default forwardRef<BlankViewType, BlankViewProps>(({ onSearch }, ref) => 
               </Button>
             </View>
             <View style={styles.content}>
-              { isShowHistorySearch ? <HistorySearch ref={historySearchRef} onSearch={onSearch} /> : null }
               { isShowHotSearch ? <HotSearch ref={hotSearchRef} onSearch={onSearch} /> : null }
               <DailyRecommend />
             </View>

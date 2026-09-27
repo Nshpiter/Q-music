@@ -19,6 +19,8 @@ import SearchTypeSelector from './SearchTypeSelector'
 import { useTheme } from '@/store/theme/hook'
 import { useBackHandler } from '@/utils/hooks/useBackHandler'
 import commonState from '@/store/common/state'
+import HistorySearch, { type HistorySearchType } from './BlankView/HistorySearch'
+import { useSettingValue } from '@/store/setting/hook'
 
 
 interface SearchInfo {
@@ -38,7 +40,11 @@ export default () => {
   const theme = useTheme()
   const [hasQuery, setHasQuery] = useState(!!searchState.searchText.trim())
   const [hasDraft, setHasDraft] = useState(false)
+  const [historyVisible, setHistoryVisible] = useState(false)
+  const isShowHistorySearch = useSettingValue('search.isShowHistorySearch')
   const headerBarRef = useRef<HeaderBarType>(null)
+  const historyRef = useRef<HistorySearchType>(null)
+  const focusedRef = useRef(false)
   const searchTipListRef = useRef<TipListType>(null)
   const listRef = useRef<ListType>(null)
   const layoutHeightRef = useRef<number>(0)
@@ -95,6 +101,8 @@ export default () => {
   }
   const handleTipSearch: HeaderBarProps['onTipSearch'] = (text) => {
     setHasDraft(!!text.trim())
+    setHistoryVisible(isShowHistorySearch && focusedRef.current && !text.trim())
+    if (!text.trim()) searchTipListRef.current?.hide()
     if (tipSearchTimeoutRef.current) clearTimeout(tipSearchTimeoutRef.current)
     tipSearchTimeoutRef.current = setTimeout(() => {
       tipSearchTimeoutRef.current = null
@@ -102,6 +110,8 @@ export default () => {
     }, 260)
   }
   const handleHideTipList = () => {
+    focusedRef.current = false
+    setHistoryVisible(false)
     if (showTipTimeoutRef.current) {
       clearTimeout(showTipTimeoutRef.current)
       showTipTimeoutRef.current = null
@@ -123,13 +133,21 @@ export default () => {
     if (keyword) void addHistoryWord(keyword)
     listRef.current?.loadList(keyword, searchInfo.current.source, searchInfo.current.searchType)
   }
-  const handleShowTipList: HeaderBarProps['onShowTipList'] = () => {
+  const handleShowTipList: HeaderBarProps['onShowTipList'] = (text) => {
+    focusedRef.current = true
     if (showTipTimeoutRef.current) clearTimeout(showTipTimeoutRef.current)
     showTipTimeoutRef.current = setTimeout(() => {
       showTipTimeoutRef.current = null
-      searchTipListRef.current?.show(layoutHeightRef.current)
+      if (text.trim()) searchTipListRef.current?.search(text.trim(), layoutHeightRef.current)
+      else setHistoryVisible(isShowHistorySearch)
     }, 100)
   }
+
+  useEffect(() => {
+    if (!historyVisible) return
+    const frame = requestAnimationFrame(() => { historyRef.current?.show() })
+    return () => { cancelAnimationFrame(frame) }
+  }, [historyVisible])
 
   useBackHandler(useCallback(() => {
     if ((!hasQuery && !hasDraft) || commonState.navActiveId != 'nav_search' || Object.keys(commonState.componentIds).length != 1) return false
@@ -138,10 +156,14 @@ export default () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasQuery, hasDraft]))
 
+  const handleBackHome = () => { handleSearch('') }
+
   return (
     <View style={styles.container}>
       <HeaderBar
         ref={headerBarRef}
+        showBack={hasQuery || hasDraft}
+        onBack={handleBackHome}
         onSourceChange={handleSourceChange}
         onTipSearch={handleTipSearch}
         onSearch={handleSearch}
@@ -154,6 +176,9 @@ export default () => {
       <View style={styles.content} onLayout={handleLayout}>
         <TipList ref={searchTipListRef} onSearch={handleSearch} />
         <List ref={listRef} onSearch={handleSearch} />
+        {historyVisible ? <View style={styles.historyOverlay}>
+          <HistorySearch ref={historyRef} onSearch={handleSearch} />
+        </View> : null}
       </View>
     </View>
   )
@@ -166,6 +191,14 @@ const styles = createStyle({
   },
   content: {
     flex: 1,
+  },
+  historyOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    right: 16,
+    zIndex: 11,
+    elevation: 4,
   },
   typeTabs: {
     height: 48,
