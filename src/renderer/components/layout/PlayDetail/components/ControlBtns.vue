@@ -1,5 +1,13 @@
 <template lang="pug">
 div(:class="[$style.footerLeftControlBtns, { [$style.detail]: detail }]")
+  button(v-if="isShowPlayerDetail && musicInfo.tlrc" :class="[$style.footerLeftControlBtn, { [$style.active]: appSetting['player.isShowLyricTranslation'] }]" :aria-label="$t('setting__play_lyric_transition')" :aria-pressed="appSetting['player.isShowLyricTranslation']" :title="$t('setting__play_lyric_transition')" @click="toggleTranslation")
+    svg(:class="$style.translationIcon" viewBox="0 0 512 512" aria-hidden="true")
+      line(x1="48" y1="112" x2="336" y2="112")
+      line(x1="192" y1="64" x2="192" y2="112")
+      polyline(points="272 448 368 224 464 448")
+      line(x1="301.5" y1="384" x2="434.5" y2="384")
+      path(d="M281.3,112S257,206,199,277,80,384,80,384")
+      path(d="M256,336s-35-27-72-75-56-85-56-85")
   button(:class="[$style.footerLeftControlBtn, $style.lrcBtn, { [$style.active]: appSetting['desktopLyric.enable'] }]" :aria-label="toggleDesktopLyricBtnTitle" @click="toggleDesktopLyric" @contextmenu="toggleLockDesktopLyric")
     svg(viewBox="0 0 24 24" aria-hidden="true")
       path(d="M5 6h14")
@@ -73,6 +81,7 @@ import {
   isShowLrcSelectContent,
   isShowPlayComment,
   isShowPlayerDetail,
+  musicInfo,
   playMusicInfo,
   isPlay,
 } from '@renderer/store/player/state'
@@ -107,6 +116,9 @@ export default {
     const toggleVisibleLrc = () => {
       if (!isShowPlayerDetail.value) setShowPlayerDetail(true)
       setShowPlayLrcSelectContentLrc(!isShowLrcSelectContent.value)
+    }
+    const toggleTranslation = () => {
+      updateSetting({ 'player.isShowLyricTranslation': !appSetting['player.isShowLyricTranslation'] })
     }
     const toggleVisibleComment = () => {
       if (!isShowPlayerDetail.value) setShowPlayerDetail(true)
@@ -300,6 +312,9 @@ export default {
       appSetting,
       isShowLrcSelectContent,
       toggleVisibleLrc,
+      toggleTranslation,
+      isShowPlayerDetail,
+      musicInfo,
       isShowPlayComment,
       toggleVisibleComment,
       nextTogglePlayName,
@@ -412,6 +427,10 @@ export default {
       background-color: var(--color-primary-alpha-800);
       box-shadow: 0 8px 18px var(--color-primary-alpha-800);
     }
+  }
+
+  .translationIcon {
+    stroke-width: 32px;
   }
 
   .toolDivider {

@@ -137,9 +137,8 @@ const handleImgError = () => {
   height: calc(@height-player - 18px);
   overflow: hidden;
   display: grid;
-  // 左右两列同样的 minmax 约束 + 对称外边距，保证中间控制簇真正居中
-  grid-template-columns: minmax(336px, 1fr) minmax(430px, 540px) minmax(336px, 1fr);
-  column-gap: clamp(18px, 2.3vw, 34px);
+  grid-template-columns: minmax(180px, 1fr) minmax(300px, 520px) max-content;
+  column-gap: clamp(12px, 2vw, 24px);
   align-items: center;
   margin: 0 clamp(28px, 3vw, 50px) 18px;
   padding: 8px 16px;
@@ -280,6 +279,7 @@ const handleImgError = () => {
 .centerControl {
   position: relative;
   width: 100%;
+  box-sizing: border-box;
   justify-self: center;
   min-width: 0;
   height: 64px;
@@ -417,7 +417,8 @@ const handleImgError = () => {
 
 .tools {
   min-width: 0;
-  flex: auto;
+  flex: none;
+  width: max-content;
 }
 
 .queueBtn {
@@ -708,8 +709,8 @@ const handleImgError = () => {
 
 @media (max-width: 1280px) {
   .footer {
-    grid-template-columns: minmax(0, 1fr) minmax(360px, 460px) minmax(306px, 1fr);
-    column-gap: 16px;
+    grid-template-columns: minmax(120px, 1fr) minmax(300px, 420px) max-content;
+    column-gap: 12px;
     margin: 0 20px 16px clamp(22px, 3vw, 44px);
     padding-inline: 14px;
   }
@@ -732,9 +733,26 @@ const handleImgError = () => {
   }
 }
 
+@media (max-width: 1100px) {
+  .footer {
+    grid-template-columns: minmax(120px, 1fr) minmax(270px, 380px) minmax(230px, 1fr);
+  }
+
+  .footer:not(.detailFooter) .toolArea {
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
 @media (max-width: 980px) {
   .footer {
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px) minmax(258px, 1fr);
+    grid-template-columns: minmax(100px, 1fr) minmax(240px, 340px) minmax(180px, 1fr);
     column-gap: 10px;
     margin: 0 18px 14px 16px;
   }
