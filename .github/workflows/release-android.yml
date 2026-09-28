@@ -7,10 +7,6 @@ on:
         description: 'Existing pushed release tag. Empty means v<Android package.json version>.'
         required: false
         type: string
-  push:
-    tags:
-      - 'v*'
-
 permissions:
   contents: write
 
@@ -44,12 +40,7 @@ jobs:
           REF_TYPE: ${{ github.ref_type }}
         run: |
           package_version="$(node -p "require('./release-metadata/publish/mobile-version.json').version")"
-          desktop_version="$(node -p "require('./release-metadata/package.json').version")"
           android_commit="$(node -p "require('./release-metadata/publish/mobile-version.json').commit")"
-          if [ "$desktop_version" != "$package_version" ]; then
-            echo "Root package version '$desktop_version' does not match mobile release metadata '$package_version'." >&2
-            exit 1
-          fi
           EXPECTED_VERSION="$package_version" node <<'NODE'
           const fs = require('node:fs')
           const metadata = JSON.parse(fs.readFileSync('release-metadata/publish/mobile-version.json', 'utf8'))

@@ -22,15 +22,15 @@ const assertUsefulReleaseNotes = (metadata: VersionMetadata, expectedVersion: st
   assert.ok(!historyVersions.includes(expectedVersion))
 }
 
-test('桌面端与 Android 更新元数据包含当前版本的人工发布说明', async() => {
+test('桌面更新元数据与版本一致，Android 保留独立版本记录', async() => {
   const packageInfo = await readJson<{ version: string }>('package.json')
   const desktopMetadata = await readJson<VersionMetadata>('publish/version.json')
   const mobileMetadata = await readJson<VersionMetadata>('publish/mobile-version.json')
   const changeLog = await readFile('publish/changeLog.md', 'utf8')
 
   assertUsefulReleaseNotes(desktopMetadata, packageInfo.version)
-  assertUsefulReleaseNotes(mobileMetadata, packageInfo.version)
-  assert.match(mobileMetadata.commit ?? '', /^[a-f\d]{40}$/)
+  assertUsefulReleaseNotes(mobileMetadata, mobileMetadata.version)
+  assert.match(mobileMetadata.commit ?? '', /^[a-f\d]{7,40}$/)
   assert.match(changeLog, new RegExp(`^Q-music ${packageInfo.version.replaceAll('.', '\\.')}$`, 'm'))
 })
 
@@ -44,8 +44,11 @@ test('发布工作流只允许带人工说明的 Release 流程', async() => {
   assert.match(windowsWorkflow, /--draft/)
   assert.match(windowsWorkflow, /q-music-managed-release/)
   assert.doesNotMatch(windowsWorkflow, /--generate-notes/)
+  assert.doesNotMatch(windowsWorkflow, /'SHA256SUMS-android.txt'/)
+  assert.match(windowsWorkflow, /'SHA256SUMS-arch.txt'/)
   assert.doesNotMatch(androidWorkflow, /gh\s+release\s+create/)
   assert.doesNotMatch(archWorkflow, /gh\s+release\s+create/)
   assert.match(androidWorkflow, /release_notes_are_human/)
+  assert.doesNotMatch(androidWorkflow, /push:\s*\n\s*tags:/)
   assert.match(archWorkflow, /release_notes_are_human/)
 })

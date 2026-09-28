@@ -14,6 +14,7 @@ import {
 } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
 import { getMusicUrl, getPicPath, getLyricInfo, isCustomApiSource } from '../music/index'
+import { findMatchedTranslation } from '../music/translation'
 import type { MusicUrlRequestOptions, MusicUrlResolvedInfo } from '../music/index'
 import { filterList } from './utils'
 import { requestMsg } from '@renderer/utils/message'
@@ -31,6 +32,23 @@ const createGettingUrlId = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
   const originalMusicInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
   const tInfo = originalMusicInfo.meta.toggleMusicInfo
   return `${originalMusicInfo.source}:${originalMusicInfo.id}:${musicInfo.id}:${tInfo?.source ?? ''}:${tInfo?.id ?? ''}`
+}
+
+const applyLyricInfo = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem, lyricInfo: LX.Player.LyricInfo) => {
+  setMusicInfo({
+    lrc: lyricInfo.lyric,
+    tlrc: lyricInfo.tlyric,
+    lxlrc: lyricInfo.lxlyric,
+    rlrc: lyricInfo.rlyric,
+    rawlrc: lyricInfo.rawlrcInfo.lyric,
+  })
+  window.app_event.lyricUpdated()
+  if ('progress' in musicInfo || musicInfo.source == 'local' || lyricInfo.tlyric) return
+  void findMatchedTranslation(musicInfo, lyricInfo).then(translation => {
+    if (!translation || musicInfo.id != playMusicInfo.musicInfo?.id || _musicInfo.tlrc) return
+    setMusicInfo({ tlrc: translation })
+    window.app_event.lyricUpdated()
+  })
 }
 
 const playbackRouteState: {
@@ -361,14 +379,7 @@ const handleRestorePlay = async(restorePlayInfo: LX.Player.SavedPlayInfo) => {
 
   void getLyricInfo({ musicInfo }).then((lyricInfo) => {
     if (musicInfo.id != playMusicInfo.musicInfo?.id) return
-    setMusicInfo({
-      lrc: lyricInfo.lyric,
-      tlrc: lyricInfo.tlyric,
-      lxlrc: lyricInfo.lxlyric,
-      rlrc: lyricInfo.rlyric,
-      rawlrc: lyricInfo.rawlrcInfo.lyric,
-    })
-    window.app_event.lyricUpdated()
+    applyLyricInfo(musicInfo, lyricInfo)
   }).catch((err) => {
     console.log(err)
     if (musicInfo.id != playMusicInfo.musicInfo?.id) return
@@ -411,14 +422,7 @@ const handlePlay = () => {
 
   void getLyricInfo({ musicInfo }).then((lyricInfo) => {
     if (musicInfo.id != playMusicInfo.musicInfo?.id) return
-    setMusicInfo({
-      lrc: lyricInfo.lyric,
-      tlrc: lyricInfo.tlyric,
-      lxlrc: lyricInfo.lxlyric,
-      rlrc: lyricInfo.rlyric,
-      rawlrc: lyricInfo.rawlrcInfo.lyric,
-    })
-    window.app_event.lyricUpdated()
+    applyLyricInfo(musicInfo, lyricInfo)
   }).catch((err) => {
     console.log(err)
     if (musicInfo.id != playMusicInfo.musicInfo?.id) return

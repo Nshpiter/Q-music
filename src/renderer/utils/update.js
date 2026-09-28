@@ -1,7 +1,8 @@
 import { httpGet } from './request'
+import { isDesktopRelease } from '@common/utils/release'
 
 const address = [
-  ['https://api.github.com/repos/Nshpiter/Q-music/releases/latest', 'githubRelease'],
+  ['https://api.github.com/repos/Nshpiter/Q-music/releases?per_page=30', 'githubRelease'],
   ['https://raw.githubusercontent.com/Nshpiter/Q-music/master/publish/version.json', 'direct'],
   ['https://cdn.jsdelivr.net/gh/Nshpiter/Q-music@master/publish/version.json', 'direct'],
 ]
@@ -39,7 +40,11 @@ const getNpmPkgInfo = async(url) => {
 const normalizeVersion = version => String(version || '').replace(/^v/i, '')
 
 const getGithubReleaseInfo = async(url) => {
-  return request(url).then(info => {
+  return request(url).then(releases => {
+    const info = Array.isArray(releases)
+      ? releases.find(release => !release.draft && !release.prerelease && isDesktopRelease(release))
+      : null
+    if (!info) throw new Error('No desktop release found')
     const version = normalizeVersion(info.tag_name)
     if (!version) throw new Error('failed')
     return {

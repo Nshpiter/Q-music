@@ -3,6 +3,7 @@ import { log, isWin } from '@common/utils'
 import { mainOn } from '@common/mainIpc'
 import { isExistWindow, sendEvent } from './index'
 import { WIN_MAIN_RENDERER_EVENT_NAME } from '@common/ipcNames'
+import { isDesktopRelease } from '@common/utils/release'
 
 autoUpdater.logger = log
 autoUpdater.autoDownload = false
@@ -117,14 +118,14 @@ export default () => {
 
   mainOn(WIN_MAIN_RENDERER_EVENT_NAME.update_check, () => {
     console.log('check')
-    checkUpdate()
+    void checkUpdate()
   })
 
   mainOn(WIN_MAIN_RENDERER_EVENT_NAME.update_download_update, () => {
     if (isPackageManagerInstall()) return
     if (!autoUpdater.isUpdaterActive()) {
       isManualDownloadPending = true
-      checkUpdate(false)
+      void checkUpdate(false)
       return
     }
     void autoUpdater.downloadUpdate()
@@ -140,7 +141,20 @@ export default () => {
   })
 }
 
-const checkUpdate = (autoDownload = global.lx.appSetting['common.tryAutoUpdate']) => {
+const latestReleaseIsDesktop = async() => {
+  try {
+    const response = await fetch('https://api.github.com/repos/Nshpiter/Q-music/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'Q-music-desktop' },
+      signal: AbortSignal.timeout(8000),
+    })
+    if (!response.ok) return true
+    return isDesktopRelease(await response.json() as { assets?: Array<{ name?: string }> })
+  } catch {
+    return true
+  }
+}
+
+const checkUpdate = async(autoDownload = global.lx.appSetting['common.tryAutoUpdate']) => {
   // if (!isFirstCheckedUpdate) {
   //   if (waitEvent.length) {
   //     waitEvent.forEach((event, index) => {
@@ -158,6 +172,11 @@ const checkUpdate = (autoDownload = global.lx.appSetting['common.tryAutoUpdate']
   if (isWin && process.arch.includes('arm')) {
     handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_error, info: 'failed' })
   } else {
+    if (!await latestReleaseIsDesktop()) {
+      isManualDownloadPending = false
+      handleSendEvent({ type: WIN_MAIN_RENDERER_EVENT_NAME.update_not_available, info: { version: process.versions.app } })
+      return
+    }
     autoUpdater.autoDownload = autoDownload && !isPackageManagerInstall()
     void autoUpdater.checkForUpdates()
   }

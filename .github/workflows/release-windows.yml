@@ -279,9 +279,6 @@ jobs:
               "Q-music-v$env:PACKAGE_VERSION-x64-Setup.exe.blockmap",
               'latest.yml',
               'SHA256SUMS-windows.txt',
-              "Q-music-android-v$env:PACKAGE_VERSION-arm64-v8a.apk",
-              "Q-music-android-v$env:PACKAGE_VERSION-universal.apk",
-              'SHA256SUMS-android.txt',
               'SHA256SUMS-arch.txt',
               "Q-music_$($env:PACKAGE_VERSION)_x64.pacman"
             )
@@ -294,7 +291,7 @@ jobs:
               $missingAssets = @($requiredAssets | Where-Object { $_ -notin $assetNames })
               $assetsComplete = $missingAssets.Count -eq 0
               if (-not $assetsComplete) {
-                Write-Host "Waiting for Android and Arch assets ($attempt/180). Missing: $($missingAssets -join ', ')"
+                Write-Host "Waiting for Arch assets ($attempt/180). Missing: $($missingAssets -join ', ')"
                 Start-Sleep -Seconds 10
               }
             }

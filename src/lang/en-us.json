@@ -733,6 +733,7 @@
   "setting__play_lyric_roma": "Show romanized lyrics if available",
   "setting__play_lyric_s2t": "Convert Chinese lyrics that are playing and downloading to traditional",
   "setting__play_lyric_transition": "Show translated lyrics if available",
+  "play_detail__bilingual": "Bilingual",
   "setting__play_max_output_channel_count": "Output audio using the maximum number of channels the device can handle",
   "setting__play_mediaDevice": "Audio Output",
   "setting__play_mediaDevice_remove_stop_play": "Pause playback when current audio output device is changed",

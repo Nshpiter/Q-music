@@ -1,9 +1,18 @@
 <template>
   <div :class="['right', $style.right, appSetting['playDetail.style.layout'] == 'immersive' ? $style.immersive : $style.classic, { [$style.commentMode]: isCommentLayoutVisible, [$style.layoutSettling]: commentLayoutSettling }]" :style="lrcFontSize">
-    <div v-show="playerMusicInfo.name" :class="$style.trackHeader">
+    <div v-show="playerMusicInfo.name" :class="[$style.trackHeader, { [$style.hasTranslation]: playerMusicInfo.tlrc }]">
       <div :class="$style.trackName">{{ playerMusicInfo.name }}</div>
       <div :class="$style.trackArtist">{{ playerMusicInfo.singer }}</div>
     </div>
+    <button
+      v-if="playerMusicInfo.tlrc"
+      type="button"
+      :class="[$style.translationToggle, { [$style.translationActive]: appSetting['player.isShowLyricTranslation'] }]"
+      :aria-label="$t('setting__play_lyric_transition')"
+      :aria-pressed="appSetting['player.isShowLyricTranslation']"
+      :title="$t('setting__play_lyric_transition')"
+      @click="toggleTranslation"
+    >{{ $t('play_detail__bilingual') }}</button>
     <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
       <div
         v-show="!isShowLrcSelectContent"
@@ -90,7 +99,7 @@ import {
 import { onMounted, onBeforeUnmount, computed, reactive, ref, nextTick, watch } from '@common/utils/vueTools'
 import useLyric from '@renderer/utils/compositions/useLyric'
 import LyricMenu from './components/LyricMenu.vue'
-import { appSetting } from '@renderer/store/setting'
+import { appSetting, updateSetting } from '@renderer/store/setting'
 import { setLyricOffset } from '@renderer/core/lyric'
 import useSelectAllLrc from './useSelectAllLrc'
 
@@ -103,6 +112,9 @@ export default {
     commentLayoutSettling: Boolean,
   },
   setup(props) {
+    const toggleTranslation = () => {
+      updateSetting({ 'player.isShowLyricTranslation': !appSetting['player.isShowLyricTranslation'] })
+    }
     const isShowNoLyric = computed(() => !!playerMusicInfo.id && !lyric.lines.length && !isShowLrcSelectContent.value)
     const isZoomActiveLrc = computed(() => appSetting['playDetail.isZoomActiveLrc'])
     const isShowLyricProgressSetting = computed(() => appSetting['playDetail.isShowLyricProgressSetting'])
@@ -254,6 +266,7 @@ export default {
 
     return {
       appSetting,
+      toggleTranslation,
       isShowNoLyric,
       dom_lyric,
       dom_lyric_text,
@@ -333,6 +346,30 @@ export default {
   backdrop-filter: none;
   overflow: visible;
 }
+.translationToggle {
+  position: absolute;
+  z-index: 3;
+  top: 18px;
+  right: 18px;
+  min-width: 54px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, .12);
+  color: rgba(255, 255, 255, .8);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .2s ease, border-color .2s ease, color .2s ease;
+
+  &:hover { background: rgba(255, 255, 255, .2); }
+  &:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+}
+.translationActive {
+  border-color: rgba(255, 255, 255, .62);
+  background: rgba(255, 255, 255, .25);
+  color: #fff;
+}
 .trackHeader {
   position: relative;
   z-index: 2;
@@ -346,6 +383,9 @@ export default {
   opacity: 0;
   transform: translateY(-8px);
   transition: max-height .5s cubic-bezier(.22, 1, .36, 1), margin-bottom .5s cubic-bezier(.22, 1, .36, 1), opacity .28s ease, transform .5s cubic-bezier(.22, 1, .36, 1);
+}
+.hasTranslation {
+  padding-right: 84px;
 }
 .trackName {
   max-width: 100%;
@@ -694,6 +734,18 @@ export default {
 }
 
 .classic {
+  .translationToggle {
+    border-color: rgba(54, 58, 60, .22);
+    background: rgba(54, 58, 60, .06);
+    color: rgba(54, 58, 60, .7);
+
+    &:hover { background: rgba(54, 58, 60, .12); }
+  }
+  .translationActive {
+    border-color: rgba(54, 58, 60, .5);
+    background: rgba(54, 58, 60, .16);
+    color: rgba(54, 58, 60, .95);
+  }
   .trackHeader {
     color: rgba(54, 58, 60, .94);
   }
