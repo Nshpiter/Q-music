@@ -451,6 +451,7 @@
   "setting_search_show_history_search": "Enable Search History",
   "setting_search_show_hot_search": "Enable Top Searches",
   "setting_sync": "Sync",
+  "setting_cloud": "Cloud Library",
   "setting_sync_cloud_title": "Multi-device sync",
   "setting_sync_cloud_desc": "Connect your Q-music sync service to keep playlists and dislike rules in sync across Windows, Arch Linux, and Android.",
   "setting_sync_address": "Current device address: {address}",

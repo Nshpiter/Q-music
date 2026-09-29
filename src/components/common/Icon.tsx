@@ -34,6 +34,7 @@ const outlineIcons: Record<string, string> = {
   album: 'music',
   leaderboard: 'bar-chart-2',
   'download-2': 'download',
+  'cloud-library': 'cloud',
   menu: 'list',
   comment: 'message-circle',
   'chevron-left': 'chevron-left',

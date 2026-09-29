@@ -451,6 +451,7 @@
   "setting_search_show_history_search": "顯示歷史搜尋記錄",
   "setting_search_show_hot_search": "顯示熱門搜尋",
   "setting_sync": "資料同步",
+  "setting_cloud": "雲端曲庫",
   "setting_sync_cloud_title": "多端雲同步",
   "setting_sync_cloud_desc": "連接自己的 Q-music 同步服務後，Windows、Arch Linux 與 Android 會自動同步歌單和不喜歡列表。",
   "setting_sync_address": "目前裝置位址：{address}",

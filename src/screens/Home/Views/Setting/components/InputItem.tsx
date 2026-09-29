@@ -12,9 +12,10 @@ export interface InputItemProps extends InputProps {
   value: string
   label: string
   onChanged: (text: string, callback: (vlaue: string) => void) => void
+  immediate?: boolean
 }
 
-export default memo(({ value, label, onChanged, ...props }: InputItemProps) => {
+export default memo(({ value, label, onChanged, immediate, ...props }: InputItemProps) => {
   const [text, setText] = useState(value)
   const textRef = useRef(value)
   const isMountRef = useRef(false)
@@ -61,6 +62,7 @@ export default memo(({ value, label, onChanged, ...props }: InputItemProps) => {
   const handleSetSelectMode = (text: string) => {
     setText(text)
     textRef.current = text
+    if (immediate) onChanged?.(text, () => {})
   }
   return (
     <View style={styles.container}>
