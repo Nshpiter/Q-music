@@ -157,6 +157,32 @@ export const getQQDailyKeyStatus = async() => rendererInvoke<QQDailyKeyStatus>(W
 export const saveQQDailyApiKey = async(apiKey: string) => rendererInvoke<string, QQDailyKeySaveResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_daily_key_save, apiKey)
 export const openQQDailyKeyPage = async() => rendererInvoke<QQDailyKeySaveResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_daily_key_page)
 
+export interface CloudConfigInput {
+  provider: 's3' | 'webdav'
+  endpoint: string
+  region: string
+  bucket: string
+  prefix: string
+  accessKey: string
+  secretKey: string
+}
+export interface CloudTrackInfo {
+  id: string
+  name: string
+  singer: string
+  fileName: string
+  size: number
+  playlist: string
+}
+export const getCloudConfig = async() => rendererInvoke<Partial<CloudConfigInput> & { configured: boolean }>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_config_get)
+export const saveCloudConfig = async(config: CloudConfigInput) => rendererInvoke<CloudConfigInput, Partial<CloudConfigInput> & { configured: boolean }>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_config_save, config)
+export const selectCloudProvider = async(provider: CloudConfigInput['provider']) => rendererInvoke<CloudConfigInput['provider'], Partial<CloudConfigInput> & { configured: boolean }>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_config_select, provider)
+export const getSavedCloudPassword = async() => rendererInvoke<string>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_password_get)
+export const saveCloudPassword = async(password: string) => rendererInvoke<string, undefined>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_password_save, password)
+export const listCloudTracks = async(password: string) => rendererInvoke<string, CloudTrackInfo[]>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_tracks_list, password)
+export const uploadCloudTrack = async(source: string, password: string, playlist: string, name: string, singer: string) => rendererInvoke<{ source: string, password: string, playlist: string, name: string, singer: string }, CloudTrackInfo>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_track_upload, { source, password, playlist, name, singer })
+export const importCloudTracks = async(ids: string[], password: string) => rendererInvoke<{ ids: string[], password: string }, Array<CloudTrackInfo & { filePath: string }>>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_tracks_import, { ids, password })
+
 // export const updateDislikeInfo = async(dislikeInfo: LX.Dislike.ListItem[]) => {
 //   await rendererInvoke<LX.Dislike.ListItem[]>(WIN_MAIN_RENDERER_EVENT_NAME.update_dislike_music_infos, dislikeInfo)
 // }

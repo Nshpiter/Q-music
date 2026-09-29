@@ -150,6 +150,11 @@ export const applyElectronEnvParams = () => {
 }
 
 export const setUserDataPath = () => {
+  if (process.env.Q_MUSIC_LOCAL_PREVIEW === '1') {
+    const previewPath = path.join(app.getPath('temp'), 'q-music-local-preview')
+    if (!existsSync(previewPath)) mkdirSync(previewPath, { recursive: true })
+    app.setPath('userData', previewPath)
+  }
   // windows平台下如果应用目录下存在 portable 文件夹则将数据存在此文件下
   if (process.platform == 'win32') {
     const portablePath = path.join(path.dirname(app.getPath('exe')), '/portable')
@@ -168,6 +173,7 @@ export const setUserDataPath = () => {
 }
 
 export const registerDeeplink = (startApp: () => void) => {
+  if (process.env.Q_MUSIC_LOCAL_PREVIEW === '1') return
   if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
     // Set the path of electron.exe and your app.
     // These two additional parameters are only available on windows.

@@ -25,7 +25,7 @@ export default {
       id ||= defaultList.id
       next({
         path: to.path,
-        query: { id },
+        query: { ...to.query, id },
       })
     } else next()
   },
@@ -44,7 +44,7 @@ export default {
 
     return {
       path: '/list',
-      query: { id, updated: true },
+      query: { ...to.query, id, updated: true },
     }
   },
   beforeRouteLeave(to, from) {

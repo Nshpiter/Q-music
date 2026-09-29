@@ -35,6 +35,7 @@ export default ({ props, listRef, list, handleRestoreScroll }) => {
       router.replace({
         path: '/list',
         query: {
+          ...route.query,
           id: props.listId,
           updated: true,
         },

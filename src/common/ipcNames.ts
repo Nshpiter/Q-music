@@ -150,6 +150,14 @@ const modules = {
     music_account_qq_daily_key_status: 'music_account_qq_daily_key_status',
     music_account_qq_daily_key_save: 'music_account_qq_daily_key_save',
     music_account_qq_daily_key_page: 'music_account_qq_daily_key_page',
+    cloud_config_get: 'cloud_config_get',
+    cloud_config_save: 'cloud_config_save',
+    cloud_config_select: 'cloud_config_select',
+    cloud_password_get: 'cloud_password_get',
+    cloud_password_save: 'cloud_password_save',
+    cloud_tracks_list: 'cloud_tracks_list',
+    cloud_track_upload: 'cloud_track_upload',
+    cloud_tracks_import: 'cloud_tracks_import',
 
     process_new_desktop_lyric_client: 'process_new_desktop_lyric_client',
 

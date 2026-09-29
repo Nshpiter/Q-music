@@ -47,7 +47,7 @@
 </template>
 
 <script>
-import { ref, computed, nextTick } from '@common/utils/vueTools'
+import { ref, computed, nextTick, onMounted } from '@common/utils/vueTools'
 // import { currentStting } from './setting'
 import { useI18n } from '@renderer/plugins/i18n'
 import { useRoute } from '@common/utils/vueRouter'
@@ -120,6 +120,16 @@ export default {
     const avtiveComponentName = ref(route.query.name && tocList.value.some(t => t.id == route.query.name)
       ? route.query.name
       : tocList.value[0].id)
+
+    onMounted(() => {
+      if (route.query.section != 'cloud-library') return
+      void nextTick(() => {
+        const content = dom_content_ref.value
+        const target = content?.querySelector('#cloud-library')
+        if (!target) return
+        content.scrollTop += target.getBoundingClientRect().top - content.getBoundingClientRect().top
+      })
+    })
 
     const toggleTab = id => {
       avtiveComponentName.value = id

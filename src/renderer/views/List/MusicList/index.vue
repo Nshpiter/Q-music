@@ -1,5 +1,12 @@
 <template>
   <div :class="$style.list">
+    <div v-if="route.query.from == 'cloud-library'" :class="$style.cloudReturnBar">
+      <button type="button" :class="$style.cloudBack" @click="returnToCloud">
+        <svg-icon name="angle-right-solid" />
+        <span>返回云端曲库</span>
+      </button>
+      <button type="button" :class="$style.cloudClose" aria-label="关闭导入结果" title="关闭导入结果" @click="closeImportResult">×</button>
+    </div>
     <div class="thead">
       <table>
         <thead>
@@ -122,6 +129,7 @@ import useSearch from './useSearch'
 import useListScroll from './useListScroll'
 import useMusicToggle from './useMusicToggle'
 import { appSetting } from '@renderer/store/setting'
+import { useRoute, useRouter } from '@common/utils/vueRouter'
 export default {
   name: 'MusicList',
   components: {
@@ -138,6 +146,10 @@ export default {
   },
   emits: ['show-menu'],
   setup(props, { emit }) {
+    const route = useRoute()
+    const router = useRouter()
+    const returnToCloud = () => { void router.push({ path: '/setting', query: { name: 'SettingSync', section: 'cloud-library' } }) }
+    const closeImportResult = () => { void router.replace({ path: '/list', query: { id: props.listId } }) }
     const actionButtonsVisible = appSetting['list.actionButtonsVisible']
 
     let scrollIndex = null
@@ -303,6 +315,9 @@ export default {
     }
 
     return {
+      route,
+      returnToCloud,
+      closeImportResult,
       listItemHeight,
       handleListItemClick,
       selectedList,
@@ -405,6 +420,35 @@ export default {
     }
   }
 }
+.cloudReturnBar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 0 12px;
+  border-bottom: 1px solid rgba(122, 136, 150, .1);
+}
+.cloudBack, .cloudClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-button-font);
+  cursor: pointer;
+  &:hover, &:focus-visible { background: var(--color-primary-background-hover); }
+}
+.cloudBack {
+  gap: 7px;
+  padding: 0 9px;
+  font-size: 12px;
+  font-weight: 600;
+  svg { width: 12px; height: 12px; transform: rotate(180deg); }
+}
+.cloudClose { width: 32px; font-size: 22px; line-height: 1; }
 .num {
   height: 100%;
   display: flex;

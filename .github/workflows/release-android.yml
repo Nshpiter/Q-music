@@ -133,9 +133,9 @@ jobs:
         working-directory: mobile
         run: npm ci
 
-      - name: Lint playback source
+      - name: Lint playback and cloud library source
         working-directory: mobile
-        run: npx eslint src/core/music/official.ts src/core/music/utils.ts src/core/music/online.ts
+        run: npx eslint src/core/music/official.ts src/core/music/utils.ts src/core/music/online.ts src/core/cloudLibrary.ts src/screens/Home/Views/Setting/settings/Sync/CloudLibrary.tsx
 
       - name: Validate signing secrets
         shell: bash

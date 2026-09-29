@@ -77,6 +77,11 @@
         </li>
       </transition>
     </ul>
+    <button :class="$style.cloudLink" aria-label="云端曲库" @click="openCloudLibrary">
+      <svg-icon name="share" />
+      <span>云端曲库</span>
+      <svg-icon name="angle-right-solid" :class="$style.cloudArrow" />
+    </button>
     <base-menu v-model="isShowMenu" :menus="menus" :xy="menuLocation" item-name="name" @menu-click="handleMenuClick" />
     <DuplicateMusicModal v-model:visible="isShowDuplicateMusicModal" :list-info="duplicateListInfo" />
     <ListSortModal v-model:visible="isShowListSortModal" :list-info="sortListInfo" />
@@ -206,6 +211,10 @@ export default {
       }).catch(_ => _)
     }
 
+    const openCloudLibrary = () => {
+      void router.push({ path: '/setting', query: { name: 'SettingSync', section: 'cloud-library' } })
+    }
+
     const handleMenuClick = (action) => {
       if (rightClickItemIndex.value < -2) return
       let index = rightClickItemIndex.value
@@ -253,6 +262,7 @@ export default {
       menus,
       menuLocation,
       handleListToggle,
+      openCloudLibrary,
       isModDown,
       hideMenu: handleMenuClick,
     }
@@ -274,6 +284,28 @@ export default {
   background: rgb(from var(--color-main-background) r g b / .52);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .66), 0 16px 38px rgba(72, 91, 112, .08);
   backdrop-filter: blur(16px) saturate(1.1);
+}
+.cloudLink {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  margin: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--color-primary-alpha-600);
+  border-radius: 8px;
+  background: var(--color-primary-background-hover);
+  color: var(--color-button-font);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color @transition-normal;
+  &:hover, &:focus-visible { background: var(--color-primary-alpha-800); }
+  svg { width: 17px; height: 17px; flex: none; }
+  span { flex: 1; }
+  .cloudArrow { width: 13px; height: 13px; opacity: .6; }
 }
 .listHeader {
   position: relative;

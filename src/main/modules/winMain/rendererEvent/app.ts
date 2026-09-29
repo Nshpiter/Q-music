@@ -26,8 +26,20 @@ import { quitApp } from '@main/app'
 import { getAllThemes, removeTheme, saveTheme, setPowerSaveBlocker } from '@main/utils'
 import { openDirInExplorer } from '@common/utils/electron'
 import { getMusicAccountDailySongIds, getMusicAccountMusicUrl, getMusicAccountPlaylistDetail, getMusicAccountPlaylists, getMusicAccountStatus, getQQDailyKeyStatus, logoutMusicAccount, openMusicAccountLogin, openQQDailyKeyPage, reportMusicAccountPlayback, saveQQDailyApiKey, type MusicAccountDailyResult, type MusicAccountLoginResult, type MusicAccountLogoutResult, type MusicAccountMusicUrlRequest, type MusicAccountMusicUrlResult, type MusicAccountPlaybackReportRequest, type MusicAccountPlaybackReportResult, type MusicAccountPlaylistDetailResult, type MusicAccountPlaylistsResult, type MusicAccountProvider, type QQDailyKeySaveResult } from '../musicAccount'
+import { getCloudConfig, getSavedCloudPassword, importCloudTracks, listCloudTracks, saveCloudConfig, saveCloudPassword, selectCloudProvider, uploadCloudTrack, type CloudConfig, type CloudTrack } from '../cloudLibrary'
 
 export default () => {
+  mainHandle<ReturnType<typeof getCloudConfig>>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_config_get, async() => getCloudConfig())
+  mainHandle<CloudConfig, ReturnType<typeof getCloudConfig>>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_config_save, async({ params }) => saveCloudConfig(params))
+  mainHandle<CloudConfig['provider'], ReturnType<typeof getCloudConfig>>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_config_select, async({ params }) => selectCloudProvider(params))
+  mainHandle<string>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_password_get, async() => getSavedCloudPassword())
+  mainHandle<string, undefined>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_password_save, async({ params }) => {
+    saveCloudPassword(params)
+    return undefined
+  })
+  mainHandle<string, CloudTrack[]>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_tracks_list, async({ params }) => listCloudTracks(params))
+  mainHandle<{ source: string, password: string, playlist: string, name: string, singer: string }, CloudTrack>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_track_upload, async({ params }) => uploadCloudTrack(params.source, params.password, params.playlist, params.name, params.singer))
+  mainHandle<{ ids: string[], password: string }, Array<CloudTrack & { filePath: string }>>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_tracks_import, async({ params }) => importCloudTracks(params.ids, params.password))
   // 设置应用名称
   // mainOn(WIN_MAIN_RENDERER_EVENT_NAME.set_app_name, ({ params: name }) => {
   //   if (name == null) {
