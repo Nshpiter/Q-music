@@ -28,6 +28,7 @@ jobs:
       - name: Check out release metadata
         uses: actions/checkout@v6
         with:
+          ref: ${{ inputs.tag_name || github.ref }}
           path: release-metadata
           fetch-depth: 0
 
@@ -38,6 +39,7 @@ jobs:
           INPUT_TAG_NAME: ${{ inputs.tag_name }}
           TRIGGER_SHA: ${{ github.sha }}
           REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           package_version="$(node -p "require('./release-metadata/publish/mobile-version.json').version")"
           android_commit="$(node -p "require('./release-metadata/publish/mobile-version.json').commit")"
@@ -61,8 +63,8 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             tag_name="$GITHUB_REF_NAME"
           else
-            if [ "$REF_TYPE" != "tag" ]; then
-              echo "Manual Android release runs must be dispatched from the pushed release tag, not a branch." >&2
+            if [ "$REF_TYPE" != "tag" ] && { [ "$REF_TYPE" != "branch" ] || [ "$REF_NAME" != "master" ] || [ -z "$INPUT_TAG_NAME" ]; }; then
+              echo "Manual Android release runs require the release tag or master with an explicit tag_name." >&2
               exit 1
             fi
             tag_name="$INPUT_TAG_NAME"
@@ -86,8 +88,10 @@ jobs:
             exit 1
           fi
           if [ "$tag_commit" != "$trigger_commit" ]; then
-            echo "Release tag '$tag_name' does not point to the workflow commit." >&2
-            exit 1
+            if [ "$REF_TYPE" != "branch" ] || ! git -C release-metadata merge-base --is-ancestor "$tag_commit" "$trigger_commit"; then
+              echo "Release tag '$tag_name' is not the workflow commit or an ancestor of master." >&2
+              exit 1
+            fi
           fi
 
           echo "PACKAGE_VERSION=$package_version" >> "$GITHUB_ENV"
@@ -125,6 +129,8 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install Android SDK packages
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;26.1.10909125"
