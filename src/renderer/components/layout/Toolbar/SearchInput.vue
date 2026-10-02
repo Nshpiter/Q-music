@@ -1,6 +1,6 @@
 <template>
-  <div ref="searchSlotRef" :class="[$style.searchSlot, { [$style.focused]: panelVisible }]">
-    <material-search-input v-model="searchText" :placeholder="$t('search')" :list="[]" :visible-list="false" @event="handleEvent" />
+  <div ref="searchSlotRef" :class="[$style.searchSlot, { [$style.focused]: panelVisible }]" @keydown.esc.stop="closePanel">
+    <material-search-input v-model="searchText" :placeholder="$t('search')" :list="panelVisible && !sourceMenuVisible ? tipList : []" :visible-list="false" @event="handleEvent" />
     <button
       type="button"
       :class="[$style.sourceButton, { [$style.menuOpen]: sourceMenuVisible }]"
@@ -37,22 +37,22 @@
     <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
       <section v-show="panelVisible" :class="$style.searchPanel" @mousedown.prevent>
         <div v-if="searchText" :class="$style.suggestionList">
-          <button v-for="item in tipList" :key="item" type="button" @click="search(item)">
+          <button v-for="(item, index) in tipList" :key="item" type="button" data-search-suggestion :class="{ [$style.selectedSuggestion]: selectedTipIndex == index }" @click="search(item)">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.8 5.2a5.6 5.6 0 1 0 0 11.2 5.6 5.6 0 0 0 0-11.2zm4.1 9.7 4 4" /></svg>
             <span>{{ item }}</span>
           </button>
-          <p v-if="!tipList.length">{{ $t('search__hot_search_loading') }}</p>
+          <p v-if="!tipList.length" role="status">{{ isTipSearchLoading ? $t('search__hot_search_loading') : $t('search__tip_empty') }}</p>
         </div>
         <div v-else :class="$style.discoveryPanel">
-          <div :class="[$style.panelSection, $style.historySection]">
+          <div v-if="appSetting['search.isShowHistorySearch']" :class="[$style.panelSection, $style.historySection]">
             <header><strong>{{ $t('history_search') }}</strong><button v-if="historyList.length" type="button" @click="clearHistoryList">{{ $t('history_clear') }}</button></header>
             <div v-if="historyList.length" :class="$style.chips">
               <button v-for="(item, index) in historyList.slice(0, 10)" :key="item" type="button" @click="search(item)" @contextmenu.prevent="removeHistoryWord(index)">{{ item }}</button>
             </div>
             <div v-else :class="$style.emptyHistory">{{ $t('history_search_empty') }}</div>
           </div>
-          <div :class="[$style.panelSection, $style.hotSection]">
-            <header><strong>{{ selectedSourceLabel }} · {{ $t('search__hot_search') }}</strong><button type="button" @click="refreshHotSearch">{{ $t('search__hot_search_refresh') }}</button></header>
+          <div v-if="appSetting['search.isShowHotSearch']" :class="[$style.panelSection, $style.hotSection]">
+            <header><strong>{{ selectedSourceLabel }} · {{ $t('search__hot_search') }}</strong><button type="button" :disabled="isHotSearchLoading" @click="refreshHotSearch">{{ $t('search__hot_search_refresh') }}</button></header>
             <div v-if="isHotSearchLoading" :class="$style.loading">{{ $t('search__hot_search_loading') }}</div>
             <ol v-else-if="hotSearchList.length" :class="$style.hotList">
               <li v-for="(item, index) in hotSearchList.slice(0, 10)" :key="item"><button type="button" @click="search(item)"><b>{{ index + 1 }}</b><span>{{ item }}</span></button></li>
@@ -83,12 +83,15 @@ import { clearHistoryList, getHistoryList, removeHistoryWord, setSearchText } fr
 import { clearList, getList } from '@renderer/store/hotSearch'
 import { getSearchSetting, setSearchSetting } from '@renderer/utils/data'
 import SourceIcon from '@renderer/components/common/SourceIcon.vue'
+import { appSetting } from '@renderer/store/setting'
 
 export default {
   components: { SourceIcon },
   setup() {
     const searchText = ref('')
     const tipList = ref([])
+    const isTipSearchLoading = ref(false)
+    const selectedTipIndex = ref(-1)
     const isFocused = ref(false)
     const panelPinned = ref(false)
     const sourceMenuVisible = ref(false)
@@ -110,7 +113,7 @@ export default {
     const selectedSourceLabel = computed(() => sourceOptions.value.find(item => item.id == selectedSource.value)?.label ?? window.i18n.t('source_all'))
     // Keep the discovery panel mounted while the source menu is open so the
     // compact platform list can layer above it instead of replacing it.
-    const panelVisible = computed(() => isFocused.value || panelPinned.value)
+    const panelVisible = computed(() => (isFocused.value || panelPinned.value) && (searchText.value || appSetting['search.isShowHistorySearch'] || appSetting['search.isShowHotSearch']))
 
     getSearchSetting().then(setting => {
       if (route.query.source != null || route.name == 'SongList') return
@@ -141,7 +144,10 @@ export default {
     const tipSearch = debounce(async(generation) => {
       const query = typeof searchText.value == 'string' ? searchText.value.trim() : ''
       if (!query) {
-        if (generation == tipSearchGeneration) tipList.value = []
+        if (generation == tipSearchGeneration) {
+          tipList.value = []
+          isTipSearchLoading.value = false
+        }
         return
       }
 
@@ -153,7 +159,10 @@ export default {
       }
       const tipSearchApi = music[source]?.tipSearch
       if (!tipSearchApi) {
-        if (generation == tipSearchGeneration) tipList.value = []
+        if (generation == tipSearchGeneration) {
+          tipList.value = []
+          isTipSearchLoading.value = false
+        }
         return
       }
       try {
@@ -163,15 +172,21 @@ export default {
         tipList.value = Array.isArray(list) ? list : []
       } catch {
         if (generation == tipSearchGeneration) tipList.value = []
+      } finally {
+        if (generation == tipSearchGeneration) isTipSearchLoading.value = false
       }
     }, 50)
 
     const handleTipSearch = () => {
       tipSearchGeneration++
+      selectedTipIndex.value = -1
+      tipList.value = []
+      isTipSearchLoading.value = !!searchText.value.trim()
       tipSearch(tipSearchGeneration)
     }
 
     const loadHotSearch = async(force = false) => {
+      if (!appSetting['search.isShowHotSearch']) return
       const source = selectedSource.value
       const requestId = ++hotSearchRequestId
       if (force) clearList(source)
@@ -238,6 +253,10 @@ export default {
         case 'listClick':
           searchText.value = tipList.value[data]
           handleSearch()
+          break
+        case 'selectionChange':
+          selectedTipIndex.value = data
+          searchSlotRef.value?.querySelectorAll('[data-search-suggestion]')[data]?.scrollIntoView({ block: 'nearest' })
       }
     }
 
@@ -292,6 +311,10 @@ export default {
     return {
       searchText,
       tipList,
+      isTipSearchLoading,
+      selectedTipIndex,
+      appSetting,
+      closePanel,
       handleEvent,
       isFocused,
       panelVisible,
@@ -465,7 +488,7 @@ export default {
   gap: 3px;
   padding-top: 0;
   button { height: 40px; padding: 0 11px; display: flex; align-items: center; gap: 10px; color: var(--color-font); border: 0; border-radius: 10px; background: transparent; cursor: pointer; font-size: 12px; text-align: left; }
-  button:hover { background: rgb(from var(--color-font) r g b / .06); }
+  button:hover, button:focus-visible, .selectedSuggestion { background: rgb(from var(--color-font) r g b / .06); }
   svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; }
   p { padding: 16px 12px; color: var(--color-font-label); font-size: 12px; text-align: center; }
 }
@@ -475,6 +498,7 @@ export default {
   grid-template-columns: minmax(170px, .75fr) minmax(0, 1.4fr);
   gap: 12px;
   padding-top: 0;
+  > :only-child { grid-column: 1 / -1; }
 }
 .panelSection {
   min-width: 0;

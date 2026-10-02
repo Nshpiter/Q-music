@@ -8,6 +8,7 @@
         role="region"
         aria-labelledby="play_queue_title"
         @click.stop
+        @keydown.esc.stop.prevent="closeQueue"
       >
         <header :class="$style.header">
           <div :class="$style.heading">
@@ -55,10 +56,16 @@
         <section v-show="activeTab == 'playlist'" :class="$style.tabPanel">
           <div :class="$style.listMeta">
             <strong>{{ currentListName }}</strong>
-            <span>{{ $t('play_queue__songs', { num: currentList.length }) }}</span>
+            <button v-if="currentIndex >= 0 && !isListLoading && !listError" type="button" :class="$style.locateBtn" @click="scrollToCurrent(true)">{{ $t('play_queue__locate') }}</button>
+            <span v-else>{{ $t('play_queue__songs', { num: currentList.length }) }}</span>
+          </div>
+          <div v-if="isListLoading && !currentList.length" :class="$style.empty" role="status">{{ $t('loading') }}</div>
+          <div v-else-if="listError" :class="$style.empty" role="alert">
+            <p>{{ listError }}</p>
+            <button type="button" :class="$style.locateBtn" @click="loadCurrentList">{{ $t('play_queue__retry') }}</button>
           </div>
           <base-virtualized-list
-            v-if="currentList.length"
+            v-else-if="currentList.length"
             ref="listRef"
             v-slot="{ item, index }"
             :class="$style.list"
@@ -71,10 +78,11 @@
               :music-info="item"
               :index="index"
               :active="currentIndex == index"
+              :playing="isPlay && currentIndex == index"
               @play="handlePlayCurrent(index, item)"
             />
           </base-virtualized-list>
-          <div v-else-if="!isListLoading" :class="$style.empty">
+          <div v-else :class="$style.empty">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 18V5l10-2v13" />
               <circle cx="6" cy="18" r="3" />
@@ -82,6 +90,7 @@
             </svg>
             <p>{{ $t('play_queue__empty') }}</p>
           </div>
+          <p v-if="playError" :class="$style.feedback" role="alert">{{ playError }}</p>
         </section>
 
         <section v-show="activeTab == 'later'" :class="$style.tabPanel">
@@ -134,13 +143,14 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from '@common/utils/vueTools'
 import { LIST_IDS } from '@common/constants'
-import { playList, playTempListByIndex } from '@renderer/core/player'
+import { play, pause, playList, playTempListByIndex } from '@renderer/core/player'
 import { useI18n } from '@renderer/plugins/i18n'
 import { getListMusics } from '@renderer/store/list/action'
 import { defaultList, loveList, userLists } from '@renderer/store/list/state'
 import { downloadList } from '@renderer/store/download/state'
 import {
   isShowPlayerDetail,
+  isPlay,
   isShowPlayQueue,
   musicInfo,
   playInfo,
@@ -162,9 +172,15 @@ const t = useI18n()
 const activeTab = ref('playlist')
 const currentList = ref([])
 const isListLoading = ref(false)
+const listError = ref('')
+const playError = ref('')
 const listRef = ref(null)
 const panelRef = ref(null)
 let loadId = 0
+let loadedListId = null
+let playRequestId = 0
+let showId = 0
+let previousFocus = null
 
 const isImmersiveDetail = computed(() => {
   return isShowPlayerDetail.value && appSetting['playDetail.style.layout'] == 'immersive'
@@ -199,8 +215,12 @@ const currentIndex = computed(() => {
 const loadCurrentList = async() => {
   const requestId = ++loadId
   const listId = playInfo.playerListId
+  listError.value = ''
+  playError.value = ''
+  if (loadedListId != listId) currentList.value = []
+  loadedListId = listId
   if (!listId) {
-    currentList.value = []
+    isListLoading.value = false
     return
   }
 
@@ -212,6 +232,9 @@ const loadCurrentList = async() => {
     if (requestId != loadId || listId != playInfo.playerListId) return
     currentList.value = list
   } catch (err) {
+    if (requestId != loadId || listId != playInfo.playerListId) return
+    currentList.value = []
+    listError.value = t('play_queue__load_error')
     console.error('load play queue list failed:', err)
   } finally {
     if (requestId == loadId) isListLoading.value = false
@@ -221,6 +244,7 @@ const loadCurrentList = async() => {
 const scrollToCurrent = async(animate = false) => {
   if (!isShowPlayQueue.value || activeTab.value != 'playlist' || currentIndex.value < 0) return
   await nextTick()
+  if (!isShowPlayQueue.value || activeTab.value != 'playlist') return
   listRef.value?.scrollToIndex(currentIndex.value, SCROLL_TOP_OFFSET, animate)
 }
 
@@ -229,14 +253,27 @@ const closeQueue = () => {
 }
 
 const handlePlayCurrent = async(index, item) => {
+  const requestId = ++playRequestId
   const listId = playInfo.playerListId
   if (!listId) return
-  // 本地快照可能落后于源列表，播放前用最新列表校正索引，避免播错歌
-  const list = listId == LIST_IDS.DOWNLOAD ? downloadList : await getListMusics(listId)
-  if (listId != playInfo.playerListId) return
-  const targetIndex = list[index]?.id == item.id ? index : list.findIndex(m => m.id == item.id)
-  if (targetIndex < 0) return
-  playList(listId, targetIndex)
+  playError.value = ''
+  try {
+    // 本地快照可能落后于源列表，播放前按来源与歌曲身份校正索引。
+    const list = listId == LIST_IDS.DOWNLOAD ? downloadList : await getListMusics(listId)
+    if (requestId != playRequestId || listId != playInfo.playerListId || !isShowPlayQueue.value) return
+    const matches = music => music?.id == item.id && music?.source == item.source
+    const targetIndex = matches(list[index]) ? index : list.findIndex(matches)
+    if (targetIndex < 0) {
+      await loadCurrentList()
+      return
+    }
+    if (targetIndex == currentIndex.value) {
+      if (isPlay.value) pause()
+      else play()
+    } else playList(listId, targetIndex)
+  } catch {
+    if (requestId == playRequestId) playError.value = t('play_queue__play_error')
+  }
 }
 
 const handlePlayLater = index => {
@@ -251,10 +288,6 @@ const handleDocumentClick = () => {
   closeQueue()
 }
 
-const handleKeydown = event => {
-  if (event.key == 'Escape' && isShowPlayQueue.value) closeQueue()
-}
-
 watch(() => playInfo.playerListId, () => {
   void loadCurrentList()
 }, { immediate: true })
@@ -264,10 +297,18 @@ const handleDownloadListUpdate = () => {
 }
 
 watch(isShowPlayQueue, async(visible) => {
-  if (!visible) return
-  await loadCurrentList()
+  const requestId = ++showId
+  if (!visible) {
+    ++playRequestId
+    if (panelRef.value?.contains(document.activeElement) && previousFocus?.isConnected) previousFocus.focus({ preventScroll: true })
+    return
+  }
+  previousFocus = document.activeElement
   await nextTick()
+  if (requestId != showId || !isShowPlayQueue.value) return
   panelRef.value?.focus({ preventScroll: true })
+  await loadCurrentList()
+  if (requestId != showId || !isShowPlayQueue.value) return
   await scrollToCurrent()
 })
 
@@ -279,14 +320,15 @@ onMounted(() => {
   window.app_event.on('myListUpdate', handleMyListUpdate)
   window.app_event.on('downloadListUpdate', handleDownloadListUpdate)
   document.addEventListener('click', handleDocumentClick)
-  document.addEventListener('keydown', handleKeydown)
 })
 
 onBeforeUnmount(() => {
+  ++loadId
+  ++playRequestId
+  ++showId
   window.app_event.off('myListUpdate', handleMyListUpdate)
   window.app_event.off('downloadListUpdate', handleDownloadListUpdate)
   document.removeEventListener('click', handleDocumentClick)
-  document.removeEventListener('keydown', handleKeydown)
 })
 </script>
 
@@ -503,6 +545,23 @@ onBeforeUnmount(() => {
     stroke-linecap: round;
     stroke-linejoin: round;
   }
+}
+
+.locateBtn {
+  flex: none;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  &:hover { background: rgba(128, 128, 128, .12); }
+  &:focus-visible { outline: 2px solid var(--color-primary); }
+}
+.feedback {
+  padding: 10px 18px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .closeBtn {

@@ -3,18 +3,18 @@
     <div :class="$style.listHeader">
       <h2 :class="$style.listsTitle">{{ $t('my_list') }}</h2>
       <div :class="$style.headerBtns">
-        <button :class="$style.listsAdd" :aria-label="$t('lists__new_list_btn')" @click="isShowNewList = true">
+        <button type="button" :class="$style.listsAdd" :aria-label="$t('lists__new_list_btn')" :title="$t('lists__new_list_btn')" @click="isShowNewList = true">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="70%" viewBox="0 0 24 24" space="preserve">
             <use xlink:href="#icon-list-add" />
           </svg>
         </button>
-        <button :class="[$style.listsAdd, $style.importBtn]" :aria-label="$t('playlist_import_modal__title')" :title="$t('playlist_import_modal__title')" @click="isShowExternalImportModal = true">
+        <button type="button" :class="[$style.listsAdd, $style.importBtn]" :aria-label="$t('playlist_import_modal__title')" :title="$t('playlist_import_modal__title')" @click="isShowExternalImportModal = true">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 425.2 425.2" space="preserve">
             <use xlink:href="#icon-download-2" />
           </svg>
           <span>{{ $t('playlist_import_modal__entry') }}</span>
         </button>
-        <button :class="$style.listsAdd" :aria-label="$t('list_update_modal__title')" @click="isShowListUpdateModal = true">
+        <button type="button" :class="$style.listsAdd" :aria-label="$t('list_update_modal__title')" :title="$t('list_update_modal__title')" @click="isShowListUpdateModal = true">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="transform: rotate(45deg);" height="70%" viewBox="0 0 24 24" space="preserve">
             <use xlink:href="#icon-refresh" />
           </svg>
@@ -24,8 +24,9 @@
     <ul ref="dom_lists_list" class="scroll" :class="[$style.listsContent, { [$style.sortable]: isModDown }]">
       <li
         class="default-list" :class="[$style.listsItem, {[$style.active]: defaultList.id == listId}, {[$style.clicked]: rightClickItemIndex == -2}, {[$style.fetching]: fetchingListStatus[defaultList.id]}]"
-        :aria-label="$t(defaultList.name)" :aria-selected="defaultList.id == listId"
+        role="button" tabindex="0" :aria-label="$t(defaultList.name)" :aria-pressed="defaultList.id == listId"
         @contextmenu="handleListsItemRigthClick($event, -2)" @click="handleListToggle(defaultList.id)"
+        @keydown.enter.self="handleListToggle(defaultList.id)" @keydown.space.self.prevent="handleListToggle(defaultList.id)"
       >
         <!-- <div v-if="defaultList.id == listId" :class="$style.activeIcon">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="40%" viewBox="0 0 451.846 451.847" space="preserve">
@@ -41,8 +42,9 @@
       </li>
       <li
         class="default-list" :class="[$style.listsItem, {[$style.active]: loveList.id == listId}, {[$style.clicked]: rightClickItemIndex == -1}, {[$style.fetching]: fetchingListStatus[loveList.id]}]"
-        :aria-label="$t(loveList.name)" :aria-selected="loveList.id == listId"
+        role="button" tabindex="0" :aria-label="$t(loveList.name)" :aria-pressed="loveList.id == listId"
         @contextmenu="handleListsItemRigthClick($event, -1)" @click="handleListToggle(loveList.id)"
+        @keydown.enter.self="handleListToggle(loveList.id)" @keydown.space.self.prevent="handleListToggle(loveList.id)"
       >
         <span :class="$style.listsLabel">
           <transition name="list-active">
@@ -55,9 +57,10 @@
         v-for="(item, index) in userLists"
         :key="item.id" class="user-list"
         :class="[$style.listsItem, {[$style.active]: item.id == listId}, {[$style.clicked]: rightClickItemIndex == index}, {[$style.fetching]: fetchingListStatus[item.id]}]"
-        :data-index="index" :aria-label="item.name" :aria-selected="defaultList.id == listId" @contextmenu="handleListsItemRigthClick($event, index)"
+        role="button" tabindex="0" :data-index="index" :aria-label="item.name" :aria-pressed="item.id == listId" @contextmenu="handleListsItemRigthClick($event, index)"
+        @keydown.enter.self="handleListToggle(item.id)" @keydown.space.self.prevent="handleListToggle(item.id)"
       >
-        <span :class="$style.listsLabel" @click="handleListToggle(item.id, index + 2)">
+        <span :class="$style.listsLabel" :title="item.name" @click="handleListToggle(item.id, index + 2)">
           <transition name="list-active">
             <svg-icon v-if="item.id == listId" name="angle-right-solid" :class="$style.activeIcon" />
           </transition>
@@ -310,10 +313,11 @@ export default {
 .listHeader {
   position: relative;
   display: flex;
-  flex-flow: row nowrap;
-  align-items: center;
-  min-height: 52px;
-  padding: 0 12px;
+  flex: none;
+  flex-flow: column nowrap;
+  align-items: stretch;
+  gap: 8px;
+  padding: 12px;
   box-sizing: border-box;
   border-bottom: 1px solid rgba(122, 136, 150, .1);
   &:hover {
@@ -323,8 +327,8 @@ export default {
   }
 }
 .listsTitle {
-  flex: auto;
-  min-width: 58px;
+  flex: none;
+  min-width: 0;
   margin: 0;
   font-size: 13px;
   line-height: 1.2;
@@ -334,24 +338,26 @@ export default {
 }
 .headerBtns {
   flex: none;
-  display: flex;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 30px;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
 }
 .listsAdd {
   // position: absolute;
   // right: 0;
   margin-top: 0;
   background: none;
-  width: 26px;
+  width: 30px;
   height: 30px;
   padding: 0;
   border: none;
   outline: none;
   border-radius: @radius-border;
   cursor: pointer;
-  opacity: .1;
-  transition: opacity @transition-normal;
+  opacity: .72;
+  transition: opacity @transition-normal, background-color @transition-normal;
   color: var(--color-button-font);
   svg {
     vertical-align: bottom;
@@ -360,7 +366,13 @@ export default {
     opacity: .7 !important;
   }
   &:hover {
-    opacity: .6 !important;
+    opacity: 1 !important;
+    background-color: var(--color-primary-background-hover);
+  }
+  &:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
   }
 }
 .importBtn {
@@ -370,6 +382,7 @@ export default {
   justify-content: center;
   gap: 5px;
   width: auto;
+  min-width: 0;
   height: 28px;
   margin: 0;
   padding: 0 8px;
@@ -383,6 +396,10 @@ export default {
     width: 12px;
     height: 12px;
     flex: none;
+  }
+  span {
+    min-width: 0;
+    .mixin-ellipsis-1();
   }
 
   &:hover {
@@ -421,6 +438,10 @@ export default {
   transition: .3s ease;
   transition-property: color, background-color, opacity;
   background-color: transparent;
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+  }
   &:not(.active) {
     &:hover {
       background-color: var(--color-primary-background-hover);

@@ -4,8 +4,11 @@ material-modal(:show="modelValue" teleport="#view" @close="handleCloseModal" @af
     h2 {{ $t('play_timeout') }}
     div(:class="$style.content")
       div(:class="[$style.row, $style.inputGroup]")
-        base-input(ref="dom_input" v-model="time" :class="$style.input" type="number")
+        base-input(ref="dom_input" v-model="time" :class="$style.input" inputmode="numeric" :aria-label="$t('play_timeout')" :aria-invalid="!!error" aria-describedby="play-timeout-hint" @submit="handleConfirm")
         p(:class="$style.inputLabel") {{ $t('play_timeout_unit') }}
+      p#play-timeout-hint(:class="$style.hint" role="status") {{ error || $t('play_timeout_range') }}
+      div(:class="$style.presets")
+        button(v-for="minutes in [15, 30, 60, 90]" :key="minutes" type="button" :aria-pressed="Number(time) == minutes" @click="time = String(minutes)") {{ minutes }} {{ $t('play_timeout_unit') }}
       div(:class="$style.row")
         base-checkbox(id="play_timeout_end" :model-value="appSetting['player.waitPlayEndStop']" :label="$t('play_timeout_end')" @update:model-value="updateSetting({'player.waitPlayEndStop': $event})")
       div(:class="[$style.row, $style.tip, { [$style.show]: !!timeLabel }]")
@@ -17,12 +20,13 @@ material-modal(:show="modelValue" teleport="#view" @close="handleCloseModal" @af
 
 <script>
 import { useTimeout, startTimeoutStop, stopTimeoutStop } from '@renderer/core/player/timeoutStop'
-import { ref } from '@common/utils/vueTools'
+import { ref, watch } from '@common/utils/vueTools'
+import { useI18n } from '@renderer/plugins/i18n'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 
 const MAX_MIN = 1440
 
-const rxp = /([1-9]\d*)/
+const rxp = /^[1-9]\d*$/
 
 export default {
   props: {
@@ -35,6 +39,14 @@ export default {
   setup(props, { emit }) {
     const { timeLabel } = useTimeout()
     const time = ref(appSetting['player.waitPlayEndStopTime'])
+    const error = ref('')
+    const t = useI18n()
+    watch(() => props.modelValue, visible => {
+      if (!visible) return
+      time.value = appSetting['player.waitPlayEndStopTime']
+      error.value = ''
+    })
+    watch(time, () => { error.value = '' })
 
     const handleCloseModal = () => {
       emit('update:modelValue', false)
@@ -46,19 +58,12 @@ export default {
       handleCloseModal()
     }
     const verify = () => {
-      const orgText = time.value
-      let text = time.value
-
-      if (rxp.test(text)) {
-        text = RegExp.$1
-        if (parseInt(text) > MAX_MIN) {
-          text = MAX_MIN
-        }
-      } else {
-        text = ''
+      const text = String(time.value).trim()
+      if (!rxp.test(text) || Number(text) > MAX_MIN) {
+        error.value = t('play_timeout_range')
+        return ''
       }
-      time.value = text
-      return text && orgText == text ? parseInt(text) : ''
+      return Number(text)
     }
     const handleConfirm = () => {
       let time = verify()
@@ -72,6 +77,7 @@ export default {
       updateSetting,
       timeLabel,
       time,
+      error,
       handleCloseModal,
       handleCancel,
       handleConfirm,
@@ -114,6 +120,32 @@ export default {
 }
 .input {
   flex: auto;
+  min-width: 0;
+}
+.hint {
+  margin-top: 8px;
+  color: var(--color-font-label);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 12px 0;
+  button {
+    padding: 8px 4px;
+    border: 1px solid var(--color-primary-light-400);
+    border-radius: 6px;
+    color: var(--color-font);
+    background: transparent;
+    cursor: pointer;
+    &[aria-pressed='true'] {
+      color: var(--color-primary);
+      background: var(--color-primary-alpha-900);
+    }
+    &:focus-visible { outline: 2px solid var(--color-primary); }
+  }
 }
 .inputLabel {
   flex: none;

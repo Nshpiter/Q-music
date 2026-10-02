@@ -1,9 +1,10 @@
 <template>
   <div :class="[$style.row, { [$style.active]: active }]">
-    <button type="button" :class="$style.track" :title="displayInfo.name" @click="$emit('play')">
+    <button type="button" :class="$style.track" :title="displayInfo.name" :aria-label="`${$t(playing ? 'play_queue__pause' : 'play_queue__play')} · ${displayInfo.name}`" :aria-current="active ? 'true' : undefined" @click="$emit('play')">
       <span :class="$style.index" aria-hidden="true">
         <svg v-if="active" viewBox="0 0 24 24">
-          <path d="M9 7v10l8-5-8-5z" />
+          <path v-if="playing" d="M7 6h4v12H7zM14 6h4v12h-4z" />
+          <path v-else d="M9 7v10l8-5-8-5z" />
         </svg>
         <span v-else>{{ index + 1 }}</span>
       </span>
@@ -36,6 +37,7 @@ const props = defineProps<{
   musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
   index: number
   active?: boolean
+  playing?: boolean
   removable?: boolean
 }>()
 

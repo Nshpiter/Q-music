@@ -4,9 +4,9 @@
       <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
         <div v-show="showContent" :class="[$style.modal, {[$style.filter]: filter, [$style.viewModal]: isViewModal}]" @click="bgClose && close()">
           <transition :enter-active-class="inClass" :leave-active-class="outClass" @after-enter="$emit('after-enter', $event)" @after-leave="handleAfterLeave">
-            <div v-show="showContent" :class="$style.content" :style="contentStyle" @click.stop>
+            <div v-show="showContent" ref="dom_content" :class="$style.content" :style="contentStyle" role="dialog" aria-modal="true" :aria-labelledby="dialogTitleId || undefined" :aria-label="$attrs['aria-label'] || (!dialogTitleId ? 'Q-music' : undefined)" tabindex="-1" @click.stop>
               <header :class="$style.header">
-                <button v-if="closeBtn" type="button" @click="close">
+                <button v-if="closeBtn" type="button" :aria-label="$t('close')" @click="close">
                   <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 212.982 212.982" space="preserve">
                     <use xlink:href="#icon-delete" />
                   </svg>
@@ -31,6 +31,10 @@ let modalSeq = 0
 // 按目标节点记录正在显示的弹窗实例 id 集合。用 Set 而非计数器，保证多次 add/remove
 // 幂等且不会失衡，避免 show-modal 类残留导致视图被持续置灰（看起来空白）。
 const modalTargets = new WeakMap()
+// 独立于挂载顺序记录打开顺序，嵌套确认框仅让最上层接管键盘。
+const activeModals = []
+const focusableSelector = 'button, input, select, textarea, a[href], [tabindex], [contenteditable="true"]'
+const isFocusable = element => element?.isConnected && !element.matches(':disabled') && !element.closest('[inert], [aria-hidden="true"]') && element.getClientRects().length > 0
 export default {
   props: {
     show: {
@@ -44,6 +48,10 @@ export default {
     bgClose: {
       type: Boolean,
       default: false,
+    },
+    escClose: {
+      type: Boolean,
+      default: undefined,
     },
     teleport: {
       type: String,
@@ -153,6 +161,8 @@ export default {
       modalTarget: null,
       modalUid: ++modalSeq,
       showChangeId: 0,
+      previousFocus: null,
+      dialogTitleId: '',
       // ai: 0,
     }
   },
@@ -179,11 +189,14 @@ export default {
     },
   },
   mounted() {
+    document.addEventListener('keydown', this.handleKeydown, true)
     if (this.show) this.handleShowChange(true)
     this.setRandomAnimation()
   },
   beforeUnmount() {
     this.showChangeId++
+    document.removeEventListener('keydown', this.handleKeydown, true)
+    this.deactivateModal()
     this.removeModalCount()
     this.removeClass()
   },
@@ -196,6 +209,11 @@ export default {
         //   // dom.t
         // }
         this.setRandomAnimation()
+        if (!activeModals.includes(this)) {
+          // 快速重开时焦点可能尚未离开内容，保留最初的外部入口。
+          if (!this.$refs.dom_content?.contains(document.activeElement)) this.previousFocus = document.activeElement
+          activeModals.push(this)
+        }
         if (!this.isCounted) {
           this.modalCount = ++modalCount
           this.isCounted = true
@@ -207,12 +225,73 @@ export default {
           const node = this.$refs.dom_container.parentNode
           this.addClass(node)
           this.showContent = true
+          void nextTick(() => {
+            if (showChangeId === this.showChangeId) this.focusContent()
+          })
         })
       } else {
+        this.deactivateModal()
         this.removeModalCount()
         this.removeClass()
         this.showContent = false
       }
+    },
+    deactivateModal() {
+      const index = activeModals.indexOf(this)
+      if (index < 0) return
+      const wasTop = index == activeModals.length - 1
+      activeModals.splice(index, 1)
+      for (const modal of activeModals) {
+        if (this.$refs.dom_content?.contains(modal.previousFocus)) modal.previousFocus = this.previousFocus
+      }
+      if (!wasTop) return
+      const showChangeId = this.showChangeId
+      const previousFocus = this.previousFocus
+      void nextTick(() => {
+        if (showChangeId !== this.showChangeId || activeModals.includes(this)) return
+        const top = activeModals.at(-1)
+        if (top) {
+          if (top.$refs.dom_content?.contains(previousFocus) && isFocusable(previousFocus)) previousFocus.focus({ preventScroll: true })
+          else top.focusContent()
+        } else if (isFocusable(previousFocus) && !previousFocus.closest('[data-modal-container]')) {
+          previousFocus.focus({ preventScroll: true })
+        }
+      })
+    },
+    getFocusableElements() {
+      return Array.from(this.$refs.dom_content?.querySelectorAll(focusableSelector) ?? []).filter(element => element.tabIndex >= 0 && isFocusable(element))
+    },
+    focusContent() {
+      if (!this.show || !this.showContent || activeModals.at(-1) !== this) return
+      const content = this.$refs.dom_content
+      if (!content) return
+      const heading = content.querySelector('h1, h2, [role="heading"]')
+      if (heading && !heading.id) heading.id = `modal-title-${this.modalUid}`
+      this.dialogTitleId = heading?.id ?? ''
+      if (content.contains(document.activeElement)) return
+      const items = this.getFocusableElements()
+      const target = items.find(element => element.hasAttribute('autofocus')) ?? items[0] ?? content
+      target.focus({ preventScroll: true })
+    },
+    handleKeydown(event) {
+      if (event.lx_handled || !this.show || activeModals.at(-1) !== this || !['Escape', 'Tab'].includes(event.key)) return
+      const content = this.$refs.dom_content
+      // 弹窗内部打开的独立菜单自行处理 Escape 和方向键。
+      if (!content?.contains(event.target) && event.target.closest?.('[role="menu"], [role="listbox"]')) return
+      if (event.key == 'Escape') {
+        event.preventDefault()
+        event.stopPropagation()
+        event.lx_handled = true
+        if (!event.repeat && (this.escClose ?? (this.closeBtn || this.bgClose))) this.close()
+        return
+      }
+      const items = this.getFocusableElements()
+      const current = items.indexOf(document.activeElement)
+      if (items.length && current >= 0 && (event.shiftKey ? current > 0 : current < items.length - 1)) return
+      event.preventDefault()
+      event.stopPropagation()
+      const target = event.shiftKey ? items.at(-1) : items[0]
+      ;(target ?? content)?.focus({ preventScroll: true })
     },
     addClass(node) {
       if (!node) return
@@ -263,6 +342,7 @@ export default {
       this.$emit('close')
     },
     handleAfterLeave(event) {
+      if (this.show || this.showContent) return
       this.$emit('after-leave', event)
       this.showModal = false
     },

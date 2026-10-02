@@ -1,5 +1,5 @@
 <template>
-  <Modal :show="visible" :close-btn="false" :teleport="teleport" @close="handleCancel" @after-leave="afterLeave">
+  <Modal :show="visible" :close-btn="false" :esc-close="true" :teleport="teleport" @close="handleCancel" @after-leave="afterLeave">
     <main class="scroll" :class="[$style.main, { 'select': selection }]">{{ message }}</main>
     <footer :class="$style.footer">
       <Btn v-if="showCancel" :class="$style.btn" @click="handleCancel">{{ cancelBtnText }}</Btn>

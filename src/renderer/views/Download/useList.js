@@ -45,43 +45,30 @@ const useKeyEvent = ({ listRef, handleSelectAllData }) => {
   return keyEvent
 }
 
-export default ({ listRef, list, listAll }) => {
+export default ({ listRef, list }) => {
   const selectedList = ref([])
 
   let lastSelectIndex = -1
   const listItemHeight = computed(() => {
-    return Math.ceil((isFullscreen.value ? getFontSizeWithScreen() : appSetting['common.fontSize']) * 2.3)
+    return Math.max(34, Math.ceil((isFullscreen.value ? getFontSizeWithScreen() : appSetting['common.fontSize']) * 2.3))
   })
 
   const removeAllSelect = () => {
     selectedList.value = []
+    lastSelectIndex = -1
   }
   const handleSelectAllData = () => {
     removeAllSelect()
     selectedList.value = [...list.value]
+    lastSelectIndex = list.value.length ? 0 : -1
   }
   const keyEvent = useKeyEvent({ handleSelectAllData, listRef })
 
   const handleSelectData = clickIndex => {
+    if (!list.value[clickIndex]) return
     if (keyEvent.isShiftDown) {
-      if (selectedList.value.length) {
-        removeAllSelect()
-        if (lastSelectIndex != clickIndex) {
-          let isNeedReverse = false
-          let _lastSelectIndex = lastSelectIndex
-          if (clickIndex < _lastSelectIndex) {
-            let temp = _lastSelectIndex
-            _lastSelectIndex = clickIndex
-            clickIndex = temp
-            isNeedReverse = true
-          }
-          selectedList.value = list.value.slice(_lastSelectIndex, clickIndex + 1)
-          if (isNeedReverse) selectedList.value.reverse()
-        }
-      } else {
-        selectedList.value.push(list.value[clickIndex])
-        lastSelectIndex = clickIndex
-      }
+      if (lastSelectIndex < 0 || lastSelectIndex >= list.value.length) lastSelectIndex = clickIndex
+      selectedList.value = list.value.slice(Math.min(lastSelectIndex, clickIndex), Math.max(lastSelectIndex, clickIndex) + 1)
     } else if (keyEvent.isModDown) {
       lastSelectIndex = clickIndex
       let item = list.value[clickIndex]
@@ -91,17 +78,29 @@ export default ({ listRef, list, listAll }) => {
       } else {
         selectedList.value.splice(index, 1)
       }
-    } else if (selectedList.value.length) {
+    } else {
       removeAllSelect()
+      lastSelectIndex = clickIndex
     }
   }
 
-  watch(listAll, removeAllSelect)
+  const toggleSelect = index => {
+    const item = list.value[index]
+    if (!item) return
+    const selectedIndex = selectedList.value.indexOf(item)
+    if (selectedIndex < 0) selectedList.value.push(item)
+    else selectedList.value.splice(selectedIndex, 1)
+    lastSelectIndex = index
+  }
+
+  watch(() => list.value.map(item => item.id).join('\n'), removeAllSelect)
 
   return {
     selectedList,
     listItemHeight,
     removeAllSelect,
     handleSelectData,
+    handleSelectAllData,
+    toggleSelect,
   }
 }

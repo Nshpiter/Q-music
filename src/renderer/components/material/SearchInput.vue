@@ -17,13 +17,13 @@
           @contextmenu="handleContextMenu"
         >
         <transition enter-active-class="animated zoomIn" leave-active-class="animated zoomOut">
-          <button v-show="text" type="button" @click="handleClearList">
+          <button v-show="text" type="button" :aria-label="$t('search__clear')" @click="handleClearList">
             <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 24 24" space="preserve">
               <use xlink:href="#icon-window-close" />
             </svg>
           </button>
         </transition>
-        <button type="button" @click="handleSearch">
+        <button type="button" :aria-label="$t('search')" @click="handleSearch">
           <slot>
             <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 30.239 30.239" space="preserve">
               <use xlink:href="#icon-search" />
@@ -96,8 +96,9 @@ export default {
   },
   watch: {
     list(n) {
-      if (!this.visibleList) return
       if (this.selectIndex > -1) this.selectIndex = -1
+      this.sendEvent('selectionChange', -1)
+      if (!this.visibleList) return
       this.$nextTick(() => {
         this.listStyle.height = this.$refs.dom_list.scrollHeight + 'px'
       })
@@ -170,6 +171,7 @@ export default {
       } else if (this.selectIndex > -1) {
         this.selectIndex = -1
       }
+      this.sendEvent('selectionChange', this.selectIndex)
     },
     handleKeyUp() {
       if (this.list.length) {
@@ -177,6 +179,7 @@ export default {
       } else if (this.selectIndex > -1) {
         this.selectIndex = -1
       }
+      this.sendEvent('selectionChange', this.selectIndex)
     },
     handleContextMenu() {
       let str = clipboardReadText()

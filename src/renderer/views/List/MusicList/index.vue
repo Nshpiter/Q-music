@@ -1,5 +1,5 @@
 <template>
-  <div :class="$style.list">
+  <div :class="[$style.list, $style.listColumns]">
     <div v-if="route.query.from == 'cloud-library'" :class="$style.cloudReturnBar">
       <button type="button" :class="$style.cloudBack" @click="returnToCloud">
         <svg-icon name="angle-right-solid" />
@@ -7,23 +7,29 @@
       </button>
       <button type="button" :class="$style.cloudClose" aria-label="关闭导入结果" title="关闭导入结果" @click="closeImportResult">×</button>
     </div>
+    <material-list-toolbar
+      :count="list.length" :selected-count="selectedList.length" show-play
+      :download-visible="appSetting['download.enable']" :download-enabled="canDownloadSelection"
+      @play="handlePlayMusic(0)" @select-all="handleSelectAllData" @clear="removeAllSelect"
+      @add="handleShowMusicAddModal(0)" @download="handleShowDownloadModal(0)"
+    />
     <div class="thead">
       <table>
         <thead>
           <tr v-if="actionButtonsVisible">
-            <th class="num" style="width: 5%;">#</th>
+            <th class="num" :class="$style.numberColumn">#</th>
             <th class="nobreak">{{ $t('music_name') }}</th>
-            <th class="nobreak" style="width: 22%;">{{ $t('music_singer') }}</th>
-            <th class="nobreak" style="width: 22%;">{{ $t('music_album') }}</th>
-            <th class="nobreak" style="width: 9%;">{{ $t('music_time') }}</th>
-            <th class="nobreak" style="width: 16%;">{{ $t('action') }}</th>
+            <th class="nobreak" :class="$style.singerColumn">{{ $t('music_singer') }}</th>
+            <th class="nobreak" :class="$style.albumColumn">{{ $t('music_album') }}</th>
+            <th class="nobreak" :class="$style.durationColumn">{{ $t('music_time') }}</th>
+            <th class="nobreak" :class="$style.actionColumn">{{ $t('action') }}</th>
           </tr>
           <tr v-else>
-            <th class="num" style="width: 5%;">#</th>
+            <th class="num" :class="$style.numberColumn">#</th>
             <th class="nobreak">{{ $t('music_name') }}</th>
-            <th class="nobreak" style="width: 25%;">{{ $t('music_singer') }}</th>
-            <th class="nobreak" style="width: 28%;">{{ $t('music_album') }}</th>
-            <th class="nobreak" style="width: 10%;">{{ $t('music_time') }}</th>
+            <th class="nobreak" :class="$style.singerColumn">{{ $t('music_singer') }}</th>
+            <th class="nobreak" :class="$style.albumColumn">{{ $t('music_album') }}</th>
+            <th class="nobreak" :class="$style.durationColumn">{{ $t('music_time') }}</th>
           </tr>
         </thead>
       </table>
@@ -38,7 +44,7 @@
           class="list-item" :class="[{ [$style.active]: playerInfo.isPlayList && playerInfo.playIndex === index }, { selected: selectedIndex == index || rightClickSelectedIndex == index }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }]"
           @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
         >
-          <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;">
+          <div class="list-item-cell no-select" :class="[$style.num, $style.numberColumn, $style.selectColumn]">
             <transition name="play-active">
               <div v-if="playerInfo.isPlayList && playerInfo.playIndex === index" :class="$style.playIcon">
                 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="50%" viewBox="0 0 512 512" space="preserve">
@@ -47,16 +53,17 @@
               </div>
               <div v-else class="num">{{ index + 1 }}</div>
             </transition>
+            <input type="checkbox" :checked="selectedList.includes(item)" :aria-label="$t('list__select_song', { name: item.name })" @click.stop @change="toggleSelectData(index)">
           </div>
           <div class="list-item-cell auto name" :aria-label="item.name">
             <span class="select name">{{ item.name }}</span>
             <source-icon v-if="isShowSource || item.source != 'local'" class="no-select label-source" :source="item.source" :size="14" />
           </div>
-          <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
-          <div class="list-item-cell" style="flex: 0 0 22%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
-          <div class="list-item-cell" style="flex: 0 0 9%;"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
-          <div class="list-item-cell" style="flex: 0 0 16%; padding-left: 0; padding-right: 0;">
-            <material-list-buttons :index="index" :download-btn="assertApiSupport(item.source) && item.source != 'local'" @btn-click="handleListBtnClick" />
+          <div class="list-item-cell" :class="$style.singerColumn"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
+          <div class="list-item-cell" :class="$style.albumColumn"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
+          <div class="list-item-cell" :class="$style.durationColumn"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
+          <div class="list-item-cell" :class="$style.actionColumn" style="padding-left: 0; padding-right: 0;">
+            <material-list-buttons :index="index" :playing="isCurrentMusic(item) && isPlay" :download-btn="assertApiSupport(item.source) && item.source != 'local'" @btn-click="handleListBtnClick" />
           </div>
         </div>
       </base-virtualized-list>
@@ -70,7 +77,7 @@
           :class="[{ [$style.active]: playerInfo.isPlayList && playerInfo.playIndex === index }, { selected: selectedIndex == index || rightClickSelectedIndex == index }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }]"
           @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
         >
-          <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;">
+          <div class="list-item-cell no-select" :class="[$style.num, $style.numberColumn, $style.selectColumn]">
             <transition name="play-active">
               <div v-if="playerInfo.isPlayList && playerInfo.playIndex === index" :class="$style.playIcon">
                 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="50%" viewBox="0 0 512 512" space="preserve">
@@ -79,14 +86,15 @@
               </div>
               <div v-else class="num">{{ index + 1 }}</div>
             </transition>
+            <input type="checkbox" :checked="selectedList.includes(item)" :aria-label="$t('list__select_song', { name: item.name })" @click.stop @change="toggleSelectData(index)">
           </div>
           <div class="list-item-cell auto name">
             <span class="select name" :aria-label="item.name">{{ item.name }}</span>
             <source-icon v-if="isShowSource || item.source != 'local'" class="no-select label-source" :source="item.source" :size="14" />
           </div>
-          <div class="list-item-cell" style="flex: 0 0 25%;"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
-          <div class="list-item-cell" style="flex: 0 0 28%;"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
-          <div class="list-item-cell" style="flex: 0 0 10%;"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
+          <div class="list-item-cell" :class="$style.singerColumn"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
+          <div class="list-item-cell" :class="$style.albumColumn"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
+          <div class="list-item-cell" :class="$style.durationColumn"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
         </div>
       </base-virtualized-list>
     </div>
@@ -130,6 +138,9 @@ import useListScroll from './useListScroll'
 import useMusicToggle from './useMusicToggle'
 import { appSetting } from '@renderer/store/setting'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
+import { computed } from '@common/utils/vueTools'
+import { isPlay, playMusicInfo } from '@renderer/store/player/state'
+import { togglePlay } from '@renderer/core/player'
 export default {
   name: 'MusicList',
   components: {
@@ -150,7 +161,8 @@ export default {
     const router = useRouter()
     const returnToCloud = () => { void router.push({ path: '/setting', query: { name: 'SettingSync', section: 'cloud-library' } }) }
     const closeImportResult = () => { void router.replace({ path: '/list', query: { id: props.listId } }) }
-    const actionButtonsVisible = appSetting['list.actionButtonsVisible']
+    const actionButtonsVisible = computed(() => appSetting['list.actionButtonsVisible'])
+    const isCurrentMusic = item => !!item && playMusicInfo.musicInfo?.id == item.id && playMusicInfo.musicInfo?.source == item.source
 
     let scrollIndex = null
     let isAnimation = false
@@ -182,7 +194,10 @@ export default {
       listItemHeight,
       handleSelectData,
       removeAllSelect,
+      handleSelectAllData,
+      toggleSelectData,
     } = useList({ listRef, list })
+    const canDownloadSelection = computed(() => selectedList.value.length > 0 && selectedList.value.every(item => item.source != 'local' && assertApiSupport(item.source)))
 
     const {
       handlePlayMusic,
@@ -270,6 +285,7 @@ export default {
     const handleListItemClick = (event, index) => {
       if (rightClickSelectedIndex.value > -1) return
       handleSelectData(index)
+      if (event.ctrlKey || event.metaKey || event.shiftKey) return
       doubleClickPlay(index)
     }
     const handleListItemRightClick = (event, index) => {
@@ -282,7 +298,7 @@ export default {
       menuClick(action, index)
     }
     const handleListRightClick = (event) => {
-      if (!event.target.classList.contains('select')) return
+      if (!event.target.classList.contains('select') || !window.getSelection()?.toString().trim()) return
       event.stopImmediatePropagation()
       let classList = dom_listContent.value.classList
       classList.add('copying')
@@ -300,7 +316,8 @@ export default {
           handleShowDownloadModal(index, true)
           break
         case 'play':
-          handlePlayMusic(index, true)
+          if (isCurrentMusic(list.value[index])) togglePlay()
+          else handlePlayMusic(index, true)
           break
         case 'search':
           handleSearch(index)
@@ -321,6 +338,15 @@ export default {
       listItemHeight,
       handleListItemClick,
       selectedList,
+      handleSelectAllData,
+      toggleSelectData,
+      handlePlayMusic,
+      handleShowMusicAddModal,
+      handleShowDownloadModal,
+      canDownloadSelection,
+      appSetting,
+      isCurrentMusic,
+      isPlay,
       handleListItemRightClick,
       removeAllSelect,
       handleListBtnClick,
@@ -379,6 +405,7 @@ export default {
 
 <style lang="less" module>
 @import '@renderer/assets/styles/layout.less';
+@import '@renderer/assets/styles/listColumns.less';
 
 .list {
   overflow: hidden;

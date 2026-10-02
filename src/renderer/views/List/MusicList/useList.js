@@ -50,49 +50,38 @@ export default ({ listRef, list }) => {
 
   let lastSelectIndex = -1
   const listItemHeight = computed(() => {
-    return Math.ceil((isFullscreen.value ? getFontSizeWithScreen() : appSetting['common.fontSize']) * 2.3)
+    return Math.max(34, Math.ceil((isFullscreen.value ? getFontSizeWithScreen() : appSetting['common.fontSize']) * 2.3))
   })
 
   const removeAllSelect = () => {
     selectedList.value = []
+    lastSelectIndex = -1
   }
   const handleSelectAllData = () => {
     removeAllSelect()
     selectedList.value = [...list.value]
+    lastSelectIndex = 0
   }
   const keyEvent = useKeyEvent({ listRef, handleSelectAllData })
 
+  const toggleSelectData = clickIndex => {
+    const item = list.value[clickIndex]
+    if (!item) return
+    lastSelectIndex = clickIndex
+    const index = selectedList.value.indexOf(item)
+    if (index < 0) selectedList.value.push(item)
+    else selectedList.value.splice(index, 1)
+  }
+
   const handleSelectData = clickIndex => {
+    if (!list.value[clickIndex]) return
     if (keyEvent.isShiftDown) {
-      if (selectedList.value.length) {
-        removeAllSelect()
-        if (lastSelectIndex != clickIndex) {
-          let _lastSelectIndex = lastSelectIndex
-          let isNeedReverse = false
-          if (clickIndex < _lastSelectIndex) {
-            let temp = _lastSelectIndex
-            _lastSelectIndex = clickIndex
-            clickIndex = temp
-            isNeedReverse = true
-          }
-          selectedList.value = list.value.slice(_lastSelectIndex, clickIndex + 1)
-          if (isNeedReverse) selectedList.value.reverse()
-        }
-      } else {
-        selectedList.value.push(list.value[clickIndex])
-        lastSelectIndex = clickIndex
-      }
-    } else if (keyEvent.isModDown) {
-      lastSelectIndex = clickIndex
-      let item = list.value[clickIndex]
-      let index = selectedList.value.indexOf(item)
-      if (index < 0) {
-        selectedList.value.push(item)
-      } else {
-        selectedList.value.splice(index, 1)
-      }
-    } else if (selectedList.value.length) {
+      if (lastSelectIndex < 0) lastSelectIndex = clickIndex
+      selectedList.value = list.value.slice(Math.min(lastSelectIndex, clickIndex), Math.max(lastSelectIndex, clickIndex) + 1)
+    } else if (keyEvent.isModDown) toggleSelectData(clickIndex)
+    else {
       removeAllSelect()
+      lastSelectIndex = clickIndex
     }
   }
 
@@ -103,5 +92,7 @@ export default ({ listRef, list }) => {
     listItemHeight,
     removeAllSelect,
     handleSelectData,
+    handleSelectAllData,
+    toggleSelectData,
   }
 }

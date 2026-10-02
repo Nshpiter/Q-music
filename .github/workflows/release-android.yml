@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   android:
-    name: Android arm64 and universal
+    name: Android APKs
     runs-on: ubuntu-latest
     env:
       ORG_GRADLE_PROJECT_MYAPP_UPLOAD_STORE_FILE: q-music-release.keystore
@@ -170,6 +170,9 @@ jobs:
           output_dir="mobile/android/app/build/outputs/apk/release"
           assets=(
             "$output_dir/Q-music-android-v$PACKAGE_VERSION-arm64-v8a.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-armeabi-v7a.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-x86.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-x86_64.apk"
             "$output_dir/Q-music-android-v$PACKAGE_VERSION-universal.apk"
           )
           for asset in "${assets[@]}"; do
@@ -184,6 +187,9 @@ jobs:
           name: q-music-android-release
           path: |
             mobile/android/app/build/outputs/apk/release/Q-music-android-v${{ env.PACKAGE_VERSION }}-arm64-v8a.apk
+            mobile/android/app/build/outputs/apk/release/Q-music-android-v${{ env.PACKAGE_VERSION }}-armeabi-v7a.apk
+            mobile/android/app/build/outputs/apk/release/Q-music-android-v${{ env.PACKAGE_VERSION }}-x86.apk
+            mobile/android/app/build/outputs/apk/release/Q-music-android-v${{ env.PACKAGE_VERSION }}-x86_64.apk
             mobile/android/app/build/outputs/apk/release/Q-music-android-v${{ env.PACKAGE_VERSION }}-universal.apk
             mobile/android/app/build/outputs/apk/release/SHA256SUMS-android.txt
           if-no-files-found: error
@@ -196,6 +202,9 @@ jobs:
           output_dir="mobile/android/app/build/outputs/apk/release"
           assets=(
             "$output_dir/Q-music-android-v$PACKAGE_VERSION-arm64-v8a.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-armeabi-v7a.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-x86.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-x86_64.apk"
             "$output_dir/Q-music-android-v$PACKAGE_VERSION-universal.apk"
             "$output_dir/SHA256SUMS-android.txt"
           )

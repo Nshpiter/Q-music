@@ -16,8 +16,8 @@ export default ({ props, onLoadedList }) => {
   const list = ref([])
   watch(() => props.listId, id => {
     getListMusics(id).then(l => {
-      list.value = [...l]
       if (id != props.listId) return
+      list.value = [...l]
       onLoadedList()
     })
   }, {
@@ -37,7 +37,9 @@ export default ({ props, onLoadedList }) => {
 
   const handleMyListUpdate = (ids) => {
     if (!ids.includes(props.listId)) return
-    getListMusics(props.listId).then(l => {
+    const id = props.listId
+    getListMusics(id).then(l => {
+      if (id != props.listId) return
       list.value = [...l]
     })
   }

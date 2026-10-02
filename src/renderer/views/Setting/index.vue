@@ -1,18 +1,19 @@
 <template>
   <div :class="$style.main">
     <div class="scroll" :class="$style.toc">
-      <ul :class="$style.tocList" role="toolbar">
-        <li v-for="h2 in tocList" :key="h2.id" :class="$style.tocListItem" role="presentation">
-          <h2
+      <ul :class="$style.tocList" role="tablist" aria-label="设置分类" aria-orientation="vertical">
+        <li v-for="(h2, index) in tocList" :key="h2.id" :class="$style.tocListItem" role="presentation">
+          <button
+            :id="`${h2.id}-tab`" type="button" :tabindex="avtiveComponentName == h2.id ? 0 : -1" aria-controls="setting-panel"
             :class="[$style.tocH2, {[$style.active]: avtiveComponentName == h2.id }]"
             role="tab" :aria-selected="avtiveComponentName == h2.id"
-            :aria-label="h2.title" ignore-tip @click="toggleTab(h2.id)"
+            :aria-label="h2.title" ignore-tip @click="toggleTab(h2.id)" @keydown="handleTabKey($event, index)"
           >
             <span :class="$style.tocIcon">
               <svg-icon :name="h2.icon" />
             </span>
             <span :class="$style.tocTitle">{{ h2.title }}</span>
-          </h2>
+          </button>
           <!-- <ul v-if="h2.children.length" :class="$style.tocList">
             <li v-for="h3 in h2.children" :key="h3.id" :class="$style.tocSubListItem">
               <h3 :class="[$style.tocH3, toc.activeId == h3.id ? $style.active : null]" :aria-label="h3.title">
@@ -23,7 +24,7 @@
         </li>
       </ul>
     </div>
-    <div ref="dom_content_ref" class="scroll" :class="$style.setting">
+    <div id="setting-panel" ref="dom_content_ref" class="scroll" :class="$style.setting" role="tabpanel" :aria-labelledby="`${avtiveComponentName}-tab`" tabindex="0">
       <dl>
         <component :is="avtiveComponentName" />
         <!-- <SettingBasic />
@@ -142,11 +143,28 @@ export default {
       })
     }
 
+    const handleTabKey = (event, index) => {
+      const last = tocList.value.length - 1
+      let next
+      switch (event.key) {
+        case 'ArrowDown': next = index == last ? 0 : index + 1; break
+        case 'ArrowUp': next = index == 0 ? last : index - 1; break
+        case 'Home': next = 0; break
+        case 'End': next = last; break
+        default: return
+      }
+      event.preventDefault()
+      const tab = event.currentTarget.closest('ul').querySelectorAll('[role="tab"]')[next]
+      toggleTab(tocList.value[next].id)
+      void nextTick(() => { tab?.focus(); tab?.scrollIntoView({ block: 'nearest' }) })
+    }
+
     return {
       tocList,
       avtiveComponentName,
       dom_content_ref,
       toggleTab,
+      handleTabKey,
     }
   },
   // mounted() {
@@ -215,6 +233,10 @@ export default {
   gap: 7px;
 }
 .tocH2 {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
   min-width: 0;
   height: 42px;
   line-height: 1;
@@ -231,6 +253,7 @@ export default {
   gap: 10px;
   transition: @transition-fast;
   transition-property: background-color, color, box-shadow, transform;
+  &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
 
   &:not(.active) {
     cursor: pointer;

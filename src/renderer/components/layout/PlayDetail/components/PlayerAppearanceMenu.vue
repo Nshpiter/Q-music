@@ -7,11 +7,11 @@
       </div>
       <div :class="$style.group">
         <div :class="$style.groupTitle">{{ $t('setting__play_detail_layout') }}</div>
-        <div :class="$style.options"><button v-for="option in layoutOptions" :key="option.value" type="button" :class="[$style.option, { [$style.active]: appSetting['playDetail.style.layout'] == option.value }]" @click="selectLayout(option.value)">{{ option.label }}</button></div>
+        <div :class="$style.options"><button v-for="option in layoutOptions" :key="option.value" type="button" :class="[$style.option, { [$style.active]: appSetting['playDetail.style.layout'] == option.value }]" :aria-pressed="appSetting['playDetail.style.layout'] == option.value" @click="selectLayout(option.value)">{{ option.label }}</button></div>
       </div>
       <div :class="$style.group">
         <div :class="$style.groupTitle">{{ $t('setting__play_detail_visualization') }}</div>
-        <div :class="$style.options"><button v-for="option in visualizationOptions" :key="option.value" type="button" :class="[$style.option, { [$style.active]: option.active }]" @click="selectVisualization(option.value)">{{ option.label }}</button></div>
+        <div :class="$style.options"><button v-for="option in visualizationOptions" :key="option.value" type="button" :class="[$style.option, { [$style.active]: option.active }]" :aria-pressed="option.active" @click="selectVisualization(option.value)">{{ option.label }}</button></div>
       </div>
     </section>
   </teleport>
@@ -26,11 +26,17 @@ const props = defineProps({ modelValue: Boolean, dark: Boolean, anchor: { type: 
 const emit = defineEmits(['update:modelValue', 'select-layout', 'select-visualization'])
 const t = useI18n()
 const menuRef = ref(null)
+const viewport = ref({ width: window.innerWidth, height: window.innerHeight })
 const menuStyle = computed(() => {
-  const width = 304
-  if (!props.anchor) return { left: `calc(50vw - ${width / 2}px)`, bottom: '84px' }
-  const left = Math.max(12, Math.min(props.anchor.x - width / 2, window.innerWidth - width - 12))
-  return { left: `${left}px`, bottom: `${Math.max(12, window.innerHeight - props.anchor.y + 10)}px` }
+  const { width: viewportWidth, height: viewportHeight } = viewport.value
+  const width = Math.min(304, Math.max(1, viewportWidth - 24))
+  const maxHeight = Math.max(0, Math.min(320, viewportHeight - 24))
+  const left = props.anchor
+    ? Math.max(12, Math.min(props.anchor.x - width / 2, viewportWidth - width - 12))
+    : Math.max(12, (viewportWidth - width) / 2)
+  const preferredBottom = props.anchor ? viewportHeight - props.anchor.y + 10 : 84
+  const bottom = Math.max(12, Math.min(preferredBottom, viewportHeight - maxHeight - 12))
+  return { left: `${left}px`, bottom: `${bottom}px`, width: `${width}px`, maxHeight: `${maxHeight}px` }
 })
 const layoutOptions = computed(() => [
   { value: 'classic', label: t('setting__play_detail_layout_classic') },
@@ -44,14 +50,29 @@ const visualizationOptions = computed(() => [
 ])
 const close = () => { emit('update:modelValue', false) }
 const handleOutside = event => { if (props.modelValue && !menuRef.value?.contains(event.target)) close() }
-onMounted(() => { document.addEventListener('click', handleOutside) })
-onBeforeUnmount(() => { document.removeEventListener('click', handleOutside) })
+const handleKeydown = event => {
+  if (!props.modelValue || event.key != 'Escape') return
+  event.preventDefault()
+  event.stopPropagation()
+  close()
+}
+const handleResize = () => { viewport.value = { width: window.innerWidth, height: window.innerHeight } }
+onMounted(() => {
+  document.addEventListener('click', handleOutside)
+  document.addEventListener('keydown', handleKeydown, true)
+  window.addEventListener('resize', handleResize)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleOutside)
+  document.removeEventListener('keydown', handleKeydown, true)
+  window.removeEventListener('resize', handleResize)
+})
 const selectLayout = value => { emit('select-layout', value) }
 const selectVisualization = value => { emit('select-visualization', value) }
 </script>
 
 <style lang="less" module>
-.container { position: fixed; z-index: 80; width: 304px; padding: 15px; box-sizing: border-box; color: var(--color-font); border: 1px solid rgb(from var(--color-font) r g b / .11); border-radius: 17px; background: rgb(from var(--color-content-background) r g b / .94); box-shadow: 0 18px 50px rgba(20,28,32,.2), inset 0 1px 0 rgba(255,255,255,.72); backdrop-filter: blur(24px) saturate(1.18); animation: popIn .16s cubic-bezier(.2,.8,.2,1); transform-origin: 50% 100%; }
+.container { position: fixed; z-index: 80; width: 304px; max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow-y: auto; overscroll-behavior: contain; padding: 15px; box-sizing: border-box; color: var(--color-font); border: 1px solid rgb(from var(--color-font) r g b / .11); border-radius: 17px; background: rgb(from var(--color-content-background) r g b / .94); box-shadow: 0 18px 50px rgba(20,28,32,.2), inset 0 1px 0 rgba(255,255,255,.72); backdrop-filter: blur(24px) saturate(1.18); animation: popIn .16s cubic-bezier(.2,.8,.2,1); transform-origin: 50% 100%; }
 .dark { color: rgba(255,255,255,.94); border-color: rgba(255,255,255,.12); background: rgba(24,29,32,.92); box-shadow: 0 22px 54px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08); }
 .header { padding: 1px 2px 11px; }
 .title { font-size: 14px; font-weight: 720; }

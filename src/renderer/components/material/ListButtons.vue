@@ -1,8 +1,8 @@
 <template>
   <div :class="$style.btns">
-    <button v-if="playBtn" type="button" :aria-label="$t('list__play')" @contextmenu.capture.stop @click.stop="handleClick('play')">
-      <svg v-once version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 287.386 287.386" space="preserve">
-        <use xlink:href="#icon-testPlay" />
+    <button v-if="playBtn" type="button" :aria-label="$t(playing ? 'player__pause' : 'list__play')" @contextmenu.capture.stop @click.stop="handleClick('play')">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" :viewBox="playing ? '0 0 1024 1024' : '0 0 287.386 287.386'" space="preserve">
+        <use :xlink:href="playing ? '#icon-pause' : '#icon-testPlay'" />
       </svg>
     </button>
     <button v-if="listAddBtn" type="button" :aria-label="$t('list__add_to')" @contextmenu.capture.stop @click.stop="handleClick('listAdd')">
@@ -51,6 +51,10 @@ export default {
     index: {
       type: Number,
       required: true,
+    },
+    playing: {
+      type: Boolean,
+      default: false,
     },
     startBtn: {
       type: Boolean,
@@ -104,15 +108,23 @@ export default {
 @import '@renderer/assets/styles/layout.less';
 
 .btns {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   line-height: 1.2;
 
   button {
     background-color: transparent;
     border: none;
     border-radius: @form-radius;
-    margin-right: 5px;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    padding: 4px 7px;
+    padding: 6px;
     color: var(--color-button-font);
     outline: none;
     transition: background-color 0.2s ease;
@@ -122,6 +134,7 @@ export default {
     }
 
     svg {
+      width: 16px;
       height: 16px;
     }
 
@@ -130,6 +143,11 @@ export default {
     }
     &:active {
       background-color: var(--color-button-background-active);
+    }
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: -2px;
+      background-color: var(--color-button-background-hover);
     }
   }
 }

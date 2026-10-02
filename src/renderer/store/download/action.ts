@@ -412,7 +412,7 @@ export const removeDownloadTasks = async(ids: string[]) => {
 
   const idsSet = new Set<string>(ids)
   const newList = downloadList.filter(task => {
-    if (runingTask.has(task.id)) {
+    if (idsSet.has(task.id) && runingTask.has(task.id)) {
       void window.lx.worker.download.removeTask(task.id)
       runingTask.delete(task.id)
     }

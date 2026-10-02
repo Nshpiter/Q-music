@@ -58,49 +58,38 @@ export default ({ props, listRef }: {
   const selectedList = ref<LX.Music.MusicInfoOnline[]>([])
   let lastSelectIndex = -1
   const listItemHeight = computed(() => {
-    return Math.ceil((isFullscreen.value ? getFontSizeWithScreen() : appSetting['common.fontSize']) * 2.3)
+    return Math.max(34, Math.ceil((isFullscreen.value ? getFontSizeWithScreen() : appSetting['common.fontSize']) * 2.3))
   })
 
   const removeAllSelect = () => {
     selectedList.value = []
+    lastSelectIndex = -1
   }
   const handleSelectAllData = () => {
     removeAllSelect()
     selectedList.value = [...props.list]
+    lastSelectIndex = 0
   }
   const keyEvent = useKeyEvent({ handleSelectAllData, listRef })
 
+  const toggleSelectData = (clickIndex: number) => {
+    const item = props.list[clickIndex]
+    if (!item) return
+    lastSelectIndex = clickIndex
+    const index = selectedList.value.indexOf(item)
+    if (index < 0) selectedList.value.push(item)
+    else selectedList.value.splice(index, 1)
+  }
+
   const handleSelectData = (clickIndex: number) => {
+    if (!props.list[clickIndex]) return
     if (keyEvent.isShiftDown) {
-      if (selectedList.value.length) {
-        removeAllSelect()
-        if (lastSelectIndex != clickIndex) {
-          let isNeedReverse = false
-          let _lastSelectIndex = lastSelectIndex
-          if (clickIndex < _lastSelectIndex) {
-            let temp = _lastSelectIndex
-            _lastSelectIndex = clickIndex
-            clickIndex = temp
-            isNeedReverse = true
-          }
-          selectedList.value = props.list.slice(_lastSelectIndex, clickIndex + 1)
-          if (isNeedReverse) selectedList.value.reverse()
-        }
-      } else {
-        selectedList.value.push(props.list[clickIndex])
-        lastSelectIndex = clickIndex
-      }
-    } else if (keyEvent.isModDown) {
-      lastSelectIndex = clickIndex
-      let item = props.list[clickIndex]
-      let index = selectedList.value.indexOf(item)
-      if (index < 0) {
-        selectedList.value.push(item)
-      } else {
-        selectedList.value.splice(index, 1)
-      }
-    } else if (selectedList.value.length) {
+      if (lastSelectIndex < 0) lastSelectIndex = clickIndex
+      selectedList.value = props.list.slice(Math.min(lastSelectIndex, clickIndex), Math.max(lastSelectIndex, clickIndex) + 1)
+    } else if (keyEvent.isModDown) toggleSelectData(clickIndex)
+    else {
       removeAllSelect()
+      lastSelectIndex = clickIndex
     }
   }
 
@@ -111,5 +100,7 @@ export default ({ props, listRef }: {
     listItemHeight,
     removeAllSelect,
     handleSelectData,
+    handleSelectAllData,
+    toggleSelectData,
   }
 }

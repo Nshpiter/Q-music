@@ -1,0 +1,43 @@
+.listColumns {
+  container-type: inline-size;
+
+  :global(.thead) { padding-left: 7px; padding-right: 7px; }
+  :global(table) { table-layout: fixed; }
+  :global(th) { box-sizing: border-box; }
+  :global(.list-item-cell.auto) { min-width: 0; }
+  :global(.list-item) { height: calc(100% - 4px); }
+  .numberColumn { width: 34px !important; flex: 0 0 34px !important; }
+  .singerColumn { width: 22% !important; flex: 0 0 22% !important; }
+  .albumColumn { width: 22% !important; flex: 0 0 22% !important; }
+  .durationColumn { width: 58px !important; flex: 0 0 58px !important; }
+  .actionColumn { width: 104px !important; flex: 0 0 104px !important; }
+  .selectColumn {
+    position: relative;
+    input {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      cursor: pointer;
+      accent-color: var(--color-primary);
+      &:checked, &:focus-visible { opacity: 1; }
+      &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    }
+    &:hover input { opacity: 1; }
+    &:has(input:checked), &:has(input:focus-visible), &:hover {
+      > :not(input) { opacity: 0; }
+    }
+  }
+}
+
+@container (max-width: 620px) {
+  .listColumns .albumColumn { display: none; }
+  .listColumns .singerColumn { width: 24% !important; flex-basis: 24% !important; }
+}
+@container (max-width: 430px) {
+  .listColumns .durationColumn { display: none; }
+}

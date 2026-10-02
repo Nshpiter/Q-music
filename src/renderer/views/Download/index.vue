@@ -3,17 +3,24 @@
     <div :class="$style.header">
       <base-tab v-model="activeTab" :class="$style.tab" :list="tabs" />
     </div>
-    <div :class="$style.downloadPanel">
+    <div :class="[$style.downloadPanel, $style.listColumns]">
+      <material-list-toolbar :count="list.length" :selected-count="selectedList.length" @clear="removeAllSelect" @select-all="handleSelectAllData">
+        <template #selected-actions>
+          <button type="button" :disabled="isBusy" @click="handleStartTask(-1)">{{ $t('list__start') }}</button>
+          <button type="button" :disabled="isBusy" @click="handlePauseTask(-1)">{{ $t('list__pause') }}</button>
+          <button type="button" :disabled="isBusy" @click="handleRemoveTask(-1)">{{ $t('list__remove') }}</button>
+        </template>
+      </material-list-toolbar>
       <div class="thead" :class="$style.thead">
         <table>
           <thead>
             <tr>
-              <th class="num" style="width: 5%;">#</th>
+              <th class="num" :class="$style.numberColumn">#</th>
               <th class="nobreak">{{ $t('music_name') }}</th>
               <th class="nobreak" style="width: 20%;">{{ $t('download__progress') }}</th>
               <th class="nobreak" style="width: 22%;">{{ $t('download__status') }}</th>
-              <th class="nobreak" style="width: 10%;">{{ $t('download__quality') }}</th>
-              <th class="nobreak" style="width: 13%;">{{ $t('action') }}</th>
+              <th class="nobreak" :class="$style.qualityColumn" style="width: 10%;">{{ $t('download__quality') }}</th>
+              <th class="nobreak" :class="$style.actionColumn">{{ $t('action') }}</th>
             </tr>
           </thead>
         </table>
@@ -28,7 +35,8 @@
             :class="[{[$style.active]: playTaskId == item.id }, { selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }]"
             @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
           >
-            <div class="list-item-cell no-select" :class="$style.num" style="flex: 0 0 5%;">
+            <div class="list-item-cell no-select" :class="[$style.num, $style.numberColumn, $style.selectColumn]">
+              <input type="checkbox" :checked="selectedList.includes(item)" :aria-label="$t('list__select_music', { name: getName(item) })" @click.stop @change="toggleSelect(index)">
               <transition name="play-active">
                 <div v-if="playTaskId == item.id" :class="$style.playIcon">
                   <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="50%" viewBox="0 0 512 512" space="preserve">
@@ -43,13 +51,14 @@
             </div>
             <div class="list-item-cell" style="flex: 0 0 20%;">{{ item.progress }}%<span v-if="item.status == downloadStatus.RUN && item.speed"> - {{ item.speed }}/s</span></div>
             <div class="list-item-cell" style="flex: 0 0 22%;" :aria-label="item.statusText">{{ item.statusText }}</div>
-            <div class="list-item-cell" style="flex: 0 0 10%;">{{ getTypeName(item.metadata.quality) }}</div>
-            <div class="list-item-cell" style="flex: 0 0 13%; padding-left: 0; padding-right: 0;">
+            <div class="list-item-cell" :class="$style.qualityColumn" style="flex: 0 0 10%;">{{ getTypeName(item.metadata.quality) }}</div>
+            <div class="list-item-cell" :class="$style.actionColumn" style="padding-left: 0; padding-right: 0;">
               <material-list-buttons
                 :index="index" :download-btn="false" :file-btn="item.status != downloadStatus.ERROR" remove-btn="remove-btn"
                 :start-btn="!item.isComplate && item.status != downloadStatus.WAITING && (item.status != downloadStatus.RUN)"
                 :pause-btn="!item.isComplate && (item.status == downloadStatus.RUN || item.status == downloadStatus.WAITING)"
                 :list-add-btn="false" :play-btn="item.status == downloadStatus.COMPLETED"
+                :playing="playTaskId == item.id && isPlay"
                 :search-btn="item.status == downloadStatus.ERROR" @btn-click="handleListBtnClick"
               />
             </div>
@@ -87,6 +96,7 @@ import useMusicAdd from './useMusicAdd'
 import { downloadStatus } from '@renderer/store/download/state'
 import { appSetting } from '@renderer/store/setting'
 import { formatMusicName } from '@renderer/utils'
+import { isPlay } from '@renderer/store/player/state'
 
 export default {
   name: 'Download',
@@ -107,7 +117,9 @@ export default {
       listItemHeight,
       removeAllSelect,
       handleSelectData,
-    } = useList({ listRef, list, listAll })
+      handleSelectAllData,
+      toggleSelect,
+    } = useList({ listRef, list })
 
     const {
       handlePlayMusic,
@@ -115,6 +127,7 @@ export default {
     } = usePlay({ selectedList, list, listAll, removeAllSelect })
 
     const {
+      isBusy,
       handleSearch,
       handleOpenMusicDetail,
       handleStartTask,
@@ -174,6 +187,7 @@ export default {
     const handleListItemClick = (event, index) => {
       if (rightClickSelectedIndex.value > -1) return
       handleSelectData(index)
+      if (event.shiftKey || event.ctrlKey || event.metaKey) { clickIndex = -1; return }
       doubleClickPlay(index)
     }
     const handleListItemRightClick = (event, index) => {
@@ -226,6 +240,13 @@ export default {
       selectedList,
       listItemHeight,
       playTaskId,
+      isPlay,
+      isBusy,
+      handleSelectAllData,
+      toggleSelect,
+      handleStartTask,
+      handlePauseTask,
+      handleRemoveTask,
 
       isShowListAdd,
       isShowListAddMultiple,
@@ -251,6 +272,11 @@ export default {
 
 <style lang="less" module>
 @import '@renderer/assets/styles/layout.less';
+@import '@renderer/assets/styles/listColumns.less';
+
+@container (max-width: 620px) {
+  .qualityColumn { display: none; }
+}
 
 .download {
   position: relative;

@@ -1,29 +1,31 @@
 <template>
   <div :class="$style.container">
     <div :class="$style.songListHeader">
+      <button type="button" :class="$style.backButton" :aria-label="$t('back')" :title="$t('back')" @click="handleBack">
+        <svg-icon name="angle-right-solid" />
+      </button>
       <div :class="$style.songListHeaderLeft" :style="{ backgroundImage: 'url('+(picUrl || listDetailInfo.info.img)+')' }">
         <!-- <span v-if="listDetailInfo.info.play_count" :class="$style.playNum">{{ listDetailInfo.info.play_count }}</span> -->
       </div>
       <div :class="$style.songListHeaderMiddle">
         <h3 :title="listDetailInfo.info.name">{{ listDetailInfo.info.name }}</h3>
         <p :title="listDetailInfo.info.desc">{{ listDetailInfo.info.desc }}</p>
-      </div>
-      <div :class="$style.songListHeaderRight">
-        <base-btn
-          :class="$style.headerRightBtn"
-          :disabled="!!listDetailInfo.noItemLabel"
-          @click="playSongListDetail(listDetailInfo.id, listDetailInfo.source, listDetailInfo.list)"
-        >
-          {{ $t('list__play') }}
-        </base-btn>
-        <base-btn
-          :class="$style.headerRightBtn"
-          :disabled="!!listDetailInfo.noItemLabel"
-          @click="addSongListDetail(listDetailInfo.id, listDetailInfo.source, listDetailInfo.info.name)"
-        >
-          {{ $t('list__collect') }}
-        </base-btn>
-        <base-btn :class="$style.headerRightBtn" @click="handleBack">{{ $t('back') }}</base-btn>
+        <div :class="$style.songListHeaderRight">
+          <base-btn
+            :class="$style.headerRightBtn"
+            :disabled="!listDetailInfo.list.length || !!listDetailInfo.noItemLabel"
+            @click="playSongListDetail(listDetailInfo.id, listDetailInfo.source, listDetailInfo.list)"
+          >
+            {{ $t('list__play') }}
+          </base-btn>
+          <base-btn
+            :class="$style.headerRightBtn"
+            :disabled="!listDetailInfo.list.length || !!listDetailInfo.noItemLabel"
+            @click="addSongListDetail(listDetailInfo.id, listDetailInfo.source, listDetailInfo.info.name)"
+          >
+            {{ $t('list__collect') }}
+          </base-btn>
+        </div>
       </div>
     </div>
     <div :class="$style.list">
@@ -182,22 +184,44 @@ export default {
   // height: 100%;
   display: flex;
   flex-flow: column nowrap;
+  container-type: inline-size;
 }
 
 .songListHeader {
   flex: none;
   display: flex;
   flex-flow: row nowrap;
-  height: 80px;
+  align-items: center;
+  gap: 12px;
+  min-height: 108px;
+  padding: 14px 18px;
+  box-sizing: border-box;
+}
+.backButton {
+  flex: none;
+  align-self: flex-start;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  color: var(--color-font);
+  background: var(--color-primary-alpha-1000);
+  cursor: pointer;
+  &:hover { background: var(--color-primary-background-hover); }
+  &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  svg { width: 13px; height: 13px; transform: rotate(180deg); }
 }
 .songListHeaderLeft {
   flex: none;
-  margin-left: 15px;
-  height: 100%;
+  width: 76px;
+  height: 76px;
   aspect-ratio: 1 / 1;
   position: relative;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: 14px;
   background-position: center;
   background-size: cover;
   opacity: .9;
@@ -218,16 +242,16 @@ export default {
 
 .songListHeaderMiddle {
   flex: auto;
-  padding: 2px 7px;
   min-width: 0;
   h3 {
     .mixin-ellipsis-1();
     line-height: 1.2;
     padding-bottom: 5px;
+    font-size: 16px;
     color: var(--color-font);
   }
   p {
-    .mixin-ellipsis(3);
+    .mixin-ellipsis(2);
     font-size: 12px;
     line-height: 1.2;
     color: var(--color-font-label);
@@ -237,18 +261,14 @@ export default {
   flex: none;
   display: flex;
   align-items: center;
-  padding-right: 15px;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
 
   .headerRightBtn {
-    border-radius: 0;
-    &:first-child {
-      border-top-left-radius: 4px;
-      border-bottom-left-radius: 4px;
-    }
-    &:last-child {
-      border-top-right-radius: 4px;
-      border-bottom-right-radius: 4px;
-    }
+    border-radius: 10px;
+    padding: 7px 13px;
+    font-size: 12px;
   }
 }
 
@@ -258,6 +278,11 @@ export default {
   min-height: 0;
   flex: auto;
   height: 100%;
+}
+
+@container (max-width: 520px) {
+  .songListHeader { gap: 10px; padding: 12px; }
+  .songListHeaderLeft { width: 60px; height: 60px; }
 }
 </style>
 

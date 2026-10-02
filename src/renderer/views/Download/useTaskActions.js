@@ -1,17 +1,19 @@
 import { useRouter } from '@common/utils/vueRouter'
 import musicSdk from '@renderer/utils/musicSdk'
 import { openUrl } from '@common/utils/electron'
-import { checkPath } from '@common/utils/nodejs'
-// import { dialog } from '@renderer/plugins/Dialog'
-// import { useI18n } from '@renderer/plugins/i18n'
-// import { appSetting } from '@renderer/store/setting'
+import { checkPath, joinPath } from '@common/utils/nodejs'
+import { dialog } from '@renderer/plugins/Dialog'
+import { useI18n } from '@renderer/plugins/i18n'
+import { appSetting } from '@renderer/store/setting'
+import { ref } from '@common/utils/vueTools'
 import { toOldMusicInfo } from '@renderer/utils/index'
 import { startDownloadTasks, pauseDownloadTasks, removeDownloadTasks } from '@renderer/store/download/action'
 import { openDirInExplorer } from '@renderer/utils/ipc'
 
 export default ({ list, selectedList, removeAllSelect }) => {
   const router = useRouter()
-  // const t = useI18n()
+  const t = useI18n()
+  const isBusy = ref(false)
 
   const handleSearch = index => {
     const info = list.value[index].metadata.musicInfo
@@ -31,48 +33,44 @@ export default ({ list, selectedList, removeAllSelect }) => {
     openUrl(url)
   }
 
-  const handleStartTask = async(index, single) => {
-    if (selectedList.value.length && !single) {
-      startDownloadTasks([...selectedList.value])
-      removeAllSelect()
-    } else {
-      startDownloadTasks([list.value[index]])
+  const runTaskAction = async(index, single, action) => {
+    if (isBusy.value) return
+    const multiple = selectedList.value.length && !single
+    const tasks = multiple ? [...selectedList.value] : [list.value[index]].filter(Boolean)
+    if (!tasks.length) return
+    isBusy.value = true
+    try {
+      await action(tasks)
+      if (multiple) removeAllSelect()
+    } catch {
+      await dialog({ message: t('download__action_failed') })
+    } finally {
+      isBusy.value = false
     }
   }
-
-  const handlePauseTask = async(index, single) => {
-    if (selectedList.value.length && !single) {
-      pauseDownloadTasks([...selectedList.value])
-      removeAllSelect()
-    } else {
-      pauseDownloadTasks([list.value[index]])
-    }
-  }
-
-  const handleRemoveTask = async(index, single) => {
-    if (selectedList.value.length && !single) {
-      // const confirm = await (selectedList.value.length > 1
-      //   ? dialog.confirm({
-      //     message: t('lists__remove_music_tip', { len: selectedList.value.length }),
-      //     confirmButtonText: t('lists__remove_tip_button'),
-      //   })
-      //   : Promise.resolve(true)
-      // )
-      // if (!confirm) return
-      removeDownloadTasks(selectedList.value.map(m => m.id))
-      removeAllSelect()
-    } else {
-      removeDownloadTasks([list.value[index].id])
-    }
-  }
+  const handleStartTask = (index, single) => runTaskAction(index, single, startDownloadTasks)
+  const handlePauseTask = (index, single) => runTaskAction(index, single, pauseDownloadTasks)
+  const handleRemoveTask = (index, single) => runTaskAction(index, single, tasks => removeDownloadTasks(tasks.map(task => task.id)))
 
   const handleOpenFile = async(index) => {
     const task = list.value[index]
-    if (!checkPath(task.metadata.filePath)) return
-    openDirInExplorer(task.metadata.filePath)
+    if (!task) return
+    try {
+      const savedPath = task.metadata.filePath
+      const fallbackPath = joinPath(appSetting['download.savePath'], task.metadata.fileName)
+      const path = savedPath && await checkPath(savedPath) ? savedPath : await checkPath(fallbackPath) ? fallbackPath : ''
+      if (!path) {
+        await dialog({ message: t('download__file_missing') })
+        return
+      }
+      await openDirInExplorer(path)
+    } catch {
+      await dialog({ message: t('download__file_missing') })
+    }
   }
 
   return {
+    isBusy,
     handleSearch,
     handleOpenMusicDetail,
     handleStartTask,
