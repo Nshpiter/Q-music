@@ -188,9 +188,9 @@ android {
             // 可直接侧载的本地测试包：内置 JS bundle，但仍使用 debug keystore。
             initWith release
             applicationIdSuffix ".preview"
-            versionNameSuffix "-r2fix2"
+            versionNameSuffix "-media-lyrics-fix"
             debuggable false
-            minifyEnabled false
+            minifyEnabled true
             signingConfig signingConfigs.debug
             matchingFallbacks = ['release']
         }
@@ -230,6 +230,7 @@ gradle.taskGraph.whenReady { taskGraph ->
 }
 
 dependencies {
+    implementation 'io.github.proify.lyricon:provider:0.1.70'
     implementation 'com.amazonaws:aws-android-sdk-s3:2.81.1'
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")

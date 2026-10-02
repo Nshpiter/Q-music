@@ -5,11 +5,22 @@
     <!-- 获取读写外置存储权限 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!-- 内置文件浏览器、公共音乐目录下载和云端曲库沿用用户已有的文件路径。 -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <queries>
+      <package android:name="io.github.proify.lyricon" />
+      <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent>
+      <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="http" /></intent>
+    </queries>
 
     <application
       android:name=".MainApplication"
@@ -21,6 +32,11 @@
       android:allowBackup="false"
       android:theme="@style/AppTheme"
       tools:targetApi="n">
+      <meta-data android:name="lyricon_module" android:value="true" />
+      <meta-data android:name="lyricon_module_author" android:value="Nshpiter" />
+      <meta-data android:name="lyricon_module_description" android:value="Q-music 原生状态栏歌词" />
+      <service android:name="com.guichaguri.trackplayer.service.MusicService"
+        android:foregroundServiceType="mediaPlayback" />
       <activity
         android:name=".MainActivity"
         android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"

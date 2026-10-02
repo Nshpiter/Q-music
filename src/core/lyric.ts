@@ -1,3 +1,4 @@
+import { setStatusBarLyric, playStatusBarLyric, pauseStatusBarLyric, setStatusBarLyricOptions } from './statusBarLyric'
 import {
   play as lrcPlay,
   setLyric as lrcSetLyric,
@@ -34,6 +35,7 @@ export const init = async() => {
  */
 const handleSetLyric = async(lyric: string, translation = '', romalrc = '') => {
   lrcSetLyric(lyric, translation, romalrc)
+  setStatusBarLyric(lyric, translation, romalrc)
   await setDesktopLyric(lyric, translation, romalrc)
   if (settingState.setting['player.isShowBluetoothFullLyric']) {
     void updateNowPlayingTitles({
@@ -48,6 +50,7 @@ const handleSetLyric = async(lyric: string, translation = '', romalrc = '') => {
  */
 export const handlePlay = (time: number) => {
   lrcPlay(time)
+  playStatusBarLyric(time)
   void playDesktopLyric(time)
 }
 
@@ -55,7 +58,9 @@ export const handlePlay = (time: number) => {
  * pause lyric
  */
 export const pause = () => {
+  lyricPlayRequest++
   lrcPause()
+  pauseStatusBarLyric()
   void pauseDesktopLyric()
 }
 
@@ -63,6 +68,7 @@ export const pause = () => {
  * stop lyric
  */
 export const stop = () => {
+  pause()
   void handleSetLyric('')
 }
 
@@ -72,14 +78,9 @@ export const stop = () => {
  */
 export const setPlaybackRate = async(playbackRate: number) => {
   lrcSetPlaybackRate(playbackRate)
+  setStatusBarLyricOptions()
   await setDesktopLyricPlaybackRate(playbackRate)
-  if (playerState.isPlay) {
-    setTimeout(() => {
-      void getPosition().then((position) => {
-        handlePlay(position * 1000)
-      })
-    })
-  }
+  if (playerState.isPlay) play()
 }
 
 /**
@@ -88,6 +89,7 @@ export const setPlaybackRate = async(playbackRate: number) => {
  */
 export const toggleTranslation = async(isShowTranslation: boolean) => {
   lrcToggleTranslation(isShowTranslation)
+  setStatusBarLyricOptions()
   await toggleDesktopLyricTranslation(isShowTranslation)
   if (playerState.isPlay) play()
 }
@@ -98,14 +100,17 @@ export const toggleTranslation = async(isShowTranslation: boolean) => {
  */
 export const toggleRoma = async(isShowLyricRoma: boolean) => {
   lrcToggleRoma(isShowLyricRoma)
+  setStatusBarLyricOptions()
   await toggleDesktopLyricRoma(isShowLyricRoma)
   if (playerState.isPlay) play()
 }
 
+let lyricPlayRequest = 0
 export const play = () => {
+  const request = ++lyricPlayRequest
   void getPosition().then((position) => {
-    handlePlay(position * 1000)
-  })
+    if (request == lyricPlayRequest) handlePlay(position * 1000)
+  }).catch(() => {})
 }
 
 

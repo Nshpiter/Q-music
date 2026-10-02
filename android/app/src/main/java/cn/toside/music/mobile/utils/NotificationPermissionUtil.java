@@ -4,15 +4,13 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
+import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
 
 import androidx.core.app.NotificationManagerCompat;
 
-import java.util.List;
 
 public class NotificationPermissionUtil {
 
@@ -28,19 +26,9 @@ public class NotificationPermissionUtil {
         return false;
       }
 
-      // 检查每个通知通道
-      try {
-        List<NotificationChannel> channels = manager.getNotificationChannels();
-        if (channels != null) {
-          for (NotificationChannel channel : channels) {
-            if (channel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
-              return false;
-            }
-          }
-        }
-      } catch (Exception e) {
-        Log.w("NotificationUtil", "Error reading notification channels", e);
-      }
+      // 只检查播放器的通知通道，无关通道关闭不影响播放通知。
+      NotificationChannel channel = manager.getNotificationChannel("com.guichaguri.trackplayer");
+      if (channel != null && channel.getImportance() == NotificationManager.IMPORTANCE_NONE) return false;
 
       return true;
     } else {
@@ -68,19 +56,22 @@ public class NotificationPermissionUtil {
     // 加上 NEW_TASK 标志，确保从非 Activity Context 启动不会崩溃
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-    // 检查系统是否支持该 Intent（防止某些 ROM 无响应导致卡死）
-    PackageManager pm = context.getPackageManager();
-    List<ResolveInfo> infos = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-    if (infos.isEmpty()) {
-      Log.w("NotificationUtil", "No activity found to handle notification settings intent");
-      return false;
-    }
-
     try {
       context.startActivity(intent);
       return true;
     } catch (Exception e) {
       Log.e("NotificationUtil", "Failed to start notification settings", e);
+      return openAppSettings(context);
+    }
+  }
+
+  static boolean openAppSettings(Context context) {
+    try {
+      context.startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+          Uri.parse("package:" + context.getPackageName())).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+      return true;
+    } catch (Exception e) {
+      Log.w("NotificationUtil", "Unable to open app settings", e);
       return false;
     }
   }

@@ -1,4 +1,5 @@
 import { useState, useRef, forwardRef, useImperativeHandle } from 'react'
+import { Platform } from 'react-native'
 // import { StyleSheet, View, Text, StatusBar, ScrollView } from 'react-native'
 
 // import { useGetter, useDispatch } from '@/store'
@@ -103,7 +104,7 @@ export default forwardRef<ChoosePathType, ChoosePathProps>(({
       setDeny(result == null)
       if (result) {
         listRef.current?.show(readOptions.current.title, '', readOptions.current.dirOnly, readOptions.current.filter)
-      } else {
+      } else if (Number(Platform.Version) < 30) {
         toast(t('storage_permission_tip_disagree'), 'long')
       }
     })

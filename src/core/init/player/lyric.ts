@@ -1,3 +1,4 @@
+import { enableStatusBarLyric } from '@/core/statusBarLyric'
 import { init as initLyricPlayer, toggleTranslation, toggleRoma, play, pause, stop, setLyric, setPlaybackRate } from '@/core/lyric'
 import { updateSetting } from '@/core/common'
 import { onDesktopLyricPositionChange, showDesktopLyric, onLyricLinePlay, showRemoteLyric } from '@/core/desktopLyric'
@@ -29,6 +30,9 @@ export default async(setting: LX.AppSetting) => {
     toggleTranslation(setting['player.isShowLyricTranslation']),
     toggleRoma(setting['player.isShowLyricRoma']),
   ])
+
+  // 内置提供端随播放器初始化，旧测试版的开关值不再参与判断。
+  void enableStatusBarLyric(true)
 
   if (setting['desktopLyric.enable']) {
     showDesktopLyric().catch(() => {

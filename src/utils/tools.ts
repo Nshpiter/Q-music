@@ -3,7 +3,7 @@ import { Platform, ToastAndroid, BackHandler, Linking, Dimensions, Alert, Appear
 import Clipboard from '@react-native-clipboard/clipboard'
 import { storageDataPrefix } from '@/config/constant'
 import { gzipFile, readFile, temporaryDirectoryPath, unGzipFile, unlink, writeFile } from '@/utils/fs'
-import { getSystemLocales, isIgnoringBatteryOptimization, isNotificationsEnabled, requestNotificationPermission, requestIgnoreBatteryOptimization, shareText } from '@/utils/nativeModules/utils'
+import { getSystemLocales, isIgnoringBatteryOptimization, isNotificationsEnabled, requestNotificationPermission, requestIgnoreBatteryOptimization, shareText, isExternalStorageManager, requestExternalStorageAccess } from '@/utils/nativeModules/utils'
 import musicSdk from '@/utils/musicSdk'
 import { getData, removeData, saveData } from '@/plugins/storage'
 import BackgroundTimer from 'react-native-background-timer'
@@ -55,11 +55,29 @@ export const TEMP_FILE_PATH = temporaryDirectoryPath + '/tempFile'
 //   // return windowSize
 // }
 
-export const checkStoragePermissions = async() => PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE)
+export const checkStoragePermissions = async() => Number(Platform.Version) >= 30
+  ? isExternalStorageManager()
+  : PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE)
+
+let storageRequest: Promise<boolean | null> | undefined
 
 export const requestStoragePermission = async() => {
+  if (storageRequest) return storageRequest
+  storageRequest = requestStoragePermissionInternal().finally(() => { storageRequest = undefined })
+  return storageRequest
+}
+
+const requestStoragePermissionInternal = async(): Promise<boolean | null> => {
   const isGranted = await checkStoragePermissions()
   if (isGranted) return isGranted
+
+  // 新系统不再授予 WRITE_EXTERNAL_STORAGE。仅在用户执行文件操作时申请，在线播放不申请。
+  if (Number(Platform.Version) >= 30) {
+    if (!await confirmDialog({ message: global.i18n.t('storage_all_files_request'), confirmButtonText: global.i18n.t('agree') })) return false
+    const result = await requestExternalStorageAccess()
+    if (result != 'enabled') toast(global.i18n.t(result == 'unavailable' ? 'storage_all_files_unavailable' : 'storage_all_files_unconfirmed'))
+    return result == 'enabled'
+  }
 
   try {
     const granted = await PermissionsAndroid.requestMultiple(
@@ -240,88 +258,43 @@ export const clipboardWriteText = (str: string) => {
 }
 
 
-export const checkNotificationPermission = async() => {
-  const isHide = await getData(storageDataPrefix.notificationTipEnable)
-  if (isHide != null) return
-  const enabled = await isNotificationsEnabled()
-  if (enabled) return
-  return new Promise<void>((resolve) => {
-    Alert.alert(
-      global.i18n.t('notifications_check_title'),
-      global.i18n.t('notifications_check_tip'),
-      [
-        {
-          text: global.i18n.t('never_show'),
-          onPress: () => {
-            void saveData(storageDataPrefix.notificationTipEnable, '1')
-            toast(global.i18n.t('disagree_tip'))
-            resolve()
+const permissionPrompts = new Map<string, Promise<void>>()
+const checkPlaybackPermission = async(battery: boolean): Promise<void> => {
+  const key = battery ? storageDataPrefix.ignoringBatteryOptimizationTipEnable : storageDataPrefix.notificationTipEnable
+  const existing = permissionPrompts.get(key)
+  if (existing) return existing
+  const task = (async() => {
+    if (await getData(key) != null) return
+    if (await (battery ? isIgnoringBatteryOptimization() : isNotificationsEnabled())) return
+    await new Promise<void>((resolve) => {
+      Alert.alert(
+        global.i18n.t(battery ? 'ignoring_battery_optimization_check_title' : 'notifications_check_title'),
+        global.i18n.t(battery ? 'ignoring_battery_optimization_check_tip' : 'notifications_check_tip'),
+        [
+          { text: global.i18n.t('never_show'), onPress: () => { void saveData(key, '1'); toast(global.i18n.t('disagree_tip')); resolve() } },
+          { text: global.i18n.t('disagree'), style: 'cancel', onPress: () => { toast(global.i18n.t('disagree_tip')); resolve() } },
+          {
+            text: global.i18n.t(battery ? 'agree_to' : 'agree_go'),
+            onPress: () => {
+              void (battery ? requestIgnoreBatteryOptimization() : requestNotificationPermission()).then((result) => {
+                if (result != 'enabled') {
+                  toast(global.i18n.t(result == 'unavailable' ? 'permission_settings_unavailable' : battery ? 'permission_battery_unconfirmed' : 'permission_notification_unconfirmed'))
+                }
+              }).finally(resolve)
+            },
           },
-        },
-        {
-          text: global.i18n.t('disagree'),
-          onPress: () => {
-            toast(global.i18n.t('disagree_tip'))
-            resolve()
-          },
-        },
-        {
-          text: global.i18n.t('agree_go'),
-          onPress: () => {
-            requestAnimationFrame(() => {
-              void requestNotificationPermission().then((result) => {
-                if (!result) toast(global.i18n.t('disagree_tip'))
-                resolve()
-              })
-            })
-          },
-        },
-      ],
-    )
-  })
+        ],
+        { cancelable: true, onDismiss: resolve },
+      )
+    })
+  })().catch(() => {
+    // 权限状态读取异常不能阻止播放；设置页仍可手动检查。
+  }).finally(() => { permissionPrompts.delete(key) })
+  permissionPrompts.set(key, task)
+  return task
 }
-
-
-export const checkIgnoringBatteryOptimization = async() => {
-  const isHide = await getData(storageDataPrefix.ignoringBatteryOptimizationTipEnable)
-  if (isHide != null) return
-  const enabled = await isIgnoringBatteryOptimization()
-  if (enabled) return
-  return new Promise<void>((resolve) => {
-    Alert.alert(
-      global.i18n.t('ignoring_battery_optimization_check_title'),
-      global.i18n.t('ignoring_battery_optimization_check_tip'),
-      [
-        {
-          text: global.i18n.t('never_show'),
-          onPress: () => {
-            void saveData(storageDataPrefix.ignoringBatteryOptimizationTipEnable, '1')
-            toast(global.i18n.t('disagree_tip'))
-            resolve()
-          },
-        },
-        {
-          text: global.i18n.t('disagree'),
-          onPress: () => {
-            toast(global.i18n.t('disagree_tip'))
-            resolve()
-          },
-        },
-        {
-          text: global.i18n.t('agree_to'),
-          onPress: () => {
-            requestAnimationFrame(() => {
-              void requestIgnoreBatteryOptimization().then((result) => {
-                if (!result) toast(global.i18n.t('disagree_tip'))
-                resolve()
-              })
-            })
-          },
-        },
-      ],
-    )
-  })
-}
+export const checkNotificationPermission = async() => checkPlaybackPermission(false)
+export const checkIgnoringBatteryOptimization = async() => checkPlaybackPermission(true)
 export const resetNotificationPermissionCheck = async() => {
   return removeData(storageDataPrefix.notificationTipEnable)
 }

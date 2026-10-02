@@ -12,6 +12,8 @@ import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.Environment;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
@@ -50,6 +52,39 @@ public class UtilsModule extends ReactContextBaseJavaModule {
   @Override
   public String getName() {
     return "UtilsModule";
+  }
+
+  @ReactMethod
+  public void isExternalStorageManager(Promise promise) {
+    promise.resolve(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager());
+  }
+
+  @ReactMethod
+  public void needsSharedFileAccess(String path, Promise promise) {
+    try {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || Environment.isExternalStorageManager()
+          || path.startsWith("content://")) { promise.resolve(false); return; }
+      File file = new File(path.startsWith("file://") ? Uri.parse(path).getPath() : path);
+      String canonical = file.getCanonicalPath();
+      String root = Environment.getExternalStorageDirectory().getCanonicalPath();
+      // 系统文件选择器复制到私有目录的文件不需要额外授权。
+      promise.resolve(canonical.startsWith(root + "/") && !file.canRead());
+    } catch (Exception e) { promise.resolve(false); }
+  }
+
+  @ReactMethod
+  public void openExternalStorageSettings(Promise promise) {
+    reactContext.runOnUiQueueThread(() -> {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) { promise.resolve(false); return; }
+      try {
+        reactContext.startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+            Uri.parse("package:" + reactContext.getPackageName())).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        promise.resolve(true);
+      } catch (Exception e) {
+        Log.w("Utils", "Unable to open file access settings", e);
+        promise.resolve(false);
+      }
+    });
   }
 
   @ReactMethod
@@ -284,11 +319,11 @@ public class UtilsModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void openNotificationPermissionActivity(Promise promise) {
-    new Thread(() -> {
+    reactContext.runOnUiQueueThread(() -> {
       boolean result = NotificationPermissionUtil.openNotificationPermissionActivity(
         reactContext.getApplicationContext());
       promise.resolve(result);
-    }).start();
+    });
   }
 
   @ReactMethod
@@ -399,7 +434,7 @@ public class UtilsModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void requestIgnoreBatteryOptimization(Promise promise) {
-    new Thread(() -> {
+    reactContext.runOnUiQueueThread(() -> {
       try {
         boolean result = BatteryOptimizationUtil.requestIgnoreBatteryOptimization(
           reactContext.getApplicationContext(),
@@ -409,7 +444,7 @@ public class UtilsModule extends ReactContextBaseJavaModule {
       } catch (Exception e) {
         promise.reject("ERROR", e);
       }
-    }).start();
+    });
   }
 }
 

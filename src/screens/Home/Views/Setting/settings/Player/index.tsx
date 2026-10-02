@@ -1,3 +1,5 @@
+import StatusBarLyric from './StatusBarLyric'
+import BackgroundPlayback from './BackgroundPlayback'
 import { memo } from 'react'
 
 import Section from '../../components/Section'
@@ -25,12 +27,14 @@ export default memo(() => {
       <IsAutoCleanPlayedList />
       <IsHandleAudioFocus />
       <IsEnableAudioOffload />
+      <StatusBarLyric />
       <IsShowBluetoothLyric />
       <IsShowBluetoothFullLyric />
       <IsShowNotificationImage />
       <IsShowLyricTranslation />
       <IsShowLyricRoma />
       <IsS2T />
+      <BackgroundPlayback />
       <MaxCache />
       <PlayHighQuality />
     </Section>

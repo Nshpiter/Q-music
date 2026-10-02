@@ -1,3 +1,4 @@
+import { enableStatusBarLyric } from './statusBarLyric'
 import { hideDesktopLyric } from './desktopLyric'
 import { exitApp as utilExitApp } from '@/utils/nativeModules/utils'
 import { destroy as destroyPlayer } from '@/plugins/player/utils'
@@ -55,6 +56,7 @@ export const exitApp = (reason: string) => {
   if (isDestroying) return
   isDestroying = true
   void Promise.all([
+    enableStatusBarLyric(false),
     hideDesktopLyric(),
     destroyPlayer(),
     hideDesktopLyricView(),

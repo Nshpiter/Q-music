@@ -1,3 +1,4 @@
+require('./patch-android-dependencies.cjs')
 const { spawnSync } = require('node:child_process')
 const path = require('node:path')
 

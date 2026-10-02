@@ -1,4 +1,5 @@
-import { AppState, NativeEventEmitter, NativeModules } from 'react-native'
+import { createSettingsRequest } from './permissionSettings'
+import { NativeEventEmitter, NativeModules } from 'react-native'
 
 const { UtilsModule } = NativeModules
 
@@ -29,20 +30,17 @@ export const getDeviceName = async(): Promise<string> => {
 
 export const isNotificationsEnabled = UtilsModule.isNotificationsEnabled as () => Promise<boolean>
 
-export const requestNotificationPermission = async() => new Promise<boolean>((resolve) => {
-  let subscription = AppState.addEventListener('change', (state) => {
-    if (state != 'active') return
-    subscription.remove()
-    setTimeout(() => {
-      void isNotificationsEnabled().then(resolve)
-    }, 1000)
-  })
-  UtilsModule.openNotificationPermissionActivity().then((result: boolean) => {
-    if (result) return
-    subscription.remove()
-    resolve(false)
-  })
-})
+export const isExternalStorageManager = async(): Promise<boolean> => UtilsModule.isExternalStorageManager()
+export const needsSharedFileAccess = async(path: string): Promise<boolean> => UtilsModule.needsSharedFileAccess(path)
+export const requestExternalStorageAccess = createSettingsRequest(
+  isExternalStorageManager,
+  async() => UtilsModule.openExternalStorageSettings(),
+)
+
+export const requestNotificationPermission = createSettingsRequest(
+  isNotificationsEnabled,
+  async() => UtilsModule.openNotificationPermissionActivity(),
+)
 
 export const shareText = async(shareTitle: string, title: string, text: string): Promise<void> => {
   UtilsModule.shareText(shareTitle, title, text)
@@ -85,17 +83,7 @@ export const isIgnoringBatteryOptimization = async(): Promise<boolean> => {
   return UtilsModule.isIgnoringBatteryOptimization()
 }
 
-export const requestIgnoreBatteryOptimization = async() => new Promise<boolean>((resolve) => {
-  let subscription = AppState.addEventListener('change', (state) => {
-    if (state != 'active') return
-    subscription.remove()
-    setTimeout(() => {
-      void isIgnoringBatteryOptimization().then(resolve)
-    }, 1000)
-  })
-  UtilsModule.requestIgnoreBatteryOptimization().then((result: boolean) => {
-    if (result) return
-    subscription.remove()
-    resolve(false)
-  })
-})
+export const requestIgnoreBatteryOptimization = createSettingsRequest(
+  isIgnoringBatteryOptimization,
+  async() => UtilsModule.requestIgnoreBatteryOptimization(),
+)

@@ -27,13 +27,16 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install Android SDK packages
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;26.1.10909125"
+        run: sdkmanager "platforms;android-36" "build-tools;35.0.0" "ndk;26.1.10909125"
 
       - name: Install dependencies
         run: npm ci
 
       - name: Lint source
         run: npm run lint
+
+      - name: Verify background playback and lyrics
+        run: npm run test:background
 
       - name: Build APK
         run: npm run pack:android:standalone

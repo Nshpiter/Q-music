@@ -1,0 +1,254 @@
+name: Release Android APKs
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Existing pushed release tag. Empty means v<Android package.json version>.'
+        required: false
+        type: string
+permissions:
+  contents: write
+
+concurrency:
+  group: release-android-${{ inputs.tag_name || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  android:
+    name: Android APKs
+    runs-on: ubuntu-latest
+    env:
+      ORG_GRADLE_PROJECT_MYAPP_UPLOAD_STORE_FILE: q-music-release.keystore
+      ORG_GRADLE_PROJECT_MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ORG_GRADLE_PROJECT_MYAPP_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ORG_GRADLE_PROJECT_MYAPP_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+    steps:
+      - name: Check out release metadata
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag_name || github.ref }}
+          path: release-metadata
+          fetch-depth: 0
+
+      - name: Resolve release metadata
+        id: release-metadata
+        shell: bash
+        env:
+          INPUT_TAG_NAME: ${{ inputs.tag_name }}
+          TRIGGER_SHA: ${{ github.sha }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          package_version="$(node -p "require('./release-metadata/publish/mobile-version.json').version")"
+          android_commit="$(node -p "require('./release-metadata/publish/mobile-version.json').commit")"
+          EXPECTED_VERSION="$package_version" node <<'NODE'
+          const fs = require('node:fs')
+          const metadata = JSON.parse(fs.readFileSync('release-metadata/publish/mobile-version.json', 'utf8'))
+          const expectedVersion = process.env.EXPECTED_VERSION
+          const description = String(metadata.desc ?? '').trim()
+
+          if (metadata.version !== expectedVersion) {
+            throw new Error(`publish/mobile-version.json version '${metadata.version}' does not match its resolved version '${expectedVersion}'`)
+          }
+          if (description.length < 80 || !description.includes(expectedVersion) || /^\*\*Full Changelog\*\*:/i.test(description)) {
+            throw new Error('Android release notes must contain a human-readable description for the current version')
+          }
+          NODE
+          if ! printf '%s' "$android_commit" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "publish/mobile-version.json must pin a full Android commit SHA." >&2
+            exit 1
+          fi
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            tag_name="$GITHUB_REF_NAME"
+          else
+            if [ "$REF_TYPE" != "tag" ] && { [ "$REF_TYPE" != "branch" ] || [ "$REF_NAME" != "master" ] || [ -z "$INPUT_TAG_NAME" ]; }; then
+              echo "Manual Android release runs require the release tag or master with an explicit tag_name." >&2
+              exit 1
+            fi
+            tag_name="$INPUT_TAG_NAME"
+            if [ -z "$tag_name" ]; then
+              tag_name="v$package_version"
+            fi
+          fi
+
+          expected_tag="v$package_version"
+          if [ "$tag_name" != "$expected_tag" ]; then
+            echo "Release tag '$tag_name' does not match Android package version '$expected_tag'." >&2
+            exit 1
+          fi
+
+          if ! tag_commit="$(git -C release-metadata rev-parse "$tag_name^{}" 2>/dev/null)"; then
+            echo "Release tag '$tag_name' does not exist in the checked-out repository. Push the tag first, then dispatch this workflow from that tag." >&2
+            exit 1
+          fi
+          if ! trigger_commit="$(git -C release-metadata rev-parse "$TRIGGER_SHA^{}" 2>/dev/null)"; then
+            echo "Unable to resolve the workflow trigger commit for release tag '$tag_name'." >&2
+            exit 1
+          fi
+          if [ "$tag_commit" != "$trigger_commit" ]; then
+            if [ "$REF_TYPE" != "branch" ] || ! git -C release-metadata merge-base --is-ancestor "$tag_commit" "$trigger_commit"; then
+              echo "Release tag '$tag_name' is not the workflow commit or an ancestor of master." >&2
+              exit 1
+            fi
+          fi
+
+          echo "PACKAGE_VERSION=$package_version" >> "$GITHUB_ENV"
+          echo "TAG_NAME=$tag_name" >> "$GITHUB_ENV"
+          echo "android_commit=$android_commit" >> "$GITHUB_OUTPUT"
+
+      - name: Check out pinned Android source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.release-metadata.outputs.android_commit }}
+          path: mobile
+
+      - name: Validate Android source version
+        shell: bash
+        run: |
+          source_version="$(node -p "require('./mobile/package.json').version")"
+          if [ "$source_version" != "$PACKAGE_VERSION" ]; then
+            echo "Pinned Android source version '$source_version' does not match release metadata '$PACKAGE_VERSION'." >&2
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: mobile/.nvmrc
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-36" "build-tools;35.0.0" "ndk;26.1.10909125"
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Lint source
+        working-directory: mobile
+        run: npm run lint
+
+      - name: Verify background playback and lyrics
+        working-directory: mobile
+        run: npm run test:background
+
+      - name: Validate signing secrets
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ORG_GRADLE_PROJECT_MYAPP_UPLOAD_STORE_PASSWORD"
+          test -n "$ORG_GRADLE_PROJECT_MYAPP_UPLOAD_KEY_ALIAS"
+          test -n "$ORG_GRADLE_PROJECT_MYAPP_UPLOAD_KEY_PASSWORD"
+
+      - name: Build signed release APKs
+        working-directory: mobile
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          keystore_path="android/app/q-music-release.keystore"
+          trap 'rm -f "$keystore_path"' EXIT
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
+          npm run pack:android
+
+      - name: Generate Android checksums
+        shell: bash
+        run: |
+          output_dir="mobile/android/app/build/outputs/apk/release"
+          assets=(
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-arm64-v8a.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-armeabi-v7a.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-x86.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-x86_64.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-universal.apk"
+          )
+          for asset in "${assets[@]}"; do
+            test -f "$asset"
+          done
+          sha256sum "${assets[@]}" | sed 's#mobile/android/app/build/outputs/apk/release/##' \
+            > "$output_dir/SHA256SUMS-android.txt"
+
+      - name: Upload Android build artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: q-music-android-release
+          path: |
+            mobile/android/app/build/outputs/apk/release/Q-music-android-v${{ env.PACKAGE_VERSION }}-arm64-v8a.apk
+            mobile/android/app/build/outputs/apk/release/Q-music-android-v${{ env.PACKAGE_VERSION }}-armeabi-v7a.apk
+            mobile/android/app/build/outputs/apk/release/Q-music-android-v${{ env.PACKAGE_VERSION }}-x86.apk
+            mobile/android/app/build/outputs/apk/release/Q-music-android-v${{ env.PACKAGE_VERSION }}-x86_64.apk
+            mobile/android/app/build/outputs/apk/release/Q-music-android-v${{ env.PACKAGE_VERSION }}-universal.apk
+            mobile/android/app/build/outputs/apk/release/SHA256SUMS-android.txt
+          if-no-files-found: error
+
+      - name: Upload Android assets to GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          output_dir="mobile/android/app/build/outputs/apk/release"
+          assets=(
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-arm64-v8a.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-armeabi-v7a.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-x86.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-x86_64.apk"
+            "$output_dir/Q-music-android-v$PACKAGE_VERSION-universal.apk"
+            "$output_dir/SHA256SUMS-android.txt"
+          )
+
+          attempts=180
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            attempts=1
+          fi
+
+          release_notes_are_human() {
+            local body body_without_marker compact
+            body="$(gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" --json body --jq '.body // ""' 2>/dev/null)" || return 1
+            body_without_marker="$(printf '%s' "$body" | sed 's/<!-- q-music-managed-release -->//g')"
+            if ! printf '%s' "$body_without_marker" | grep '[^[:space:]]' >/dev/null; then
+              return 1
+            fi
+            compact="$(printf '%s' "$body_without_marker" | tr -d '[:space:]')"
+            # 只拒绝正文整体就是 GitHub 自动生成的比较链接；人工正文中
+            # 额外附带比较链接不应被误判为占位说明。
+            if [[ "$compact" =~ ^\*\*FullChangelog\*\*:https://github\.com/[^/]+/[^/]+/compare/.+$ ]]; then
+              return 1
+            fi
+            return 0
+          }
+
+          for attempt in $(seq 1 "$attempts"); do
+            if release_notes_are_human; then
+              gh release upload "$TAG_NAME" "${assets[@]}" \
+                --repo "$GITHUB_REPOSITORY" \
+                --clobber
+              exit $?
+            fi
+
+            echo "Waiting for a GitHub Release with human-written notes; retry $attempt/$attempts."
+            sleep 10
+          done
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "Release '$TAG_NAME' is missing or still has placeholder notes. Run the Windows release workflow first." >&2
+            exit 1
+          fi
+          echo "Release '$TAG_NAME' was not prepared; refusing to create it without human-written notes." >&2
+          exit 1

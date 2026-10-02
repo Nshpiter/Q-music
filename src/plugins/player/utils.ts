@@ -250,7 +250,7 @@ export const onStateChange = async(listener: (state: PlayStatus) => void) => {
 
 export const updateOptions = async(options = {
   // Whether the player should stop running when the app is closed on Android
-  // stopWithApp: true,
+  stopWithApp: false,
 
   // An array of media controls capabilities
   // Can contain CAPABILITY_PLAY, CAPABILITY_PAUSE, CAPABILITY_STOP, CAPABILITY_SEEK_TO,
@@ -258,7 +258,6 @@ export const updateOptions = async(options = {
   capabilities: [
     Capability.Play,
     Capability.Pause,
-    Capability.Stop,
     Capability.SeekTo,
     Capability.SkipToNext,
     Capability.SkipToPrevious,
@@ -267,16 +266,15 @@ export const updateOptions = async(options = {
   notificationCapabilities: [
     Capability.Play,
     Capability.Pause,
-    Capability.Stop,
     Capability.SkipToNext,
     Capability.SkipToPrevious,
   ],
 
   // // An array of capabilities that will show up when the notification is in the compact form on Android
   compactCapabilities: [
+    Capability.SkipToPrevious,
     Capability.Play,
     Capability.Pause,
-    Capability.Stop,
     Capability.SkipToNext,
   ],
 

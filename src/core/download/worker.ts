@@ -12,7 +12,7 @@ import type { DownloadStatus, DownloadTaskInfo } from './types'
 
 const { UtilsModule } = NativeModules
 
-// 公共音乐目录（legacy storage 下可直接写入，系统播放器可见）
+// 公共音乐目录；文件操作前检查对应系统版本的存储授权，系统播放器可见。
 const DOWNLOAD_DIR = `${RNFS.ExternalStorageDirectoryPath}/Music/QMusic`
 const PROGRESS_THROTTLE = 300
 const MAX_CONCURRENT = 2

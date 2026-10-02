@@ -3,15 +3,12 @@ package cn.toside.music.mobile.utils;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.util.Log;
 
-import java.util.List;
 
 public class BatteryOptimizationUtil {
 
@@ -45,19 +42,18 @@ public class BatteryOptimizationUtil {
     intent.setData(Uri.parse("package:" + packageName));
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-    PackageManager pmgr = context.getPackageManager();
-    List<ResolveInfo> resolveInfos = pmgr.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-    if (resolveInfos.isEmpty()) {
-      Log.w("BatteryOptimizationUtil", "No Activity found to handle ignore battery optimization intent");
-      return false;
-    }
-
     try {
       context.startActivity(intent);
       return true;
     } catch (Exception e) {
       Log.e("BatteryOptimizationUtil", "Failed to start ignore battery optimization intent", e);
-      return false;
+      try {
+        context.startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        return true;
+      } catch (Exception ignored) {
+        return NotificationPermissionUtil.openAppSettings(context);
+      }
     }
   }
 }

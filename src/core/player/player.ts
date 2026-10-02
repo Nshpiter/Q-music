@@ -25,7 +25,8 @@ import { requestMsg } from '@/utils/message'
 import { getRandom } from '@/utils/common'
 import { filterList } from './utils'
 import BackgroundTimer from 'react-native-background-timer'
-import { checkIgnoringBatteryOptimization, checkNotificationPermission, debounceBackgroundTimer } from '@/utils/tools'
+import { checkIgnoringBatteryOptimization, checkNotificationPermission, debounceBackgroundTimer, requestStoragePermission } from '@/utils/tools'
+import { needsSharedFileAccess } from '@/utils/nativeModules/utils'
 import { LIST_IDS } from '@/config/constant'
 import { addListMusics, removeListMusics } from '@/core/list'
 import { addDislikeInfo } from '@/core/dislikeList'
@@ -247,10 +248,19 @@ const debouncePlay = debounceBackgroundTimer((musicInfo: LX.Player.PlayMusic) =>
 }, 200)
 
 // 处理音乐播放
+let playRequest = 0
 const handlePlay = async() => {
+  const request = ++playRequest
+  const selected = playerState.playMusicInfo.musicInfo
+  if (selected && !('progress' in selected) && selected.source == 'local' && await needsSharedFileAccess(selected.meta.filePath)) {
+    if (request != playRequest) return
+    if (!await requestStoragePermission()) {
+      if (request == playRequest) setStatusText(global.i18n.t('storage_all_files_unconfirmed'))
+      return
+    }
+    if (request != playRequest) return
+  }
   if (!isInitialized()) {
-    await checkNotificationPermission()
-    void checkIgnoringBatteryOptimization()
     await playerInitial({
       volume: settingState.setting['player.volume'],
       playRate: settingState.setting['player.playbackRate'],
@@ -258,8 +268,13 @@ const handlePlay = async() => {
       isHandleAudioFocus: settingState.setting['player.isHandleAudioFocus'],
       isEnableAudioOffload: settingState.setting['player.isEnableAudioOffload'],
     })
+    if (request != playRequest) return
+    await checkNotificationPermission()
+    if (request != playRequest) return
+    void checkIgnoringBatteryOptimization()
   }
 
+  if (request != playRequest) return
   global.lx.isPlayedStop &&= false
   resetRandomNextMusicInfo()
 
@@ -275,6 +290,7 @@ const handlePlay = async() => {
   if (!musicInfo) return
 
   await setStop()
+  if (request != playRequest) return
   global.app_event.pause()
 
   clearDelayNextTimeout()
