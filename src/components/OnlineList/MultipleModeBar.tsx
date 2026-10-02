@@ -1,8 +1,7 @@
 import { useState, useRef, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react'
-import { Animated, View } from 'react-native'
+import { Animated } from 'react-native'
 
-import Text from '@/components/common/Text'
-import Button from '@/components/common/Button'
+import MultiSelectControls from '@/components/common/MultiSelectControls'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import { BorderWidths } from '@/theme'
@@ -11,7 +10,7 @@ import { Q_UI } from '@/theme/ui'
 
 export type SelectMode = 'single' | 'range'
 
-export const MULTI_SELECT_BAR_HEIGHT = Math.max(Q_UI.touchSize, Math.round(scaleSizeH(40)))
+export const MULTI_SELECT_BAR_HEIGHT = Math.max(Q_UI.touchSize + 4, Math.round(scaleSizeH(40)))
 
 export interface MultipleModeBarProps {
   onSwitchMode: (mode: SelectMode) => void
@@ -28,6 +27,7 @@ export interface MultipleModeBarType {
 export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelectAll, onSwitchMode, onExitSelectMode }, ref) => {
   // const isGetDetailFailedRef = useRef(false)
   const [visible, setVisible] = useState(false)
+  const visibleRef = useRef(false)
   const [animatePlayed, setAnimatPlayed] = useState(true)
   const animFade = useRef(new Animated.Value(0)).current
   const animTranslateY = useRef(new Animated.Value(0)).current
@@ -51,15 +51,17 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
   }))
 
   const handleShow = useCallback(() => {
+    visibleRef.current = true
     // console.log('show List')
     setVisible(true)
     setAnimatPlayed(false)
     requestAnimationFrame(() => {
+      if (!visibleRef.current) return
       animTranslateY.setValue(20)
 
       Animated.parallel([
         Animated.timing(animFade, {
-          toValue: 0.92,
+          toValue: 1,
           duration: 200,
           useNativeDriver: true,
         }),
@@ -68,13 +70,15 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
           duration: 200,
           useNativeDriver: true,
         }),
-      ]).start(() => {
+      ]).start(({ finished }) => {
+        if (!finished) return
         setAnimatPlayed(true)
       })
     })
   }, [animFade, animTranslateY])
 
   const handleHide = useCallback(() => {
+    visibleRef.current = false
     setAnimatPlayed(false)
     Animated.parallel([
       Animated.timing(animFade, {
@@ -87,7 +91,7 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
         duration: 200,
         useNativeDriver: true,
       }),
-    ]).start(finished => {
+    ]).start(({ finished }) => {
       if (!finished) return
       setVisible(false)
       setAnimatPlayed(true)
@@ -98,8 +102,8 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
   const animaStyle = useMemo(() => ({
     ...styles.container,
     height: MULTI_SELECT_BAR_HEIGHT,
-    // backgroundColor: theme['c-content-background'],
-    borderBottomColor: theme['c-border-background'],
+    backgroundColor: theme['q-surface-base'],
+    borderTopColor: theme['q-outline'],
     opacity: animFade, // Bind opacity to animated value
     transform: [
       { translateY: animTranslateY },
@@ -114,24 +118,11 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
 
   const component = useMemo(() => {
     return (
-      <Animated.View style={animaStyle}>
-        <View style={styles.switchBtn}>
-          <Button accessibilityRole="radio" accessibilityLabel={global.i18n.t('list_select_single')} accessibilityState={{ checked: selectMode == 'single' }} onPress={() => { onSwitchMode('single') }} style={{ ...styles.btn, backgroundColor: selectMode == 'single' ? theme['c-button-background'] : 'rgba(0,0,0,0)' }}>
-            <Text color={theme['c-button-font']}>{global.i18n.t('list_select_single')}</Text>
-          </Button>
-          <Button accessibilityRole="radio" accessibilityLabel={global.i18n.t('list_select_range')} accessibilityState={{ checked: selectMode == 'range' }} onPress={() => { onSwitchMode('range') }} style={{ ...styles.btn, backgroundColor: selectMode == 'range' ? theme['c-button-background'] : 'rgba(0,0,0,0)' }}>
-            <Text color={theme['c-button-font']}>{global.i18n.t('list_select_range')}</Text>
-          </Button>
-        </View>
-        <Button accessibilityLabel={global.i18n.t(isSelectAll ? 'list_select_unall' : 'list_select_all')} onPress={handleSelectAll} style={styles.btn}>
-          <Text color={theme['c-button-font']}>{global.i18n.t(isSelectAll ? 'list_select_unall' : 'list_select_all')}</Text>
-        </Button>
-        <Button accessibilityLabel={global.i18n.t('list_select_cancel')} onPress={onExitSelectMode} style={styles.btn}>
-          <Text color={theme['c-button-font']}>{global.i18n.t('list_select_cancel')}</Text>
-        </Button>
+      <Animated.View pointerEvents={visible && animatePlayed ? 'auto' : 'none'} importantForAccessibility={visible && animatePlayed ? 'auto' : 'no-hide-descendants'} style={animaStyle}>
+        <MultiSelectControls selectMode={selectMode} isSelectAll={isSelectAll} onSwitchMode={onSwitchMode} onSelectAll={handleSelectAll} onExitSelectMode={onExitSelectMode} />
       </Animated.View>
     )
-  }, [animaStyle, selectMode, theme, handleSelectAll, isSelectAll, onExitSelectMode, onSwitchMode])
+  }, [animaStyle, selectMode, handleSelectAll, isSelectAll, onExitSelectMode, onSwitchMode, visible, animatePlayed])
 
   return !visible && animatePlayed ? null : component
 })
@@ -145,17 +136,7 @@ const styles = createStyle({
     width: '100%',
     // height: 40,
     flexDirection: 'row',
-    borderBottomWidth: BorderWidths.normal,
-  },
-  switchBtn: {
-    flexDirection: 'row',
-    flex: 1,
-  },
-  btn: {
-    minHeight: Q_UI.touchSize,
-    paddingLeft: 18,
-    paddingRight: 18,
+    borderTopWidth: BorderWidths.normal,
     alignItems: 'center',
-    justifyContent: 'center',
   },
 })

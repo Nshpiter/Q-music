@@ -35,6 +35,7 @@ const PreassBar = memo(({ onDragState, setDragProgress, onSetProgress }: {
     onLayout,
     onDragStart,
     onDragEnd,
+    onDragCancel,
     onDrag,
   } = useDrag(onSetProgress, onDragState, setDragProgress)
   // const handlePress = useCallback((event: GestureResponderEvent) => {
@@ -57,9 +58,7 @@ const PreassBar = memo(({ onDragState, setDragProgress, onSetProgress }: {
       onPanResponderRelease: () => {
         onDragEnd()
       },
-      // onPanResponderTerminate: (evt, gestureState) => {
-      //   onDragEnd()
-      // },
+      onPanResponderTerminate: onDragCancel,
     }),
   ).current
 

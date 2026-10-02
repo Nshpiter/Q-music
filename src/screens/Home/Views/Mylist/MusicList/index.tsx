@@ -16,6 +16,8 @@ import MusicPositionModal, { type MusicPositionModalType } from './MusicPosition
 import MetadataEditModal, { type MetadataEditType, type MetadataEditProps } from '@/components/MetadataEditModal'
 import MusicToggleModal, { type MusicToggleModalType } from './MusicToggleModal'
 import ExternalImportModal, { type ExternalImportModalType } from '../ExternalImportModal'
+import { useBackHandler } from '@/utils/hooks/useBackHandler'
+import commonState from '@/store/common/state'
 
 
 export default () => {
@@ -88,6 +90,18 @@ export default () => {
       multipleModeBarRef.current?.setVisibleBar(true)
     } else activeListRef.current?.setVisibleBar(true)
   }, [])
+  useBackHandler(useCallback(() => {
+    if (commonState.navActiveId != 'nav_love' || Object.keys(commonState.componentIds).length != 1) return false
+    if (isShowSearchBarModeBar.current) {
+      handleExitSearch()
+      return true
+    }
+    if (isShowMultipleModeBar.current) {
+      hancelExitSelect()
+      return true
+    }
+    return false
+  }, [handleExitSearch, hancelExitSelect]))
   const handleScrollToInfo = useCallback((info: LX.Music.MusicInfo) => {
     listRef.current?.scrollToInfo(info)
     handleExitSearch()

@@ -50,6 +50,7 @@ const styles = createStyle({
 
 export interface PopupProps {
   onHide?: () => void
+  onShow?: () => void
   keyHide?: boolean
   bgHide?: boolean
   closeBtn?: boolean
@@ -64,6 +65,7 @@ export interface PopupType {
 
 export default forwardRef<PopupType, PopupProps>(({
   onHide = () => {},
+  onShow,
   keyHide = true,
   bgHide = true,
   closeBtn = true,
@@ -175,7 +177,7 @@ export default forwardRef<PopupType, PopupProps>(({
   }, [position])
 
   return (
-    <Modal onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor={theme['q-scrim']} ref={modalRef}>
+    <Modal onHide={onHide} onShow={onShow} keyHide={keyHide} bgHide={bgHide} bgColor={theme['q-scrim']} ref={modalRef}>
       <View pointerEvents="box-none" style={{ ...styles.centeredView, ...centeredViewStyle, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
         <View
           style={{

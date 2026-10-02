@@ -33,18 +33,23 @@ export default forwardRef<ListMusicSearchType, ListMusicSearchProps>(({ onScroll
   const [visible, setVisible] = useState(false)
   const currentListIdRef = useRef('')
   const currentKeywordRef = useRef('')
+  const searchRequestRef = useRef(0)
   const theme = useTheme()
 
   const handleShowList = (keyword: string, height: number) => {
+    const requestId = ++searchRequestRef.current
     searchTipListRef.current?.setHeight(height)
     currentKeywordRef.current = keyword
     const id = currentListIdRef.current = listState.activeListId
     if (keyword) {
       void getListMusics(id).then(list => {
+        if (searchRequestRef.current != requestId || currentListIdRef.current != id || currentKeywordRef.current != keyword) return
         debounceSearchList(keyword, list, (list) => {
-          if (currentListIdRef.current != id) return
+          if (searchRequestRef.current != requestId || currentListIdRef.current != id || currentKeywordRef.current != keyword) return
           searchTipListRef.current?.setList(list)
         })
+      }).catch(() => {
+        if (searchRequestRef.current == requestId) searchTipListRef.current?.setList([])
       })
     } else {
       searchTipListRef.current?.setList([])
@@ -53,15 +58,18 @@ export default forwardRef<ListMusicSearchType, ListMusicSearchProps>(({ onScroll
 
   useImperativeHandle(ref, () => ({
     search(keyword, height) {
+      const requestId = ++searchRequestRef.current
       if (visible) handleShowList(keyword, height)
       else {
         setVisible(true)
         requestAnimationFrame(() => {
+          if (requestId != searchRequestRef.current) return
           handleShowList(keyword, height)
         })
       }
     },
     hide() {
+      searchRequestRef.current++
       currentKeywordRef.current = ''
       currentListIdRef.current = ''
       searchTipListRef.current?.setList([])
@@ -69,14 +77,20 @@ export default forwardRef<ListMusicSearchType, ListMusicSearchProps>(({ onScroll
   }))
 
   useEffect(() => {
+    const requestState = searchRequestRef
     const updateList = (id: string) => {
+      const requestId = ++searchRequestRef.current
       currentListIdRef.current = id
-      if (!currentKeywordRef.current) return
-      void getListMusics(listState.activeListId).then(list => {
-        debounceSearchList(currentKeywordRef.current, list, (list) => {
-          if (currentListIdRef.current != id) return
+      const keyword = currentKeywordRef.current
+      if (!keyword) return
+      void getListMusics(id).then(list => {
+        if (searchRequestRef.current != requestId || currentListIdRef.current != id || currentKeywordRef.current != keyword) return
+        debounceSearchList(keyword, list, (list) => {
+          if (searchRequestRef.current != requestId || currentListIdRef.current != id || currentKeywordRef.current != keyword) return
           searchTipListRef.current?.setList(list)
         })
+      }).catch(() => {
+        if (searchRequestRef.current == requestId) searchTipListRef.current?.setList([])
       })
     }
     const handleChange = (ids: string[]) => {
@@ -88,6 +102,7 @@ export default forwardRef<ListMusicSearchType, ListMusicSearchProps>(({ onScroll
     global.app_event.on('myListMusicUpdate', handleChange)
 
     return () => {
+      requestState.current++
       global.state_event.off('mylistToggled', updateList)
       global.app_event.off('myListMusicUpdate', handleChange)
     }
@@ -114,7 +129,10 @@ export default forwardRef<ListMusicSearchType, ListMusicSearchProps>(({ onScroll
       ? <SearchTipList
           ref={searchTipListRef}
           renderItem={renderItem}
-          onPressBg={() => searchTipListRef.current?.setList([])}
+          onPressBg={() => {
+            searchRequestRef.current++
+            searchTipListRef.current?.setList([])
+          }}
           keyExtractor={getkey}
           getItemLayout={getItemLayout}
         />

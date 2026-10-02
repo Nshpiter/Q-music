@@ -28,6 +28,7 @@ const QUALITY_EXT: Record<LX.Quality, LX.Download.FileExt> = {
 }
 
 const runningTasks = new Set<string>()
+const deletingTasks = new Set<string>()
 const waitingQueue: string[] = []
 
 const formatSpeed = (bytesPerSecond: number) => {
@@ -136,6 +137,7 @@ const runTask = async(taskId: string) => {
 const scheduleNext = () => {
   while (runningTasks.size < MAX_CONCURRENT && waitingQueue.length) {
     const taskId = waitingQueue.shift()!
+    if (runningTasks.has(taskId) || deletingTasks.has(taskId) || getDownloadTask(taskId)?.status != 'waiting') continue
     runningTasks.add(taskId)
     void runTask(taskId).finally(() => {
       runningTasks.delete(taskId)
@@ -151,11 +153,10 @@ export const downloadMusics = async(musicInfos: LX.Music.MusicInfoOnline[], qual
   const isGranted = await requestStoragePermission()
   if (!isGranted) return false
 
-  const newTasks = musicInfos
-    .map(m => buildTask(m, quality))
-    .filter(task => !getDownloadTask(task.id) || getDownloadTask(task.id)!.status == 'error')
-
-  for (const task of newTasks) {
+  for (const musicInfo of musicInfos) {
+    const task = buildTask(musicInfo, quality)
+    const existing = getDownloadTask(task.id)
+    if (deletingTasks.has(task.id) || runningTasks.has(task.id) || (existing && existing.status != 'error')) continue
     upsertDownloadTask({ ...task, status: 'waiting' })
     waitingQueue.push(task.id)
   }
@@ -165,22 +166,28 @@ export const downloadMusics = async(musicInfos: LX.Music.MusicInfoOnline[], qual
 
 export const retryDownload = (taskId: string) => {
   const task = getDownloadTask(taskId)
-  if (!task || task.status == 'run') return
+  if (!task || task.status != 'error' || runningTasks.has(taskId) || deletingTasks.has(taskId)) return
   patchTask(taskId, { status: 'waiting', statusText: '', progress: 0 })
   waitingQueue.push(taskId)
   scheduleNext()
 }
 
-export const deleteDownloadTask = async(taskId: string) => {
+export const deleteDownloadTask = async(taskId: string, deleteFile = false) => {
   const task = getDownloadTask(taskId)
-  if (task?.filePath) {
-    try {
+  if (!task || runningTasks.has(taskId) || deletingTasks.has(taskId)) return
+  deletingTasks.add(taskId)
+  try {
+    if (deleteFile && task.filePath) {
       if (await RNFS.exists(task.filePath)) await RNFS.unlink(task.filePath)
-    } catch (err) {
-      console.log('delete file failed', err)
     }
+    // 成功后再移除记录；失败时保留任务，用户可以重试。
+    for (let index = waitingQueue.length - 1; index >= 0; index--) {
+      if (waitingQueue[index] == taskId) waitingQueue.splice(index, 1)
+    }
+    removeDownloadTask(taskId)
+  } finally {
+    deletingTasks.delete(taskId)
   }
-  removeDownloadTask(taskId)
 }
 
 export type { DownloadStatus, DownloadTaskInfo }

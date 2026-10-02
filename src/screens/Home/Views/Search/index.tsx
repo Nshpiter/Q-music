@@ -50,7 +50,6 @@ export default () => {
   const layoutHeightRef = useRef<number>(0)
   const searchInfo = useRef<SearchInfo>({ temp_source: 'kw', source: 'kw', searchType: 'music' })
   const showTipTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const tipSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     void getSearchSetting().then(info => {
@@ -84,7 +83,6 @@ export default () => {
     return () => {
       global.app_event.off('searchTypeChanged', handleTypeChange)
       if (showTipTimeoutRef.current) clearTimeout(showTipTimeoutRef.current)
-      if (tipSearchTimeoutRef.current) clearTimeout(tipSearchTimeoutRef.current)
     }
   }, [])
 
@@ -102,12 +100,8 @@ export default () => {
   const handleTipSearch: HeaderBarProps['onTipSearch'] = (text) => {
     setHasDraft(!!text.trim())
     setHistoryVisible(isShowHistorySearch && focusedRef.current && !text.trim())
-    if (!text.trim()) searchTipListRef.current?.hide()
-    if (tipSearchTimeoutRef.current) clearTimeout(tipSearchTimeoutRef.current)
-    tipSearchTimeoutRef.current = setTimeout(() => {
-      tipSearchTimeoutRef.current = null
-      searchTipListRef.current?.search(text, layoutHeightRef.current)
-    }, 260)
+    if (text.trim()) searchTipListRef.current?.search(text.trim(), layoutHeightRef.current)
+    else searchTipListRef.current?.hide()
   }
   const handleHideTipList = () => {
     focusedRef.current = false
@@ -115,10 +109,6 @@ export default () => {
     if (showTipTimeoutRef.current) {
       clearTimeout(showTipTimeoutRef.current)
       showTipTimeoutRef.current = null
-    }
-    if (tipSearchTimeoutRef.current) {
-      clearTimeout(tipSearchTimeoutRef.current)
-      tipSearchTimeoutRef.current = null
     }
     searchTipListRef.current?.hide()
   }

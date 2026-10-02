@@ -46,6 +46,7 @@ const timeoutTools = {
       this.clearTimeout()
       this.exit()
     }, time * 1000)
+    this.callHooks()
     this.timeout = setInterval(() => {
       this.callHooks()
     }, 1000)

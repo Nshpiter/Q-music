@@ -60,11 +60,14 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   const [currentList, setList] = useState<LX.List.ListMusics>([])
   const listFirstScrollRef = useRef(false)
   const isMultiSelectModeRef = useRef(false)
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false)
   const selectModeRef = useRef<SelectMode>('single')
   const prevSelectIndexRef = useRef(-1)
   const [selectedList, setSelectedList] = useState<LX.List.ListMusics>([])
   const selectedListRef = useRef<LX.List.ListMusics>([])
   const currentListIdRef = useRef('')
+  const selectAllCallbackRef = useRef(onSelectAll)
+  selectAllCallbackRef.current = onSelectAll
   const waitJumpListPositionRef = useRef(false)
   const rowInfo = useRef(getRowInfo())
   const isShowAlbumName = useSettingValue('list.isShowAlbumName')
@@ -74,6 +77,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   useImperativeHandle(ref, () => ({
     setIsMultiSelectMode(isMultiSelectMode) {
       isMultiSelectModeRef.current = isMultiSelectMode
+      setIsMultiSelectMode(isMultiSelectMode)
       if (!isMultiSelectMode) {
         prevSelectIndexRef.current = -1
         handleUpdateSelectedList([])
@@ -81,6 +85,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
     },
     setSelectMode(mode) {
       selectModeRef.current = mode
+      if (mode == 'range') prevSelectIndexRef.current = currentList.indexOf(selectedListRef.current[0])
     },
     selectAll(isAll) {
       let list: LX.List.ListMusics
@@ -89,8 +94,8 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       } else {
         list = []
       }
-      selectedListRef.current = list
-      setSelectedList(list)
+      prevSelectIndexRef.current = isAll && currentList.length ? 0 : -1
+      handleUpdateSelectedList(list)
     },
     getSelectedList() {
       return selectedListRef.current
@@ -123,6 +128,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
           if (currentListIdRef.current != id) return
           selectedListRef.current = []
           setSelectedList([])
+          selectAllCallbackRef.current(false)
           setList([...list])
           setLoaded(true)
           requestAnimationFrame(() => {
@@ -149,6 +155,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
         if (currentListIdRef.current != id) return
         selectedListRef.current = []
         setSelectedList([])
+        selectAllCallbackRef.current(false)
         setList([...list])
       })
     }
@@ -195,8 +202,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   }
 
   const handleUpdateSelectedList = (newList: LX.List.ListMusics) => {
-    if (selectedListRef.current.length && newList.length == currentList.length) onSelectAll(true)
-    else if (selectedListRef.current.length == currentList.length) onSelectAll(false)
+    onSelectAll(currentList.length > 0 && newList.length == currentList.length)
     selectedListRef.current = newList
     setSelectedList(newList)
   }
@@ -212,7 +218,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
         newList.splice(index, 1)
       }
     } else {
-      if (selectedListRef.current.length) {
+      if (selectedListRef.current.length && prevSelectIndexRef.current >= 0) {
         const prevIndex = prevSelectIndexRef.current
         const currentIndex = pressIndex
         if (prevIndex == currentIndex) {
@@ -270,6 +276,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       onLongPress={handleLongPress}
       onShowMenu={onShowMenu}
       selectedList={selectedList}
+      isMultiSelectMode={isMultiSelectMode}
       rowInfo={rowInfo.current}
       isShowAlbumName={isShowAlbumName}
       isShowInterval={isShowInterval}

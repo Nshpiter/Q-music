@@ -34,7 +34,7 @@ export const handlePlay = async(id: string, source: Source, list?: LX.Music.Musi
 export const handleCollect = async(id: string, source: Source, name: string) => {
   const listId = getListId(id, source)
 
-  const targetList = listState.userList.find(l => l.sourceListId == listId)
+  const targetList = listState.userList.find(l => l.source == source && (l.sourceListId == id || l.sourceListId == listId))
   if (targetList) {
     const confirm = await confirmDialog({
       message: global.i18n.t('duplicate_list_tip', { name: targetList.name }),
@@ -42,7 +42,7 @@ export const handleCollect = async(id: string, source: Source, name: string) => 
       confirmButtonText: global.i18n.t('confirm_button_text'),
     })
     if (!confirm) return
-    void syncSourceList(targetList)
+    await syncSourceList(targetList.sourceListId == listId ? { ...targetList, sourceListId: id } : targetList)
     return
   }
 

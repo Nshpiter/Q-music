@@ -20,6 +20,7 @@ export const getDownloadTask = (id: string): DownloadTaskInfo | undefined => {
 
 export const subscribeDownloadTasks = (listener: Listener): (() => void) => {
   listeners.add(listener)
+  listener(getDownloadTasks())
   return () => {
     listeners.delete(listener)
   }

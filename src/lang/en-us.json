@@ -1,4 +1,11 @@
 {
+  "timeout_exit_range": "Enter a whole number from 1 to 1440 minutes.",
+  "queue_locate": "Go to current song",
+  "queue_play_failed": "Could not play this song. Please retry.",
+  "download_remove_record": "Remove record",
+  "download_remove_file": "Also delete file",
+  "download_remove_tip": "“{name}” is saved on your phone. Removing the record keeps the music file.",
+  "download_remove_failed": "Could not delete the file. The download record was kept. Check file permissions and retry.",
   "account_lists_entry": "Sync playlists",
   "account_lists_title": "Your platform playlists",
   "account_lists_tip": "Choose playlists to bring into Q-music. Return here to update them.",
@@ -679,5 +686,7 @@
   "search_history_less": "Show less history",
   "search_back_home": "Back to Discover",
   "daily_refresh": "Refresh recommendations",
-  "daily_authorization_tip": "Complete recommendation authorization on QQ Music. The generated key is verified and saved automatically."
+  "daily_authorization_tip": "Complete recommendation authorization on QQ Music. The generated key is verified and saved automatically.",
+  "list_create_failed": "Could not create the playlist. Your name is preserved; please try again.",
+  "list_create_saving": "Saving…"
 }

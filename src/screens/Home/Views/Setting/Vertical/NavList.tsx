@@ -1,5 +1,5 @@
-import { memo, useCallback, useState } from 'react'
-import { View, ScrollView } from 'react-native'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { View, ScrollView, type LayoutChangeEvent } from 'react-native'
 
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
@@ -11,8 +11,9 @@ import { BorderWidths } from '@/theme'
 import { Q_UI } from '@/theme/ui'
 
 
-const ListItem = memo(({ id, activeId, onPress }: {
+const ListItem = memo(({ id, activeId, onPress, onLayout }: {
   onPress: (item: SettingScreenIds) => void
+  onLayout: (id: SettingScreenIds, event: LayoutChangeEvent) => void
   activeId: string
   id: SettingScreenIds
 }) => {
@@ -26,7 +27,7 @@ const ListItem = memo(({ id, activeId, onPress }: {
   }
 
   return (
-    <View style={{ ...styles.listItem, backgroundColor: active ? theme['q-surface-tint'] : 'transparent' }}>
+    <View onLayout={event => { onLayout(id, event) }} style={{ ...styles.listItem, backgroundColor: active ? theme['q-surface-tint'] : 'transparent' }}>
       <Button
         accessibilityRole="tab"
         accessibilityState={{ selected: active }}
@@ -50,19 +51,53 @@ export default ({ onChangeId }: {
   onChangeId: (id: SettingScreenIds) => void
 }) => {
   const [activeId, setActiveId] = useState(global.lx.settingActiveId)
+  const activeIdRef = useRef(activeId)
+  const scrollRef = useRef<ScrollView>(null)
+  const viewportWidthRef = useRef(0)
+  const layoutsRef = useRef<Partial<Record<SettingScreenIds, { x: number, width: number }>>>({})
   const theme = useTheme()
+  activeIdRef.current = activeId
+
+  const scrollToActive = useCallback((animated: boolean) => {
+    const layout = layoutsRef.current[activeIdRef.current]
+    const viewportWidth = viewportWidthRef.current
+    if (!layout || !viewportWidth) return
+    scrollRef.current?.scrollTo({ x: Math.max(0, layout.x - (viewportWidth - layout.width) / 2), animated })
+  }, [])
+
+  const handleItemLayout = useCallback((id: SettingScreenIds, event: LayoutChangeEvent) => {
+    const { x, width } = event.nativeEvent.layout
+    layoutsRef.current[id] = { x, width }
+    if (id == activeIdRef.current) scrollToActive(false)
+  }, [scrollToActive])
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => { scrollToActive(true) })
+    return () => { cancelAnimationFrame(frame) }
+  }, [activeId, scrollToActive])
 
   const handleChangeId = useCallback((id: SettingScreenIds) => {
     onChangeId(id)
     setActiveId(id)
     global.lx.settingActiveId = id
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [onChangeId])
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ ...styles.container, borderBottomColor: theme['c-border-background'] }} contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      ref={scrollRef}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={{ ...styles.container, borderBottomColor: theme['c-border-background'] }}
+      contentContainerStyle={styles.contentContainer}
+      keyboardShouldPersistTaps="handled"
+      onLayout={event => {
+        viewportWidthRef.current = event.nativeEvent.layout.width
+        scrollToActive(false)
+      }}
+      onContentSizeChange={() => { scrollToActive(false) }}
+    >
       {
-        SETTING_SCREENS.map(id => <ListItem key={id} id={id} activeId={activeId} onPress={handleChangeId} />)
+        SETTING_SCREENS.map(id => <ListItem key={id} id={id} activeId={activeId} onPress={handleChangeId} onLayout={handleItemLayout} />)
       }
     </ScrollView>
   )

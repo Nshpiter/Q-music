@@ -12,7 +12,7 @@ import Button, { type BtnType } from '@/components/common/Button'
 export const ITEM_HEIGHT = 54
 
 
-export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPress, selectedList, rowInfo, isShowAlbumName, isShowInterval }: {
+export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPress, selectedList, isMultiSelectMode, rowInfo, isShowAlbumName, isShowInterval }: {
   item: LX.Music.MusicInfo
   index: number
   activeIndex: number
@@ -20,6 +20,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
   onLongPress: (item: LX.Music.MusicInfo, index: number) => void
   onShowMenu: (item: LX.Music.MusicInfo, index: number, position: { x: number, y: number, w: number, h: number }) => void
   selectedList: LX.Music.MusicInfo[]
+  isMultiSelectMode: boolean
   rowInfo: RowInfo
   isShowAlbumName: boolean
   isShowInterval: boolean
@@ -46,16 +47,18 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
     <View style={[styles.row, { width: rowInfo.rowWidth, height: ITEM_HEIGHT, opacity: isSupported ? 1 : 0.5 }]}>
       <View style={[
         styles.listItem,
-        active
+        isSelected
           ? {
               backgroundColor: theme['q-surface-tint'],
-              borderColor: theme['c-primary-alpha-700'],
+              borderColor: theme['q-outline'],
               borderWidth: StyleSheet.hairlineWidth,
               borderRadius: 10,
             }
-          : isSelected
+          : active
             ? {
-                backgroundColor: theme['c-primary-light-300-alpha-800'],
+                backgroundColor: theme['q-surface-tint'],
+                borderColor: theme['c-primary-alpha-700'],
+                borderWidth: StyleSheet.hairlineWidth,
                 borderRadius: 10,
               }
             : {
@@ -66,15 +69,22 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
       ]}>
         <Button
           accessibilityLabel={`${item.name} · ${singer}`}
-          accessibilityState={{ selected: active || isSelected }}
+          accessibilityRole={isMultiSelectMode ? 'checkbox' : 'button'}
+          accessibilityState={isMultiSelectMode ? { checked: isSelected } : { selected: active }}
           style={styles.listItemLeft}
           onPress={() => { onPress(item, index) }}
           onLongPress={() => { onLongPress(item, index) }}
         >
           {
-            active
-              ? <Icon accessible={false} style={styles.sn} name="play-outline" size={13} color={theme['q-accent-text']} />
-              : <Text style={styles.sn} size={13} color={theme['q-text-secondary']}>{index + 1}</Text>
+            isMultiSelectMode
+              ? <View style={styles.sn}>
+                  <View style={{ ...styles.selection, backgroundColor: isSelected ? theme['q-accent'] : 'transparent', borderColor: isSelected ? theme['q-accent'] : theme['q-outline'] }}>
+                    {isSelected ? <Icon accessible={false} name="check" rawSize={13} color={theme['q-on-accent']} /> : null}
+                  </View>
+                </View>
+              : active
+                ? <Icon accessible={false} style={styles.sn} name="play-outline" size={13} color={theme['q-accent-text']} />
+                : <Text style={styles.sn} size={13} color={theme['q-text-secondary']}>{index + 1}</Text>
           }
           <View style={styles.itemInfo}>
             <Text style={active ? styles.playingTitle : undefined} color={active ? theme['q-accent-text'] : theme['c-font']} numberOfLines={1}>{item.name}</Text>
@@ -102,6 +112,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
     prevProps.index === nextProps.index &&
     prevProps.isShowAlbumName === nextProps.isShowAlbumName &&
     prevProps.isShowInterval === nextProps.isShowInterval &&
+    prevProps.isMultiSelectMode === nextProps.isMultiSelectMode &&
     prevProps.activeIndex != nextProps.index &&
     nextProps.activeIndex != nextProps.index &&
     nextProps.selectedList.includes(nextProps.item) == prevProps.selectedList.includes(nextProps.item)
@@ -122,6 +133,7 @@ const styles = createStyle({
   },
   listItemLeft: {
     flex: 1,
+    minWidth: 0,
     flexGrow: 1,
     flexShrink: 1,
     flexDirection: 'row',
@@ -130,6 +142,9 @@ const styles = createStyle({
   },
   sn: {
     width: 34,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
     // fontSize: 12,
     textAlign: 'center',
     // backgroundColor: 'rgba(0,0,0,0.2)',
@@ -137,6 +152,7 @@ const styles = createStyle({
     paddingRight: 3,
   },
   itemInfo: {
+    minWidth: 0,
     flexGrow: 1,
     flexShrink: 1,
     // paddingTop: 10,
@@ -145,6 +161,14 @@ const styles = createStyle({
   },
   playingTitle: {
     fontWeight: '700',
+  },
+  selection: {
+    width: 20,
+    height: 20,
+    borderRadius: 7,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   // listItemTitle: {
   //   flexGrow: 0,
@@ -180,6 +204,7 @@ const styles = createStyle({
 
   moreButton: {
     width: 48,
+    flexShrink: 0,
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',

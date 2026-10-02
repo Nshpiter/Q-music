@@ -1,7 +1,7 @@
 import { useRef, useImperativeHandle, forwardRef, useState, useEffect } from 'react'
 import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/ConfirmAlert'
 import Text from '@/components/common/Text'
-import { View } from 'react-native'
+import { TouchableOpacity, View } from 'react-native'
 import Input, { type InputType } from '@/components/common/Input'
 import { createStyle, toast } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
@@ -13,7 +13,7 @@ import { updateSetting } from '@/core/common'
 import settingState from '@/store/setting/state'
 
 const MAX_MIN = 1440
-const rxp = /([1-9]\d*)/
+const rxp = /^[1-9]\d*$/
 const formatTime = (time: number) => {
   // let d = parseInt(time / 86400)
   // d = d ? d.toString() + ':' : ''
@@ -34,7 +34,7 @@ const Status = () => {
       {
       exitTimeInfo.time < 0
         ? (
-            <Text>{t('timeout_exit_tip_off')}</Text>
+            !exitTimeInfo.isPlayedStop ? <Text>{t('timeout_exit_tip_off')}</Text> : null
           )
         : (
             <Text>{t('timeout_exit_tip_on', { time: formatTime(exitTimeInfo.time) })}</Text>
@@ -44,41 +44,6 @@ const Status = () => {
     </View>
   )
 }
-
-
-interface TimeInputType {
-  setText: (text: string) => void
-  getText: () => string
-  focus: () => void
-}
-const TimeInput = forwardRef<TimeInputType, {}>((props, ref) => {
-  const theme = useTheme()
-  const [text, setText] = useState('')
-  const inputRef = useRef<InputType>(null)
-  const t = useI18n()
-
-  useImperativeHandle(ref, () => ({
-    getText() {
-      return text.trim()
-    },
-    setText(text) {
-      setText(text)
-    },
-    focus() {
-      inputRef.current?.focus()
-    },
-  }))
-
-  return (
-    <Input
-      ref={inputRef}
-      placeholder={t('timeout_exit_input_tip')}
-      value={text}
-      onChangeText={setText}
-      style={{ ...styles.input, backgroundColor: theme['c-primary-input-background'] }}
-    />
-  )
-})
 
 
 const Setting = () => {
@@ -105,29 +70,18 @@ export const useTimeInfo = () => {
   const t = useI18n()
 
   useEffect(() => {
-    let active: boolean | null = null
+    let previous = ''
     const remove = onTimeUpdate((time, isPlayedStop) => {
-      if (time < 0) {
-        if (active) {
-          setExitTimeInfo({
-            cancelText: isPlayedStop ? t('timeout_exit_btn_wait_cancel') : '',
-            confirmText: '',
-            isPlayedStop,
-            active: false,
-          })
-          active = false
-        }
-      } else {
-        if (active !== true) {
-          setExitTimeInfo({
-            cancelText: t('timeout_exit_btn_cancel'),
-            confirmText: t('timeout_exit_btn_update'),
-            isPlayedStop,
-            active: true,
-          })
-          active = true
-        }
-      }
+      const active = time >= 0
+      const key = `${active}_${isPlayedStop}`
+      if (previous == key) return
+      previous = key
+      setExitTimeInfo({
+        cancelText: active ? t('timeout_exit_btn_cancel') : (isPlayedStop ? t('timeout_exit_btn_wait_cancel') : ''),
+        confirmText: active ? t('timeout_exit_btn_update') : '',
+        isPlayedStop,
+        active,
+      })
     })
 
     return () => {
@@ -147,28 +101,19 @@ interface TimeoutExitEditModalProps {
 
 export default forwardRef<TimeoutExitEditModalType, TimeoutExitEditModalProps>(({ timeInfo }, ref) => {
   const alertRef = useRef<ConfirmAlertType>(null)
-  const timeInputRef = useRef<TimeInputType>(null)
+  const timeInputRef = useRef<InputType>(null)
+  const [timeText, setTimeText] = useState('')
+  const [error, setError] = useState(false)
   const [visible, setVisible] = useState(false)
   const t = useI18n()
+  const theme = useTheme()
 
-  const handleShow = () => {
-    alertRef.current?.setVisible(true)
-    requestAnimationFrame(() => {
-      if (settingState.setting['player.timeoutExit']) timeInputRef.current?.setText(settingState.setting['player.timeoutExit'])
-      //   setTimeout(() => {
-      //     timeInputRef.current?.focus()
-      //   }, 300)
-    })
-  }
+  useEffect(() => { alertRef.current?.setVisible(visible) }, [visible])
   useImperativeHandle(ref, () => ({
     show() {
-      if (visible) handleShow()
-      else {
-        setVisible(true)
-        requestAnimationFrame(() => {
-          handleShow()
-        })
-      }
+      setTimeText(settingState.setting['player.timeoutExit'] || '')
+      setError(false)
+      setVisible(true)
     },
   }))
 
@@ -182,21 +127,13 @@ export default forwardRef<TimeoutExitEditModalType, TimeoutExitEditModalProps>((
     toast(t('timeout_exit_tip_cancel'))
   }
   const handleConfirm = () => {
-    let timeStr = timeInputRef.current?.getText() ?? ''
-    if (rxp.test(timeStr)) {
-      // if (timeStr != RegExp.$1) toast(t('input_error'))
-      timeStr = RegExp.$1
-      if (parseInt(timeStr) > MAX_MIN) {
-        toast(t('timeout_exit_tip_max', { num: MAX_MIN }))
-        // timeStr = timeStr.substring(0, timeStr.length - 1)
-        return
-      }
-    } else {
-      if (timeStr.length) toast(t('input_error'))
-      timeStr = ''
+    const timeStr = timeText.trim()
+    if (!rxp.test(timeStr) || Number(timeStr) > MAX_MIN) {
+      setError(true)
+      timeInputRef.current?.focus()
+      return
     }
-    if (!timeStr) return
-    const time = parseInt(timeStr)
+    const time = Number(timeStr)
     cancelTimeoutExit()
     startTimeoutExit(time * 60)
     toast(t('timeout_exit_tip_on', { time: formatTime(getTimeoutExitTime()) }))
@@ -208,6 +145,7 @@ export default forwardRef<TimeoutExitEditModalType, TimeoutExitEditModalProps>((
     visible
       ? <ConfirmAlert
           ref={alertRef}
+          onHide={() => { setVisible(false) }}
           cancelText={timeInfo.cancelText}
           confirmText={timeInfo.confirmText}
           onCancel={handleCancel}
@@ -216,8 +154,34 @@ export default forwardRef<TimeoutExitEditModalType, TimeoutExitEditModalProps>((
           <View style={styles.alertContent}>
             <Status />
             <View style={styles.inputContent}>
-              <TimeInput ref={timeInputRef} />
+              <Input
+                ref={timeInputRef}
+                accessibilityLabel={t('timeout_exit_input_tip')}
+                placeholder={t('timeout_exit_input_tip')}
+                keyboardType="number-pad"
+                returnKeyType="done"
+                value={timeText}
+                onChangeText={text => { setTimeText(text); setError(false) }}
+                onSubmitEditing={handleConfirm}
+                style={{ ...styles.input, backgroundColor: theme['c-primary-input-background'] }}
+              />
               <Text style={styles.inputLabel}>{t('timeout_exit_min')}</Text>
+            </View>
+            {error
+              ? <Text accessibilityRole="alert" accessibilityLiveRegion="assertive" size={12} style={styles.hint} color={theme['q-accent-text']}>{t('timeout_exit_range')}</Text>
+              : <Text size={12} style={styles.hint} color={theme['c-font-label']}>{t('timeout_exit_range')}</Text>}
+            <View style={styles.presets}>
+              {[15, 30, 60, 90].map(minutes => (
+                <TouchableOpacity
+                  key={minutes}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: Number(timeText) == minutes }}
+                  style={{ ...styles.preset, backgroundColor: Number(timeText) == minutes ? theme['q-surface-tint'] : theme['c-primary-input-background'] }}
+                  onPress={() => { setTimeText(String(minutes)); setError(false) }}
+                >
+                  <Text size={12} color={Number(timeText) == minutes ? theme['q-accent-text'] : theme['c-font']}>{minutes} {t('timeout_exit_min')}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
             <Setting />
           </View>
@@ -227,6 +191,9 @@ export default forwardRef<TimeoutExitEditModalType, TimeoutExitEditModalProps>((
 })
 
 const styles = createStyle({
+  hint: { marginTop: 8 },
+  presets: { flexDirection: 'row', gap: 6, marginVertical: 12 },
+  preset: { flex: 1, minHeight: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   alertContent: {
     flexShrink: 1,
     flexDirection: 'column',

@@ -1,73 +1,21 @@
-import { useMemo, useState } from 'react'
 import { ScrollView, View } from 'react-native'
-
-import Button from '@/components/common/Button'
-import Text from '@/components/common/Text'
 import { useMyList } from '@/store/list/hook'
-import ListItem, { styles as listStyles } from './ListItem'
+import ListItem from './ListItem'
 import CreateUserList from '../MusicAddModal/CreateUserList'
-import { useWindowSize } from '@/utils/hooks'
-import { useTheme } from '@/store/theme/hook'
-import { useI18n } from '@/lang'
-import { createStyle } from '@/utils/tools'
-import { scaleSizeW } from '@/utils/pixelRatio'
+import { styles } from '../MusicAddModal/List'
 
-const styles = createStyle({
-  list: {
-    paddingLeft: 15,
-    paddingRight: 2,
-    paddingBottom: 5,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    // backgroundColor: 'rgba(0,0,0,0.2)'
-  },
-})
-const MIN_WIDTH = scaleSizeW(140)
-const PADDING = styles.list.paddingLeft + styles.list.paddingRight
-
-const EditListItem = ({ itemWidth }: {
-  itemWidth: number
-}) => {
-  const [isEdit, setEdit] = useState(false)
-  const theme = useTheme()
-  const t = useI18n()
-
-  return (
-    <View style={{ ...listStyles.listItem, width: itemWidth }}>
-      <Button
-        accessibilityLabel={t('list_create')}
-        style={{ ...listStyles.button, borderColor: theme['c-primary-light-200-alpha-700'], borderStyle: 'dashed' }}
-        onPress={() => { setEdit(true) }}
-      >
-        <Text style={{ opacity: isEdit ? 0 : 1 }} numberOfLines={1} size={14} color={theme['c-button-font']}>{t('list_create')}</Text>
-      </Button>
-      {
-        isEdit
-          ? <CreateUserList isEdit={isEdit} onHide={() => { setEdit(false) }} />
-          : null
-      }
-    </View>
-  )
-}
-
-export default ({ listId, onPress }: {
+export default ({ listId, onPress, disabled = false, onCreating }: {
   listId: string
   onPress: (listInfo: LX.List.MyListInfo) => void
+  disabled?: boolean
+  onCreating?: (busy: boolean) => void
 }) => {
-  const windowSize = useWindowSize()
-  const allList = useMyList().filter(l => l.id != listId)
-  const itemWidth = useMemo(() => {
-    let w = Math.floor(windowSize.width * 0.9 - PADDING)
-    let n = Math.floor(w / MIN_WIDTH)
-    if (n > 10) n = 10
-    return Math.floor((w - 1) / n)
-  }, [windowSize])
-
+  const allList = useMyList().filter(list => list.id != listId)
   return (
     <ScrollView style={{ flexGrow: 0 }} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
-      <View style={{ ...styles.list }}>
-        { allList.map(info => <ListItem key={info.id} listInfo={info} onPress={onPress} width={itemWidth} />) }
-        <EditListItem itemWidth={itemWidth} />
+      <View style={styles.list}>
+        {allList.map(info => <ListItem key={info.id} listInfo={info} onPress={onPress} disabled={disabled} />)}
+        <CreateUserList disabled={disabled} onBusyChange={onCreating} />
       </View>
     </ScrollView>
   )

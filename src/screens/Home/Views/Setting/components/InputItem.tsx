@@ -17,6 +17,7 @@ export interface InputItemProps extends InputProps {
 
 export default memo(({ value, label, onChanged, immediate, ...props }: InputItemProps) => {
   const [text, setText] = useState(value)
+  const [passwordVisible, setPasswordVisible] = useState(false)
   const textRef = useRef(value)
   const isMountRef = useRef(false)
   const inputRef = useRef<InputType>(null)
@@ -73,6 +74,11 @@ export default memo(({ value, label, onChanged, immediate, ...props }: InputItem
         onChangeText={handleSetSelectMode}
         containerStyle={styles.input}
         {...props}
+        secureTextEntry={props.secureTextEntry && !passwordVisible}
+        actionIcon={props.actionIcon ?? (props.secureTextEntry ? passwordVisible ? 'eye-off' : 'eye' : undefined)}
+        onActionPress={props.onActionPress ?? (props.secureTextEntry ? () => { setPasswordVisible(visible => !visible) } : undefined)}
+        actionAccessibilityLabel={props.actionAccessibilityLabel ?? (props.secureTextEntry ? `${passwordVisible ? '隐藏' : '显示'}${label}` : undefined)}
+        accessibilityLabel={props.accessibilityLabel ?? label}
         onBlur={saveValue}
        />
     </View>

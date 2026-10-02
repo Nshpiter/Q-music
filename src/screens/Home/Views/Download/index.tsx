@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { FlatList, TouchableOpacity, View } from 'react-native'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Alert, FlatList, TouchableOpacity, View } from 'react-native'
 
 import Text from '@/components/common/Text'
 import SourceLogo from '@/components/SourceLogo'
 import { Icon } from '@/components/common/Icon'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
-import { createStyle } from '@/utils/tools'
-import { subscribeDownloadTasks } from '@/core/download/store'
+import { createStyle, toast } from '@/utils/tools'
+import { getDownloadTasks, subscribeDownloadTasks } from '@/core/download/store'
 import { deleteDownloadTask, retryDownload } from '@/core/download/worker'
 import type { DownloadTaskInfo } from '@/core/download/types'
 import { QUALITY_BADGE } from '@/config/constant'
@@ -17,19 +17,21 @@ import { setNavActiveId } from '@/core/common'
 import commonState from '@/store/common/state'
 import { useDockInset } from '@/components/common/DockInset'
 
-const TaskItem = ({ task, onDelete, onRetry }: {
+const TaskItem = ({ task, busy, onDelete, onRetry }: {
   task: DownloadTaskInfo
-  onDelete: (id: string) => void
+  busy: boolean
+  onDelete: (task: DownloadTaskInfo) => void
   onRetry: (id: string) => void
 }) => {
   const theme = useTheme()
   const t = useI18n()
+  const progress = Number.isFinite(task.progress) ? Math.max(0, Math.min(100, Math.round(task.progress))) : 0
   const statusText = useMemo(() => {
     switch (task.status) {
       case 'waiting':
         return t('download_status_waiting')
       case 'run':
-        return task.speed ? `${task.progress}% · ${task.speed}` : `${task.progress}%`
+        return task.speed ? `${progress}% · ${task.speed}` : `${progress}%`
       case 'error':
         return task.statusText || t('download_status_error')
       case 'completed':
@@ -37,7 +39,7 @@ const TaskItem = ({ task, onDelete, onRetry }: {
       default:
         return ''
     }
-  }, [task.status, task.progress, task.speed, task.statusText, t])
+  }, [task.status, progress, task.speed, task.statusText, t])
 
   return (
     <View style={{ ...styles.item, backgroundColor: theme['q-surface-raised'], borderRadius: Q_UI.radius.control }}>
@@ -47,25 +49,25 @@ const TaskItem = ({ task, onDelete, onRetry }: {
       <View style={styles.itemInfo}>
         <Text numberOfLines={1} size={14} color={theme['c-font']}>{task.musicInfo.name}</Text>
         <View style={styles.itemSub}>
-          <Text numberOfLines={1} size={11} color={theme['q-text-secondary']}>{task.musicInfo.singer}</Text>
+          <Text numberOfLines={1} size={11} style={{ flexShrink: 1 }} color={theme['q-text-secondary']}>{task.musicInfo.singer}</Text>
           <Text size={10} color={theme['q-text-secondary']} style={styles.qualityTag}>{QUALITY_BADGE[task.quality]}</Text>
         </View>
         {
           task.status == 'run' || task.status == 'error' || task.status == 'completed'
             ? (
               <View style={{ ...styles.progressTrack, backgroundColor: theme['q-outline'] }}>
-                <View style={{ ...styles.progressFill, width: `${task.progress}%`, backgroundColor: theme['q-accent'] }} />
+                <View style={{ ...styles.progressFill, width: `${progress}%`, backgroundColor: theme['q-accent'] }} />
               </View>
               )
             : null
         }
-        <Text size={11} color={theme['q-text-secondary']}>{statusText}</Text>
+        <Text size={11} color={theme['q-text-secondary']}>{busy ? t('loading') : statusText}</Text>
       </View>
       <View style={styles.itemActions}>
         {
           task.status == 'error'
             ? (
-              <TouchableOpacity style={styles.actionBtn} activeOpacity={0.6} onPress={() => { onRetry(task.id) }}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('version_btn_failed')} disabled={busy} style={styles.actionBtn} activeOpacity={0.6} onPress={() => { onRetry(task.id) }}>
                 <Icon name="available_updates" size={18} color={theme['q-text-secondary']} />
               </TouchableOpacity>
               )
@@ -74,7 +76,7 @@ const TaskItem = ({ task, onDelete, onRetry }: {
         {
           task.status != 'run'
             ? (
-              <TouchableOpacity style={styles.actionBtn} activeOpacity={0.6} onPress={() => { onDelete(task.id) }}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('download_remove_record')} disabled={busy} style={styles.actionBtn} activeOpacity={0.6} onPress={() => { onDelete(task) }}>
                 <Icon name="close" size={18} color={theme['q-text-secondary']} />
               </TouchableOpacity>
               )
@@ -89,7 +91,30 @@ export default () => {
   const dockInset = useDockInset()
   const theme = useTheme()
   const t = useI18n()
-  const [tasks, setTasks] = useState<DownloadTaskInfo[]>([])
+  const [tasks, setTasks] = useState<DownloadTaskInfo[]>(getDownloadTasks)
+  const [busyIds, setBusyIds] = useState<string[]>([])
+  const pendingIds = useRef(new Set<string>())
+  const removeTask = async(taskId: string, deleteFile: boolean) => {
+    if (pendingIds.current.has(taskId)) return
+    pendingIds.current.add(taskId)
+    setBusyIds([...pendingIds.current])
+    try {
+      await deleteDownloadTask(taskId, deleteFile)
+    } catch {
+      toast(t('download_remove_failed'))
+    } finally {
+      pendingIds.current.delete(taskId)
+      setBusyIds([...pendingIds.current])
+    }
+  }
+  const handleDelete = (task: DownloadTaskInfo) => {
+    if (!task.filePath) { void removeTask(task.id, false); return }
+    Alert.alert(t('download_remove_record'), t('download_remove_tip', { name: task.musicInfo.name }), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('download_remove_record'), onPress: () => { void removeTask(task.id, false) } },
+      { text: t('download_remove_file'), style: 'destructive', onPress: () => { void removeTask(task.id, true) } },
+    ])
+  }
   useBackHandler(useCallback(() => {
     if (commonState.navActiveId != 'download' || Object.keys(commonState.componentIds).length != 1) return false
     setNavActiveId('nav_love')
@@ -112,7 +137,7 @@ export default () => {
               data={tasks}
               keyExtractor={item => item.id}
               renderItem={({ item }) => (
-                <TaskItem task={item} onDelete={id => { void deleteDownloadTask(id) }} onRetry={retryDownload} />
+                <TaskItem task={item} busy={busyIds.includes(item.id)} onDelete={handleDelete} onRetry={retryDownload} />
               )}
             />
             )
@@ -177,8 +202,8 @@ const styles = createStyle({
     alignItems: 'center',
   },
   actionBtn: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -4,8 +4,7 @@ import { StyleSheet, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import { BorderWidths } from '@/theme'
 import { useTheme } from '@/store/theme/hook'
-import { useActiveListId, useListFetching } from '@/store/list/hook'
-import listState from '@/store/list/state'
+import { useActiveListId, useListFetching, useMyList } from '@/store/list/hook'
 import { createStyle } from '@/utils/tools'
 import { getListPrevSelectId } from '@/utils/data'
 import { setActiveList } from '@/core/list'
@@ -15,6 +14,8 @@ import Loading from '@/components/common/Loading'
 import { useSettingValue } from '@/store/setting/hook'
 import Button from '@/components/common/Button'
 import IconButton from '@/components/common/IconButton'
+import { useWindowSize } from '@/utils/hooks'
+import { useFontSize } from '@/store/common/hook'
 
 export interface ActiveListProps {
   onShowImport: () => void
@@ -28,8 +29,12 @@ export interface ActiveListType {
 export default forwardRef<ActiveListType, ActiveListProps>(({ onShowImport, onShowSearchBar, onScrollToTop }, ref) => {
   const theme = useTheme()
   const currentListId = useActiveListId()
+  const lists = useMyList()
   const fetching = useListFetching(currentListId)
   const langId = useSettingValue('common.langId')
+  const { width } = useWindowSize()
+  const fontSize = useFontSize()
+  const compactActions = width < 360 || fontSize > 1.1
   const currentListName = useMemo(() => {
     switch (currentListId) {
       case LIST_IDS.TEMP:
@@ -39,10 +44,10 @@ export default forwardRef<ActiveListType, ActiveListProps>(({ onShowImport, onSh
       case LIST_IDS.LOVE:
         return global.i18n.t('list_name_love')
       default:
-        return listState.allList.find(l => l.id === currentListId)?.name ?? ''
+        return lists.find(l => l.id === currentListId)?.name ?? ''
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentListId, langId])
+  }, [currentListId, langId, lists])
   const [visibleBar, setVisibleBar] = useState(true)
 
   useImperativeHandle(ref, () => ({
@@ -62,36 +67,41 @@ export default forwardRef<ActiveListType, ActiveListProps>(({ onShowImport, onSh
   }, [])
 
   return (
-    <View style={{ ...styles.currentList, opacity: visibleBar ? 1 : 0, borderBottomColor: theme['c-border-background'] }}>
+    <View
+      pointerEvents={visibleBar ? 'auto' : 'none'}
+      importantForAccessibility={visibleBar ? 'auto' : 'no-hide-descendants'}
+      style={{ ...styles.currentList, opacity: visibleBar ? 1 : 0, borderBottomColor: theme['q-outline'] }}
+    >
       <Button
         accessibilityLabel={currentListName}
         onPress={showList}
         onLongPress={onScrollToTop}
         style={styles.currentListMain}
       >
-        <Icon style={styles.currentListIcon} color={theme['c-button-font']} name="chevron-right" size={12} />
-        { fetching ? <Loading color={theme['c-button-font']} style={styles.loading} /> : null }
-        <Text style={styles.currentListText} numberOfLines={1} color={theme['c-button-font']}>{currentListName}</Text>
+        <Icon accessible={false} style={styles.currentListIcon} color={theme['q-text-secondary']} name="menu" size={17} />
+        { fetching ? <Loading color={theme['q-accent-text']} style={styles.loading} /> : null }
+        <Text style={styles.currentListText} numberOfLines={1} color={theme['q-text-primary']}>{currentListName}</Text>
       </Button>
       <Button
         accessibilityLabel={global.i18n.t('playlist_import_modal__title')}
         style={{
           ...styles.importButton,
+          width: compactActions ? 48 : undefined,
           backgroundColor: theme['q-surface-tint'],
           borderColor: theme['q-outline'],
         }}
         onPress={onShowImport}
       >
         <Icon accessible={false} color={theme['q-accent-text']} name="download-2" size={15} />
-        <Text size={11} style={styles.importText} color={theme['q-accent-text']} numberOfLines={1}>
+        {!compactActions ? <Text size={11} style={styles.importText} color={theme['q-accent-text']} numberOfLines={1}>
           {global.i18n.t('playlist_import_modal__title')}
-        </Text>
+        </Text> : null}
       </Button>
       <IconButton
         accessibilityLabel={global.i18n.t('list_search')}
         name="search-2"
         iconSize={18}
-        iconColor={theme['c-button-font']}
+        iconColor={theme['q-text-secondary']}
         style={styles.currentListBtns}
         onPress={onShowSearchBar}
       />
@@ -127,6 +137,8 @@ const styles = createStyle({
   },
   currentListText: {
     flex: 1,
+    minWidth: 0,
+    fontWeight: '600',
     // minWidth: 70,
     // paddingLeft: 10,
     paddingRight: 10,
@@ -145,6 +157,8 @@ const styles = createStyle({
     // backgroundColor: 'rgba(0,0,0,0.2)',
   },
   importButton: {
+    flexShrink: 0,
+    minWidth: 48,
     minHeight: 48,
     height: 48,
     maxWidth: 144,

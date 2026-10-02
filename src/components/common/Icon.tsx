@@ -35,6 +35,8 @@ const outlineIcons: Record<string, string> = {
   leaderboard: 'bar-chart-2',
   'download-2': 'download',
   'cloud-library': 'cloud',
+  eye: 'eye',
+  'eye-off': 'eye-off',
   menu: 'list',
   comment: 'message-circle',
   'chevron-left': 'chevron-left',

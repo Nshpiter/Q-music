@@ -14,7 +14,7 @@ export const ITEM_HEIGHT = Math.max(Q_UI.touchSize, Math.round(scaleSizeH(44)))
 
 export const debounceTipSearch = debounce((keyword: string, source: SearchState['temp_source'], callback: (list: string[]) => void) => {
   // console.log(reslutList)
-  void musicSdk[source].tipSearch.search(keyword).then(callback)
+  void musicSdk[source].tipSearch.search(keyword).then(callback).catch(() => { callback([]) })
 }, 200)
 
 
@@ -35,6 +35,7 @@ export default forwardRef<TipListType, TipListProps>(({ onSearch }, ref) => {
   const [visible, setVisible] = useState(false)
   const visibleListRef = useRef(false)
   const isUnmountedRef = useRef(false)
+  const searchRequestRef = useRef(0)
 
   useEffect(() => {
     isUnmountedRef.current = false
@@ -43,15 +44,17 @@ export default forwardRef<TipListType, TipListProps>(({ onSearch }, ref) => {
     }
   }, [])
 
-  const handleSearch = (keyword: string, height: number) => {
+  const handleSearch = (keyword: string, height: number, requestId: number) => {
+    if (searchRequestRef.current != requestId || !visibleListRef.current || isUnmountedRef.current) return
     searchTipListRef.current?.setHeight(height)
     setSearchText(keyword)
     if (keyword) {
-      setTipListInfo(keyword, searchState.temp_source)
-      debounceTipSearch(keyword, searchState.temp_source, (list) => {
-        if (keyword != searchState.tipListInfo.text) return
+      const source = searchState.temp_source
+      setTipListInfo(keyword, source)
+      debounceTipSearch(keyword, source, (list) => {
+        if (!visibleListRef.current || isUnmountedRef.current || searchRequestRef.current != requestId) return
+        if (keyword != searchState.tipListInfo.text || source != searchState.tipListInfo.source) return
         setTipList(list)
-        if (!visibleListRef.current || isUnmountedRef.current) return
         searchTipListRef.current?.setList(list)
       })
     } else {
@@ -69,32 +72,38 @@ export default forwardRef<TipListType, TipListProps>(({ onSearch }, ref) => {
     }
   }
 
+  const handleHide = () => {
+    searchRequestRef.current++
+    visibleListRef.current = false
+    searchTipListRef.current?.setList([])
+  }
+
   useImperativeHandle(ref, () => ({
     search(keyword, height) {
+      const requestId = ++searchRequestRef.current
       visibleListRef.current = true
-      if (visible) handleSearch(keyword, height)
+      if (visible) handleSearch(keyword, height, requestId)
       else {
         setVisible(true)
         requestAnimationFrame(() => {
-          handleSearch(keyword, height)
+          handleSearch(keyword, height, requestId)
         })
       }
     },
     show(height) {
+      const requestId = ++searchRequestRef.current
       visibleListRef.current = true
       if (visible) handleShowList(height)
       else {
         setVisible(true)
         requestAnimationFrame(() => {
+          if (searchRequestRef.current != requestId || !visibleListRef.current || isUnmountedRef.current) return
           handleShowList(height)
         })
       }
     },
     hide() {
-      requestAnimationFrame(() => {
-        visibleListRef.current = false
-        searchTipListRef.current?.setList([])
-      })
+      handleHide()
     },
   }), [visible])
 
@@ -120,7 +129,7 @@ export default forwardRef<TipListType, TipListProps>(({ onSearch }, ref) => {
       ? <SearchTipList
           ref={searchTipListRef}
           renderItem={renderItem}
-          onPressBg={() => searchTipListRef.current?.setList([])}
+          onPressBg={handleHide}
           keyExtractor={getkey}
           getItemLayout={getItemLayout}
         />

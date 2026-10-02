@@ -1,4 +1,11 @@
 {
+  "timeout_exit_range": "請輸入 1–1440 之間的整數分鐘。",
+  "queue_locate": "定位目前歌曲",
+  "queue_play_failed": "暫時無法播放，請重試。",
+  "download_remove_record": "移除記錄",
+  "download_remove_file": "同時刪除檔案",
+  "download_remove_tip": "「{name}」已儲存在手機中。僅移除記錄會保留音樂檔案。",
+  "download_remove_failed": "未能刪除檔案，下載記錄已保留，請檢查檔案權限後重試。",
   "account_lists_entry": "同步歌單",
   "account_lists_title": "你的平台歌單",
   "account_lists_tip": "選擇要帶到 Q-music 的歌單，之後可在這裡更新。",
@@ -156,7 +163,7 @@
   "list_select_local_file_temp_add_tip": "共找到 {total} 個符合要求的檔案，已快速添加到目前清單，現在將進入檔案標籤讀取流程，請勿退出應用！",
   "list_select_range": "區間",
   "list_select_single": "單選",
-  "list_select_unall": "反選",
+  "list_select_unall": "取消全選",
   "list_search": "搜尋目前列表",
   "list_sort": "排序歌曲",
   "list_sort_modal_by_album": "專輯",
@@ -679,5 +686,7 @@
   "search_history_less": "收起搜尋記錄",
   "search_back_home": "返回發現首頁",
   "daily_refresh": "重新整理推薦",
-  "daily_authorization_tip": "在 QQ 音樂官方頁面完成推薦授權，產生 Key 後會自動驗證並儲存。"
+  "daily_authorization_tip": "在 QQ 音樂官方頁面完成推薦授權，產生 Key 後會自動驗證並儲存。",
+  "list_create_failed": "建立歌單失敗，請重試。輸入內容已保留。",
+  "list_create_saving": "正在儲存…"
 }

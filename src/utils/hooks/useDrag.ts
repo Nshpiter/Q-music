@@ -11,6 +11,7 @@ export const useDrag = (onSetProgress: (progress: number) => void, onDragState: 
   })
 
   const onDragStart = useCallback((offsetX: number, locationX: number) => {
+    if (info.current.progressWidth <= 0 || !Number.isFinite(locationX) || !Number.isFinite(offsetX)) return
     info.current.isDraging = true
     info.current.dragStartX = offsetX
 
@@ -27,8 +28,13 @@ export const useDrag = (onSetProgress: (progress: number) => void, onDragState: 
     info.current.isDraging = false
     onDragState(false)
   }, [onDragState, onSetProgress])
+  // 系统手势或弹窗接管触摸时复位拖动，不提交取消中的播放位置。
+  const onDragCancel = useCallback(() => {
+    info.current.isDraging = false
+    onDragState(false)
+  }, [onDragState])
   const onDrag = useCallback((offsetX: number) => {
-    if (!info.current.isDraging) return
+    if (!info.current.isDraging || info.current.progressWidth <= 0 || !Number.isFinite(offsetX)) return
     // dragging.value ||= true
 
     let progress = info.current.dragStartProgress + (offsetX - info.current.dragStartX) / info.current.progressWidth
@@ -49,6 +55,7 @@ export const useDrag = (onSetProgress: (progress: number) => void, onDragState: 
     onLayout,
     onDragStart,
     onDragEnd,
+    onDragCancel,
     onDrag,
   }
 }
