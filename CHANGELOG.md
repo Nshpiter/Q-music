@@ -6,6 +6,27 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## Q-music Android 0.4.8 - 2026-10-04
+
+本次安卓更新专注界面动效与加载状态打磨，与 Windows 同步发布 0.4.8。
+
+### 播放界面
+
+- 底部播放条和播放详情页切歌时封面、歌名淡入；暂停时封面轻微收缩，播放／暂停按钮带弹性切换。
+- 播放详情页“封面／歌词”页码点改为动态胶囊指示。
+
+### 列表与加载
+
+- 每日推荐、排行榜、搜索歌曲、歌单详情和歌单广场加载时显示与列表项尺寸一致的骨架占位，内容到达时不跳动。
+- 每日推荐详情加载失败可直接重试；每日图片加载完成后淡入。
+- 歌单详情页上滑后顶栏标题切换为歌单名，封面尺寸与圆角和其他页面统一。
+- 开启系统“减少动态效果”或应用性能模式时，以上动画自动关闭。
+
+### 安装包
+
+- 安卓正式签名版本，versionCode 38；提供 arm64-v8a、armeabi-v7a、x86、x86_64 和通用 APK。大多数手机请选择 arm64-v8a。
+- 已完成代码检查与类型检查；动画在不同机型上的实际观感仍需使用中验证。
+
 ## Q-music Android 0.4.7 - 2026-10-02
 
 ### 状态栏歌词（词幕）
