@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native'
+import { Animated, StyleSheet } from 'react-native'
 import { navigations } from '@/navigation'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import commonState from '@/store/common/state'
@@ -10,6 +10,7 @@ import { setLoadErrorPicUrl, setMusicInfo } from '@/core/player/playInfo'
 import { useTheme } from '@/store/theme/hook'
 import { Q_UI } from '@/theme/ui'
 import Button from '@/components/common/Button'
+import { useTrackChangeAnimation } from '@/components/player/useTrackChangeAnimation'
 
 const PIC_HEIGHT = 34
 
@@ -34,6 +35,7 @@ const styles = StyleSheet.create({
 export default ({ isHome, onOpenDetail }: { isHome: boolean, onOpenDetail?: () => void }) => {
   const musicInfo = usePlayerMusicInfo()
   const theme = useTheme()
+  const picAnimation = useTrackChangeAnimation(musicInfo.pic, 0)
   const handlePress = () => {
     // console.log('')
     // console.log(playMusicInfo)
@@ -68,12 +70,14 @@ export default ({ isHome, onOpenDetail }: { isHome: boolean, onOpenDetail?: () =
       onPress={handlePress}
       disabled={!musicInfo.id}
     >
-      <Image
-        url={musicInfo.pic}
-        nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic}
-        style={{ ...styles.image, borderColor: theme['q-outline'] }}
-        onError={handleError}
-      />
+      <Animated.View style={picAnimation}>
+        <Image
+          url={musicInfo.pic}
+          nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic}
+          style={{ ...styles.image, borderColor: theme['q-outline'] }}
+          onError={handleError}
+        />
+      </Animated.View>
     </Button>
   )
 }

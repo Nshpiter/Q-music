@@ -17,6 +17,7 @@ export interface OnlineListProps {
   onPlayList?: ListProps['onPlayList']
   progressViewOffset?: ListProps['progressViewOffset']
   ListHeaderComponent?: ListProps['ListHeaderComponent']
+  onScroll?: ListProps['onScroll']
   checkHomePagerIdle?: boolean
   rowType?: RowInfoType
 }
@@ -31,6 +32,7 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
   onPlayList,
   progressViewOffset,
   ListHeaderComponent,
+  onScroll,
   checkHomePagerIdle = false,
   rowType,
 }, ref) => {
@@ -93,6 +95,7 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
           onPlayList={onPlayList}
           progressViewOffset={progressViewOffset}
           ListHeaderComponent={ListHeaderComponent}
+          onScroll={onScroll}
           checkHomePagerIdle={checkHomePagerIdle}
           rowType={rowType}
         />

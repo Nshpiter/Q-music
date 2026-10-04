@@ -1,5 +1,5 @@
 import { memo, useEffect, useState } from 'react'
-import { View } from 'react-native'
+import { Animated, View } from 'react-native'
 // import { useLayout } from '@/utils/hooks'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import { useWindowSize } from '@/utils/hooks'
@@ -12,6 +12,8 @@ import { marginLeft } from './constant'
 import Image from '@/components/common/Image'
 import { useStatusbarHeight } from '@/store/common/hook'
 import commonState from '@/store/common/state'
+import { useTrackChangeAnimation } from '@/components/player/useTrackChangeAnimation'
+import { useCoverPlayScale } from '@/components/player/useCoverPlayScale'
 
 
 export default memo(({ componentId }: { componentId: string }) => {
@@ -28,6 +30,8 @@ export default memo(({ componentId }: { componentId: string }) => {
   useNavigationComponentDidAppear(componentId, () => {
     setAnimated(true)
   })
+  const coverAnimation = useTrackChangeAnimation(pic, 0)
+  const coverScale = useCoverPlayScale(animated)
 
   let imgWidth = Math.min((winWidth * 0.45 - marginLeft - BTN_WIDTH) * 0.76, (winHeight - statusBarHeight - HEADER_HEIGHT) * 0.62)
   imgWidth -= imgWidth * (global.lx.fontSize - 1) * 0.3
@@ -36,13 +40,13 @@ export default memo(({ componentId }: { componentId: string }) => {
 
   return (
     <View style={{ ...styles.container, height: contentHeight }}>
-      <View style={{ ...styles.content, elevation: animated ? 3 : 0 }}>
+      <Animated.View style={[styles.content, { elevation: animated ? 3 : 0, opacity: coverAnimation.opacity, transform: [{ scale: coverScale }] }]}>
         <Image url={pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={{
           width: imgWidth,
           height: imgWidth,
           borderRadius: 2,
         }} />
-      </View>
+      </Animated.View>
     </View>
   )
 })

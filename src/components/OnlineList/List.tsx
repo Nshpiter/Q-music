@@ -14,6 +14,7 @@ import Text from '@/components/common/Text'
 import { handlePlay } from './listAction'
 import { useSettingValue } from '@/store/setting/hook'
 import ContentState from '@/components/common/ContentState'
+import ListSkeleton from '@/components/common/ListSkeleton'
 import { useDockInset } from '@/components/common/DockInset'
 
 type FlatListType = FlatListProps<LX.Music.MusicInfoOnline>
@@ -31,6 +32,7 @@ export interface ListProps {
   onPlayList?: (index: number) => void
   progressViewOffset?: number
   ListHeaderComponent?: FlatListType['ListEmptyComponent']
+  onScroll?: FlatListType['onScroll']
   checkHomePagerIdle: boolean
   rowType?: RowInfoType
 }
@@ -55,6 +57,7 @@ const List = forwardRef<ListType, ListProps>(({
   onPlayList,
   progressViewOffset,
   ListHeaderComponent,
+  onScroll,
   checkHomePagerIdle,
   rowType,
 }, ref) => {
@@ -237,7 +240,7 @@ const List = forwardRef<ListType, ListProps>(({
     switch (status) {
       case 'loading':
       case 'refreshing':
-        return <ContentState status="loading" />
+        return <ListSkeleton variant="song" itemHeight={ITEM_HEIGHT} />
       case 'error':
         return <ContentState status="error" onRetry={onLoadMore} />
       case 'end':
@@ -269,6 +272,8 @@ const List = forwardRef<ListType, ListProps>(({
       onEndReached={handleLoadMore}
       progressViewOffset={progressViewOffset}
       ListHeaderComponent={ListHeaderComponent}
+      onScroll={onScroll}
+      scrollEventThrottle={onScroll ? 32 : undefined}
       ListEmptyComponent={emptyComponent}
       refreshControl={refreshControl}
       ListFooterComponent={footerComponent}

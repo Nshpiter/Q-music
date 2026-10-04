@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { View } from 'react-native'
+import { Animated, View } from 'react-native'
 // import { useLayout } from '@/utils/hooks'
 import { createStyle } from '@/utils/tools'
 import { usePlayerMusicInfo } from '@/store/player/hook'
@@ -12,7 +12,8 @@ import { useStatusbarHeight } from '@/store/common/hook'
 import commonState from '@/store/common/state'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
-
+import { useTrackChangeAnimation } from '@/components/player/useTrackChangeAnimation'
+import { useCoverPlayScale } from '@/components/player/useCoverPlayScale'
 
 export default ({ componentId }: { componentId: string }) => {
   const musicInfo = usePlayerMusicInfo()
@@ -30,6 +31,10 @@ export default ({ componentId }: { componentId: string }) => {
   useNavigationComponentDidAppear(componentId, () => {
     setAnimated(true)
   })
+
+  const coverAnimation = useTrackChangeAnimation(pic, 0)
+  const infoAnimation = useTrackChangeAnimation(musicInfo.id)
+  const coverScale = useCoverPlayScale(animated)
   // console.log('render pic')
 
   const style = useMemo(() => {
@@ -44,16 +49,16 @@ export default ({ componentId }: { componentId: string }) => {
 
   return (
     <View style={styles.container} onLayout={onLayout}>
-      <View style={styles.content}>
+      <Animated.View style={[styles.content, { opacity: coverAnimation.opacity, transform: [{ scale: coverScale }] }]}>
         <Image url={pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={style} />
-      </View>
-      <View style={styles.trackInfo}>
+      </Animated.View>
+      <Animated.View style={[styles.trackInfo, infoAnimation]}>
         <Text size={20} style={styles.title} color={theme['q-text-primary']} numberOfLines={1}>{musicInfo.name}</Text>
         <Text size={13} color={theme['q-text-secondary']} numberOfLines={1}>{musicInfo.singer}</Text>
         {musicInfo.album && musicInfo.album != musicInfo.name
           ? <Text size={12} style={styles.album} color={theme['q-text-secondary']} numberOfLines={1}>{musicInfo.album}</Text>
           : null}
-      </View>
+      </Animated.View>
     </View>
   )
 }

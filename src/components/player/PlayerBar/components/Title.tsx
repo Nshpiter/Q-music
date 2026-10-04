@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native'
+import { Animated, StyleSheet } from 'react-native'
 import { navigations } from '@/navigation'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import { useGlassColors } from '@/components/common/GlassSurface'
@@ -7,11 +7,13 @@ import playerState from '@/store/player/state'
 import Text from '@/components/common/Text'
 import { LIST_IDS } from '@/config/constant'
 import Button from '@/components/common/Button'
+import { useTrackChangeAnimation } from '@/components/player/useTrackChangeAnimation'
 
 
 export default ({ isHome, onOpenDetail }: { isHome: boolean, onOpenDetail?: () => void }) => {
   const musicInfo = usePlayerMusicInfo()
   const colors = useGlassColors()
+  const trackAnimation = useTrackChangeAnimation(musicInfo.id)
 
   const handlePress = () => {
     // console.log('')
@@ -41,8 +43,10 @@ export default ({ isHome, onOpenDetail }: { isHome: boolean, onOpenDetail?: () =
       onPress={handlePress}
       disabled={!musicInfo.id}
     >
-      <Text style={styles.title} size={13} color={colors.primary} numberOfLines={1}>{title}</Text>
-      <Text style={styles.singer} size={10} color={colors.secondary} numberOfLines={1}>{singer}</Text>
+      <Animated.View style={trackAnimation}>
+        <Text style={styles.title} size={13} color={colors.primary} numberOfLines={1}>{title}</Text>
+        <Text style={styles.singer} size={10} color={colors.secondary} numberOfLines={1}>{singer}</Text>
+      </Animated.View>
     </Button>
   )
 }

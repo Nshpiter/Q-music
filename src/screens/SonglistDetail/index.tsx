@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import MusicList, { type MusicListType } from './MusicList'
 import PageContent from '@/components/PageContent'
@@ -14,6 +14,7 @@ import { FixedHeader } from './Header'
 export default ({ componentId, info }: { componentId: string, info: ListInfoItem }) => {
   const musicListRef = useRef<MusicListType>(null)
   const isUnmountedRef = useRef(false)
+  const [titleCollapsed, setTitleCollapsed] = useState(false)
 
   useEffect(() => {
     setComponentId(COMPONENT_IDS.songlistDetail, componentId)
@@ -34,8 +35,8 @@ export default ({ componentId, info }: { componentId: string, info: ListInfoItem
     <PageContent>
       <StatusBar />
       <ListInfoContext.Provider value={info}>
-        <FixedHeader />
-        <MusicList ref={musicListRef} componentId={componentId} />
+        <FixedHeader titleCollapsed={titleCollapsed} />
+        <MusicList ref={musicListRef} componentId={componentId} onTitleCollapse={setTitleCollapsed} />
       </ListInfoContext.Provider>
       <PlayerBar />
     </PageContent>

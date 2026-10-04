@@ -9,6 +9,7 @@ import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import ContentState from '@/components/common/ContentState'
+import ListSkeleton from '@/components/common/ListSkeleton'
 import { useDockInset } from '@/components/common/DockInset'
 
 type FlatListType = FlatListProps<ListInfoItem>
@@ -98,7 +99,7 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
     switch (status) {
       case 'loading':
       case 'refreshing':
-        return <ContentState status="loading" />
+        return <ListSkeleton variant="songlist" itemHeight={ITEM_HEIGHT} />
       case 'error':
         return <ContentState status="error" onRetry={onLoadMore} />
       case 'end':

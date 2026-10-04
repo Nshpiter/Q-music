@@ -1,8 +1,9 @@
-import { memo, useEffect, useState } from 'react'
-import { Image, StyleSheet, View } from 'react-native'
+import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Animated, StyleSheet, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import { getPicUrl } from '@/core/music/online'
 import { useTheme } from '@/store/theme/hook'
+import { useMotion } from '@/utils/useMotion'
 
 // 拼图和横向推荐共享请求，避免同一封面重复访问音源。
 const covers = new Map<string, Promise<string>>()
@@ -19,7 +20,9 @@ const loadCover = async(musicInfo: LX.Music.MusicInfoOnline) => {
 
 export default memo(({ item }: { item?: LX.Music.MusicInfoOnline }) => {
   const theme = useTheme()
+  const motion = useMotion()
   const [url, setUrl] = useState(item?.meta.picUrl ?? '')
+  const opacity = useRef(new Animated.Value(0)).current
   useEffect(() => {
     let active = true
     setUrl(item?.meta.picUrl ?? '')
@@ -28,10 +31,19 @@ export default memo(({ item }: { item?: LX.Music.MusicInfoOnline }) => {
     }
     return () => { active = false }
   }, [item])
+  useLayoutEffect(() => {
+    opacity.stopAnimation()
+    opacity.setValue(0)
+  }, [opacity, url])
+  useEffect(() => () => { opacity.stopAnimation() }, [opacity])
+  const handleLoad = () => {
+    if (!motion) { opacity.setValue(1); return }
+    Animated.timing(opacity, { toValue: 1, duration: 280, useNativeDriver: true }).start()
+  }
   return (
     <View style={{ ...styles.cover, backgroundColor: theme['q-surface-tint'] }}>
       <Icon accessible={false} name="album" color={theme['q-accent-text']} rawSize={26} />
-      {url ? <Image source={{ uri: url }} style={StyleSheet.absoluteFill} onError={() => { setUrl('') }} /> : null}
+      {url ? <Animated.Image source={{ uri: url }} style={[StyleSheet.absoluteFill, { opacity }]} onLoad={handleLoad} onError={() => { setUrl('') }} /> : null}
     </View>
   )
 })

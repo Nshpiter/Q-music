@@ -16,9 +16,10 @@ import { useTheme } from '@/store/theme/hook'
 import { Q_TOUCH_HIT_SLOP, Q_UI } from '@/theme/ui'
 import { createStyle, toast } from '@/utils/tools'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, AppState, FlatList, InteractionManager, Modal, SafeAreaView, ScrollView, View } from 'react-native'
+import { AppState, FlatList, InteractionManager, Modal, SafeAreaView, ScrollView, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import DailyArtwork from './DailyArtwork'
+import Skeleton from '@/components/common/Skeleton'
 
 export default () => {
   const t = useI18n()
@@ -171,7 +172,20 @@ export default () => {
         </Button>
       </View>
       {loading && !list.length
-        ? <View style={styles.state}><ActivityIndicator color={theme['q-accent']} /><Text size={12} color={theme['q-text-secondary']}>{t('search_daily_recommend_loading')}</Text></View>
+        ? (
+            <View accessible accessibilityLabel={t('search_daily_recommend_loading')} style={styles.skeleton}>
+              <Skeleton width={96} height={16} radius={8} style={styles.discoveryTitle} />
+              <View style={styles.rail}>
+                {[0, 1, 2].map(index => (
+                  <View key={index} style={styles.discoveryItem}>
+                    <Skeleton height={120} radius={12} />
+                    <Skeleton width="78%" height={12} style={styles.skeletonTitle} />
+                    <Skeleton width="48%" height={10} />
+                  </View>
+                ))}
+              </View>
+            </View>
+          )
         : loadError
           ? (
               <View style={styles.state}>
@@ -210,11 +224,38 @@ export default () => {
           </View>
           <FlatList
             data={list}
-            refreshing={loading}
+            refreshing={loading && list.length > 0}
             onRefresh={() => { if (!startingPlayback) void load(sourceRef.current, true) }}
             contentContainerStyle={styles.detailList}
             keyExtractor={item => `${item.source}_${item.id}`}
-            ListEmptyComponent={<Text color={theme['q-text-secondary']}>{t(loading ? 'search_daily_recommend_loading' : loadError ? 'load_failed' : 'search_daily_recommend_empty')}</Text>}
+            ListEmptyComponent={loading
+              ? (
+                  <View accessible accessibilityLabel={t('search_daily_recommend_loading')}>
+                    {[0, 1, 2, 3, 4, 5].map(index => (
+                      <View key={index} style={[styles.item, { opacity: 1 - index * 0.12 }]}>
+                        <Skeleton width={16} height={10} style={styles.trackNumberSkeleton} />
+                        <Skeleton width={48} height={48} radius={12} />
+                        <View style={styles.musicInfo}>
+                          <Skeleton width={`${62 - (index % 3) * 10}%`} height={13} />
+                          <Skeleton width="36%" height={10} style={styles.skeletonLine} />
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )
+              : (
+                  <View style={styles.detailState}>
+                    <Text size={13} color={theme['q-text-secondary']}>{t(loadError ? 'load_failed' : 'search_daily_recommend_empty')}</Text>
+                    {loadError
+                      ? (
+                          <Button accessibilityLabel={t('list_retry')} hitSlop={Q_TOUCH_HIT_SLOP} style={{ ...styles.errorAction, backgroundColor: theme['q-surface-tint'] }} onPress={() => { void load(sourceRef.current, true) }}>
+                            <Icon accessible={false} name="available_updates" color={theme['q-accent-text']} rawSize={14} />
+                            <Text size={12} color={theme['q-accent-text']}>{t('list_retry')}</Text>
+                          </Button>
+                        )
+                      : null}
+                  </View>
+                )}
             renderItem={({ item, index }) => (
               <Button disabled={startingPlayback} accessibilityLabel={`${t(playMusicInfo.musicInfo?.id == item.id && isPlay ? 'pause' : 'play')} · ${item.name} · ${item.singer}`} style={styles.item} onPress={() => { if (playMusicInfo.musicInfo?.id == item.id) togglePlay(); else void handlePlay(index) }}>
                 <Text size={12} style={styles.trackNumber} color={theme['q-text-secondary']}>{String(index + 1).padStart(2, '0')}</Text>
@@ -254,7 +295,12 @@ const styles = createStyle({
   eyebrow: { letterSpacing: 2, fontWeight: '700', marginBottom: 6 },
   openHint: { marginTop: 10, fontWeight: '600' },
   discoveryTitle: { fontWeight: '700', marginTop: 24, marginBottom: 14 },
-  rail: { gap: 12, paddingBottom: 4 },
+  rail: { flexDirection: 'row', gap: 12, paddingBottom: 4 },
+  skeleton: { overflow: 'hidden' },
+  skeletonTitle: { marginTop: 10, marginBottom: 6 },
+  skeletonLine: { marginTop: 8 },
+  trackNumberSkeleton: { marginRight: 12 },
+  detailState: { minHeight: 240, gap: 12, alignItems: 'center', justifyContent: 'center' },
   discoveryItem: { width: 120 },
   trackTitle: { fontWeight: '600', marginTop: 8, marginBottom: 3 },
   detailHeader: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 8 },

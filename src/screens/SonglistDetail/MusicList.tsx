@@ -8,14 +8,25 @@ import { useListInfo } from './state'
 
 export interface MusicListProps {
   componentId: string
+  onTitleCollapse?: (collapsed: boolean) => void
 }
+
+// 歌单标题滚出可视区后，固定栏改为显示歌单名
+const TITLE_COLLAPSE_OFFSET = 64
 
 export interface MusicListType {
   loadList: (source: LX.OnlineSource, listId: string) => void
 }
 
-export default forwardRef<MusicListType, MusicListProps>(({ componentId }, ref) => {
+export default forwardRef<MusicListType, MusicListProps>(({ componentId, onTitleCollapse }, ref) => {
   const listRef = useRef<OnlineListType>(null)
+  const collapsedRef = useRef(false)
+  const handleScroll: OnlineListProps['onScroll'] = (event) => {
+    const collapsed = event.nativeEvent.contentOffset.y > TITLE_COLLAPSE_OFFSET
+    if (collapsed == collapsedRef.current) return
+    collapsedRef.current = collapsed
+    onTitleCollapse?.(collapsed)
+  }
   const headerRef = useRef<HeaderType>(null)
   const isUnmountedRef = useRef(false)
   const info = useListInfo()
@@ -118,6 +129,7 @@ export default forwardRef<MusicListType, MusicListProps>(({ componentId }, ref) 
     onRefresh={handleRefresh}
     onLoadMore={handleLoadMore}
     ListHeaderComponent={header}
+    onScroll={onTitleCollapse ? handleScroll : undefined}
     // progressViewOffset={}
    />
 })

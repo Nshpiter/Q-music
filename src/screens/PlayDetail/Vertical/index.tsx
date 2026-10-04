@@ -1,5 +1,5 @@
 import { memo, useState, useRef, useEffect } from 'react'
-import { View, AppState } from 'react-native'
+import { Animated, View, AppState } from 'react-native'
 
 import Header from './components/Header'
 // import Aside from './components/Aside'
@@ -15,6 +15,8 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import Button from '@/components/common/Button'
+import { useMotion } from '@/utils/useMotion'
+import { Q_UI } from '@/theme/ui'
 
 const LyricPage = ({ activeIndex }: { activeIndex: number }) => {
   const initedRef = useRef(false)
@@ -29,9 +31,26 @@ const LyricPage = ({ activeIndex }: { activeIndex: number }) => {
   // return activeIndex == 0 || activeIndex == 1 ? setting : null
 }
 
+const PageDot = ({ active }: { active: boolean }) => {
+  const theme = useTheme()
+  const motion = useMotion()
+  const progress = useRef(new Animated.Value(active ? 1 : 0)).current
+  useEffect(() => {
+    progress.stopAnimation()
+    if (motion) Animated.spring(progress, { toValue: active ? 1 : 0, ...Q_UI.motion.settle, useNativeDriver: false }).start()
+    else progress.setValue(active ? 1 : 0)
+    return () => { progress.stopAnimation() }
+  }, [active, motion, progress])
+  return <Animated.View style={{
+    width: progress.interpolate({ inputRange: [0, 1], outputRange: [4, 14], extrapolate: 'clamp' }),
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: progress.interpolate({ inputRange: [0, 1], outputRange: [String(theme['q-outline']), String(theme['q-text-primary'])], extrapolate: 'clamp' }),
+  }} />
+}
+
 // global.iskeep = false
 export default memo(({ componentId }: { componentId: string }) => {
-  const theme = useTheme()
   const t = useI18n()
   const [pageIndex, setPageIndex] = useState(0)
   const showLyricRef = useRef(false)
@@ -105,7 +124,7 @@ export default memo(({ componentId }: { componentId: string }) => {
                 ripple={null}
                 onPress={() => { pagerViewRef.current?.setPage(index) }}
               >
-                <View style={{ width: active ? 14 : 4, height: 4, borderRadius: 2, backgroundColor: active ? theme['q-text-primary'] : theme['q-outline'] }} />
+                <PageDot active={active} />
               </Button>
             )
           })}

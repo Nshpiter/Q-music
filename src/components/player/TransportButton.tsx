@@ -31,6 +31,18 @@ export default ({ icon, label, onPress, size = 48, faceSize = size, iconSize = 2
     if (!motion) { scale.stopAnimation(); scale.setValue(1) }
     return () => { scale.stopAnimation() }
   }, [motion, scale])
+  // 播放／暂停等图标切换时轻弹一下，让状态变化可感知
+  const iconScale = useRef(new Animated.Value(1)).current
+  const lastIcon = useRef(icon)
+  useEffect(() => {
+    if (lastIcon.current == icon) return
+    lastIcon.current = icon
+    iconScale.stopAnimation()
+    if (!motion) { iconScale.setValue(1); return }
+    iconScale.setValue(0.72)
+    Animated.spring(iconScale, { toValue: 1, stiffness: 420, damping: 18, mass: 0.7, useNativeDriver: true }).start()
+  }, [icon, iconScale, motion])
+  useEffect(() => () => { iconScale.stopAnimation() }, [iconScale])
   return <Button
     accessibilityLabel={label}
     ripple={null}
@@ -49,9 +61,11 @@ export default ({ icon, label, onPress, size = 48, faceSize = size, iconSize = 2
       borderColor: foreground,
       transform: [{ scale }],
     }]}>
-    <Icon accessible={false} name={icon} rawSize={iconSize}
-      color={primary && !outlined ? theme['c-content-background'] : foreground}
-      style={icon == 'play' ? { marginLeft: 2 } : undefined} />
+      <Animated.View style={{ transform: [{ scale: iconScale }] }}>
+        <Icon accessible={false} name={icon} rawSize={iconSize}
+          color={primary && !outlined ? theme['c-content-background'] : foreground}
+          style={icon == 'play' ? { marginLeft: 2 } : undefined} />
+      </Animated.View>
     </Animated.View>
   </Button>
 }

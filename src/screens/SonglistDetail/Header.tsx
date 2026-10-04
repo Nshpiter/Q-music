@@ -1,5 +1,5 @@
-import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { forwardRef, memo, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { Animated, Easing, StyleSheet, View } from 'react-native'
 import ButtonBar from './ActionBar'
 import { pop, useNavigationComponentDidAppear } from '@/navigation'
 import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
@@ -12,9 +12,11 @@ import { useStatusbarHeight } from '@/store/common/hook'
 import commonState from '@/store/common/state'
 import { useI18n } from '@/lang'
 import IconButton from '@/components/common/IconButton'
+import { useMotion } from '@/utils/useMotion'
+import { Q_UI } from '@/theme/ui'
 
-const IMAGE_WIDTH = 76
-const COVER_RADIUS = 4
+const IMAGE_WIDTH = 92
+const COVER_RADIUS = Q_UI.radius.control
 
 const CountText = memo(({ count }: { count: string }) => {
   const [animFade] = useAnimateOnecNumber(0, 1, 250, false)
@@ -72,10 +74,20 @@ export interface DetailInfo {
   imgUrl?: string
 }
 
-export const FixedHeader = () => {
+export const FixedHeader = ({ titleCollapsed = false }: { titleCollapsed?: boolean }) => {
   const statusBarHeight = useStatusbarHeight()
   const theme = useTheme()
   const t = useI18n()
+  const info = useListInfo()
+  const motion = useMotion()
+  const showName = titleCollapsed && !!info.name
+  const progress = useRef(new Animated.Value(0)).current
+  useEffect(() => {
+    progress.stopAnimation()
+    if (motion) Animated.timing(progress, { toValue: showName ? 1 : 0, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start()
+    else progress.setValue(showName ? 1 : 0)
+    return () => { progress.stopAnimation() }
+  }, [motion, progress, showName])
 
   return (
     <View
@@ -96,9 +108,26 @@ export const FixedHeader = () => {
           onPress={() => { void pop(commonState.componentIds.songlistDetail!) }}
           iconColor={theme['q-text-primary']}
         />
-        <Text style={styles.pageTitle} size={17} color={theme['q-text-primary']} numberOfLines={1}>
-          {t('nav_songlist')}
-        </Text>
+        <View style={styles.pageTitle} accessibilityRole="header" accessibilityLabel={showName ? info.name : t('nav_songlist')}>
+          <AnimatedText
+            size={17} color={theme['q-text-primary']} numberOfLines={1}
+            style={[styles.pageTitleText, {
+              opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+              transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, -8] }) }],
+            }]}
+          >
+            {t('nav_songlist')}
+          </AnimatedText>
+          <AnimatedText
+            size={15} color={theme['q-text-primary']} numberOfLines={1}
+            style={[styles.pageTitleText, styles.pageTitleOverlay, {
+              opacity: progress,
+              transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
+            }]}
+          >
+            {info.name}
+          </AnimatedText>
+        </View>
       </View>
     </View>
   )
@@ -162,9 +191,17 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     flex: 1,
-    paddingRight: 48,
+    marginRight: 48,
+    justifyContent: 'center',
+  },
+  pageTitleText: {
     textAlign: 'center',
     fontWeight: '700',
+  },
+  pageTitleOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
   },
   container: {
     flexDirection: 'column',
