@@ -9,7 +9,7 @@
         @pointerdown.stop
         @click.stop="toggleDetail"
       >
-        <img v-if="musicInfo.pic" :src="musicInfo.pic" decoding="async" @error="handleImgError">
+        <img v-if="musicInfo.pic" :key="musicInfo.pic" :class="$style.coverImg" :src="musicInfo.pic" decoding="async" @error="handleImgError">
         <empty-cover-mark v-else :class="$style.coverPlaceholder" />
         <span :class="[$style.coverHint, { [$style.coverHintFlip]: props.detail }]" aria-hidden="true">
           <svg viewBox="0 0 24 24">
@@ -17,7 +17,7 @@
           </svg>
         </span>
       </button>
-      <div :class="$style.trackText">
+      <div :key="musicInfo.id || title" :class="$style.trackText">
         <div :class="$style.trackTitle">{{ title || status }}</div>
         <div :class="$style.trackMeta">{{ artist }}</div>
       </div>
@@ -210,6 +210,10 @@ const handleImgError = () => {
     object-fit: cover;
   }
 
+  .coverImg {
+    animation: q-footer-cover-in .42s cubic-bezier(.22, 1, .36, 1);
+  }
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 14px 28px rgba(50, 63, 82, .18);
@@ -259,6 +263,38 @@ const handleImgError = () => {
 .trackText {
   min-width: 0;
   flex: auto;
+  animation: q-footer-text-in .36s cubic-bezier(.22, 1, .36, 1);
+}
+
+@keyframes q-footer-cover-in {
+  from {
+    opacity: 0;
+    transform: scale(.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes q-footer-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes q-footer-icon-in {
+  from {
+    opacity: .3;
+    transform: scale(.72);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 .trackTitle {
   max-width: 100%;
@@ -389,6 +425,7 @@ const handleImgError = () => {
   svg {
     width: 25px;
     height: 25px;
+    animation: q-footer-icon-in .26s cubic-bezier(.34, 1.56, .64, 1);
   }
 
   &:hover {

@@ -47,11 +47,19 @@
         </button>
       </li>
     </ul>
+    <label v-if="maxPage > btnLength" :class="$style.jump" :title="$t('pagination__jump_tip', { max: maxPage })">
+      <span>{{ $t('pagination__jump') }}</span>
+      <input
+        v-model="jumpValue" type="text" inputmode="numeric" :maxlength="String(maxPage).length"
+        :placeholder="String(page)" :aria-label="$t('pagination__jump_tip', { max: maxPage })"
+        @keydown.enter="handleJump" @blur="jumpValue = ''"
+      >
+    </label>
   </div>
 </template>
 
 <script>
-import { computed } from '@common/utils/vueTools'
+import { computed, ref } from '@common/utils/vueTools'
 
 export default {
   props: {
@@ -95,11 +103,23 @@ export default {
       emit('btn-click', page)
     }
 
+    const jumpValue = ref('')
+    const handleJump = (event) => {
+      const target = parseInt(jumpValue.value, 10)
+      jumpValue.value = ''
+      if (!Number.isFinite(target)) return
+      const page = Math.min(Math.max(target, 1), maxPage.value)
+      event.target.blur()
+      if (page != props.page) handleClick(page)
+    }
+
     return {
       maxPage,
       pageEvg,
       pages,
       handleClick,
+      jumpValue,
+      handleJump,
     }
   },
 }
@@ -110,39 +130,49 @@ export default {
 @import '@renderer/assets/styles/layout.less';
 
 .pagination {
-  display: inline-block;
-  background-color: var(--color-button-background);
-  // border-top-left-radius: 8px;
-  border-radius: @radius-border;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .42);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6), 0 8px 22px rgba(35, 54, 46, .07);
+  backdrop-filter: blur(14px);
+
   ul {
     display: flex;
     flex-flow: row nowrap;
-    // border: .0625rem solid @theme_color2;
-    // border-radius: .3125rem;
+    gap: 2px;
+
     li {
-      // margin-right: @padding;
-      // color: var(--color-button-font);
-      // border: .0625rem solid @theme_line;
-      // border-radius: .3125rem;
-      transition: 0.4s ease;
-      transition-property: all;
-      line-height: 1.2;
       display: flex;
-      // border-right: none;
+      line-height: 1.2;
+
       svg {
         height: 1em;
+        fill: currentColor;
       }
       span,
       button {
-        display: block;
-        padding: 7px 12px;
-        line-height: 1.2;
-        color: var(--color-button-font);
+        min-width: 32px;
+        height: 30px;
+        padding: 0 9px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        color: var(--color-font);
         font-size: 13px;
+        font-variant-numeric: tabular-nums;
       }
       &.active {
         span {
-          background-color: var(--color-button-background-selected);
+          color: #fff;
+          font-weight: 650;
+          background-color: var(--color-primary);
+          box-shadow: 0 6px 14px var(--color-primary-alpha-700);
+          animation: q-pagination-active .32s cubic-bezier(.34, 1.56, .64, 1);
         }
       }
       button {
@@ -150,12 +180,16 @@ export default {
         border: none;
         cursor: pointer;
         outline: none;
-        transition: background-color .3s ease;
+        transition: background-color @transition-fast, color @transition-fast, transform @transition-fast;
         &:hover {
-          background-color: var(--color-button-background-hover);
+          color: var(--color-primary-dark-100);
+          background-color: rgba(255, 255, 255, .62);
+        }
+        &:focus-visible {
+          box-shadow: inset 0 0 0 2px var(--color-primary-alpha-600);
         }
         &:active {
-          background-color: var(--color-button-background-active);
+          transform: scale(.92);
         }
       }
       &.disabled {
@@ -163,29 +197,49 @@ export default {
           opacity: .3;
         }
       }
-      &:first-child {
-        span, button {
-          border-top-left-radius: @radius-border;
-          border-bottom-left-radius: @radius-border;
-        }
-        // border-right: .0625rem solid @theme_line;
-      }
-      &:last-child {
-        span, button {
-          border-top-right-radius: @radius-border;
-          border-bottom-right-radius: @radius-border;
-        }
-        // border-right: .0625rem solid @theme_line;
-      }
-      &:first-child, &:last-child, &.first, &.last {
-        span,
-        button {
-          line-height: 0;
-        }
-      }
+    }
+  }
+}
+@keyframes q-pagination-active {
+  from { transform: scale(.8); }
+  to { transform: scale(1); }
+}
+
+.jump {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px 0 10px;
+  border-left: 1px solid rgba(54, 83, 70, .12);
+  color: var(--color-font-label);
+  font-size: 12px;
+  white-space: nowrap;
+
+  input {
+    width: 44px;
+    height: 26px;
+    padding: 0 6px;
+    box-sizing: border-box;
+    border: none;
+    border-radius: 8px;
+    outline: none;
+    color: var(--color-font);
+    background: rgba(255, 255, 255, .6);
+    box-shadow: inset 0 0 0 1px rgba(54, 83, 70, .12);
+    font: inherit;
+    font-size: 12px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    transition: box-shadow @transition-fast, background-color @transition-fast;
+
+    &::placeholder { color: var(--color-font-label); opacity: .6; }
+    &:focus {
+      background: #fff;
+      box-shadow: inset 0 0 0 1.5px var(--color-primary);
     }
   }
 }
 
-
 </style>
+
+

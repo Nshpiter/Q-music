@@ -265,6 +265,8 @@
   "no_item": "清單竟然是空的...",
   "not_agree": "不接受",
   "ok": "我知道了",
+  "pagination__jump": "跳至",
+  "pagination__jump_tip": "輸入頁碼，按 Enter 跳轉（共 {max} 頁）",
   "pagination__next": "下一頁",
   "pagination__page": "第 {num} 頁",
   "pagination__prev": "上一頁",

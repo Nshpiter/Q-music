@@ -265,6 +265,8 @@
   "no_item": "Nothing's here...",
   "not_agree": "Decline",
   "ok": "OK",
+  "pagination__jump": "Go to",
+  "pagination__jump_tip": "Enter a page number and press Enter ({max} pages)",
   "pagination__next": "Next page",
   "pagination__page": "Page {num}",
   "pagination__prev": "Previous page",

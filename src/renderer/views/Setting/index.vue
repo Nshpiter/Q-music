@@ -2,6 +2,11 @@
   <div :class="$style.main">
     <div class="scroll" :class="$style.toc">
       <ul :class="$style.tocList" role="tablist" aria-label="设置分类" aria-orientation="vertical">
+        <li
+          v-show="activeIndex > -1" role="presentation" aria-hidden="true"
+          :class="[$style.tocIndicator, { [$style.tocIndicatorReady]: indicatorReady }]"
+          :style="{ transform: `translateY(${activeIndex * 49}px)` }"
+        />
         <li v-for="(h2, index) in tocList" :key="h2.id" :class="$style.tocListItem" role="presentation">
           <button
             :id="`${h2.id}-tab`" type="button" :tabindex="avtiveComponentName == h2.id ? 0 : -1" aria-controls="setting-panel"
@@ -26,7 +31,9 @@
     </div>
     <div id="setting-panel" ref="dom_content_ref" class="scroll" :class="$style.setting" role="tabpanel" :aria-labelledby="`${avtiveComponentName}-tab`" tabindex="0">
       <dl>
-        <component :is="avtiveComponentName" />
+        <div :key="avtiveComponentName" :class="$style.panel">
+          <component :is="avtiveComponentName" />
+        </div>
         <!-- <SettingBasic />
         <SettingPlay />
         <SettingPlayDetail />
@@ -122,7 +129,13 @@ export default {
       ? route.query.name
       : tocList.value[0].id)
 
+    const activeIndex = computed(() => tocList.value.findIndex(item => item.id == avtiveComponentName.value))
+    const indicatorReady = ref(false)
+
     onMounted(() => {
+      requestAnimationFrame(() => {
+        indicatorReady.value = true
+      })
       if (route.query.section != 'cloud-library') return
       void nextTick(() => {
         const content = dom_content_ref.value
@@ -135,11 +148,9 @@ export default {
     const toggleTab = id => {
       avtiveComponentName.value = id
       logRendererState('setting:toggleTab', { id })
+      // 内容整页替换并淡入，直接回到顶部，不再从旧位置平滑滚动
       void nextTick(() => {
-        dom_content_ref.value?.scrollTo({
-          top: 0,
-          behavior: 'smooth',
-        })
+        if (dom_content_ref.value) dom_content_ref.value.scrollTop = 0
       })
     }
 
@@ -161,6 +172,8 @@ export default {
 
     return {
       tocList,
+      activeIndex,
+      indicatorReady,
       avtiveComponentName,
       dom_content_ref,
       toggleTab,
@@ -228,11 +241,35 @@ export default {
   box-sizing: border-box;
 }
 .tocList {
+  position: relative;
   display: flex;
   flex-flow: column nowrap;
   gap: 7px;
 }
+// 选中底块在分类之间滑动；49px = 分类高度 42px + 间距 7px
+.tocIndicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 42px;
+  border-radius: 16px;
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, .68);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .82), 0 14px 30px rgba(72, 91, 112, .08);
+}
+.tocIndicatorReady {
+  transition: transform .42s cubic-bezier(.22, 1, .36, 1);
+}
+.panel {
+  animation: q-setting-panel-in .36s cubic-bezier(.22, 1, .36, 1);
+}
+@keyframes q-setting-panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .tocH2 {
+  position: relative;
   width: 100%;
   border: 0;
   background: transparent;
@@ -268,8 +305,6 @@ export default {
   }
   &.active {
     color: var(--color-primary-dark-300);
-    background-color: rgba(255, 255, 255, .68);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .82), 0 14px 30px rgba(72, 91, 112, .08);
 
     .tocIcon {
       color: #fff;

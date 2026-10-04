@@ -297,18 +297,23 @@ export default {
   margin: 8px;
   padding: 0 10px;
   border: 1px solid var(--color-primary-alpha-600);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--color-primary-background-hover);
   color: var(--color-button-font);
   font-size: 12px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
-  transition: background-color @transition-normal;
-  &:hover, &:focus-visible { background: var(--color-primary-alpha-800); }
+  transition: background-color @transition-fast, box-shadow @transition-fast, transform @transition-fast;
+  &:hover, &:focus-visible {
+    background: var(--color-primary-alpha-800);
+    box-shadow: 0 8px 18px var(--color-primary-alpha-900);
+    .cloudArrow { opacity: 1; transform: translateX(3px); }
+  }
+  &:active { transform: scale(.98); }
   svg { width: 17px; height: 17px; flex: none; }
   span { flex: 1; }
-  .cloudArrow { width: 13px; height: 13px; opacity: .6; }
+  .cloudArrow { width: 13px; height: 13px; opacity: .6; transition: opacity @transition-fast, transform @transition-fast; }
 }
 .listHeader {
   position: relative;
@@ -427,6 +432,8 @@ export default {
 
       &.dragingItem {
         background-color: var(--color-primary-background-hover) !important;
+        box-shadow: inset 0 0 0 1.5px var(--color-primary-alpha-600), 0 10px 24px rgba(72, 91, 112, .16);
+        opacity: .9;
       }
     }
   }
@@ -436,7 +443,7 @@ export default {
   margin-bottom: 3px;
   border-radius: 12px;
   transition: .3s ease;
-  transition-property: color, background-color, opacity;
+  transition-property: color, background-color, opacity, box-shadow, transform;
   background-color: transparent;
   &:focus-visible {
     outline: 2px solid var(--color-primary);
@@ -446,6 +453,9 @@ export default {
     &:hover {
       background-color: var(--color-primary-background-hover);
       cursor: pointer;
+    }
+    &:not(.editing):hover {
+      transform: translateX(2px);
     }
   }
   &.active {
@@ -459,8 +469,23 @@ export default {
   &.clicked {
     background-color: var(--color-primary-background-hover);
   }
+  // 正在从来源同步：保留可读性，右侧转圈提示进行中
   &.fetching {
-    opacity: .5;
+    opacity: .66;
+    .listsLabel { padding-right: 30px; }
+    &:after {
+      content: '';
+      position: absolute;
+      right: 11px;
+      top: 50%;
+      width: 12px;
+      height: 12px;
+      margin-top: -7px;
+      border: 1.5px solid var(--color-primary-alpha-700);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: q-mylist-spin .8s linear infinite;
+    }
   }
   &.editing {
     padding: 0 10px;
@@ -505,9 +530,13 @@ export default {
 .listsNew {
   padding: 0 10px;
   background-color: var(--color-primary-background-hover) !important;
+  box-shadow: inset 0 0 0 1.5px var(--color-primary-alpha-600);
   .listsInput {
     display: block;
   }
+}
+@keyframes q-mylist-spin {
+  to { transform: rotate(360deg); }
 }
 .newLeave {
   margin-top: -@lists-item-height;

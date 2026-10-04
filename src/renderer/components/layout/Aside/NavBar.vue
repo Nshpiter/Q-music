@@ -1,6 +1,13 @@
 <template>
   <div ref="dom_menu" :class="$style.menu">
     <ul :class="$style.list" role="toolbar">
+      <li
+        v-show="activeIndex > -1"
+        :class="[$style.indicator, { [$style.indicatorReady]: indicatorReady }]"
+        :style="{ transform: `translateY(${activeIndex * 58}px)` }"
+        role="presentation"
+        aria-hidden="true"
+      />
       <li v-for="item in menus" :key="item.to" :class="$style.navItem" role="presentation">
         <router-link :class="[$style.link, {[$style.active]: $route.meta.name == item.name}]" role="tab" :aria-selected="$route.meta.name == item.name" :to="item.to" :aria-label="item.tips">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" :viewBox="item.iconSize" :height="item.size" :width="item.size" space="preserve">
@@ -16,7 +23,8 @@
 <script lang="ts">
 import { appSetting } from '@renderer/store/setting'
 import { useI18n } from '@root/lang'
-import { ref, computed } from '@common/utils/vueTools'
+import { ref, computed, onMounted } from '@common/utils/vueTools'
+import { useRoute } from '@common/utils/vueRouter'
 import { useIconSize } from '@renderer/utils/compositions/useIconSize'
 
 export default {
@@ -85,10 +93,23 @@ export default {
         },
       ].filter(m => m.enable)
     })
+    const route = useRoute()
+    const activeIndex = computed(() => menus.value.findIndex(m => m.name == route.meta.name))
+
+    // 首次定位不播放滑动动画，避免启动时选中块从顶部滑下来
+    const indicatorReady = ref(false)
+    onMounted(() => {
+      requestAnimationFrame(() => {
+        indicatorReady.value = true
+      })
+    })
+
     return {
       appSetting,
       menus,
       dom_menu,
+      activeIndex,
+      indicatorReady,
     }
   },
 }
@@ -108,6 +129,7 @@ export default {
   // padding: 5px;
 }
 .list {
+  position: relative;
   -webkit-app-region: no-drag;
   display: flex;
   flex-flow: column nowrap;
@@ -128,6 +150,21 @@ export default {
 }
 .navItem {
   position: relative;
+}
+// 选中底块独立于导航项，切换页面时在项之间滑动；58px = 导航项高度 50px + 间距 8px
+.indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 50px;
+  border-radius: 14px;
+  pointer-events: none;
+  background: rgba(38, 40, 39, .1);
+  box-shadow: inset 0 0 0 1px rgba(38, 40, 39, .16), 0 8px 20px rgba(35, 38, 36, .07);
+}
+.indicatorReady {
+  transition: transform .42s cubic-bezier(.22, 1, .36, 1);
 }
 .link {
   position: relative;
@@ -189,8 +226,7 @@ export default {
   // 选中态：主色实心图标胶囊 + 柔和玻璃底，取代原来的左侧竖线
   &.active {
     color: var(--color-font);
-    background: rgba(38, 40, 39, .1);
-    box-shadow: inset 0 0 0 1px rgba(38, 40, 39, .16), 0 8px 20px rgba(35, 38, 36, .07);
+    background: transparent;
 
     svg {
       color: #fff;
@@ -199,7 +235,7 @@ export default {
     }
 
     &:hover {
-      background: rgba(38, 40, 39, .14);
+      background: rgba(38, 40, 39, .04);
     }
   }
 

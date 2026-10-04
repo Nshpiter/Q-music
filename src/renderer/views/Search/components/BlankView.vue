@@ -1,6 +1,12 @@
 <template>
   <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
     <div v-show="props.visible" :class="$style.noitem">
+      <transition
+        mode="out-in"
+        :enter-active-class="$style.panelEnterActive" :leave-active-class="$style.panelLeaveActive"
+        :enter-from-class="isShowDailyDetail ? $style.panelFromRight : $style.panelFromLeft"
+        :leave-to-class="$style.panelFade"
+      >
       <div v-if="!isShowDailyDetail" class="scroll" :class="$style.noitemShell">
         <header :class="$style.welcomeBar">
           <div :class="$style.welcomeCopy">
@@ -54,7 +60,7 @@
           >
             <div :class="$style.dailyCover" aria-hidden="true">
               <div v-for="index in 4" :key="index" :class="$style.coverTile">
-                <img v-if="dailyCoverUrls[index - 1]" :src="dailyCoverUrls[index - 1]" alt="" @error="handleDailyCoverError(index - 1)">
+                <img v-if="dailyCoverUrls[index - 1]" :class="$style.fadeImg" :src="dailyCoverUrls[index - 1]" alt="" @load="handleCoverLoad" @error="handleDailyCoverError(index - 1)">
                 <svg-icon v-else name="music" />
               </div>
               <div :class="$style.dateBadge">
@@ -74,7 +80,10 @@
               <ol v-if="dailyRecommendList.length" :class="$style.trackPreview">
                 <li v-for="item in dailyRecommendList.slice(0, 3)" :key="item.id"><strong>{{ item.name }}</strong><span>{{ item.singer }}</span></li>
               </ol>
-              <div v-else :class="$style.dailyLoading">{{ isDailyLoading ? $t('search__daily_recommend_loading') : $t('search__daily_recommend_empty') }}</div>
+              <ol v-else-if="isDailyLoading" :class="[$style.trackPreview, $style.trackPreviewSkeleton]" :aria-label="$t('search__daily_recommend_loading')">
+                <li v-for="index in 3" :key="index"><i /><i /></li>
+              </ol>
+              <div v-else :class="$style.dailyLoading">{{ $t('search__daily_recommend_empty') }}</div>
               <div :class="$style.dailyActions">
                 <button type="button" :disabled="!dailyRecommendList.length" @click.stop="playDailyRecommend()">{{ $t('search__daily_recommend_play') }}</button>
                 <button type="button" :disabled="isDailyLoading" @click.stop="loadDailyRecommend(true)">{{ $t('search__daily_recommend_refresh') }}</button>
@@ -94,7 +103,7 @@
           <div :class="[$style.playlistRail, $style.discoveryGrid]">
             <button v-for="(item, index) in dailyRecommendList.slice(0, 9)" :key="`${item.source}_${item.id}`" type="button" @click="playDailyRecommend(index)">
               <span :class="$style.playlistCover">
-                <img v-if="dailyCoverUrls[index] || item.meta.picUrl" :src="dailyCoverUrls[index] || item.meta.picUrl" alt="">
+                <img v-if="dailyCoverUrls[index] || item.meta.picUrl" :class="$style.fadeImg" :src="dailyCoverUrls[index] || item.meta.picUrl" alt="" @load="handleCoverLoad">
                 <svg-icon v-else name="music" />
                 <i>▶</i>
               </span>
@@ -117,7 +126,7 @@
           <div v-if="accountPlaylists.length" :class="$style.playlistRail">
             <button v-for="playlist in accountPlaylists" :key="playlist.id" type="button" @click="openAccountPlaylist(playlist)">
               <span :class="$style.playlistCover">
-                <img v-if="playlist.cover" :src="playlist.cover" alt="">
+                <img v-if="playlist.cover" :class="$style.fadeImg" :src="playlist.cover" alt="" @load="handleCoverLoad">
                 <svg-icon v-else name="music" />
                 <i>▶</i>
               </span>
@@ -125,7 +134,10 @@
               <small>{{ $t('search__daily_count', { count: playlist.trackCount }) }}</small>
             </button>
           </div>
-          <p v-else-if="!isPlaylistsLoading" :class="$style.playlistEmpty">{{ $t('search__account_playlists_empty') }}</p>
+          <div v-else-if="isPlaylistsLoading" :class="[$style.playlistRail, $style.playlistSkeleton]" :aria-label="$t('search__account_playlists_loading')">
+            <div v-for="index in 5" :key="index"><i /><b /><b /></div>
+          </div>
+          <p v-else :class="$style.playlistEmpty">{{ $t('search__account_playlists_empty') }}</p>
         </section>
 
       </div>
@@ -133,7 +145,7 @@
         <header :class="$style.detailHeader">
           <button type="button" :class="$style.backButton" :aria-label="$t('back')" @click="closeDailyDetail">‹</button>
           <div :class="$style.detailCover" aria-hidden="true">
-            <img v-if="detailCover" :src="detailCover" alt="">
+            <img v-if="detailCover" :class="$style.fadeImg" :src="detailCover" alt="" @load="handleCoverLoad">
             <svg-icon v-else name="music" />
           </div>
           <div :class="$style.detailCopy">
@@ -155,18 +167,25 @@
             <span>#</span><span>{{ $t('music_name') }}</span><span>{{ $t('music_singer') }}</span><span>{{ $t('music_album') }}</span><span>{{ $t('music_time') }}</span><span />
           </div>
           <ol v-if="detailMusicList.length" class="scroll" :class="$style.detailTracks">
-            <li v-for="(item, index) in detailMusicList" :key="`${item.source}_${item.id}`" @dblclick="playDetailList(index)">
-              <span :class="$style.trackNumber">{{ String(index + 1).padStart(2, '0') }}</span>
+            <li v-for="(item, index) in detailMusicList" :key="`${item.source}_${item.id}`" :class="{ [$style.currentTrack]: isCurrentTrack(item) }" @dblclick="playDetailList(index)">
+              <span :class="$style.trackNumber">
+                <span v-if="isCurrentTrack(item)" :class="[$style.playingBars, { [$style.playingBarsPaused]: !isPlay }]" aria-hidden="true"><i /><i /><i /></span>
+                <template v-else>{{ String(index + 1).padStart(2, '0') }}</template>
+              </span>
               <strong :title="item.name">{{ item.name }}</strong>
               <span :title="item.singer">{{ item.singer }}</span>
               <span :title="item.meta.albumName">{{ item.meta.albumName || '—' }}</span>
               <span :class="$style.trackDuration">{{ item.interval || '—' }}</span>
-              <button type="button" :aria-label="$t('list__play')" @click="playDetailList(index)">▶</button>
+              <button type="button" :aria-label="isCurrentTrack(item) && isPlay ? $t('player__pause') : $t('list__play')" @click="playDetailList(index)">{{ isCurrentTrack(item) && isPlay ? '❚❚' : '▶' }}</button>
             </li>
+          </ol>
+          <ol v-else-if="isDetailLoading" :class="$style.detailTracksSkeleton" :aria-label="detailEmptyText">
+            <li v-for="index in 8" :key="index"><i /><i /><i /><i /><i /></li>
           </ol>
           <p v-else :class="$style.detailEmpty">{{ detailEmptyText }}</p>
         </div>
       </div>
+      </transition>
     </div>
   </transition>
   <material-modal :show="isShowAccountModal" :bg-close="!isAccountLoginPending" @close="closeAccountModal">
@@ -257,7 +276,8 @@ import { appSetting } from '@renderer/store/setting'
 import { useRouter } from '@common/utils/vueRouter'
 import { getDailyRecommend } from '@renderer/core/dailyRecommend'
 import { setTempList } from '@renderer/store/list/action'
-import { playList } from '@renderer/core/player/action'
+import { playList, togglePlay } from '@renderer/core/player/action'
+import { isPlay, playMusicInfo } from '@renderer/store/player/state'
 import { getPicPath } from '@renderer/core/music'
 import { LIST_IDS } from '@common/constants'
 import { getMusicAccountDaily, getMusicAccountPlaylistDetail, getMusicAccountPlaylists, getMusicAccountStatus, getQQDailyKeyStatus, loginMusicAccount, logoutMusicAccount, openQQDailyKeyPage, saveQQDailyApiKey } from '@renderer/utils/ipc'
@@ -373,6 +393,11 @@ const detailSourceText = computed(() => detailKind.value == 'playlist' ? selecte
 const detailEmptyText = computed(() => detailKind.value == 'playlist'
   ? isPlaylistDetailLoading.value ? window.i18n.t('search__account_playlist_loading') : window.i18n.t('search__account_playlist_empty')
   : dailyDetailEmptyText.value)
+const isDetailLoading = computed(() => detailKind.value == 'playlist' ? isPlaylistDetailLoading.value : isDailyLoading.value)
+// 封面加载完成后再淡入，避免图片逐行硬切出现
+const handleCoverLoad = event => {
+  event.target.classList.add('q-cover-loaded')
+}
 const hasDiscoveryContent = computed(() => {
   return appSetting['search.isShowHotSearch'] ||
     (appSetting['search.isShowHistorySearch'] && historyList.length > 0)
@@ -541,9 +566,14 @@ const openAccountPlaylist = async(playlist) => {
   }
 }
 
+const isCurrentTrack = item => playMusicInfo.musicInfo?.id == item.id
 const playDetailList = async(index = 0) => {
   const list = detailMusicList.value
   if (!list.length) return
+  if (list[index] && isCurrentTrack(list[index])) {
+    togglePlay()
+    return
+  }
   const listId = detailKind.value == 'playlist' ? `q_playlist_${selectedAccountPlaylistProvider.value}_${selectedAccountPlaylist.value?.id ?? 'unknown'}` : `q_daily_${new Date().toISOString().slice(0, 10)}`
   await setTempList(listId, [...list])
   playList(LIST_IDS.TEMP, index)
@@ -1210,6 +1240,37 @@ const handleSearch = (text) => {
   }
 }
 .trackNumber { color: var(--color-font-label); font-variant-numeric: tabular-nums; }
+.detailTracks li.currentTrack {
+  background: var(--color-primary-alpha-1000);
+
+  > strong { color: var(--color-primary-dark-100); }
+  > button { color: #fff; background: var(--color-primary); }
+}
+.playingBars {
+  height: 14px;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+
+  i {
+    width: 3px;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--color-primary);
+    transform-origin: bottom;
+    animation: q-daily-bars .9s ease-in-out infinite alternate;
+
+    &:nth-child(2) { animation-delay: -.3s; }
+    &:nth-child(3) { animation-delay: -.6s; }
+  }
+}
+.playingBarsPaused i {
+  animation-play-state: paused;
+}
+@keyframes q-daily-bars {
+  from { transform: scaleY(.3); }
+  to { transform: scaleY(1); }
+}
 .trackDuration { font-variant-numeric: tabular-nums; }
 .detailEmpty {
   margin: auto;
@@ -1547,6 +1608,98 @@ const handleSearch = (text) => {
   to { background-position: -100% 0; }
 }
 
+.skeletonBlock() {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(100deg, rgba(255, 255, 255, .28) 20%, rgba(255, 255, 255, .68) 45%, rgba(255, 255, 255, .28) 70%);
+  background-size: 220% 100%;
+  animation: q-search-skeleton 1.4s ease-in-out infinite;
+}
+
+.trackPreviewSkeleton {
+  li { align-items: center; height: 15px; }
+  i {
+    .skeletonBlock();
+    height: 9px;
+    &:first-child { width: 34%; }
+    &:last-child { width: 22%; opacity: .7; }
+  }
+  li:nth-child(2) i:first-child { width: 42%; }
+  li:nth-child(3) i:first-child { width: 28%; }
+}
+
+.playlistSkeleton > div {
+  min-width: 0;
+
+  i {
+    .skeletonBlock();
+    aspect-ratio: 1;
+    border-radius: 10px;
+  }
+  b {
+    .skeletonBlock();
+    height: 10px;
+    margin-top: 10px;
+    width: 76%;
+    & + b { width: 44%; height: 8px; margin-top: 7px; opacity: .7; }
+  }
+}
+
+.detailTracksSkeleton {
+  min-height: 0;
+  flex: 1;
+  margin: 0;
+  padding: 7px 8px 12px;
+  list-style: none;
+  overflow: hidden;
+
+  li {
+    display: grid;
+    grid-template-columns: 42px minmax(210px, 1.55fr) minmax(130px, .82fr) minmax(160px, 1fr) 58px 42px;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 0 8px;
+  }
+  i {
+    .skeletonBlock();
+    height: 10px;
+    &:nth-child(1) { width: 20px; }
+    &:nth-child(2) { width: 62%; height: 12px; }
+    &:nth-child(3) { width: 48%; }
+    &:nth-child(4) { width: 54%; }
+    &:nth-child(5) { width: 34px; }
+  }
+  // 越往下越淡，暗示列表仍在延伸
+  li:nth-child(n + 5) { opacity: .7; }
+  li:nth-child(n + 7) { opacity: .4; }
+}
+
+.fadeImg {
+  opacity: 0;
+  transition: opacity .38s ease;
+
+  &:global(.q-cover-loaded) { opacity: 1; }
+}
+
+.panelEnterActive {
+  transition: opacity .24s ease, transform .34s cubic-bezier(.22, 1, .36, 1);
+}
+.panelLeaveActive {
+  transition: opacity .14s ease;
+}
+.panelFromRight {
+  opacity: 0;
+  transform: translateX(18px);
+}
+.panelFromLeft {
+  opacity: 0;
+  transform: translateX(-18px);
+}
+.panelFade {
+  opacity: 0;
+}
+
 @media (max-width: 900px) {
   .noitem {
     padding-left: 28px;
@@ -1562,7 +1715,13 @@ const handleSearch = (text) => {
 
     > :nth-child(4) { display: none; }
   }
+  .detailTracksSkeleton li {
+    grid-template-columns: 38px minmax(160px, 1.4fr) minmax(110px, .8fr) 54px 40px;
+
+    > :nth-child(4) { display: none; }
+  }
   .playlistRail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .playlistSkeleton > div:nth-child(n + 4) { display: none; }
 }
 
 @media (max-height: 680px) {

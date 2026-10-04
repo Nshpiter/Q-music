@@ -13,7 +13,7 @@ transition(enter-active-class="q-detail-enter-active" leave-active-class="q-deta
       div.left(:class="$style.left")
         div(ref="dom_record" :class="['q-album-stage', $style.albumStage, { [$style.albumStagePlaying]: isPlay }]")
           div(:class="$style.record")
-            img(v-if="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
+            img(v-if="musicInfo.pic" :key="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
             div(v-else :class="$style.emptyCover")
               EmptyCoverMark(:class="$style.emptyCoverMark")
           div(v-if="appSetting['playDetail.style.layout'] == 'classic'" :class="$style.toneArm" aria-hidden="true")
@@ -21,9 +21,10 @@ transition(enter-active-class="q-detail-enter-active" leave-active-class="q-deta
             span(:class="$style.toneArmRod")
             span(:class="$style.toneArmHead")
         div.description(:class="['scroll', $style.description]")
-          p {{ musicInfo.name }}
-          p {{ musicInfo.singer }}
-          p(v-if="musicInfo.album") {{ musicInfo.album }}
+          div(:key="musicInfo.id || musicInfo.name" :class="$style.trackChange")
+            p {{ musicInfo.name }}
+            p {{ musicInfo.singer }}
+            p(v-if="musicInfo.album") {{ musicInfo.album }}
 
       LyricPlayer(:comment-layout-visible="isCommentLayoutVisible" :comment-layout-settling="isCommentLayoutSettling")
       button(
@@ -1112,6 +1113,19 @@ export default {
   height: 100%;
   object-fit: cover;
   border-radius: inherit;
+  animation: qDetailCoverIn .6s ease;
+}
+// 唱片旋转由 JS 写在外层 transform 上，这里只做透明度，避免互相覆盖
+@keyframes qDetailCoverIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.trackChange {
+  animation: qDetailTextIn .46s cubic-bezier(.22, 1, .36, 1);
+}
+@keyframes qDetailTextIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .emptyCover {
   position: relative;

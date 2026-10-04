@@ -102,7 +102,17 @@
           </base-virtualized-list>
         </div>
         <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
-          <div v-show="noItem" :class="$style.noitem">
+          <div v-if="isLoading" class="list" :class="$style.skeleton" :aria-label="noItem" aria-busy="true">
+            <div v-for="index in 14" :key="index" class="list-item" :class="$style.skeletonRow" :style="{ height: `${listItemHeight}px` }">
+              <div class="list-item-cell" :class="$style.numberColumn"><i :class="$style.skeletonNum" /></div>
+              <div class="list-item-cell auto"><i :style="{ width: `${58 - (index % 4) * 9}%` }" /></div>
+              <div class="list-item-cell" :class="$style.singerColumn"><i :style="{ width: `${64 - (index % 3) * 12}%` }" /></div>
+              <div class="list-item-cell" :class="$style.albumColumn"><i :style="{ width: `${52 - (index % 2) * 14}%` }" /></div>
+              <div class="list-item-cell" :class="$style.durationColumn"><i :class="$style.skeletonTime" /></div>
+              <div v-if="actionButtonsVisible" class="list-item-cell" :class="$style.actionColumn" />
+            </div>
+          </div>
+          <div v-else-if="noItem" :class="$style.noitem">
             <p v-text="noItem" />
           </div>
         </transition>
@@ -202,6 +212,7 @@ export default {
       handleSelectAllData,
       toggleSelectData,
     } = useList({ props, listRef })
+    const isLoading = computed(() => props.noItem == window.i18n.t('list__loading'))
     const canDownloadSelection = computed(() => selectedList.value.length > 0 && selectedList.value.every(item => assertApiSupport(item.source)))
 
     const {
@@ -304,6 +315,7 @@ export default {
 
     return {
       listItemHeight,
+      isLoading,
       isCurrentMusic,
       isPlay,
       handleListItemClick,
@@ -404,8 +416,43 @@ export default {
   // background-color: var(--color-000);
 
   p {
-    font-size: 24px;
+    font-size: 16px;
     color: var(--color-font-label);
   }
+}
+
+.skeleton {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  padding-top: 2px;
+  // 越往下越淡，暗示列表仍在延伸
+  mask-image: linear-gradient(180deg, #000 45%, transparent 96%);
+}
+.skeletonRow {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+
+  i {
+    display: block;
+    height: 10px;
+    border-radius: 6px;
+    background: linear-gradient(100deg, rgba(255, 255, 255, .28) 20%, rgba(255, 255, 255, .68) 45%, rgba(255, 255, 255, .28) 70%);
+    background-size: 220% 100%;
+    animation: q-online-list-skeleton 1.4s ease-in-out infinite;
+  }
+}
+.skeletonNum {
+  width: 16px;
+  margin: 0 auto;
+}
+.skeletonTime {
+  width: 34px;
+}
+@keyframes q-online-list-skeleton {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
 }
 </style>
