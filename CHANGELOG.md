@@ -6,6 +6,21 @@ Project versioning adheres to [Semantic Versioning](http://semver.org/).
 Commit convention is based on [Conventional Commits](http://conventionalcommits.org).
 Change log format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## Q-music Android 0.4.9 - 2026-10-05
+
+本次为安卓独立修复更新，桌面端继续使用 0.4.8。
+
+### 状态栏歌词（词幕）
+
+- 修复切歌后状态栏歌词有时不显示的问题：获取新歌播放地址期间，播放器发出的“开始播放”可能被忽略，或被缓冲引起的暂停作废，词幕因此停在暂停状态并隐藏歌词。
+- 词幕的播放／暂停状态改为直接跟随播放器的真实状态；每次推送新歌词后会补发当前播放状态，歌词晚于播放到达时也能正常显示。
+- 新增切歌时序回归用例，后台播放、权限与歌词回归断言共 147 条全部通过。
+
+### 安装包
+
+- 安卓正式签名版本，versionCode 39；提供 arm64-v8a、armeabi-v7a、x86、x86_64 和通用 APK。大多数手机请选择 arm64-v8a。
+- 已在 Redmi K70（Android 17）上通过日志确认问题成因；修复版本的长时间真机表现仍需使用中验证。
+
 ## Q-music Android 0.4.8 - 2026-10-04
 
 本次安卓更新专注界面动效与加载状态打磨，与 Windows 同步发布 0.4.8。
