@@ -5,6 +5,7 @@ import TrackPlayer, { State as TPState, Event as TPEvent } from 'react-native-tr
 import { isTempId, isEmpty } from './utils'
 // import { play as lrcPlay, pause as lrcPause } from '@/core/lyric'
 import { exitApp } from '@/core/common'
+import { syncStatusBarLyricPlayback } from '@/core/statusBarLyric'
 import { getCurrentTrackId } from './playList'
 import { pause, play, playNext, playPrev } from '@/core/player/player'
 
@@ -77,6 +78,9 @@ const registerPlaybackService = async() => {
   })
 
   TrackPlayer.addEventListener(TPEvent.PlaybackState, async info => {
+    if (!isTempId() && info.state != TPState.None && info.state != TPState.Connecting) {
+      syncStatusBarLyricPlayback(info.state == TPState.Playing)
+    }
     if (global.lx.gettingUrlId || isTempId()) return
     // let currentIsPlaying = false
 

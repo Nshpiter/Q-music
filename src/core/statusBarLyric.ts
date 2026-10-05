@@ -18,6 +18,21 @@ let active = true
 const enabled = () => active
 const ignoreError = (error: unknown) => { console.warn('Status bar lyrics:', error) }
 
+// 以播放器真实状态为准：切歌取地址期间的播放事件会被应用层忽略，不能只依赖 play/pause 事件。
+let playing = false
+let playbackRequest = 0
+const pushPlayback = async(value: boolean) => {
+  playing = value
+  if (!enabled() || !isInitialized()) return
+  const request = ++playbackRequest
+  const time = await getPosition().catch(() => 0)
+  if (request == playbackRequest && enabled()) await native.setPlayback(value, time * 1000).catch(ignoreError)
+}
+
+export const syncStatusBarLyricPlayback = (value: boolean) => {
+  if (value != playing) void pushPlayback(value)
+}
+
 export const getStatusBarLyricStatus = async(): Promise<StatusBarLyricStatus> => native.getStatus().catch(() => 'unavailable')
 
 export const setStatusBarLyricOptions = () => {
@@ -36,16 +51,23 @@ export const setStatusBarLyric = (lyric: string, translation = '', roma = '') =>
     artist: info.singer,
     duration,
     lines: buildStatusBarLyrics(lyric, translation, roma, duration),
-  } : null).catch(ignoreError)
+  } : null).then(async() => {
+    if (lyric && info.id) await pushPlayback(playing)
+  }).catch(ignoreError)
 }
 
 export const playStatusBarLyric = (time: number) => {
+  playing = true
+  playbackRequest++
   if (enabled()) void native.setPlayback(true, time).catch(ignoreError)
 }
 export const seekStatusBarLyric = (time: number) => {
-  if (enabled()) void native.setPlayback(playerState.isPlay, time).catch(ignoreError)
+  playbackRequest++
+  if (enabled()) void native.setPlayback(playing, time).catch(ignoreError)
 }
 export const pauseStatusBarLyric = () => {
+  playing = false
+  playbackRequest++
   if (enabled()) void native.setPlayback(false, -1).catch(ignoreError)
 }
 
@@ -55,14 +77,9 @@ export const enableStatusBarLyric = async(value: boolean): Promise<StatusBarLyri
   if (value && active && status != 'unsupported' && status != 'unavailable') {
     setStatusBarLyricOptions()
     const info = playerState.musicInfo
+    playing = playerState.isPlay
     setStatusBarLyric(info.lrc ?? '', info.tlrc ?? '', info.rlrc ?? '')
-    if (isInitialized()) {
-      const id = info.id
-      const time = await getPosition().catch(() => 0)
-      if (enabled() && id == playerState.musicInfo.id) {
-        await native.setPlayback(playerState.isPlay, time * 1000).catch(ignoreError)
-      }
-    }
+    await pushPlayback(playing)
   }
   return status
 }

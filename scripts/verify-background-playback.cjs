@@ -218,6 +218,29 @@ async function bridgeCases() {
   equal(await api.getStatusBarLyricStatus(), 'not_installed', '未安装状态不能误报接口错误')
   result = 'unavailable'
   equal(await api.enableStatusBarLyric(true), 'unavailable', '服务缺失时不阻塞播放器')
+
+  // 切歌：停止后新歌词先到，播放器真实状态随后变为播放；取地址期间应用层的 play 事件可能被忽略。
+  result = 'connected'
+  state.isPlay = false
+  await api.enableStatusBarLyric(true)
+  api.pauseStatusBarLyric()
+  api.setStatusBarLyric('')
+  api.setStatusBarLyric('[00:01.00]B')
+  await flush()
+  equal(calls.at(-1)[1], false, '新歌词到达时播放器尚未开始则保持暂停')
+  api.syncStatusBarLyricPlayback(true)
+  await flush()
+  equal(calls.at(-1)[0], 'playback', '播放器开始播放后补发状态')
+  equal(calls.at(-1)[1], true, '切歌后不依赖应用层 play 事件也能恢复歌词')
+  equal(calls.at(-1)[2], 12500, '恢复播放时带上真实进度')
+  api.setStatusBarLyric('[00:01.00]C')
+  await flush()
+  equal(calls.at(-1)[0], 'playback', '歌词晚于播放到达时重新同步状态')
+  equal(calls.at(-1)[1], true, '歌词晚到不会让词幕停在暂停')
+  const syncCount = calls.length
+  api.syncStatusBarLyricPlayback(true)
+  await flush()
+  equal(calls.length, syncCount, '状态未变化时不重复推送')
 }
 
 async function notificationCases() {
@@ -239,19 +262,33 @@ async function notificationCases() {
   let exited = 0
   let factory
   const eventNames = new Proxy({}, { get: (_, key) => key })
+  const lyricSync = []
+  const appEvents = []
+  const lx = { playerStatus: {}, gettingUrlId: '' }
   const service = load('plugins/player/service.ts', {
     'react-native-track-player': { default: {
       registerPlaybackService: callback => { factory = callback }, addEventListener: (key, callback) => events.set(key, callback),
     }, Event: eventNames, State: eventNames },
-    './utils': {}, './playList': {}, '@/core/common': { exitApp: () => { exited++ } },
+    './utils': { isTempId: () => false }, './playList': {}, '@/core/common': { exitApp: () => { exited++ } },
     '@/core/player/player': { pause: async () => { paused++ } },
-  }, { global: { lx: { playerStatus: {} } }, console: { log() {} } })
+    '@/core/statusBarLyric': { syncStatusBarLyricPlayback: value => lyricSync.push(value) },
+  }, { global: { lx, app_event: new Proxy({}, { get: (_, key) => () => appEvents.push(key) }) }, console: { log() {} } })
   service.default()
   await factory()()
   events.get('RemoteStop')()
   await flush()
   equal(paused, 1, '远程 Stop 安全暂停')
   equal(exited, 0, '远程 Stop 不退出软件')
+  lx.gettingUrlId = 'tx_2'
+  await events.get('PlaybackState')({ state: 'Playing' })
+  equal(lyricSync.at(-1), true, '取地址期间开始播放仍同步给词幕')
+  equal(appEvents.includes('play'), false, '取地址期间仍保留原有的应用层事件过滤')
+  lx.gettingUrlId = ''
+  await events.get('PlaybackState')({ state: 'Buffering' })
+  equal(lyricSync.at(-1), false, '缓冲时词幕暂停')
+  const syncCount = lyricSync.length
+  await events.get('PlaybackState')({ state: 'Connecting' })
+  equal(lyricSync.length, syncCount, '连接中不改变词幕状态')
 }
 
 async function storageCases() {
