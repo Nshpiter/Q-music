@@ -8,6 +8,7 @@ import {
 
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
+import { useMotion } from '@/utils/useMotion'
 
 export interface Props {
   /**
@@ -65,19 +66,24 @@ const Checkbox = ({
   const isFirstRendering = React.useRef<boolean>(true)
 
 
+  const motion = useMotion()
+
   React.useEffect(() => {
     // Do not run animation on very first rendering
     if (isFirstRendering.current) {
       isFirstRendering.current = false
       return
     }
-
-    Animated.timing(scaleAnim, {
-      toValue: selected ? 1 : 0,
-      duration: ANIMATION_DURATION,
-      useNativeDriver: true,
-    }).start()
-  }, [selected, scaleAnim])
+    if (!motion) {
+      scaleAnim.setValue(selected ? 1 : 0)
+      return
+    }
+    const animation = selected
+      ? Animated.spring(scaleAnim, { toValue: 1, stiffness: 420, damping: 18, mass: 0.7, useNativeDriver: true })
+      : Animated.timing(scaleAnim, { toValue: 0, duration: ANIMATION_DURATION, useNativeDriver: true })
+    animation.start()
+    return () => { animation.stop() }
+  }, [selected, scaleAnim, motion])
 
   const controlSize = 20 * size
   const touchSize = Math.max(48, 32 * size)
@@ -111,13 +117,14 @@ const Checkbox = ({
           height: controlSize,
           borderRadius: controlRadius,
           borderColor,
-          backgroundColor: theme['q-surface-base'],
+          borderWidth: selected ? 1.5 : 1,
+          backgroundColor: selected ? theme['q-surface-tint'] : theme['q-surface-base'],
         }}
       >
         <Animated.View
           style={{
             ...styles.markContainer,
-            opacity: scaleAnim,
+            opacity: scaleAnim.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1], extrapolate: 'clamp' }),
             transform: [{ scale: scaleAnim }],
           }}
         >

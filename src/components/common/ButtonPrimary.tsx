@@ -11,7 +11,7 @@ export interface ButtonProps extends BtnProps {
   size?: number
 }
 
-export default memo(({ disabled, size = 14, onPress, children, style, ...props }: ButtonProps) => {
+export default memo(({ disabled, size = 14, onPress, children, style, pressScale = 0.96, ...props }: ButtonProps) => {
   const theme = useTheme()
   const buttonStyle = typeof style === 'function'
     ? (state: PressableStateCallbackType) => [
@@ -36,6 +36,7 @@ export default memo(({ disabled, size = 14, onPress, children, style, ...props }
       {...props}
       style={buttonStyle}
       hitSlop={props.hitSlop}
+      pressScale={pressScale}
       onPress={onPress}
       disabled={disabled}
     >

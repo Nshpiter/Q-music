@@ -1,7 +1,8 @@
 import { useTheme } from '@/store/theme/hook'
-import { useMemo, useRef, useImperativeHandle, forwardRef } from 'react'
-import { Pressable, type PressableProps, type PressableStateCallbackType, type View } from 'react-native'
+import { useMemo, useRef, useState, useImperativeHandle, forwardRef } from 'react'
+import { Animated, Pressable, type GestureResponderEvent, type PressableProps, type PressableStateCallbackType, type View } from 'react-native'
 import { Q_UI } from '@/theme/ui'
+import { useMotion } from '@/utils/useMotion'
 // import { AppColors } from '@/theme'
 
 
@@ -9,6 +10,8 @@ export interface BtnProps extends PressableProps {
   ripple?: PressableProps['android_ripple']
   onChangeText?: (value: string) => void
   onClearText?: () => void
+  /** 独立控件按下时的缩放比例；列表行等大面积按钮不要开启。 */
+  pressScale?: number
   children: React.ReactNode
 }
 
@@ -20,6 +23,47 @@ export interface BtnType {
 const pressedStyle = { opacity: Q_UI.button.pressedOpacity }
 const disabledStyle = { opacity: Q_UI.button.disabledOpacity }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
+const ScalePressable = forwardRef<View, PressableProps & { pressScale: number }>(({ pressScale, style, disabled, onPressIn, onPressOut, ...props }, ref) => {
+  const motion = useMotion()
+  const scale = useRef(new Animated.Value(1)).current
+  const [pressed, setPressed] = useState(false)
+  const animateTo = (value: number) => {
+    if (!motion) {
+      scale.setValue(1)
+      return
+    }
+    Animated.spring(scale, { toValue: value, ...Q_UI.motion.press, useNativeDriver: true }).start()
+  }
+  const handlePressIn = (event: GestureResponderEvent) => {
+    setPressed(true)
+    animateTo(pressScale)
+    onPressIn?.(event)
+  }
+  const handlePressOut = (event: GestureResponderEvent) => {
+    setPressed(false)
+    animateTo(1)
+    onPressOut?.(event)
+  }
+  const state: PressableStateCallbackType = { pressed }
+  return (
+    <AnimatedPressable
+      {...props}
+      ref={ref}
+      disabled={disabled}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[
+        typeof style === 'function' ? style(state) : style,
+        pressed && !disabled ? pressedStyle : null,
+        disabled ? disabledStyle : null,
+        { transform: [{ scale }] },
+      ]}
+    />
+  )
+})
+
 export default forwardRef<BtnType, BtnProps>(({
   ripple: propsRipple,
   android_ripple: propsAndroidRipple,
@@ -29,6 +73,7 @@ export default forwardRef<BtnType, BtnProps>(({
   hitSlop,
   accessibilityRole,
   accessibilityState,
+  pressScale,
   ...props
 }, ref) => {
   const theme = useTheme()
@@ -58,6 +103,24 @@ export default forwardRef<BtnType, BtnProps>(({
     },
   }))
 
+  if (pressScale != null && pressScale != 1) {
+    return (
+      <ScalePressable
+        android_ripple={ripple}
+        disabled={disabled}
+        hitSlop={hitSlop}
+        accessibilityRole={accessibilityRole ?? 'button'}
+        accessibilityState={resolvedAccessibilityState}
+        style={style}
+        pressScale={pressScale}
+        {...props}
+        ref={btnRef}
+      >
+        {children}
+      </ScalePressable>
+    )
+  }
+
   return (
     <Pressable
       android_ripple={ripple}
@@ -73,4 +136,3 @@ export default forwardRef<BtnType, BtnProps>(({
     </Pressable>
   )
 })
-

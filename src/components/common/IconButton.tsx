@@ -41,6 +41,7 @@ export default memo(({
   accessibilityLabel,
   accessibilityState,
   hitSlop,
+  pressScale = 0.9,
   ...props
 }: IconButtonProps) => {
   const theme = useTheme()
@@ -77,6 +78,7 @@ export default memo(({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={resolvedAccessibilityState}
       hitSlop={resolvedHitSlop}
+      pressScale={pressScale}
       style={[
         styles.button,
         {

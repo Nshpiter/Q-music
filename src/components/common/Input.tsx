@@ -1,4 +1,4 @@
-import { useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
+import { useRef, useState, useImperativeHandle, forwardRef, useCallback } from 'react'
 import { TextInput, View, StyleSheet, type TextInputProps, type StyleProp, type ViewStyle } from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import Button from '@/components/common/Button'
@@ -75,10 +75,21 @@ export default forwardRef<InputType, InputProps>(({
   containerStyle,
   style,
   size = 14,
+  onFocus,
+  onBlur,
   ...props
 }, ref) => {
   const inputRef = useRef<TextInput>(null)
   const theme = useTheme()
+  const [focused, setFocused] = useState(false)
+  const handleFocus = useCallback<NonNullable<TextInputProps['onFocus']>>((event) => {
+    setFocused(true)
+    onFocus?.(event)
+  }, [onFocus])
+  const handleBlur = useCallback<NonNullable<TextInputProps['onBlur']>>((event) => {
+    setFocused(false)
+    onBlur?.(event)
+  }, [onBlur])
   // const scaleClearBtn = useRef(new Animated.Value(0)).current
 
   useImperativeHandle(ref, () => ({
@@ -132,8 +143,8 @@ export default forwardRef<InputType, InputProps>(({
       style={[
         styles.content,
         {
-          backgroundColor: theme['q-surface-base'],
-          borderColor: theme['q-outline'],
+          backgroundColor: focused ? theme['q-surface-tint'] : theme['q-surface-base'],
+          borderColor: focused ? theme['q-accent'] : theme['q-outline'],
         },
         containerStyle,
       ]}
@@ -141,6 +152,8 @@ export default forwardRef<InputType, InputProps>(({
       <TextInput
         autoCapitalize="none"
         onChangeText={changeText}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         autoComplete="off"
         style={StyleSheet.compose(
           StyleSheet.compose(styles.input, style),
