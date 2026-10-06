@@ -1,16 +1,18 @@
 <template>
-  <ul :class="[$style.list, $style[align]]" role="tablist">
+  <ul ref="dom_list" :class="[$style.list, $style[align]]" role="tablist">
     <li
       v-for="item in list"
       :key="item[itemKey]" :class="[$style.listItem, {[$style.active]: modelValue == item[itemKey]}]" tabindex="-1" role="tab"
-      :aria-label="item[itemLabel]" ignore-tip :aria-selected="modelValue == item[itemKey]" @click="handleToggle(item[itemKey])"
+      :aria-label="item[itemLabel]" ignore-tip :aria-selected="modelValue == item[itemKey]" :data-tab-key="item[itemKey]" @click="handleToggle(item[itemKey])"
     >
       <span :class="$style.label">{{ item[itemLabel] }}</span>
     </li>
+    <li v-show="indicator.width" aria-hidden="true" :class="[$style.indicator, {[$style.indicatorReady]: indicatorReady}]" :style="{ width: `${indicator.width}px`, transform: `translateX(${indicator.left}px)` }" />
   </ul>
 </template>
 
 <script>
+import { ref, reactive, watch, nextTick, onMounted, onBeforeUnmount } from '@common/utils/vueTools'
 
 export default {
   props: {
@@ -39,13 +41,50 @@ export default {
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit }) {
+    const dom_list = ref(null)
+    const indicator = reactive({ left: 0, width: 0 })
+    const indicatorReady = ref(false)
+
+    const updateIndicator = () => {
+      const list = dom_list.value
+      if (!list) return
+      const target = Array.from(list.children).find(el => el.dataset?.tabKey != null && el.dataset.tabKey == String(props.modelValue))
+      const label = target?.firstElementChild
+      if (!label) {
+        indicator.width = 0
+        return
+      }
+      indicator.left = target.offsetLeft + label.offsetLeft
+      indicator.width = label.offsetWidth
+    }
+
     const handleToggle = id => {
       if (id == props.modelValue) return
       emit('update:modelValue', id)
       emit('change', id)
     }
 
+    watch(() => [props.modelValue, props.list], () => {
+      void nextTick(updateIndicator)
+    }, { deep: true })
+
+    let resizeObserver = null
+    onMounted(() => {
+      updateIndicator()
+      requestAnimationFrame(() => { indicatorReady.value = true })
+      if (typeof ResizeObserver != 'undefined' && dom_list.value) {
+        resizeObserver = new ResizeObserver(updateIndicator)
+        resizeObserver.observe(dom_list.value)
+      }
+    })
+    onBeforeUnmount(() => {
+      resizeObserver?.disconnect()
+    })
+
     return {
+      dom_list,
+      indicator,
+      indicatorReady,
       handleToggle,
     }
   },
@@ -56,6 +95,7 @@ export default {
 @import '@renderer/assets/styles/layout.less';
 
 .list {
+  position: relative;
   display: flex;
   flex-flow: row nowrap;
   font-size: 12px;
@@ -74,27 +114,16 @@ export default {
 }
 .listItem {
   display: block;
-  // padding: 5px 15px;
   cursor: pointer;
   transition: color @transition-normal;
-
 
   &:hover {
     color: var(--color-primary);
   }
 
-
   &.active {
     color: var(--color-primary);
     cursor: default;
-
-    >.label {
-      &:after {
-        // background-color: var(--color-primary);
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
   }
 }
 
@@ -102,19 +131,18 @@ export default {
   display: block;
   position: relative;
   padding: 8px 0;
-  &:after {
-    .mixin-after();
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    height: 2px;
-    border-radius: 20px;
-    background-color: transparent;
-    transform: translateY(-4px);
-    opacity: 0;
-    background-color: var(--color-primary-alpha-300);
-    transition: @transition-fast;
-    transition-property: transform, opacity;
-  }
+}
+
+.indicator {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 20px;
+  background-color: var(--color-primary-alpha-300);
+  pointer-events: none;
+}
+.indicatorReady {
+  transition: transform .32s cubic-bezier(.2, .8, .2, 1), width .32s cubic-bezier(.2, .8, .2, 1);
 }
 </style>

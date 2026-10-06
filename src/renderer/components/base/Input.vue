@@ -111,17 +111,24 @@ export default {
     margin: 0;
   }
 
-  &[disabled] {
-    opacity: .4;
+  &::placeholder {
+    color: var(--color-font-label);
+    opacity: .72;
   }
 
-  &:hover, &:focus {
-    color: var(--color-primary-dark-300);
-    background-color: rgba(255, 255, 255, .68);
-    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800), 0 10px 22px rgba(70, 88, 106, .08);
+  &[disabled] {
+    opacity: .4;
+    cursor: not-allowed;
   }
-  &:active {
-    background-color: var(--color-primary-background-active);
+
+  &:hover:not([disabled]) {
+    background-color: rgba(255, 255, 255, .62);
+    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800), 0 8px 18px rgba(70, 88, 106, .06);
+  }
+  &:focus {
+    color: var(--color-primary-dark-300);
+    background-color: rgba(255, 255, 255, .74);
+    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-500), 0 0 0 3px var(--color-primary-alpha-900), 0 10px 22px rgba(70, 88, 106, .08);
   }
 }
 

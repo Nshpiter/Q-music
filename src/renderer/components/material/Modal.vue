@@ -81,12 +81,11 @@ export default {
   emits: ['after-enter', 'after-leave', 'close'],
   data() {
     return {
+      // 随机动画只在克制的位移与缩放之间变化，保持与玻璃质感一致。
       animates: [
-        [['jackInTheBox', 'flipInX', 'flipInY', 'lightSpeedIn'], ['flipOutX', 'flipOutY', 'lightSpeedOut']],
-        // [['jackInTheBox', 'lightSpeedIn'], ['lightSpeedOut']],
-        [['rotateInDownLeft', 'rotateInDownRight', 'rotateInUpLeft', 'rotateInUpRight'], ['rotateOutDownLeft', 'rotateOutDownRight', 'rotateOutUpLeft', 'rotateOutUpRight']],
-        [['jackInTheBox', 'zoomInDown', 'zoomInUp'], ['zoomOutDown', 'zoomOutUp']],
-        [['slideInDown', 'slideInLeft', 'slideInRight', 'slideInUp'], ['slideOutDown', 'slideOutLeft', 'slideOutRight', 'slideOutUp']],
+        [['q-modal-rise-in', 'q-modal-zoom-in'], ['q-modal-fade-out', 'q-modal-sink-out']],
+        [['q-modal-drop-in', 'q-modal-zoom-in'], ['q-modal-fade-out', 'q-modal-lift-out']],
+        [['q-modal-left-in', 'q-modal-right-in'], ['q-modal-fade-out']],
 
         // ['flipInX', 'flipOutX'],
         // ['flipInY', 'flipOutY'],
@@ -151,8 +150,8 @@ export default {
       //   'slideOutUp',
       //   'hinge',
       // ],
-      inClass: 'animated jackInTheBox',
-      outClass: 'animated slideOutRight',
+      inClass: 'q-modal-anim q-modal-rise-in',
+      outClass: 'q-modal-anim q-modal-fade-out',
       showModal: false,
       showContent: false,
       modalCount: false,
@@ -334,8 +333,8 @@ export default {
         // console.log(animIn, animOut)
         // this.inClass = 'animated ' + animIn
         // this.outClass = 'animated ' + animOut
-        this.inClass = 'animated ' + animIn[getRandom(0, animIn.length)]
-        this.outClass = 'animated ' + animOut[getRandom(0, animOut.length)]
+        this.inClass = 'q-modal-anim ' + animIn[getRandom(0, animIn.length)]
+        this.outClass = 'q-modal-anim ' + animOut[getRandom(0, animOut.length)]
       }
     },
     close() {
@@ -490,6 +489,57 @@ export default {
       background: rgba(255, 255, 255, .1);
     }
   }
+}
+
+:global(.q-modal-anim) {
+  animation-duration: .3s;
+  animation-timing-function: cubic-bezier(.2, .8, .2, 1);
+  animation-fill-mode: both;
+}
+:global(.q-modal-fade-out), :global(.q-modal-sink-out), :global(.q-modal-lift-out) {
+  animation-duration: .18s;
+  animation-timing-function: cubic-bezier(.4, 0, 1, 1);
+}
+:global(.q-modal-rise-in) { animation-name: q-modal-rise-in; }
+:global(.q-modal-drop-in) { animation-name: q-modal-drop-in; }
+:global(.q-modal-zoom-in) { animation-name: q-modal-zoom-in; }
+:global(.q-modal-left-in) { animation-name: q-modal-left-in; }
+:global(.q-modal-right-in) { animation-name: q-modal-right-in; }
+:global(.q-modal-fade-out) { animation-name: q-modal-fade-out; }
+:global(.q-modal-sink-out) { animation-name: q-modal-sink-out; }
+:global(.q-modal-lift-out) { animation-name: q-modal-lift-out; }
+
+@keyframes q-modal-rise-in {
+  from { opacity: 0; transform: translateY(14px) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes q-modal-drop-in {
+  from { opacity: 0; transform: translateY(-14px) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes q-modal-zoom-in {
+  from { opacity: 0; transform: scale(.92); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes q-modal-left-in {
+  from { opacity: 0; transform: translateX(-18px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes q-modal-right-in {
+  from { opacity: 0; transform: translateX(18px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes q-modal-fade-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: scale(.97); }
+}
+@keyframes q-modal-sink-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(10px) scale(.98); }
+}
+@keyframes q-modal-lift-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-10px) scale(.98); }
 }
 
 </style>

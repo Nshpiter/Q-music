@@ -1,8 +1,9 @@
 <template>
-  <div :class="[$style.sliderContent, { [$style.disabled]: disabled }, className]">
+  <div :class="[$style.sliderContent, { [$style.disabled]: disabled, [$style.dragging]: dragging }, className]">
     <div :class="[$style.slider]">
       <div ref="dom_sliderBar" :class="$style.sliderBar" :style="{ transform: `scaleX(${(value - min) / (max - min) || 0})` }" />
     </div>
+    <div :class="$style.thumb" :style="{ left: `${Math.min(Math.max((value - min) / (max - min) || 0, 0), 1) * 100}%` }" />
     <div :class="$style.sliderMask" @mousedown="handleSliderMsDown" />
   </div>
 </template>
@@ -46,6 +47,7 @@ export default {
       msDownRatio: 0,
     }
     const dom_sliderBar = ref(null)
+    const dragging = ref(false)
 
     const clampValue = val => {
       if (val < props.min) return props.min
@@ -71,6 +73,7 @@ export default {
       if (!width) return
 
       sliderEvent.isMsDown = true
+      dragging.value = true
       sliderEvent.msDownX = event.clientX
 
       const rawValue = (event.offsetX / width) * getRange() + props.min
@@ -79,6 +82,7 @@ export default {
     }
     const handleSliderMsUp = () => {
       sliderEvent.isMsDown = false
+      dragging.value = false
     }
     const handleSliderMsMove = event => {
       if (!sliderEvent.isMsDown || props.disabled) return
@@ -100,6 +104,7 @@ export default {
     return {
       handleSliderMsDown,
       dom_sliderBar,
+      dragging,
     }
   },
 }
@@ -118,15 +123,46 @@ export default {
   align-items: center;
   opacity: .5;
   transition: opacity @transition-normal;
-  &:hover {
+  &:hover, &.dragging {
     opacity: 1;
+    .slider {
+      transform: scaleY(1.34);
+    }
+    .thumb {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  &.dragging .thumb {
+    transform: translate(-50%, -50%) scale(1.15);
+    box-shadow: 0 0 0 4px var(--color-primary-alpha-800), 0 4px 10px rgba(70, 88, 106, .18);
   }
   &.disabled {
     opacity: .3;
     .sliderMask {
       cursor: default;
     }
+    .thumb {
+      display: none;
+    }
   }
+}
+
+.thumb {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--color-primary), 0 4px 10px rgba(70, 88, 106, .16);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(.6);
+  transition: opacity .18s ease, transform .22s cubic-bezier(.34, 1.56, .64, 1), box-shadow .18s ease, left .2s ease;
+  pointer-events: none;
+}
+.dragging .thumb {
+  transition-property: opacity, transform, box-shadow;
 }
 
 .slider {
@@ -136,7 +172,7 @@ export default {
   border-radius: 20px;
   overflow: hidden;
   transition: @transition-normal;
-  transition-property: background-color, opacity;
+  transition-property: background-color, opacity, transform;
   background-color: rgba(255, 255, 255, .58);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55);
   // background-color: #f5f5f5;

@@ -1,6 +1,9 @@
 <template>
   <div class="content" :class="[$style.select, show ? $style.active : '']">
-    <div ref="dom_btn" class="label-content" :class="$style.label" @click="handleShow">
+    <div
+      ref="dom_btn" class="label-content" :class="$style.label" tabindex="0" role="combobox" :aria-expanded="show"
+      @click="handleShow" @keydown="handleKeydown"
+    >
       <span class="label">{{ label }}</span>
       <div class="icon" :class="$style.icon">
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 451.847 451.847" space="preserve">
@@ -49,7 +52,7 @@ export default {
     return {
       show: false,
       listStyles: {
-        transform: 'scaleY(0) translateY(0)',
+        transform: 'scale(.96) translateY(-4px)',
         opacity: 0,
         pointerEvents: 'none',
       },
@@ -89,7 +92,7 @@ export default {
       if (e && this.$refs.dom_list && (e.target == this.$refs.dom_list || this.$refs.dom_list.contains(e.target))) return
       this.listStyles = {
         ...this.listStyles,
-        transform: 'scaleY(0) translateY(0)',
+        transform: `scale(.96) translateY(${this.listStyles.transformOrigin == 'center bottom' ? 4 : -4}px)`,
         opacity: 0,
         pointerEvents: 'none',
       }
@@ -97,7 +100,39 @@ export default {
       this.hideTimer = setTimeout(() => {
         this.show = false
         this.hideTimer = null
-      }, 50)
+      }, 160)
+    },
+    handleKeydown(event) {
+      switch (event.key) {
+        case 'Enter':
+        case ' ':
+          event.preventDefault()
+          this.handleShow()
+          break
+        case 'Escape':
+          if (!this.show) return
+          event.preventDefault()
+          event.stopPropagation()
+          this.handleHide()
+          break
+        case 'ArrowDown':
+        case 'ArrowUp': {
+          event.preventDefault()
+          if (!this.list.length) return
+          const step = event.key == 'ArrowDown' ? 1 : -1
+          const index = this.activeIndex < 0 ? 0 : Math.min(Math.max(this.activeIndex + step, 0), this.list.length - 1)
+          if (index == this.activeIndex) return
+          const item = this.list[index]
+          this.$emit('update:modelValue', this.itemKey ? item[this.itemKey] : item)
+          this.$emit('change', item)
+          if (this.show) {
+            this.$nextTick(() => {
+              this.$refs.dom_list?.children[index]?.scrollIntoView({ block: 'nearest' })
+            })
+          }
+          break
+        }
+      }
     },
     handleScroll() {
       if (!this.show) return
@@ -113,7 +148,7 @@ export default {
       this.handleHide()
     },
     handleShow() {
-      if (this.show) {
+      if (this.show && !this.hideTimer) {
         this.handleHide()
         return
       }
@@ -153,7 +188,7 @@ export default {
         top: `${top}px`,
         width: `${rect.width}px`,
         maxHeight: `${maxHeight}px`,
-        transform: 'scaleY(1) translateY(0)',
+        transform: 'scale(1) translateY(0)',
         transformOrigin: openUp ? 'center bottom' : 'center top',
         opacity: 1,
         pointerEvents: 'auto',
@@ -226,6 +261,10 @@ export default {
   &:active {
     background-color: var(--color-button-background-active);
   }
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
 }
 
 .list {
@@ -236,9 +275,9 @@ export default {
   background-color: var(--color-content-background); // 回退
   background-color: var(--q-menu-bg);
   opacity: 0;
-  transform: scaleY(0) translateY(0);
+  transform: scale(.96) translateY(-4px);
   transform-origin: center top;
-  transition: .25s ease;
+  transition: .18s cubic-bezier(.2, .8, .2, 1);
   transition-property: transform, opacity;
   border-radius: 12px;
   padding: 5px;
