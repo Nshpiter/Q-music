@@ -1,4 +1,4 @@
-import { seekStatusBarLyric } from '@/core/statusBarLyric'
+import { syncStatusBarLyricPlayback } from '@/core/statusBarLyric'
 import { updateListMusics } from '@/core/list'
 import { setMaxplayTime, setNowPlayTime } from '@/core/player/progress'
 import { setCurrentTime, getDuration, getPosition } from '@/plugins/player'
@@ -77,7 +77,7 @@ export default () => {
     setNowPlayTime(time)
     const id = playerState.musicInfo.id
     void setCurrentTime(time).then(() => {
-      if (id == playerState.musicInfo.id) seekStatusBarLyric(time * 1000)
+      if (id == playerState.musicInfo.id) void syncStatusBarLyricPlayback()
     }).catch(() => {})
 
     if (maxTime != null) setMaxplayTime(maxTime)

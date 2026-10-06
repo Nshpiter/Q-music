@@ -1,4 +1,4 @@
-import { setStatusBarLyric, playStatusBarLyric, pauseStatusBarLyric, setStatusBarLyricOptions } from './statusBarLyric'
+import { setStatusBarLyric, syncStatusBarLyricPlayback, setStatusBarLyricOptions } from './statusBarLyric'
 import {
   play as lrcPlay,
   setLyric as lrcSetLyric,
@@ -35,7 +35,7 @@ export const init = async() => {
  */
 const handleSetLyric = async(lyric: string, translation = '', romalrc = '') => {
   lrcSetLyric(lyric, translation, romalrc)
-  setStatusBarLyric(lyric, translation, romalrc)
+  void setStatusBarLyric(lyric, translation, romalrc)
   await setDesktopLyric(lyric, translation, romalrc)
   if (settingState.setting['player.isShowBluetoothFullLyric']) {
     void updateNowPlayingTitles({
@@ -50,7 +50,7 @@ const handleSetLyric = async(lyric: string, translation = '', romalrc = '') => {
  */
 export const handlePlay = (time: number) => {
   lrcPlay(time)
-  playStatusBarLyric(time)
+  void syncStatusBarLyricPlayback()
   void playDesktopLyric(time)
 }
 
@@ -60,7 +60,7 @@ export const handlePlay = (time: number) => {
 export const pause = () => {
   lyricPlayRequest++
   lrcPause()
-  pauseStatusBarLyric()
+  void syncStatusBarLyricPlayback()
   void pauseDesktopLyric()
 }
 

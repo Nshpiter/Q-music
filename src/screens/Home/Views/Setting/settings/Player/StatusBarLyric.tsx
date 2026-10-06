@@ -31,7 +31,7 @@ export default memo(() => {
     <Text size={14} color={theme['q-text-primary']}>{t('status_bar_lyric_title')}</Text>
     <Text size={12} color={theme['q-text-secondary']}>{t(`status_bar_lyric_${status}`)}</Text>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-      {status != 'connected' && status != 'unsupported' && status != 'not_installed' ? <Button disabled={busy} onPress={() => { void reconnect() }}>{t('status_bar_lyric_retry')}</Button> : null}
+      {status != 'unsupported' && status != 'not_installed' ? <Button disabled={busy} onPress={() => { void reconnect() }}>{t('status_bar_lyric_retry')}</Button> : null}
       <Button onPress={() => { void tipDialog({ title: t('status_bar_lyric_title'), message: t('status_bar_lyric_help') }) }}>{t('help')}</Button>
     </View>
   </View>

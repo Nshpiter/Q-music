@@ -78,9 +78,7 @@ const registerPlaybackService = async() => {
   })
 
   TrackPlayer.addEventListener(TPEvent.PlaybackState, async info => {
-    if (!isTempId() && info.state != TPState.None && info.state != TPState.Connecting) {
-      syncStatusBarLyricPlayback(info.state == TPState.Playing)
-    }
+    void syncStatusBarLyricPlayback()
     if (global.lx.gettingUrlId || isTempId()) return
     // let currentIsPlaying = false
 
@@ -117,6 +115,7 @@ const registerPlaybackService = async() => {
   TrackPlayer.addEventListener(TPEvent.PlaybackTrackChanged, async info => {
     // console.log('PlaybackTrackChanged====>', info)
     global.lx.playerTrackId = await getCurrentTrackId()
+    void syncStatusBarLyricPlayback()
     if (info.track == null) return
     if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
 
