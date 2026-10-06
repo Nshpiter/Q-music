@@ -1,7 +1,7 @@
 {
   "name": "q-music-mobile",
-  "version": "0.4.9",
-  "versionCode": 39,
+  "version": "0.4.10",
+  "versionCode": 40,
   "private": true,
   "scripts": {
     "postinstall": "node scripts/patch-android-dependencies.cjs",
