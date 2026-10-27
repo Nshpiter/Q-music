@@ -36,3 +36,17 @@ patch(metadataManager,
   '            sessionActions |= PlaybackStateCompat.ACTION_PLAY_PAUSE;\n' +
   '        }\n' +
   '        pb.setActions(sessionActions);')
+
+// 暂停状态的预加载在播放器内叫 CONNECTING；系统媒体卡会把它当成播放中。
+// 媒体会话单独归一为 PAUSED，并停止进度外推，保留 JS 的加载事件语义。
+patch(metadataManager,
+  '        pb.setState(playback.getState(), playback.getPosition(), playback.getRate());',
+  '        int sessionState = playback.getState();\n' +
+  '        if (sessionState == PlaybackStateCompat.STATE_CONNECTING) sessionState = PlaybackStateCompat.STATE_PAUSED;\n' +
+  '        float sessionSpeed = sessionState == PlaybackStateCompat.STATE_PLAYING ? playback.getRate() : 0f;\n' +
+  '        pb.setState(sessionState, playback.getPosition(), sessionSpeed);')
+
+// 曲目信息可能跨桥延迟到达，通知按钮必须取原生此刻的状态，不采用旧 JS 快照。
+patch(metadataManager,
+  '        updatePlayback(isPlaying);',
+  '        updatePlayback(Utils.isPlaying(playback.getState()));')

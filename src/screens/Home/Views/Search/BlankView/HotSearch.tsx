@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { ActivityIndicator, ScrollView, View } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 import { type Source, type InitState } from '@/store/hotSearch/state'
 import Button from '@/components/common/Button'
 import { getList } from '@/core/hotSearch'
@@ -88,8 +88,6 @@ export default forwardRef<HotSearchType, ListProps>((props, ref) => {
     <View
       style={{
         ...styles.card,
-        backgroundColor: theme['q-surface-raised'],
-        borderColor: theme['q-outline'],
       }}
     >
       <View style={styles.titleContent}>
@@ -102,7 +100,7 @@ export default forwardRef<HotSearchType, ListProps>((props, ref) => {
       {loading && !list.length
         ? <View style={styles.state}><ActivityIndicator color={theme['q-accent']} /><Text color={theme['q-text-secondary']} size={12}>{t('search_hot_search_loading')}</Text></View>
         : list.length
-          ? <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.list}>{list.map(keyword => <ListItem keyword={keyword} key={keyword} onSearch={props.onSearch} />)}</ScrollView>
+          ? <View style={styles.list}>{list.map(keyword => <ListItem keyword={keyword} key={keyword} onSearch={props.onSearch} />)}</View>
           : <Text style={styles.empty} color={theme['q-text-secondary']} size={12}>{t('search_hot_search_empty')}</Text>}
     </View>
   )
@@ -115,8 +113,6 @@ const styles = createStyle({
     paddingBottom: 12,
     paddingLeft: 16,
     paddingRight: 16,
-    borderWidth: 1,
-    borderRadius: 20,
   },
   titleContent: {
     minHeight: 48,
@@ -150,9 +146,10 @@ const styles = createStyle({
   },
   list: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   button: {
-    textAlign: 'center',
+    maxWidth: '100%',
     minHeight: 40,
     paddingLeft: 14,
     paddingRight: 14,

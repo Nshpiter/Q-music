@@ -1,9 +1,12 @@
 {
   "name": "q-music-mobile",
-  "version": "0.4.24",
-  "versionCode": 52,
+  "version": "0.4.25",
+  "versionCode": 53,
   "private": true,
   "scripts": {
+    "test:mobile-navigation": "node --test scripts/verify-setting-navigation.cjs scripts/verify-settings-search-download.cjs scripts/verify-netease-login-page.cjs scripts/verify-music-login.cjs scripts/verify-qq-authorization.cjs",
+    "test:api-fallback": "node --test scripts/verify-user-api-fallback.cjs scripts/verify-user-api-runtime.cjs",
+    "test:feedback": "node --test scripts/verify-lyric-copy.cjs scripts/verify-music-accounts.cjs scripts/verify-playback-recovery.cjs scripts/verify-native-playback-cancel.cjs",
     "test:account-transfer": "node --test scripts/verify-account-transfer.cjs",
     "postinstall": "node scripts/patch-android-dependencies.cjs",
     "test:background": "node scripts/verify-background-playback.cjs",
@@ -35,7 +38,8 @@
     "test:playback-recovery": "node --test scripts/verify-playback-recovery.cjs scripts/verify-native-playback-cancel.cjs",
     "test:playlist-merge": "node --test scripts/verify-playlist-merge.cjs",
     "test:download-selection": "node --test scripts/verify-download-selection.cjs",
-    "test:theme-appearance": "node --test scripts/verify-theme-appearance.cjs"
+    "test:theme-appearance": "node --test scripts/verify-theme-appearance.cjs",
+    "test:ui-interactions": "node --test scripts/verify-discovery-controls.cjs scripts/verify-event-dispatch.cjs scripts/verify-search-navigation.cjs scripts/verify-settings-motion.cjs scripts/verify-motion-preferences.cjs scripts/verify-media-session.cjs scripts/verify-song-browse.cjs scripts/verify-lyric-copy.cjs"
   },
   "engines": {
     "node": ">= 18",

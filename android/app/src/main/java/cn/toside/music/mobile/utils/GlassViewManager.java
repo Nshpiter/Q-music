@@ -11,7 +11,7 @@ public class GlassViewManager extends ReactViewManager {
   @Override public ReactViewGroup createViewInstance(ThemedReactContext context) { return new GlassView(context); }
   @ReactProp(name = "glassSelection")
   public void setGlassSelection(ReactViewGroup view, boolean value) { ((GlassView) view).setSelection(value); }
-  @ReactProp(name = "glassEnabled", defaultBoolean = true)
+  @ReactProp(name = "glassEnabled", defaultBoolean = false)
   public void setGlassEnabled(ReactViewGroup view, boolean value) { ((GlassView) view).setGlassEnabled(value); }
   @ReactProp(name = "glassDark")
   public void setGlassDark(ReactViewGroup view, boolean value) { ((GlassView) view).setDark(value); }

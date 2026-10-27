@@ -46,3 +46,35 @@ test('设备识别可被显式手机或平板选择覆盖', () => {
 test('窄窗口下手动选择大屏模式仍避免挤出屏幕', () => {
   for (const mode of ['tablet', 'car']) assert.equal(layout(393, 840, mode, false).wide, false)
 })
+
+test('侧栏布局禁止横向翻页，回到手机底栏恢复可滑动能力；车机始终不滑动切页', () => {
+  assert.equal(layout(393, 840, 'auto', false).canSwipePages, true)
+  assert.equal(layout(800, 1280, 'tablet', false).canSwipePages, false)
+  assert.equal(layout(1280, 800, 'auto', true).canSwipePages, false)
+  assert.equal(layout(480, 800, 'auto', true).canSwipePages, true)
+  assert.equal(layout(1024, 600, 'phone', true).canSwipePages, true)
+  assert.equal(layout(393, 840, 'car', false).canSwipePages, false)
+})
+
+
+test('大屏三种导航位置保留大屏布局，只有侧栏占用内容宽度', () => {
+  for (const mode of ['tablet', 'car']) {
+    for (const position of ['left', 'right', 'bottom']) {
+      const result = layout(800, 600, mode, true, false, position)
+      assert.equal(result.wide, true)
+      assert.equal(result.navigationPosition, position)
+      assert.equal(result.railWidth, position == 'bottom' ? 0 : mode == 'car' ? 104 : 88)
+      assert.equal(result.canSwipePages, false)
+      assert.equal(result.splitLibrary, true)
+    }
+  }
+})
+
+test('手机及窄分屏忽略保存的侧栏位置，恢复大屏时沿用偏好', () => {
+  for (const position of ['left', 'right', 'bottom']) {
+    assert.equal(layout(393, 840, 'auto', false, false, position).navigationPosition, 'bottom')
+    assert.equal(layout(1024, 600, 'phone', true, false, position).railWidth, 0)
+    assert.equal(layout(480, 600, 'tablet', false, false, position).navigationPosition, 'bottom')
+    assert.equal(layout(800, 600, 'tablet', true, false, position).navigationPosition, position)
+  }
+})

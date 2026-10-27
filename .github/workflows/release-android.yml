@@ -169,7 +169,9 @@ jobs:
           npm run test:background
           npm run test:playback-preferences
           npm run test:playback-recovery
-          node scripts/verify-music-login.cjs
+          npm run test:mobile-navigation
+          npm run test:api-fallback
+          npm run test:ui-interactions
 
       - name: Verify update mirror fallback
         working-directory: mobile

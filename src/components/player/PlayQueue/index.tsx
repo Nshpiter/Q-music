@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { ActivityIndicator, FlatList, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, FlatList, View } from 'react-native'
+import Button from '@/components/common/Button'
 
 import Popup, { type PopupType } from '@/components/common/Popup'
 import Text from '@/components/common/Text'
@@ -31,13 +32,12 @@ const QueueItem = ({ index, name, singer, isActive, isPlaying, busy, onPress }: 
   const theme = useTheme()
   const t = useI18n()
   return (
-    <TouchableOpacity
+    <Button
       accessibilityRole="button"
       accessibilityLabel={`${t(isPlaying ? 'pause' : 'play')} · ${name} · ${singer}`}
       accessibilityState={{ selected: isActive, busy, disabled: busy }}
       disabled={busy}
-      style={{ ...styles.item, backgroundColor: isActive ? theme['q-surface-tint'] : 'transparent', borderRadius: isActive ? Q_UI.radius.item : 0 }}
-      activeOpacity={0.6}
+      style={{ ...styles.item, backgroundColor: isActive ? theme['q-surface-tint'] : 'transparent', borderRadius: Q_UI.radius.item }}
       onPress={onPress}
     >
       <View style={styles.index}>
@@ -49,7 +49,7 @@ const QueueItem = ({ index, name, singer, isActive, isPlaying, busy, onPress }: 
         <Text numberOfLines={1} size={14} color={isActive ? theme['q-accent-text'] : theme['c-font']}>{name}</Text>
         <Text numberOfLines={1} size={11} color={theme['q-text-secondary']}>{singer}</Text>
       </View>
-    </TouchableOpacity>
+    </Button>
   )
 }
 
@@ -120,9 +120,9 @@ const PlayQueue = forwardRef<PlayQueueType>((_, ref) => {
       ? (
         <Popup ref={popupRef} title={`${t('play_queue_title')} · ${list.length}`} onHide={() => { setVisible(false) }} onShow={scrollToCurrent}>
           {activeIndex >= 0 && activeIndex < list.length
-            ? <TouchableOpacity accessibilityRole="button" style={styles.locate} onPress={scrollToCurrent}>
+            ? <Button accessibilityRole="button" style={styles.locate} onPress={scrollToCurrent}>
                 <Text size={12} color={theme['q-accent-text']}>{t('queue_locate')}</Text>
-              </TouchableOpacity>
+              </Button>
             : null}
           <FlatList
             ref={listRef}

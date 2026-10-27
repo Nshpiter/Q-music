@@ -96,7 +96,7 @@ const Component = <S extends Sources>({ fontSize = 15, center, plain = false, ic
         {!iconOnly
           ? <Text style={{ ...styles.sourceText, textAlign: center ? 'center' : 'left' }} numberOfLines={1} ellipsizeMode="tail" size={fontSize}>{sourceLabel}</Text>
           : null}
-        <Icon style={styles.chevron} name="chevron-right" color={theme['q-text-secondary']} rawSize={12} />
+        {!iconOnly ? <Icon style={styles.chevron} name="chevron-right" color={theme['q-text-secondary']} rawSize={12} /> : null}
       </View>
     </DorpDownMenu>
   )

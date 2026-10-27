@@ -155,11 +155,13 @@ const Menu = ({
 
   return (
     <View
+      testID="context-menu-surface"
       style={{
         ...styles.menu,
         ...qFloatingShadow,
         ...menuStyle,
-        backgroundColor: theme['q-surface-raised'],
+        // 浮动菜单必须遮住下层文字；玻璃表面色会让菜单与页面内容重叠。
+        backgroundColor: theme['c-content-background'],
         borderColor: theme['q-outline'],
       }}
     >

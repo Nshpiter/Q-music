@@ -4,7 +4,6 @@ import { StyleSheet, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import { createStyle, type RowInfo } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
-import { useAssertApiSupport } from '@/store/common/hook'
 import Text from '@/components/common/Text'
 import SourceLogo from '@/components/SourceLogo'
 import SongDownloadButton from '@/components/SongDownloadButton'
@@ -31,7 +30,6 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
 
   const isSelected = selectedList.includes(item)
   // console.log(item.name, selectedList, selectedList.includes(item))
-  const isSupported = useAssertApiSupport(item.source)
   const moreButtonRef = useRef<BtnType>(null)
   const handleShowMenu = () => {
     if (moreButtonRef.current?.measure) {
@@ -46,7 +44,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
   const singer = `${item.singer}${isShowAlbumName && item.meta.albumName ? ` · ${item.meta.albumName}` : ''}`
 
   return (
-    <View style={[styles.row, { width: rowInfo.rowWidth, height: songRowHeight, opacity: isSupported ? 1 : 0.5 }]}>
+    <View style={[styles.row, { width: rowInfo.rowWidth, height: songRowHeight }]}>
       <View style={[
         styles.listItem,
         isSelected
@@ -89,7 +87,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
                 : <Text style={styles.sn} size={13} color={theme['q-text-secondary']}>{index + 1}</Text>
           }
           <View style={styles.itemInfo}>
-            <Text size={isCar ? 18 : 14} style={active ? styles.playingTitle : undefined} color={active ? theme['q-accent-text'] : theme['c-font']} numberOfLines={1}>{item.name}</Text>
+            <Text size={isCar ? 18 : 14} style={active ? styles.playingTitle : undefined} color={active ? theme['q-accent-text'] : theme['q-text-primary']} numberOfLines={1}>{item.name}</Text>
             <View style={styles.listItemSingle}>
               {item.source != 'local' ? <SourceLogo source={item.source} size={18} style={styles.sourceLogo} /> : null}
               <Text style={styles.listItemSingleText} size={isCar ? 13 : 11} color={theme['q-text-secondary']} numberOfLines={1}>

@@ -57,7 +57,7 @@ global.lx = {
 
   jumpMyListPosition: false,
 
-  settingActiveId: 'basic',
+  settingActiveId: 'overview',
 
   homePagerIdle: true,
 

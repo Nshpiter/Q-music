@@ -7,7 +7,20 @@ const crypto = require('node:crypto')
 const ts = require('typescript')
 const root = path.join(__dirname, '../src')
 function load(file, dependencies, globals = {}) {
-  const context = { exports: {}, Buffer, URLSearchParams, AbortController, setTimeout, clearTimeout, Error, ...globals,
+  if (file == 'core/musicAccount/cookies.ts') {
+    dependencies['./qqCredentials'] = load('core/musicAccount/qqCredentials.ts', {})
+    dependencies['./qqImportedSession'] = { getQQImportedCookies: async () => null, clearQQImportedCookies: async () => {} }
+  }
+  if (['core/musicAccount/requests.ts', 'core/musicAccount/playlistSync.ts'].includes(file)) dependencies['./qqCredentials'] = load('core/musicAccount/qqCredentials.ts', {})
+  if (['core/musicAccount/playlists.ts', 'core/musicAccount/daily.ts'].includes(file)) {
+    dependencies['./kugou'] = {}
+    dependencies['@/utils/musicSdk/kg/songList'] = {}
+  }
+  if (file == 'core/musicAccount/playlistSync.ts') {
+    dependencies['@/utils/playlistMerge'] = load('utils/playlistMerge.ts', {})
+    dependencies['./syncState'] = load('core/musicAccount/syncState.ts', {})
+  }
+  const context = { exports: {}, Buffer, URL, URLSearchParams, AbortController, setTimeout, clearTimeout, Error, ...globals,
     require: id => { if (!(id in dependencies)) throw new Error(`Unexpected dependency: ${id}`); return dependencies[id] },
   }
   vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText, context)
@@ -55,14 +68,22 @@ const wyTrack = id => ({ id, name: `歌 ${id}`, ar: [{ name: '歌手' }], al: { 
 const qqTrack = id => ({ id, mid: `mid${id}`, title: `歌 ${id}`, singer: [{ name: '歌手' }], album: { mid: 'album', name: '专辑' }, file: { media_mid: `media${id}`, size_128mp3: 100, size_320mp3: 0, size_flac: 0, size_hires: 0 }, interval: 120 })
 const state = { userList: [] }
 const storage = new Map()
+const updateInfo = {}
 let failWrite = false
 const sync = load('core/musicAccount/playlistSync.ts', {
   '@/store/list/state': { default: state }, './playlists': api,
   '@/core/list': {
     setFetchingListStatus: () => {},
+    getListMusics: async id => storage.get(id) ?? [],
     createList: async info => { state.userList.push(info); storage.set(info.id, info.list) },
     overwriteListMusics: async (id, tracks) => { if (failWrite) throw new Error('disk'); storage.set(id, tracks) },
-  }, '@/utils/data': { setListUpdateTime: async () => {} },
+  }, '@/utils/data': {
+    getListUpdateInfo: async () => updateInfo,
+    setListUpdateTime: async () => {},
+    setListSourceSnapshot: async (id, sourceSnapshot) => { updateInfo[id] = { ...updateInfo[id], sourceSnapshot } },
+    setListSourceAccount: async (id, sourceAccountId) => { updateInfo[id] = { ...updateInfo[id], sourceAccountId } },
+    setListAutoUpdate: async (id, isAutoUpdate) => { updateInfo[id] = { ...updateInfo[id], isAutoUpdate } },
+  },
 })
 let incomplete = false
 let total = 205
@@ -97,8 +118,8 @@ async function main() {
   await sync.syncAccountPlaylist(session, lists[0])
   assert.equal(state.userList.length, 1, '重复同步不新建')
   const ongoing = sync.syncAccountPlaylist(session, lists[0])
-  await assert.rejects(sync.syncAccountPlaylist(session, lists[0]), /busy/)
-  await ongoing
+  const concurrent = sync.syncAccountPlaylist(session, lists[0])
+  assert.equal((await concurrent).id, (await ongoing).id, '并发同步共用同一结果')
   incomplete = true
   await assert.rejects(sync.syncAccountPlaylist(session, lists[0]), /incomplete/)
   assert.equal(storage.get(first.id).length, 205, '不完整返回不能覆盖')

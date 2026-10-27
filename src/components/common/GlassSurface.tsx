@@ -27,11 +27,12 @@ export const useGlassColors = () => {
 export default memo(({ children, style, radius = 24, selection = false, ...props }: ViewProps & { radius?: number, selection?: boolean }) => {
   const theme = useTheme()
   const performanceMode = useSettingValue('theme.performanceMode')
+  const liquidGlass = useSettingValue('theme.liquidGlass')
   const blurLevel = useSettingValue('theme.blurLevel')
   const motion = useMotion()
   const panelStyle = [styles.panel, { borderRadius: radius }, style]
   return NativeGlass
-    ? <NativeGlass {...props} glassSelection={selection} glassEnabled={!performanceMode} glassDark={theme.isDark} glassMotion={motion} glassRadius={radius} glassBlur={Q_BLUR_PRESETS[blurLevel].radius} style={panelStyle}>{children}</NativeGlass>
+    ? <NativeGlass {...props} glassSelection={selection} glassEnabled={liquidGlass && !performanceMode} glassDark={theme.isDark} glassMotion={motion} glassRadius={radius} glassBlur={Q_BLUR_PRESETS[blurLevel].radius} style={panelStyle}>{children}</NativeGlass>
     : <View {...props} style={[panelStyle, { backgroundColor: theme['c-content-background'], borderWidth: StyleSheet.hairlineWidth, borderColor: theme['q-outline'] }]}>{children}</View>
 })
 

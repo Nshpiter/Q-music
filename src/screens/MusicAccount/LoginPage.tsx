@@ -8,7 +8,7 @@ import { Icon } from '@/components/common/Icon'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
 import type { MusicAccountProvider } from '@/core/musicAccount'
-import { getLoginAppUrl, getQQCallbackUrl, isQQCallback, LOGIN_URLS } from '@/core/musicAccount/login'
+import { getLoginAppUrl, getQQCallbackUrl, isQQCallback, LOGIN_URLS, normalizeLoginNavigation } from '@/core/musicAccount/login'
 import { isQQLoginPage, QQ_AUTH_BRIDGE, QQ_RESUME_AUTH, QQ_START_AUTH, QQ_STOP_AUTH } from '@/core/musicAccount/qqAuthorization'
 import { isQQDailyOrigin, QQ_DAILY_BRIDGE, QQ_DAILY_USER_AGENT } from '@/core/musicAccount/dailyAuthorization'
 import { isWechatLoginPage, getWechatAppUrl, getWechatQrScript } from '@/core/musicAccount/wechatAuthorization'
@@ -30,6 +30,7 @@ const LoginPage = ({ provider, connected, onConnected, initialUrl = LOGIN_URLS[p
   const lastLaunch = useRef(0)
   const timer = useRef<ReturnType<typeof setTimeout>>()
   const wechatLogin = provider == 'tx' && isWechatLoginPage(initialUrl)
+  const supportsQQ = provider == 'tx' || provider == 'wy'
   const [wechatBusy, setWechatBusy] = useState(false)
   const [wechatNotice, setWechatNotice] = useState('')
   const exportingQR = useRef(false)
@@ -148,7 +149,8 @@ const LoginPage = ({ provider, connected, onConnected, initialUrl = LOGIN_URLS[p
     }
     const appUrl = getLoginAppUrl(target, provider)
     if (!appUrl) return
-    if (provider == 'tx' && /^wtloginmqq:/i.test(appUrl) && !/[?&]qrcode=/.test(appUrl)) {
+    if (supportsQQ && /^wtloginmqq:/i.test(appUrl) && !/[?&]qrcode=/.test(appUrl)) {
+      // 两个平台共用 QQ 官方二维码会话，避免 QQ 确认后跳到浏览器而丢失网易登录态。
       webview.current?.injectJavaScript(QQ_START_AUTH)
       return
     }
@@ -208,10 +210,12 @@ const LoginPage = ({ provider, connected, onConnected, initialUrl = LOGIN_URLS[p
         onShouldStartLoadWithRequest={request => {
           if (isQQCallback(request.url)) {
             const target = awaitingQQ.current && provider == 'wy' ? getQQCallbackUrl(request.url, provider) : null
-            if (target) { setUrl(target); setFailed(false); setAppError(false) } else if (provider == 'tx') webview.current?.injectJavaScript(QQ_RESUME_AUTH)
+            if (target) { setUrl(target); setFailed(false); setAppError(false) } else if (supportsQQ) webview.current?.injectJavaScript(QQ_RESUME_AUTH)
             refreshConnection()
             return false
           }
+          const normalized = normalizeLoginNavigation(request.url, provider)
+          if (normalized != request.url) { setUrl(normalized); setFailed(false); return false }
           if (/^https?:/i.test(request.url) || request.url == 'about:blank') return true
           openApp(request.url)
           return false
@@ -219,7 +223,7 @@ const LoginPage = ({ provider, connected, onConnected, initialUrl = LOGIN_URLS[p
         onOpenWindow={event => {
           const target = event.nativeEvent.targetUrl
           // 授权和 Cookie 留在同一个 WebView 中，避免跳到外部浏览器丢失登录态。
-          if (/^https?:\/\//i.test(target)) setUrl(target)
+          if (/^https?:\/\//i.test(target)) setUrl(normalizeLoginNavigation(target, provider))
           else openApp(target)
         }}
         setSupportMultipleWindows
@@ -244,7 +248,7 @@ const LoginPage = ({ provider, connected, onConnected, initialUrl = LOGIN_URLS[p
             } catch {}
             return
           }
-          if (provider != 'tx' || !isQQLoginPage(event.nativeEvent.url)) return
+          if (!supportsQQ || !isQQLoginPage(event.nativeEvent.url)) return
           try {
             const message = JSON.parse(event.nativeEvent.data) as { type?: string, url?: string }
             if (message.type == 'qq-open' && typeof message.url == 'string' && /^wtloginmqq:\/\/ptlogin\/qlogin\?qrcode=/.test(message.url)) openApp(message.url)
@@ -257,7 +261,7 @@ const LoginPage = ({ provider, connected, onConnected, initialUrl = LOGIN_URLS[p
         onLoadStart={() => { setLoading(true) }}
         onNavigationStateChange={state => { pageUrl.current = state.url }}
         onLoadEnd={() => {
-          if (provider == 'tx') webview.current?.injectJavaScript(QQ_AUTH_BRIDGE)
+          if (supportsQQ) webview.current?.injectJavaScript(QQ_AUTH_BRIDGE)
           if (onDailyKey) webview.current?.injectJavaScript(QQ_DAILY_BRIDGE)
           setLoading(false)
           refreshConnection()

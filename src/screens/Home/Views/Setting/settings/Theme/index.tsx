@@ -8,6 +8,7 @@ import IsDynamicBg from './IsDynamicBg'
 import BlurLevel from './BlurLevel'
 import IsFontShadow from './IsFontShadow'
 import PerformanceMode from './PerformanceMode'
+import LiquidGlass from './LiquidGlass'
 // import { useI18n } from '@/lang/i18n'
 
 export default memo(() => {
@@ -17,6 +18,7 @@ export default memo(() => {
       <Theme />
       <IsHideBgDark />
       <IsDynamicBg />
+      <LiquidGlass />
       <BlurLevel />
       <PerformanceMode />
       <IsFontShadow />

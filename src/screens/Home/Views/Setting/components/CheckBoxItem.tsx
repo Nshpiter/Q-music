@@ -17,6 +17,7 @@ export default memo((props: CheckBoxProps) => {
   return (
     <View style={{ ...styles.container, borderBottomColor: theme['q-outline'], marginBottom: props.marginBottom ?? 0 }}>
       <Button
+        pressScale={0.99}
         accessibilityRole="switch"
         accessibilityLabel={props.label}
         accessibilityState={{ checked: props.check, disabled: props.disabled }}

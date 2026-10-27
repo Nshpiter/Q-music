@@ -5,6 +5,7 @@ import { getPosition, isEmpty, setStop } from '@/plugins/player'
 import BackgroundTimer from 'react-native-background-timer'
 import playerState from '@/store/player/state'
 import { setNowPlayTime } from '@/core/player/progress'
+import { excludeFailedUserApiUrl } from '@/core/music/userApiFallback'
 
 
 export default () => {
@@ -25,6 +26,7 @@ export default () => {
       // }
 
       // 如果加载超时，则尝试刷新URL
+      excludeFailedUserApiUrl(playerState.musicInfo.apiSourceUrl ?? '')
       if (prevTimeoutId == playerState.musicInfo.id) {
         prevTimeoutId = null
         handlePlaybackFailure()
@@ -81,6 +83,7 @@ export default () => {
     clearLoadingTimeout()
     if (global.lx.isPlayedStop || playbackRecovery.isCancelled()) return
     if (playerState.playMusicInfo.musicInfo && retryNum < 2) { // 若音频URL无效则尝试刷新2次URL
+      excludeFailedUserApiUrl(playerState.musicInfo.apiSourceUrl ?? '')
       let musicInfo = playerState.playMusicInfo.musicInfo
       const token = playbackRecovery.token()
       retryNum++

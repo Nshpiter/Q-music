@@ -27,6 +27,15 @@ const IcoMoon = createIconSetFromIcoMoon(icoMoonConfig)
 
 // 常用操作统一为细线图标，播放控制使用同一套实心字形。
 const outlineIcons: Record<string, string> = {
+  'dots-horizontal': 'more-horizontal',
+  disc: 'disc',
+  radio: 'radio',
+  palette: 'droplet',
+  shield: 'shield',
+  save: 'save',
+  tool: 'tool',
+  user: 'user',
+  copy: 'copy',
   'search-2': 'search',
   setting: 'settings',
   slider: 'sliders',
@@ -59,6 +68,7 @@ const outlineIcons: Record<string, string> = {
   'lyric-off': 'align-left',
   music_time: 'clock',
   add_folder: 'folder-plus',
+  folder: 'folder',
   add: 'plus',
   'thumbs-up': 'thumbs-up',
 }
@@ -70,6 +80,7 @@ const solidIcons: Record<string, string> = {
   'add-music': 'heart-outline',
   'play-outline': 'play-outline',
   translation: 'language-outline',
+  'platform-playlists': 'albums-outline',
 }
 
 

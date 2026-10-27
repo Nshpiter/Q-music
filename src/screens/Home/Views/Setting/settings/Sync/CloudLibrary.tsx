@@ -1,7 +1,9 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
+import PressButton from '@/components/common/Button'
 import RNFS from 'react-native-fs'
 import ChoosePath, { type ChoosePathType } from '@/components/common/ChoosePath'
+import { getDownloadDirectory } from '@/core/download/location'
 import CheckBox from '@/components/common/CheckBox'
 import Text from '@/components/common/Text'
 import Input from '@/components/common/Input'
@@ -21,7 +23,7 @@ import SubTitle from '../../components/SubTitle'
 import Button from '../../components/Button'
 
 const AUDIO_EXT = ['mp3', 'flac', 'wav', 'm4a', 'aac', 'ogg', 'ape']
-const DOWNLOAD_DIR = `${RNFS.ExternalStorageDirectoryPath}/Music/QMusic`
+// 与下载设置共用保存位置。
 
 const defaultConfig: CloudConfig = {
   provider: 's3', endpoint: '', region: 'us-east-1', bucket: '', prefix: '', accessKey: '', secretKey: '',
@@ -138,7 +140,7 @@ export default memo(() => {
   const uploadDownloaded = () => {
     void run(async() => {
       if (!await requestStoragePermission()) return
-      const files = await RNFS.readDir(DOWNLOAD_DIR).catch(() => [])
+      const files = await RNFS.readDir(getDownloadDirectory()).catch(() => [])
       const paths = files.filter(file => file.isFile() && AUDIO_EXT.some(ext => file.name.toLowerCase().endsWith(`.${ext}`))).map(file => file.path)
       if (!paths.length) { setStatus('下载目录中没有歌曲'); return }
       await uploadPaths(paths)
@@ -211,22 +213,22 @@ export default memo(() => {
         <Text size={12} color={theme['q-text-secondary']}>上传本地歌曲，在其他设备按歌单或歌曲导入。</Text>
         <View style={styles.providers}>
           {(['s3', 'webdav'] as const).map(provider => (
-            <TouchableOpacity key={provider} accessibilityRole="radio" accessibilityState={{ selected: config.provider == provider }}
+            <PressButton key={provider} accessibilityRole="radio" accessibilityState={{ selected: config.provider == provider }}
               style={{ ...styles.provider, backgroundColor: config.provider == provider ? theme['q-surface-tint'] : theme['q-surface-base'] }}
               disabled={busy} onPress={() => { changeProvider(provider) }}>
               <Text size={13} color={theme['q-text-primary']}>{provider == 's3' ? 'S3 / 兼容 S3' : 'WebDAV'}</Text>
-            </TouchableOpacity>
+            </PressButton>
           ))}
         </View>
       </SubTitle>
-      <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: showConfig }}
+      <PressButton accessibilityRole="button" accessibilityState={{ expanded: showConfig }}
         style={[styles.configToggle, { backgroundColor: theme['q-surface-tint'] }]} onPress={() => { setShowConfig(current => !current) }}>
         <View style={styles.summary}>
           <Text size={13} color={theme['q-text-primary']}>{hasConfigChanges ? '有修改待保存' : configured ? '已保存连接' : '请设置连接'}</Text>
           <Text size={12} color={theme['q-text-secondary']}>{showConfig ? '收起连接设置' : '编辑连接设置'}</Text>
         </View>
         <Icon name={showConfig ? 'chevron-down' : 'chevron-right'} size={16} color={theme['q-accent-text']} />
-      </TouchableOpacity>
+      </PressButton>
       {showConfig ? <>
       <InputItem immediate editable={!busy} label="服务地址" value={config.endpoint} onChanged={update('endpoint')} placeholder="https://..." inputMode="url" />
       {config.provider == 's3' ? <>

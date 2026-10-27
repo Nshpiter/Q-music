@@ -86,6 +86,7 @@ test('已有本地版本时下载另一音质仍使用在线地址，不把本�
     '@/utils/tools': { requestStoragePermission: async() => true },
     '@/core/music': { getMusicPlayUrlInfo: async() => ({ url: '/existing/song.mp3', quality: '128k' }) },
     '@/core/music/online': { getMusicPlayUrlInfo: async options => { requests.push(options); return { url: 'https://audio.example/song.flac', quality: 'flac' } } },
+    './location': { getDownloadDirectory: () => '/storage/Music/QMusic' },
     './store': {
       getDownloadTask: id => tasks.get(id),
       removeDownloadTask: id => tasks.delete(id),

@@ -14,6 +14,7 @@ import { ThemeContext } from '@/store/theme/state'
 import { useSettingValue } from '@/store/setting/hook'
 import { getPlayerTheme } from '@/theme/playerAppearance'
 import { getStatusBarStyle } from '@/navigation/utils'
+import { SongActionsProvider } from './components/SongActions'
 
 export default ({ componentId }: { componentId: string }) => {
   const { wide } = useAdaptiveLayout()
@@ -35,10 +36,10 @@ export default ({ componentId }: { componentId: string }) => {
 
   return (
     <ThemeContext.Provider value={theme}>
-      <PageContent>
+      <SongActionsProvider><PageContent>
         <StatusBar />
         {layout == 'immersive' ? <Immersive componentId={componentId} /> : wide ? <Wide componentId={componentId} /> : <Vertical componentId={componentId} />}
-      </PageContent>
+      </PageContent></SongActionsProvider>
     </ThemeContext.Provider>
   )
 }

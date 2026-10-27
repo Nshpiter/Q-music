@@ -7,7 +7,7 @@ const ts = require('typescript')
 const source = fs.readFileSync(path.join(__dirname, '../src/core/musicAccount/login.ts'), 'utf8')
 const context = { exports: {} }
 vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, context)
-const { LOGIN_URLS, QQ_CALLBACK, QQ_RETURN, isQQCallback, getQQCallbackUrl, getLoginAppUrl } = context.exports
+const { LOGIN_URLS, QQ_CALLBACK, QQ_RETURN, isQQCallback, getQQCallbackUrl, getLoginAppUrl, normalizeLoginNavigation } = context.exports
 
 const entry = new URL(LOGIN_URLS.tx)
 assert.equal(entry.hostname, 'graph.qq.com')
@@ -30,6 +30,12 @@ assert.equal(getQQCallbackUrl('qmusic://music/play?url=' + target), null)
 const netease = 'https://music.163.com/back/qq?code=test%2Bcode&state=xyz'
 assert.equal(getQQCallbackUrl(QQ_CALLBACK + encodeURIComponent(netease), 'wy'), netease)
 assert.equal(getQQCallbackUrl(QQ_CALLBACK + netease, 'tx'), null)
+assert.equal(normalizeLoginNavigation(netease.replace('https:', 'http:'), 'wy'), netease)
+assert.equal(getQQCallbackUrl(QQ_CALLBACK + encodeURIComponent(netease.replace('https:', 'http:')), 'wy'), netease)
+for (const rejected of ['http://music.163.com.evil.test/back/qq', 'http://music.163.com@evil.test/back/qq', 'http://music.163.com/back/qq-extra', 'http://music.163.com/back/qq\\evil']) {
+  assert.equal(normalizeLoginNavigation(rejected, 'wy'), rejected)
+}
+assert.equal(normalizeLoginNavigation(netease.replace('https:', 'http:'), 'tx'), netease.replace('https:', 'http:'))
 for (const rejected of ['https://music.163.com.evil.test/', 'https://music.163.com@evil.test/', 'https://music.163.com:444/', 'http://music.163.com/', 'https://music.163.com\\@evil.test/']) {
   assert.equal(getQQCallbackUrl(QQ_CALLBACK + encodeURIComponent(rejected), 'wy'), null)
 }

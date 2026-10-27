@@ -28,6 +28,12 @@ public class JavaScriptThread extends HandlerThread {
     this.handler = new Handler(getLooper()) {
       @Override
       public void handleMessage(@NonNull Message message) {
+        if (message.what == HandlerWhat.DESTROY) {
+          if (javaScriptExecutor != null) javaScriptExecutor.destroy();
+          javaScriptExecutor = null;
+          quitSafely();
+          return;
+        }
         if (javaScriptExecutor == null) {
           javaScriptExecutor = new QuickJS(reactContext, mainHandler);
           Log.d("UserApi [thread]", "javaScript executor created");
@@ -48,10 +54,6 @@ public class JavaScriptThread extends HandlerThread {
             javaScriptExecutor.callJS((String) data[0], data[1]);
             return;
           }
-          case HandlerWhat.DESTROY:
-            javaScriptExecutor.destroy();
-            javaScriptExecutor = null;
-            break;
           default:
             Log.w("UserApi [handler]", "Unknown message what: " + message.what);
             break;

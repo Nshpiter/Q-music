@@ -14,7 +14,7 @@ export default memo(({ music }: { music: LX.Music.MusicInfo }) => {
   const [busy, setBusy] = useState(false)
   if (music.source == 'local') return null
   return <Button accessibilityLabel={`${t('download')} · ${music.name}`} disabled={busy} accessibilityState={{ busy, disabled: busy }}
-    style={{ width: isCar ? 56 : 44, height: '100%', flexShrink: 0, alignItems: 'center', justifyContent: 'center' }}
+    style={{ width: isCar ? 56 : 44, minHeight: 44, alignSelf: 'stretch', flexShrink: 0, alignItems: 'center', justifyContent: 'center' }}
     onPress={() => {
       setBusy(true)
       void downloadSelection([music]).finally(() => { setBusy(false) })

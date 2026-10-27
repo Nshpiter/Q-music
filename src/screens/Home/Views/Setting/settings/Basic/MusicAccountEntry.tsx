@@ -1,5 +1,6 @@
 import { memo, useEffect, useState } from 'react'
-import { TouchableOpacity, View } from 'react-native'
+import { View } from 'react-native'
+import Button from '@/components/common/Button'
 
 import Text from '@/components/common/Text'
 import { useI18n } from '@/lang'
@@ -22,9 +23,8 @@ const MusicAccountEntry = memo(() => {
 
   return (
     <View style={styles.content}>
-      <TouchableOpacity
+      <Button
         style={styles.row}
-        activeOpacity={0.6}
         onPress={() => {
           if (commonState.componentIds.home) pushMusicAccountScreen(commonState.componentIds.home)
         }}
@@ -36,7 +36,7 @@ const MusicAccountEntry = memo(() => {
           </Text>
         </View>
         <Text size={14} color={theme['q-text-secondary']}>{'›'}</Text>
-      </TouchableOpacity>
+      </Button>
     </View>
   )
 })

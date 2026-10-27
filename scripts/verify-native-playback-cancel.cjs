@@ -17,6 +17,8 @@ function harness(holdCleanup = false) {
     seekTo: async() => events.push('seek'),
     play: async() => events.push('play'),
     pause: async() => events.push('pause'),
+    getState: async() => 'paused',
+    updateNowPlayingMetadata: async(info, playing) => events.push(`metadata:${playing}`),
     remove: async indices => {
       if (holdCleanup) { events.push('remove'); await cleanup.promise }
       queue.splice(0, indices.length)
@@ -35,6 +37,27 @@ function harness(holdCleanup = false) {
   return { api: context.exports, events, gate, cleanup, cancel: () => { active = false; context.exports.cancelPlayMusic() }, shouldPlay: () => active }
 }
 const song = { id: 'one', name: 'one', singer: 'artist', meta: {} }
+
+test('冷启动恢复历史曲目只装载暂停占位曲目，不发起播放，元数据也报告暂停', async() => {
+  const h = harness()
+  const restored = h.api.initTrackInfo(song, { id: 'one', name: 'one', singer: 'artist' })
+  await flush()
+  assert.deepEqual(h.events, ['pause', 'add'])
+  h.gate.resolve()
+  await restored
+  await flush()
+  assert.deepEqual(h.events, ['pause', 'add', 'skip', 'metadata:false'])
+})
+
+test('恢复占位曲目时立即选歌，恢复任务不再跳回旧歌或覆盖通知', async() => {
+  const h = harness()
+  void h.api.initTrackInfo(song, { id: 'one', name: 'one' })
+  await flush()
+  h.api.playMusic({ ...song, id: 'two' }, 'https://example.test/two.mp3', 0)
+  h.gate.resolve()
+  await flush()
+  assert.deepEqual(h.events, ['pause', 'add', 'add', 'skip', 'play'])
+})
 test('安卓原生队列 add 尚未完成时取消，不再 skip/seek/play', async() => {
   const h = harness()
   h.api.playMusic(song, 'https://example.test/one.mp3', 12, h.shouldPlay)

@@ -39,10 +39,11 @@ export const createKugouApi = (fetcher: Fetch, md5: (value: string) => string) =
         headers: { 'Content-Type': 'application/json', dfid: '-', mid, clienttime: String(query.clienttime), ...(login ? {} : { 'x-router': router }) },
         ...(body ? { body: text } : {}),
       })
-      if (!response.ok) fail(response.status == 401 || response.status == 403 ? 'login_required' : 'unavailable')
+      if (!response.ok) fail(response.status == 401 ? 'login_required' : 'unavailable')
       const result = await response.json()
-      if (Number(result.error_code) == 20028) fail('verification_required')
-      if (Number(result.status) != 1 || (result.error_code != null && Number(result.error_code) != 0) || !result.data) {
+      const code = result.error_code ?? result.errcode
+      if (Number(code) == 20028) fail('verification_required')
+      if (Number(result.status) != 1 || (code != null && Number(code) != 0) || !result.data) {
         // 部分接口以 HTTP 200 返回登录过期，只提取状态，不将原始响应或凭证交给界面。
         const message = String(result.error_msg ?? result.errmsg ?? result.msg ?? result.message ?? '')
         if (/未登录|未登陆|重新登[录陆]|登[录陆].*(?:失效|过期)|(?:token|session).*(?:expired|invalid)|(?:expired|invalid).*(?:token|session)/i.test(message)) fail('login_required')

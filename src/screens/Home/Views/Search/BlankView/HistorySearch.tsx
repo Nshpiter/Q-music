@@ -79,8 +79,6 @@ export default forwardRef<HistorySearchType, HistorySearchProps>((props, ref) =>
     <View
       style={{
         ...styles.card,
-        backgroundColor: theme['c-content-background'],
-        borderColor: theme['q-outline'],
       }}
     >
       <View style={styles.titleContent}>
@@ -115,8 +113,6 @@ const styles = createStyle({
     paddingBottom: 12,
     paddingLeft: 16,
     paddingRight: 16,
-    borderWidth: 1,
-    borderRadius: 20,
   },
   titleContent: {
     minHeight: 48,

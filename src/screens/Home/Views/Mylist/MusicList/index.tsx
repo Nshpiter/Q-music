@@ -19,9 +19,10 @@ import ExternalImportModal, { type ExternalImportModalType } from '../ExternalIm
 import { useBackHandler } from '@/utils/hooks/useBackHandler'
 import commonState from '@/store/common/state'
 import { downloadSelection } from '@/core/download/selection'
+import PlaylistSyncModal, { type PlaylistSyncModalType } from '../PlaylistSyncModal'
 
 
-export default () => {
+export default ({ onBack }: { onBack?: () => void }) => {
   // const t = useI18n()
   const activeListRef = useRef<ActiveListType>(null)
   const listMusicSearchRef = useRef<ListMusicSearchType>(null)
@@ -35,6 +36,7 @@ export default () => {
   const listMenuRef = useRef<ListMenuType>(null)
   const musicToggleModalRef = useRef<MusicToggleModalType>(null)
   const externalImportModalRef = useRef<ExternalImportModalType>(null)
+  const playlistSyncRef = useRef<PlaylistSyncModalType>(null)
   const layoutHeightRef = useRef<number>(0)
   const isShowMultipleModeBar = useRef(false)
   const isShowSearchBarModeBar = useRef(false)
@@ -101,8 +103,9 @@ export default () => {
       hancelExitSelect()
       return true
     }
+    if (onBack) { onBack(); return true }
     return false
-  }, [handleExitSearch, hancelExitSelect]))
+  }, [handleExitSearch, hancelExitSelect, onBack]))
   const handleScrollToInfo = useCallback((info: LX.Music.MusicInfo) => {
     listRef.current?.scrollToInfo(info)
     handleExitSearch()
@@ -141,6 +144,8 @@ export default () => {
       <View style={{ zIndex: 2 }}>
         <ActiveList
           ref={activeListRef}
+          onBack={onBack}
+          onShowSync={() => { playlistSyncRef.current?.show() }}
           onShowImport={() => { externalImportModalRef.current?.show(listState.activeListId) }}
           onShowSearchBar={handleShowSearch}
           onScrollToTop={hancelScrollToTop}
@@ -194,6 +199,7 @@ export default () => {
       />
       <MusicToggleModal ref={musicToggleModalRef} />
       <ExternalImportModal ref={externalImportModalRef} />
+      <PlaylistSyncModal ref={playlistSyncRef} />
     </View>
   )
 }

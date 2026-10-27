@@ -3,12 +3,12 @@ import {
   Animated,
   type GestureResponderEvent,
   View,
-  Pressable,
 } from 'react-native'
 
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
-import { useMotion } from '@/utils/useMotion'
+import { useInteractionMotion } from '@/utils/useMotion'
+import Button from '../Button'
 
 export interface Props {
   /**
@@ -66,7 +66,7 @@ const Checkbox = ({
   const isFirstRendering = React.useRef<boolean>(true)
 
 
-  const motion = useMotion()
+  const motion = useInteractionMotion()
 
   React.useEffect(() => {
     // Do not run animation on very first rendering
@@ -92,7 +92,7 @@ const Checkbox = ({
 
 
   return (
-    <Pressable
+    <Button
       {...rest}
       onPress={onPress}
       disabled={disabled}
@@ -101,11 +101,11 @@ const Checkbox = ({
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled, checked }}
       accessibilityLiveRegion="polite"
-      android_ripple={{ color: tintColors.true }}
       style={{
         ...styles.container,
         width: touchSize,
         height: touchSize,
+        borderRadius: variant === 'radio' ? touchSize / 2 : 12,
         marginLeft: -(touchSize - controlSize) / 2,
         opacity: disabled ? 0.48 : 1,
       }}
@@ -166,7 +166,7 @@ const Checkbox = ({
           }
         </Animated.View>
       </View>
-    </Pressable>
+    </Button>
   )
 }
 

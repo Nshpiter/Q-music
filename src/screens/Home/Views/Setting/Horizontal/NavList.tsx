@@ -1,4 +1,4 @@
-import { memo, useRef, useState } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { View, FlatList, type FlatListProps } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
@@ -12,6 +12,7 @@ import { SETTING_SCREENS, type SettingScreenIds } from '../Main'
 import { useI18n } from '@/lang'
 import { Q_UI } from '@/theme/ui'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
+import { selectSettingSection, useSettingSection } from '@/store/setting/navigation'
 
 type FlatListType = FlatListProps<SettingScreenIds>
 
@@ -58,14 +59,19 @@ export default ({ onChangeId }: {
   onChangeId: (id: SettingScreenIds) => void
 }) => {
   const flatListRef = useRef<FlatList>(null)
-  const [activeId, setActiveId] = useState(global.lx.settingActiveId)
+  const activeId = useSettingSection()
   const { isCar } = useAdaptiveLayout()
   const itemHeight = Math.max(ITEM_HEIGHT + 6, isCar ? 64 : 56)
+  useEffect(() => {
+    const index = SETTING_SCREENS.findIndex(id => id == activeId)
+    if (index < 0) return
+    const frame = requestAnimationFrame(() => { flatListRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated: false }) })
+    return () => { cancelAnimationFrame(frame) }
+  }, [activeId, itemHeight])
 
   const handleChangeId = (id: SettingScreenIds) => {
     onChangeId(id)
-    setActiveId(id)
-    global.lx.settingActiveId = id
+    selectSettingSection(id)
   }
 
   const renderItem: FlatListType['renderItem'] = ({ item, index }) => (

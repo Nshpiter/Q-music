@@ -14,16 +14,22 @@ const SEARCH_TYPE_LIST = [
   'songlist',
 ] as const
 
-export default () => {
+export default ({ selectedType }: { selectedType?: SearchType }) => {
   const t = useI18n()
   const theme = useTheme()
   const [type, setType] = useState<SearchType>('music')
 
   useEffect(() => {
+    let current = true
+    const onChange = (type: SearchType) => { current = false; setType(type) }
+    global.app_event.on('searchTypeChanged', onChange)
     void getSearchSetting().then(info => {
-      setType(info.type)
+      if (current) setType(info.type)
     })
+    return () => { current = false; global.app_event.off('searchTypeChanged', onChange) }
   }, [])
+
+  const activeType = selectedType ?? type
 
   const list = useMemo(() => {
     return SEARCH_TYPE_LIST.map(type => ({ label: t(`search_type_${type}`), id: type }))
@@ -47,10 +53,10 @@ export default () => {
           <Button
             accessibilityRole="tab"
             accessibilityLabel={t.label}
-            accessibilityState={{ selected: type == t.id }}
+            accessibilityState={{ selected: activeType == t.id }}
             style={{
               ...styles.button,
-              borderBottomColor: type == t.id ? theme['c-primary-alpha-300'] : 'transparent',
+              borderBottomColor: activeType == t.id ? theme['c-primary-alpha-300'] : 'transparent',
             }}
             onPress={() => { handleTypeChange(t.id) }}
             key={t.id}
@@ -58,7 +64,7 @@ export default () => {
             <Text
               style={styles.buttonText}
               size={12}
-              color={type == t.id ? theme['q-accent-text'] : theme['q-text-secondary']}
+              color={activeType == t.id ? theme['q-accent-text'] : theme['q-text-secondary']}
             >
               {t.label}
             </Text>

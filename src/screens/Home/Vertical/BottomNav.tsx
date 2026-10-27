@@ -7,17 +7,19 @@ import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import GlassSurface, { useGlassColors } from '@/components/common/GlassSurface'
 import { useMotion } from '@/utils/useMotion'
+import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 import { Q_UI } from '@/theme/ui'
 
 const MOBILE_NAV = [
   { id: 'nav_search', icon: 'search-2', label: 'mobile_discover' },
   { id: 'nav_songlist', icon: 'album', label: 'nav_songlist' },
   { id: 'nav_top', icon: 'leaderboard', label: 'nav_top' },
-  { id: 'nav_love', icon: 'love', label: 'mobile_library' },
+  { id: 'nav_love', icon: 'user', label: 'mobile_library' },
 ] as const
 
 const NavItem = ({ id, icon, label }: typeof MOBILE_NAV[number]) => {
   const activeId = useNavActiveId()
+  const { isCar } = useAdaptiveLayout()
   const colors = useGlassColors()
   const t = useI18n()
   const active = activeId == id || (id == 'nav_love' && (activeId == 'download' || activeId == 'nav_setting'))
@@ -45,7 +47,7 @@ const NavItem = ({ id, icon, label }: typeof MOBILE_NAV[number]) => {
       accessibilityRole="tab"
       accessibilityLabel={t(label)}
       accessibilityState={{ selected: active }}
-      style={styles.touchTarget}
+      style={[styles.touchTarget, isCar && { minHeight: 64 }]}
       onPressIn={() => { press(true) }}
       onPressOut={() => { press(false) }}
       onPress={() => {
@@ -58,13 +60,13 @@ const NavItem = ({ id, icon, label }: typeof MOBILE_NAV[number]) => {
           <Icon
             accessible={false}
             name={icon}
-            rawSize={20}
+            rawSize={isCar ? 25 : 20}
             color={active ? colors.active : colors.secondary}
           />
         </View>
         <Text
           style={styles.label}
-          size={10}
+          size={isCar ? 14 : 10}
           color={active ? colors.active : colors.secondary}
           numberOfLines={1}
         >
@@ -77,6 +79,7 @@ const NavItem = ({ id, icon, label }: typeof MOBILE_NAV[number]) => {
 
 export default memo(() => {
   const activeId = useNavActiveId()
+  const { isCar } = useAdaptiveLayout()
   const motion = useMotion()
   const [width, setWidth] = useState(0)
   const lastLayout = useRef(0)
@@ -114,7 +117,7 @@ export default memo(() => {
       selection
       radius={Q_UI.radius.dock}
       onLayout={event => { setWidth(event.nativeEvent.layout.width) }}
-      style={styles.container}
+      style={[styles.container, isCar && { minHeight: 72 }]}
     >
       {pillWidth > 0 ? <Animated.View nativeID="qmusic-glass-selection" collapsable={false} pointerEvents="none" style={[styles.activePill, {
         width: pillWidth,

@@ -29,18 +29,15 @@ const SOURCE_OPTIONS: Array<{ id: ExternalImportSource, name: string }> = [
   { id: 'tx', name: 'QQ音乐' },
   { id: 'wy', name: '网易云' },
   { id: 'kg', name: '酷狗' },
-  { id: 'spotify', name: 'Spotify' },
 ]
 
 const ERROR_MESSAGE_KEYS: Partial<Record<ExternalImportError['code'], keyof Message>> = {
-  missing_token: 'playlist_import_modal__error_missing_token',
   invalid_link: 'playlist_import_modal__error_invalid_link',
   no_match: 'playlist_import_modal__error_no_match',
 }
 
 const PROGRESS_STAGE_KEYS: Record<ExternalImportProgress['stage'], keyof Message> = {
   fetch: 'playlist_import_modal__stage_fetch',
-  match: 'playlist_import_modal__stage_match',
   save: 'playlist_import_modal__stage_save',
 }
 
@@ -55,8 +52,6 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
   const [target, setTarget] = useState<ExternalImportTarget>('new')
   const [currentListId, setCurrentListId] = useState<string>(LIST_IDS.DEFAULT)
   const [neteaseToken, setNeteaseToken] = useState('')
-  const [spotifyAccessToken, setSpotifyAccessToken] = useState('')
-  const [spotifySavedTracks, setSpotifySavedTracks] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [statusText, setStatusText] = useState('')
   const [isError, setIsError] = useState(false)
@@ -67,8 +62,6 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
     setListName('')
     setTarget('new')
     setNeteaseToken('')
-    setSpotifyAccessToken('')
-    setSpotifySavedTracks(false)
     setStatusText('')
     setIsError(false)
     setIsLoading(false)
@@ -113,13 +106,8 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
     },
   ], [currentListName, t])
 
-  const defaultListName = getDefaultImportListName(source, spotifySavedTracks)
-  const isSpotify = source == 'spotify'
-  const canSubmit = !isLoading && (
-    isSpotify
-      ? !!spotifyAccessToken.trim() && (spotifySavedTracks || !!text.trim())
-      : !!text.trim()
-  )
+  const defaultListName = getDefaultImportListName(source)
+  const canSubmit = !isLoading && !!text.trim()
 
   const setProgress = useCallback((value: ExternalImportProgress) => {
     const stageText = t(PROGRESS_STAGE_KEYS[value.stage])
@@ -134,7 +122,6 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
     setSource(value)
     setText('')
     setListName('')
-    setSpotifySavedTracks(false)
     setStatusText('')
     setIsError(false)
   }
@@ -172,8 +159,6 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
         target,
         currentListId,
         neteaseToken,
-        spotifyAccessToken,
-        spotifySavedTracks,
       }, setProgress, () => cancelRequestedRef.current)
 
       let message = t('playlist_import_modal__success', {
@@ -256,18 +241,14 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
         </View>
 
         <Text style={styles.fieldLabel} size={12} color={theme['q-text-secondary']}>
-          {isSpotify && spotifySavedTracks
-            ? t('playlist_import_modal__spotify_liked')
-            : t('playlist_import_modal__link')}
+          {t('playlist_import_modal__link')}
         </Text>
         <Input
           value={text}
-          editable={!isLoading && !(isSpotify && spotifySavedTracks)}
+          editable={!isLoading}
           clearBtn
           onChangeText={setText}
-          placeholder={isSpotify
-            ? t('playlist_import_modal__spotify_link_placeholder')
-            : t('playlist_import_modal__link_placeholder')}
+          placeholder={t('playlist_import_modal__link_placeholder')}
         />
 
         {source == 'wy'
@@ -283,53 +264,6 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
                 onChangeText={setNeteaseToken}
                 placeholder={t('playlist_import_modal__netease_token_placeholder')}
               />
-            </>
-          : null}
-
-        {isSpotify
-          ? <>
-              <Text style={styles.fieldLabel} size={12} color={theme['q-text-secondary']}>
-                {t('playlist_import_modal__spotify_token')}
-              </Text>
-              <Input
-                value={spotifyAccessToken}
-                editable={!isLoading}
-                secureTextEntry
-                clearBtn
-                onChangeText={setSpotifyAccessToken}
-                placeholder={t('playlist_import_modal__spotify_token_placeholder')}
-              />
-              <Button
-                disabled={isLoading}
-                accessibilityRole="checkbox"
-                accessibilityLabel={t('playlist_import_modal__spotify_liked')}
-                accessibilityState={{ checked: spotifySavedTracks, disabled: isLoading }}
-                onPress={() => { setSpotifySavedTracks(value => !value); setText('') }}
-                style={[
-                  styles.optionRow,
-                  {
-                    backgroundColor: spotifySavedTracks ? theme['q-surface-tint'] : theme['q-surface-base'],
-                    borderColor: spotifySavedTracks ? theme['c-primary-alpha-700'] : fieldBorderColor,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.selectionMark,
-                    {
-                      borderColor: spotifySavedTracks ? theme['q-accent'] : theme['q-text-secondary'],
-                      backgroundColor: spotifySavedTracks ? theme['q-accent'] : 'transparent',
-                    },
-                  ]}
-                >
-                  {spotifySavedTracks
-                    ? <Text accessible={false} size={11} color={theme['q-surface-raised']}>✓</Text>
-                    : null}
-                </View>
-                <Text size={13} color={theme['q-text-primary']}>
-                  {t('playlist_import_modal__spotify_liked')}
-                </Text>
-              </Button>
             </>
           : null}
 
@@ -497,14 +431,6 @@ const styles = createStyle({
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
-  },
-  selectionMark: {
-    width: 18,
-    height: 18,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   radioOuter: {
     width: 18,

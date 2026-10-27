@@ -50,7 +50,7 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
   private boolean shaderUnavailable;
   private int[] pixels;
   private int[] scratch;
-  private boolean glassEnabled = true;
+  private boolean glassEnabled;
   private boolean dark;
   private boolean motionEnabled = true;
   private float radius;
@@ -59,6 +59,7 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
   private float touchY;
   private float touchLight;
   private long lastCapture;
+  private long captureInterval = 66;
   private boolean skipCapture;
   private ViewTreeObserver observer;
   private ValueAnimator touchAnimator;
@@ -78,7 +79,17 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
   }
 
   public void setSelection(boolean value) { if (selectionEnabled == value) return; selectionEnabled = value; selectionView = null; invalidate(); }
-  public void setGlassEnabled(boolean value) { if (glassEnabled == value) return; glassEnabled = value; if (!value) releaseBackdrop(); invalidate(); }
+  public void setGlassEnabled(boolean value) {
+    if (glassEnabled == value) return;
+    glassEnabled = value;
+    captureInterval = 66;
+    if (!value) {
+      if (touchAnimator != null) touchAnimator.cancel();
+      touchLight = 0;
+      releaseBackdrop();
+    }
+    invalidate();
+  }
   public void setDark(boolean value) { dark = value; invalidate(); }
   public void setMotionEnabled(boolean value) { motionEnabled = value; if (touchAnimator != null) touchAnimator.cancel(); touchLight = 0; invalidate(); }
   public void setCorner(float value) { radius = value; updateClip(); invalidateOutline(); invalidate(); }
@@ -139,7 +150,8 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
     if (skipCapture) { skipCapture = false; return true; }
     if (!glassEnabled || sampling || !isShown() || getWindowVisibility() != VISIBLE || getWidth() == 0 || getHeight() == 0) return true;
     long now = SystemClock.uptimeMillis();
-    if (now - lastCapture < 42) return true;
+    // 背景最高约 15 次/秒，胶囊位置仍逐帧更新；慢采样会进一步降低背景刷新频率。
+    if (now - lastCapture < captureInterval) return true;
     lastCapture = now;
     int pad = (int) Math.ceil(blur * 2);
     int w = Math.max(1, (int) Math.ceil((getWidth() + pad * 2) / SCALE));
@@ -174,6 +186,7 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
       lensBackdrop = nextLens;
       backdropPad = pad;
       lastCapture = now;
+      captureInterval = Math.max(66, Math.min(250, (SystemClock.uptimeMillis() - now) * 8));
       skipCapture = true;
       invalidate();
     } catch (RuntimeException | OutOfMemoryError error) {
@@ -311,6 +324,14 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
     float y = selectionView.getY() + h * (1 - sy) / 2;
     selectionBounds.set(x, y, x + w * sx, y + h * sy);
     float corner = selectionBounds.height() / 2;
+    if (!glassEnabled) {
+      // 轻量模式只画选中胶囊，不分配渐变、采样位图或执行折射着色器。
+      paint.setShader(null);
+      paint.setStyle(Paint.Style.FILL);
+      paint.setColor(dark ? Color.rgb(58, 65, 72) : Color.rgb(224, 230, 234));
+      canvas.drawRoundRect(selectionBounds, corner, corner, paint);
+      return;
+    }
     float flow = Math.min(1, Math.max(0, (sx - 1) * 3));
     selectionClip.reset();
     selectionClip.addRoundRect(selectionBounds, corner, corner, Path.Direction.CW);
@@ -347,7 +368,7 @@ public class GlassView extends ReactViewGroup implements ViewTreeObserver.OnPreD
   }
 
   private boolean drawShaderLens(Canvas canvas, RectF rect, float corner, float depth, boolean surface) {
-    if (Build.VERSION.SDK_INT < 33 || shaderUnavailable || !canvas.isHardwareAccelerated() || lensBackdrop == null) return false;
+    if (!glassEnabled || Build.VERSION.SDK_INT < 33 || shaderUnavailable || !canvas.isHardwareAccelerated() || lensBackdrop == null) return false;
     try {
       if (lensShader == null) lensShader = new LensShader(lensBackdrop);
       else lensShader.setImage(lensBackdrop);

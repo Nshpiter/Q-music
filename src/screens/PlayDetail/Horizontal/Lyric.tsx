@@ -12,6 +12,7 @@ import playerState from '@/store/player/state'
 import { scrollTo } from '@/utils/scroll'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
 import { getLyricFontFamily } from '@/core/lyricFont'
+import LyricCopy from '../components/LyricCopy'
 // import { screenkeepAwake } from '@/utils/nativeModules/utils'
 // import { log } from '@/utils/log'
 // import { toast } from '@/utils/tools'
@@ -275,6 +276,7 @@ export default () => {
 
   return (
     <>
+      <View style={{ alignItems: 'flex-end', paddingHorizontal: 12 }}><LyricCopy /></View>
       <FlatList
         key={fontFamily ?? 'default'}
         data={lyricLines}

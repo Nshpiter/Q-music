@@ -12,7 +12,7 @@ public class UtilsPackage implements ReactPackage {
 
   @Override
   public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
-    return Arrays.<ViewManager>asList(new GlassViewManager());
+    return Arrays.<ViewManager>asList(new GlassViewManager(), new ElasticScrollBoundaryManager(), new SettingsBackViewManager());
   }
 
   @Override

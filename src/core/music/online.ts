@@ -134,7 +134,8 @@ export const setPic = (datas: {
  */
 
 
-export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSource = true, onToggleSource = () => {} }: {
+export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSource = true, onToggleSource = () => {}, signal }: {
+  signal?: AbortSignal
   musicInfo: LX.Music.MusicInfoOnline
   quality?: LX.Quality
   isRefresh: boolean
@@ -153,8 +154,8 @@ export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSou
     if (cachedUrl && !isRefresh) return cachedUrl
   }
 
-  return handleGetOnlineMusicUrl({ musicInfo, quality, onToggleSource, isRefresh, allowToggleSource }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache, isOfficial }) => {
-    if (isOfficial) return url
+  return handleGetOnlineMusicUrl({ musicInfo, quality, onToggleSource, isRefresh, allowToggleSource, signal }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache, isOfficial, providerId }) => {
+    if (isOfficial === true || !!providerId) return url
     if (targetMusicInfo.id != musicInfo.id && !isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url)
     void saveMusicUrl(musicInfo, targetQuality, url)
     return url
@@ -164,21 +165,22 @@ export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSou
 /**
  * 获取播放 URL 并附带实际音质（音源降级/官方线路后可能与请求档位不同）
  */
-export const getMusicPlayUrlInfo = async({ musicInfo, quality, isRefresh, allowToggleSource = true, onToggleSource = () => {} }: {
+export const getMusicPlayUrlInfo = async({ musicInfo, quality, isRefresh, allowToggleSource = true, onToggleSource = () => {}, signal }: {
+  signal?: AbortSignal
   musicInfo: LX.Music.MusicInfoOnline
   quality?: LX.Quality
   isRefresh: boolean
   allowToggleSource?: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
-}): Promise<{ url: string, quality: LX.Quality }> => {
+}): Promise<{ url: string, quality: LX.Quality, providerId?: string }> => {
   const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
   if (!isCustomApiSource() && musicInfo.source != 'tx' && musicInfo.source != 'wy') {
     const cachedUrl = await getStoreMusicUrl(musicInfo, targetQuality)
     if (cachedUrl && !isRefresh) return { url: cachedUrl, quality: targetQuality }
   }
 
-  return handleGetOnlineMusicUrl({ musicInfo, quality, onToggleSource, isRefresh, allowToggleSource }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache, isOfficial }) => {
-    if (isOfficial) return { url, quality: targetQuality }
+  return handleGetOnlineMusicUrl({ musicInfo, quality, onToggleSource, isRefresh, allowToggleSource, signal }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache, isOfficial, providerId }) => {
+    if (isOfficial === true || !!providerId) return { url, quality: targetQuality, providerId }
     if (targetMusicInfo.id != musicInfo.id && !isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url)
     void saveMusicUrl(musicInfo, targetQuality, url)
     return { url, quality: targetQuality }

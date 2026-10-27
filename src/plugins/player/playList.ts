@@ -140,10 +140,21 @@ export const updateMetaData = async(musicInfo: LX.Player.MusicInfo, isPlay: bool
 
 export const initTrackInfo = async(musicInfo: LX.Player.PlayMusic, mInfo: LX.Player.MusicInfo) => {
   const tracks = buildTracks(musicInfo)
-  await TrackPlayer.add(tracks).then(() => list.push(...tracks))
-  const queue = await TrackPlayer.getQueue() as LX.Player.Track[]
-  await TrackPlayer.skip(queue.findIndex(t => t.id == tracks[0].id))
-  delayUpdateMusicInfo(mInfo)
+  const id = actionId = Math.random()
+  // 与主动播放共用串行队列；启动期间用户选歌时，迟到的恢复任务不能覆盖新选择。
+  playPromise = playPromise.catch(() => {}).then(async() => {
+    if (id != actionId) return
+    // 恢复历史元数据不代表开始播放；先清除原生播放意图再装载占位曲目。
+    await TrackPlayer.pause()
+    if (id != actionId) return
+    await TrackPlayer.add(tracks).then(() => list.push(...tracks))
+    if (id != actionId) return
+    const queue = await TrackPlayer.getQueue() as LX.Player.Track[]
+    if (id != actionId) return
+    await TrackPlayer.skip(queue.findIndex(t => t.id == tracks[0].id))
+    if (id == actionId) delayUpdateMusicInfo(mInfo)
+  })
+  return playPromise
 }
 
 

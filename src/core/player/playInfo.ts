@@ -86,6 +86,7 @@ export const resetPlayerMusicInfo = () => {
 }
 
 const setPlayerMusicInfo = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem | null) => {
+  setMusicInfo({ quality: null, apiSourceId: '', apiSourceUrl: '' })
   if (musicInfo) {
     setMusicInfo('progress' in musicInfo ? {
       id: musicInfo.id,

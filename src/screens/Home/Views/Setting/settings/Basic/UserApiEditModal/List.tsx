@@ -14,6 +14,7 @@ import settingState from '@/store/setting/state'
 import apiSourceInfo from '@/utils/musicSdk/api-source-info'
 import { setApiSource } from '@/core/apiSource'
 import Button from '@/components/common/Button'
+import { updateSetting } from '@/core/common'
 
 const formatVersionName = (version: string) => {
   return /^\d/.test(version) ? `v${version}` : version
@@ -26,6 +27,19 @@ const ListItem = ({ item, activeId, onRemove, onChangeAllowShowUpdateAlert }: {
 }) => {
   const theme = useTheme()
   const t = useI18n()
+  const backupSetting = useSettingValue('common.apiBackupSources')
+  const backupIds = backupSetting.filter(id => id !== activeId && userApiState.list.some(api => api.id === id))
+  const order = backupIds.indexOf(item.id)
+  const changeBackup = (enabled: boolean) => {
+    updateSetting({ 'common.apiBackupSources': enabled ? [...new Set([...backupIds, item.id])] : backupIds.filter(id => id !== item.id) })
+  }
+  const moveBackup = (offset: number) => {
+    const next = order + offset
+    if (order < 0 || next < 0 || next >= backupIds.length) return
+    const ids = [...backupIds]
+    ;[ids[order], ids[next]] = [ids[next], ids[order]]
+    updateSetting({ 'common.apiBackupSources': ids })
+  }
   const changeAllowShowUpdateAlert = (check: boolean) => {
     onChangeAllowShowUpdateAlert(item.id, check)
   }
@@ -54,6 +68,20 @@ const ListItem = ({ item, activeId, onRemove, onChangeAllowShowUpdateAlert }: {
             <Text size={12} color={theme['c-font-label']}>{item.description}</Text>
           ) : null
         }
+        {activeId === item.id
+          ? <Text size={12} color={theme['c-primary-font']}>{t('user_api_primary')}</Text>
+          : <CheckBox check={order >= 0} label={t('user_api_backup')} onChange={changeBackup} size={0.86} />}
+        {order >= 0 && activeId !== item.id ? (
+          <View style={styles.backupOrder}>
+            <Text size={11} color={theme['c-font-label']}>{t('user_api_backup_priority', { order: order + 1 })}</Text>
+            <Button disabled={order === 0} accessibilityLabel={t('user_api_backup_up')} style={[styles.orderBtn, { opacity: order === 0 ? 0.35 : 1 }]} onPress={() => { moveBackup(-1) }}>
+              <Text size={12} color={theme['c-primary-font']}>{t('user_api_backup_up')}</Text>
+            </Button>
+            <Button disabled={order === backupIds.length - 1} accessibilityLabel={t('user_api_backup_down')} style={[styles.orderBtn, { opacity: order === backupIds.length - 1 ? 0.35 : 1 }]} onPress={() => { moveBackup(1) }}>
+              <Text size={12} color={theme['c-primary-font']}>{t('user_api_backup_down')}</Text>
+            </Button>
+          </View>
+        ) : null}
         <CheckBox check={item.allowShowUpdateAlert} label={t('user_api_allow_show_update_alert')} onChange={changeAllowShowUpdateAlert} size={0.86} />
       </View>
       <View style={styles.listItemRight}>
@@ -77,6 +105,10 @@ export interface UserApiEditModalType {
 export default () => {
   const userApiList = useUserApiList()
   const apiSource = useSettingValue('common.apiSource')
+  const backupSources = useSettingValue('common.apiBackupSources')
+  const sourceOrder = [...new Set([apiSource, ...backupSources])]
+  const rank = (id: string) => sourceOrder.includes(id) ? sourceOrder.indexOf(id) : sourceOrder.length
+  const orderedList = [...userApiList].sort((a, b) => rank(a.id) - rank(b.id))
   const theme = useTheme()
   const t = useI18n()
 
@@ -88,9 +120,10 @@ export default () => {
       bgClose: false,
     })
     if (!confirm) return
-    void removeUserApi([id]).finally(() => {
+    void removeUserApi([id]).then(() => {
+      updateSetting({ 'common.apiBackupSources': settingState.setting['common.apiBackupSources'].filter(value => value !== id) })
       if (settingState.setting['common.apiSource'] == id) {
-        let backApiId = apiSourceInfo.find(api => !api.disabled)?.id
+        let backApiId = settingState.setting['common.apiBackupSources'].find(value => userApiState.list.some(api => api.id === value)) ?? apiSourceInfo.find(api => !api.disabled)?.id
         if (!backApiId) backApiId = userApiState.list[0]?.id
         setApiSource(backApiId ?? '')
       }
@@ -102,10 +135,11 @@ export default () => {
 
   return (
     <ScrollView style={styles.scrollView} keyboardShouldPersistTaps={'always'}>
+      <Text size={12} color={theme['c-font-label']} style={{ padding: 10, lineHeight: 19 }}>{t('user_api_backup_hint')}</Text>
       <View>
         {
           userApiList.length
-            ? userApiList.map((item) => {
+            ? orderedList.map((item) => {
               return (
               <ListItem
                 key={item.id}
@@ -125,6 +159,8 @@ export default () => {
 
 
 const styles = createStyle({
+  backupOrder: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  orderBtn: { minWidth: 44, minHeight: 40, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center' },
   scrollView: {
     paddingHorizontal: 7,
     flexGrow: 0,

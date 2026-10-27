@@ -24,6 +24,7 @@ const QUALITY_INFO: Partial<Record<LX.Quality, { name: 'standard' | 'high' | 'lo
 export default memo(() => {
   const quality = useSettingValue('player.playQuality')
   const apiSource = useSettingValue('common.apiSource')
+  const backupSources = useSettingValue('common.apiBackupSources')
   const qualitys = useMemo(() => [...TRY_QUALITYS_LIST, '128k'].reverse() as LX.Quality[], [])
   const playMusicInfo = usePlayMusicInfo()
   const playerMusicInfo = usePlayerMusicInfo()
@@ -37,8 +38,9 @@ export default memo(() => {
     ? currentMusic
     : null
   const customApi = isCustomApiSource(apiSource)
-  const customApiName = customApi ? userApiList.find(item => item.id == apiSource)?.name : null
-  const apiStatusLabel = apiStatus.status
+  const actualApi = playerMusicInfo.apiSourceId?.length ? playerMusicInfo.apiSourceId : undefined
+  const customApiName = customApi ? userApiList.find(item => item.id == (actualApi ?? apiSource))?.name : null
+  const apiStatusLabel = !!actualApi || apiStatus.status
     ? t('setting_basic_source_status_success')
     : apiStatus.message == 'initing'
       ? t('setting_basic_source_status_initing')
@@ -72,7 +74,7 @@ export default memo(() => {
         {qualitys.map(id => {
           const info = QUALITY_INFO[id]!
           const active = activeQuality == id
-          const available = !onlineMusic || getPlayQualityCandidates(id, onlineMusic)[0] == id
+          const available = !onlineMusic || (customApi && backupSources.length > 0) || getPlayQualityCandidates(id, onlineMusic)[0] == id
           return (
             <Button
               key={id}

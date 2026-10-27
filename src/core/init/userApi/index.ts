@@ -1,80 +1,17 @@
-import { type InitParams, onScriptAction, sendAction, type ResponseParams, type UpdateInfoParams, type RequestParams } from '@/utils/nativeModules/userApi'
+import { type InitParams, onScriptAction, type UpdateInfoParams } from '@/utils/nativeModules/userApi'
 import { log, setUserApiList, setUserApiStatus } from '@/core/userApi'
 import settingState from '@/store/setting/state'
-import BackgroundTimer from 'react-native-background-timer'
-import { fetchData } from './request'
+import { requestUserApi, cancelUserApiRequest, handleUserApiRuntimeEvent, pruneUserApiRuntimes } from '@/core/userApiRuntime'
 import { getUserApiList } from '@/utils/data'
 import { confirmDialog, openUrl, tipDialog } from '@/utils/tools'
 
 
 export default async(setting: LX.AppSetting) => {
-  const userApiRequestMap = new Map<string, { resolve: (value: ResponseParams['result']) => void, reject: (error: Error) => void, timeout: number }>()
-  const scriptRequestMap = new Map<string, { request: Promise<any>, abort: () => void }>()
-
-  const cancelRequest = (requestKey: string, message: string) => {
-    const target = scriptRequestMap.get(requestKey)
-    if (!target) return
-    scriptRequestMap.delete(requestKey)
-    target.abort()
-  }
-  const sendScriptRequest = (requestKey: string, url: string, options: RequestParams['options']) => {
-    let req = fetchData(url, options)
-    req.request.then(response => {
-      // console.log(response)
-      sendAction('response', {
-        error: null,
-        requestKey,
-        response,
-      })
-    }).catch(err => {
-      sendAction('response', {
-        error: err.message,
-        requestKey,
-        response: null,
-      })
-    }).finally(() => {
-      scriptRequestMap.delete(requestKey)
-    })
-    scriptRequestMap.set(requestKey, req)
-  }
-  const sendUserApiRequest = async(data: LX.UserApi.UserApiRequestParams) => {
-    const handleApiUpdate = () => {
-      const target = userApiRequestMap.get(data.requestKey)
-      if (!target) return
-      userApiRequestMap.delete(data.requestKey)
-      BackgroundTimer.clearTimeout(target.timeout)
-      target.reject(new Error('request failed'))
-    }
-    const requestPromise = new Promise<ResponseParams['result']>((resolve, reject) => {
-      userApiRequestMap.set(data.requestKey, {
-        resolve,
-        reject,
-        timeout: BackgroundTimer.setTimeout(() => {
-          const target = userApiRequestMap.get(data.requestKey)
-          if (!target) return
-          userApiRequestMap.delete(data.requestKey)
-          target.reject(new Error('request timeout'))
-        }, 20_000),
-      })
-      sendAction('request', data)
-    }).finally(() => {
-      global.state_event.off('apiSourceUpdated', handleApiUpdate)
-    })
-    global.state_event.on('apiSourceUpdated', handleApiUpdate)
-    return requestPromise
-  }
-  const handleUserApiResponse = ({ status, result, requestKey, errorMessage }: ResponseParams) => {
-    const target = userApiRequestMap.get(requestKey)
-    if (!target) return
-    userApiRequestMap.delete(requestKey)
-    BackgroundTimer.clearTimeout(target.timeout)
-    if (status) target.resolve(result)
-    else target.reject(new Error(errorMessage ?? 'failed'))
-  }
+  const sendUserApiRequest = async(data: LX.UserApi.UserApiRequestParams) => requestUserApi(settingState.setting['common.apiSource'], data).promise
   const handleStateChange = ({ status, errorMessage, info }: InitParams) => {
     // console.log(status, message, info)
-    setUserApiStatus(status, errorMessage)
     if (!info || info.id !== settingState.setting['common.apiSource']) return
+    setUserApiStatus(status, errorMessage)
     if (status) {
       if (info.sources) {
         let apis: any = {}
@@ -89,7 +26,7 @@ export default async(setting: LX.AppSetting) => {
                   const requestKey = `request__${Math.random().toString().substring(2)}`
                   return {
                     canceleFn() {
-                      // userApiRequestCancel(requestKey)
+                      cancelUserApiRequest(requestKey)
                     },
                     promise: sendUserApiRequest({
                       requestKey,
@@ -117,7 +54,7 @@ export default async(setting: LX.AppSetting) => {
                   const requestKey = `request__${Math.random().toString().substring(2)}`
                   return {
                     canceleFn() {
-                      // userApiRequestCancel(requestKey)
+                      cancelUserApiRequest(requestKey)
                     },
                     promise: sendUserApiRequest({
                       requestKey,
@@ -145,7 +82,7 @@ export default async(setting: LX.AppSetting) => {
                   const requestKey = `request__${Math.random().toString().substring(2)}`
                   return {
                     canceleFn() {
-                      // userApiRequestCancel(requestKey)
+                      cancelUserApiRequest(requestKey)
                     },
                     promise: sendUserApiRequest({
                       requestKey,
@@ -179,7 +116,7 @@ export default async(setting: LX.AppSetting) => {
         global.state_event.apiSourceUpdated(settingState.setting['common.apiSource'])
       }
     } else {
-      if (errorMessage) {
+      if (errorMessage && !settingState.setting['common.apiBackupSources'].length) {
         void tipDialog({
           message: `${global.i18n.t('user_api__init_failed_alert', { name: info.name })}\n${errorMessage}`,
           // selection: true,
@@ -213,20 +150,11 @@ export default async(setting: LX.AppSetting) => {
   }
 
   onScriptAction((event) => {
-    // console.log('script actuon: ', event)
+    if (!handleUserApiRuntimeEvent(event)) return
     switch (event.action) {
       case 'init':
         if ((event as unknown as { errorMessage?: string }).errorMessage) event.data.errorMessage = (event as unknown as { errorMessage: string }).errorMessage
         handleStateChange(event.data)
-        break
-      case 'response':
-        handleUserApiResponse(event.data)
-        break
-      case 'request':
-        sendScriptRequest(event.data.requestKey, event.data.url, event.data.options)
-        break
-      case 'cancelRequest':
-        cancelRequest(event.data, 'request canceled')
         break
       case 'showUpdateAlert':
         showUpdateAlert(event.data)
@@ -252,5 +180,8 @@ export default async(setting: LX.AppSetting) => {
     }
   })
 
+  global.state_event.on('configUpdated', keys => {
+    if (keys.includes('common.apiBackupSources')) pruneUserApiRuntimes()
+  })
   setUserApiList(await getUserApiList())
 }

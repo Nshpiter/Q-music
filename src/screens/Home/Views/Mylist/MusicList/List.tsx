@@ -1,10 +1,11 @@
+import EmptyList from './EmptyList'
 import { playFromList } from '@/core/player/selection'
 import { useMemo, useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react'
-import { FlatList, View, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
+import { FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
 
 import listState from '@/store/list/state'
 import playerState from '@/store/player/state'
-import { getListPosition, getListPrevSelectId, saveListPosition } from '@/utils/data'
+import { getListPosition, saveListPosition } from '@/utils/data'
 // import { useMusicList } from '@/store/list/hook'
 import { getListMusics, setActiveList } from '@/core/list'
 import ListItem from './ListItem'
@@ -15,12 +16,6 @@ import type { Position } from './ListMenu'
 import type { SelectMode } from './MultipleModeBar'
 import { useActiveListId } from '@/store/list/hook'
 import { useSettingValue } from '@/store/setting/hook'
-import Button from '@/components/common/Button'
-import Text from '@/components/common/Text'
-import { Icon } from '@/components/common/Icon'
-import { useTheme } from '@/store/theme/hook'
-import { useI18n } from '@/lang'
-import { setNavActiveId } from '@/core/common'
 import { useDockInset } from '@/components/common/DockInset'
 
 type FlatListType = FlatListProps<LX.Music.MusicInfo>
@@ -53,10 +48,8 @@ const usePlayIndex = () => {
 
 
 const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, onSelectAll }, ref) => {
-  const t = useI18n()
   const dockInset = useDockInset()
   const { songRowHeight } = useAdaptiveLayout()
-  const theme = useTheme()
   const [loaded, setLoaded] = useState(false)
   const flatListRef = useRef<FlatList>(null)
   const [currentList, setList] = useState<LX.List.ListMusics>([])
@@ -163,6 +156,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
     }
 
     const handleJumpPosition = () => {
+      global.lx.jumpMyListPosition = false
       requestAnimationFrame(() => {
         const listId = playerState.playMusicInfo.listId
         if (!listId) return
@@ -184,8 +178,8 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       if (playerState.playMusicInfo.listId) {
         waitJumpListPositionRef.current = true
         updateList(playerState.playMusicInfo.listId)
-      } else void getListPrevSelectId().then(updateList)
-    } else void getListPrevSelectId().then(updateList)
+      } else updateList(listState.activeListId)
+    } else updateList(listState.activeListId)
 
     global.state_event.on('mylistToggled', updateList)
     global.app_event.on('myListMusicUpdate', handleChange)
@@ -297,14 +291,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       style={styles.list}
       contentContainerStyle={{ paddingBottom: dockInset }}
       data={currentList}
-      ListEmptyComponent={loaded
-        ? <View style={styles.empty}>
-            <View style={{ ...styles.emptyIcon, backgroundColor: theme['q-surface-tint'] }}><Icon name="album" rawSize={34} color={theme['q-accent-text']} /></View>
-            <Text size={17} color={theme['q-text-primary']}>{t('mobile_library_empty')}</Text>
-            <Text size={12} color={theme['q-text-secondary']} style={styles.emptyHint}>{t('mobile_library_empty_hint')}</Text>
-            <Button style={{ ...styles.explore, backgroundColor: theme['q-accent'] }} onPress={() => { setNavActiveId('nav_search') }}><Text size={13} color={theme['q-on-accent']}>{t('mobile_discover')}</Text></Button>
-          </View>
-        : null}
+      ListEmptyComponent={loaded ? <EmptyList /> : null}
       maxToRenderPerBatch={4}
       numColumns={rowInfo.current.rowNum}
       horizontal={false}
@@ -321,10 +308,6 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
 })
 
 const styles = createStyle({
-  empty: { paddingHorizontal: 24, paddingVertical: 48, alignItems: 'center', gap: 12 },
-  emptyIcon: { width: 76, height: 76, borderRadius: 26, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  emptyHint: { textAlign: 'center', lineHeight: 20 },
-  explore: { marginTop: 8, minHeight: 48, paddingHorizontal: 32, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   container: {
     flex: 1,
   },

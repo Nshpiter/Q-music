@@ -9,6 +9,7 @@ import settingActions from '@/store/setting/action'
 import settingState from '@/store/setting/state'
 import commonActions from '@/store/common/action'
 import commonState, { type InitState as CommonStateType } from '@/store/common/state'
+import { selectSettingSection } from '@/store/setting/navigation'
 
 import { storageDataPrefix } from '@/config/constant'
 import { saveData } from '@/plugins/storage'
@@ -84,6 +85,7 @@ export const removeComponentId = (name: string) => {
 
 export const setNavActiveId = (id: Parameters<typeof commonActions.setNavActiveId>['0']) => {
   if (id == commonState.navActiveId) return
+  if (commonState.navActiveId == 'nav_setting') selectSettingSection('overview')
   commonActions.setNavActiveId(id)
   if (id != 'nav_setting') {
     commonActions.setLastNavActiveId(id)

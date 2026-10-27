@@ -1,6 +1,6 @@
-import { action, state } from '@/store/userApi'
-import { addUserApi, getUserApiScript, removeUserApi as removeUserApiFromStore, setUserApiAllowShowUpdateAlert as setUserApiAllowShowUpdateAlertFromStore } from '@/utils/data'
-import { destroy, loadScript } from '@/utils/nativeModules/userApi'
+import { action } from '@/store/userApi'
+import { addUserApi, removeUserApi as removeUserApiFromStore, setUserApiAllowShowUpdateAlert as setUserApiAllowShowUpdateAlertFromStore } from '@/utils/data'
+import { loadUserApiRuntime, resetUserApiRuntimes } from './userApiRuntime'
 import { log as writeLog } from '@/utils/log'
 
 
@@ -8,14 +8,12 @@ export const setUserApi = async(apiId: string) => {
   global.lx.qualityList = {}
   setUserApiStatus(false, 'initing')
 
-  const target = state.list.find(api => api.id === apiId)
-  if (!target) throw new Error('api not found')
-  const script = await getUserApiScript(target.id)
-  loadScript({ ...target, script })
+  resetUserApiRuntimes()
+  await loadUserApiRuntime(apiId, true)
 }
 
 export const destroyUserApi = () => {
-  destroy()
+  resetUserApiRuntimes()
 }
 
 
@@ -33,6 +31,7 @@ export const importUserApi = async(script: string) => {
 }
 
 export const removeUserApi = async(ids: string[]) => {
+  resetUserApiRuntimes(ids)
   const list = await removeUserApiFromStore(ids)
   action.setUserApiList(list)
 }

@@ -1,7 +1,8 @@
 import { useRef, useImperativeHandle, forwardRef, useState, useEffect } from 'react'
 import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/ConfirmAlert'
 import Text from '@/components/common/Text'
-import { TouchableOpacity, View } from 'react-native'
+import { View } from 'react-native'
+import Button from '@/components/common/Button'
 import Input, { type InputType } from '@/components/common/Input'
 import { createStyle, toast } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
@@ -172,7 +173,7 @@ export default forwardRef<TimeoutExitEditModalType, TimeoutExitEditModalProps>((
               : <Text size={12} style={styles.hint} color={theme['c-font-label']}>{t('timeout_exit_range')}</Text>}
             <View style={styles.presets}>
               {[15, 30, 60, 90].map(minutes => (
-                <TouchableOpacity
+                <Button
                   key={minutes}
                   accessibilityRole="button"
                   accessibilityState={{ selected: Number(timeText) == minutes }}
@@ -180,7 +181,7 @@ export default forwardRef<TimeoutExitEditModalType, TimeoutExitEditModalProps>((
                   onPress={() => { setTimeText(String(minutes)); setError(false) }}
                 >
                   <Text size={12} color={Number(timeText) == minutes ? theme['q-accent-text'] : theme['c-font']}>{minutes} {t('timeout_exit_min')}</Text>
-                </TouchableOpacity>
+                </Button>
               ))}
             </View>
             <Setting />

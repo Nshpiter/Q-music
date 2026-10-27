@@ -152,7 +152,7 @@ public class QuickJS {
       inited = true;
     }
     message.obj = new Object[]{action, data};
-    Log.d("UserApi [script call]", "script call action: " + action + " data: " + data);
+    Log.d("UserApi [script call]", "script call action: " + action);
     this.eventHandler.sendMessage(message);
   }
 
@@ -214,7 +214,8 @@ public class QuickJS {
   }
 
   public void destroy () {
-    this.jsContext.destroy();
+    timeoutHandler.removeCallbacksAndMessages(null);
+    if (this.jsContext != null) this.jsContext.destroy();
     this.jsContext = null;
   }
 }

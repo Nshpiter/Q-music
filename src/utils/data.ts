@@ -354,8 +354,9 @@ export const removeListMusics = async(ids: string[]): Promise<void> => {
 }
 
 
-export const getMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality) => getData<string>(`${storageDataPrefix.musicUrl}${musicInfo.id}_${type}`).then((url) => url ?? '')
-export const saveMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality, url: string) => saveData(`${storageDataPrefix.musicUrl}${musicInfo.id}_${type}`, url)
+const musicUrlKey = (musicInfo: LX.Music.MusicInfo, type: LX.Quality, providerId?: string) => `${storageDataPrefix.musicUrl}${providerId ? `${encodeURIComponent(providerId)}@` : ''}${musicInfo.id}_${type}`
+export const getMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality, providerId?: string) => getData<string>(musicUrlKey(musicInfo, type, providerId)).then((url) => url ?? '')
+export const saveMusicUrl = async(musicInfo: LX.Music.MusicInfo, type: LX.Quality, url: string, providerId?: string) => saveData(musicUrlKey(musicInfo, type, providerId), url)
 export const clearMusicUrl = async(keys?: string[]) => {
   if (!keys) keys = (await getAllKeys()).filter(key => key.startsWith(storageDataPrefix.musicUrl))
   await removeDataMultiple(keys)

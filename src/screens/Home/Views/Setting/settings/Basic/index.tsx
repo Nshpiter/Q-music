@@ -1,21 +1,13 @@
 import { memo } from 'react'
 
-import Theme from '../Theme'
 import Section from '../../components/Section'
-import Source from './Source'
-import SourceName from './SourceName'
 import Language from './Language'
-import FontSize from './FontSize'
 import ShareType from './ShareType'
-import IsStartupAutoPlay from './IsStartupAutoPlay'
-import IsStartupPushPlayDetailScreen from './IsStartupPushPlayDetailScreen'
 import IsAutoHidePlayBar from './IsAutoHidePlayBar'
 import IsHomePageScroll from './IsHomePageScroll'
 import IsAllowProgressBarSeek from './IsAllowProgressBarSeek'
 import IsUseSystemFileSelector from './IsUseSystemFileSelector'
 import IsAlwaysKeepStatusbarHeight from './IsAlwaysKeepStatusbarHeight'
-import MusicAccountEntry from './MusicAccountEntry'
-import DisplayMode from './DisplayMode'
 import { useI18n } from '@/lang/i18n'
 
 export default memo(() => {
@@ -24,21 +16,13 @@ export default memo(() => {
 
   return (
     <Section title={t('setting_basic')}>
-      <DisplayMode />
-      <IsStartupAutoPlay />
-      <IsStartupPushPlayDetailScreen />
+      <Language />
       <IsAutoHidePlayBar />
       <IsHomePageScroll />
       <IsAllowProgressBarSeek />
       <IsUseSystemFileSelector />
       <IsAlwaysKeepStatusbarHeight />
-      <Theme />
-      <Language />
-      <FontSize />
       <ShareType />
-      <Source />
-      <SourceName />
-      <MusicAccountEntry />
     </Section>
   )
 })

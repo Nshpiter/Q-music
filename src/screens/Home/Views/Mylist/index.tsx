@@ -1,60 +1,48 @@
-import { useEffect, useRef } from 'react'
-import settingState from '@/store/setting/state'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import MusicList from './MusicList'
 import MyList from './MyList'
 import { useTheme } from '@/store/theme/hook'
-import DrawerLayoutFixed, { type DrawerLayoutFixedType } from '@/components/common/DrawerLayoutFixed'
-import { COMPONENT_IDS } from '@/config/constant'
-import { scaleSizeW } from '@/utils/pixelRatio'
-import type { InitState as CommonState } from '@/store/common/state'
 import LibraryShortcuts from './LibraryShortcuts'
 import { View } from 'react-native'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
-
-const MAX_WIDTH = scaleSizeW(400)
+import { setActiveList } from '@/core/list'
+import { getListPrevSelectId } from '@/utils/data'
+import playerState from '@/store/player/state'
 
 export default () => {
-  const drawer = useRef<DrawerLayoutFixedType>(null)
+  const [opened, setOpened] = useState(false)
+  const selectionMade = useRef(false)
   const theme = useTheme()
   const { splitLibrary, width, railWidth } = useAdaptiveLayout()
-  // const [width, setWidth] = useState(0)
+  const close = useCallback(() => { setOpened(false) }, [])
+  const open = useCallback((id: string) => { selectionMade.current = true; setActiveList(id); setOpened(true) }, [])
 
   useEffect(() => {
-    const handleFixDrawer = (id: CommonState['navActiveId']) => {
-      if (id == 'nav_love') drawer.current?.fixWidth()
-    }
-    const changeVisible = (visible: boolean) => {
-      if (visible) {
-        requestAnimationFrame(() => {
-          drawer.current?.openDrawer()
-        })
-      } else {
-        drawer.current?.closeDrawer()
-      }
-    }
-
-    // setWidth(getWindowSise().width * 0.82)
-
-    global.state_event.on('navActiveIdUpdated', handleFixDrawer)
-    global.app_event.on('changeLoveListVisible', changeVisible)
-
-    // 就放旋转屏幕后的宽度没有更新的问题
-    // const changeEvent = onDimensionChange(({ window }) => {
-    //   setWidth(window.width * 0.82)
-    //   drawer.current?.setNativeProps({
-    //     width: window.width,
-    //   })
-    // })
-
-    return () => {
-      global.state_event.off('navActiveIdUpdated', handleFixDrawer)
-      global.app_event.off('changeLoveListVisible', changeVisible)
-    // changeEvent.remove()
-    }
+    let cancelled = false
+    const onSelection = () => { cancelled = true }
+    global.state_event.on('mylistToggled', onSelection)
+    void getListPrevSelectId().then(id => { if (!cancelled && !selectionMade.current && !global.lx.jumpMyListPosition) setActiveList(id) }).catch(() => {})
+    return () => { cancelled = true; global.state_event.off('mylistToggled', onSelection) }
   }, [])
 
-  const navigationView = () => <MyList />
-  // console.log('render drawer content')
+  useEffect(() => {
+    const jump = () => {
+      if (splitLibrary || opened) return
+      const id = playerState.playMusicInfo.listId
+      if (!id) return
+      global.lx.jumpMyListPosition = true
+      open(id)
+    }
+    global.app_event.on('jumpListPosition', jump)
+    if (global.lx.jumpMyListPosition) jump()
+    return () => { global.app_event.off('jumpListPosition', jump) }
+  }, [open, opened, splitLibrary])
+
+  useEffect(() => {
+    const showCatalog = (visible: boolean) => { if (visible) close() }
+    global.app_event.on('changeLoveListVisible', showCatalog)
+    return () => { global.app_event.off('changeLoveListVisible', showCatalog) }
+  }, [close])
 
   if (splitLibrary) {
     return <View style={{ flex: 1, flexDirection: 'row' }}>
@@ -64,19 +52,11 @@ export default () => {
   }
 
   return (
-    <DrawerLayoutFixed
-      ref={drawer}
-      visibleNavNames={[COMPONENT_IDS.home]}
-      // drawerWidth={width}
-      widthPercentage={0.82}
-      widthPercentageMax={MAX_WIDTH}
-      drawerPosition={settingState.setting['common.drawerLayoutPosition']}
-      renderNavigationView={navigationView}
-      drawerBackgroundColor={theme['c-content-background']}
-      style={{ elevation: 1 }}
-    >
-      <LibraryShortcuts />
-      <MusicList />
-    </DrawerLayoutFixed>
+    <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, display: opened ? 'none' : 'flex' }} importantForAccessibility={opened ? 'no-hide-descendants' : 'auto'}>
+        <MyList catalog onSelect={open} />
+      </View>
+      {opened ? <MusicList onBack={close} /> : null}
+    </View>
   )
 }

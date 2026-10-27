@@ -3,6 +3,7 @@ const defaultSetting: LX.AppSetting = {
   'common.isAutoTheme': false,
   'common.langId': null,
   'common.apiSource': '',
+  'common.apiBackupSources': [] as string[],
   'common.sourceNameType': 'real',
   'common.shareType': 'system',
   'common.isAgreePact': false,
@@ -15,6 +16,9 @@ const defaultSetting: LX.AppSetting = {
   'common.useSystemFileSelector': true,
   'common.alwaysKeepStatusbarHeight': false,
   'common.displayMode': 'auto',
+  'common.largeScreenNavigation': 'left',
+  'common.carShowExitBtn': false,
+  'common.predictiveBack': true,
 
   'player.startupAutoPlay': false,
   'player.startupPushPlayDetailScreen': false,
@@ -74,6 +78,7 @@ const defaultSetting: LX.AppSetting = {
   'list.addMusicLocationType': 'top',
 
   'download.fileName': '歌名 - 歌手',
+  'download.directory': '',
 
   'sync.enable': false,
 
@@ -89,6 +94,7 @@ const defaultSetting: LX.AppSetting = {
   'theme.dynamicBg': false,
   'theme.fontShadow': false,
   'theme.performanceMode': false,
+  'theme.liquidGlass': false,
   'theme.blurLevel': 'balance',
 }
 

@@ -20,6 +20,7 @@ declare global {
        * api id
        */
       'common.apiSource': string
+      'common.apiBackupSources': string[]
 
       /**
        * 音源名称类型，原名、别名
@@ -76,6 +77,9 @@ declare global {
        */
       'common.alwaysKeepStatusbarHeight': boolean
       'common.displayMode': 'auto' | 'phone' | 'tablet' | 'car'
+      'common.largeScreenNavigation': 'left' | 'right' | 'bottom'
+      'common.carShowExitBtn': boolean
+      'common.predictiveBack': boolean
 
       /**
        * 主题id
@@ -115,6 +119,8 @@ declare global {
        * 流畅模式：禁用动态封面模糊背景以降低渲染开销
        */
       'theme.performanceMode': boolean
+      /** 液态玻璃独立开关；默认使用轻量材质。 */
+      'theme.liquidGlass': boolean
 
       /**
        * 毛玻璃强度：清晰/平衡/沉浸
@@ -371,6 +377,7 @@ declare global {
        * 文件命名方式
        */
       'download.fileName': '歌名 - 歌手' | '歌手 - 歌名' | '歌名'
+      'download.directory': string
 
       /**
        * 是否启用同步

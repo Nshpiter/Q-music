@@ -29,7 +29,9 @@ const mergeSetting = (originSetting: LX.AppSetting, targetSetting?: Partial<LX.A
     if (originSettingKeys.length > targetSettingKeys.length) {
       for (const key of targetSettingKeys as Array<keyof LX.AppSetting>) {
         const targetValue: any = targetSetting[key]
-        const isPrimitive = checkPrimitiveType(targetValue)
+        const isPrimitive = key === 'common.apiBackupSources'
+          ? Array.isArray(targetValue) && targetValue.length <= 20 && targetValue.every(id => typeof id === 'string' && /^user_api/.test(id))
+          : checkPrimitiveType(targetValue)
         // if (checkPrimitiveType(value)) {
         if (!isPrimitive || targetValue == originSettingCopy[key] || originSettingCopy[key] === undefined) continue
         updatedSettingKeys.push(key)
@@ -43,7 +45,9 @@ const mergeSetting = (originSetting: LX.AppSetting, targetSetting?: Partial<LX.A
     } else {
       for (const key of originSettingKeys as Array<keyof LX.AppSetting>) {
         const targetValue: any = targetSetting[key]
-        const isPrimitive = checkPrimitiveType(targetValue)
+        const isPrimitive = key === 'common.apiBackupSources'
+          ? Array.isArray(targetValue) && targetValue.length <= 20 && targetValue.every(id => typeof id === 'string' && /^user_api/.test(id))
+          : checkPrimitiveType(targetValue)
         // if (checkPrimitiveType(value)) {
         if (!isPrimitive || targetValue == originSettingCopy[key]) continue
         updatedSettingKeys.push(key)

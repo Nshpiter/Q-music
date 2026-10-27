@@ -63,6 +63,8 @@ const state: InitState = {
     singer: '',
     album: '',
     quality: null,
+    apiSourceId: '',
+    apiSourceUrl: '',
   },
 
   isPlay: false,

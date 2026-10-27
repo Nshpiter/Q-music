@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import { View, FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
+import { View, ScrollView, FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
@@ -13,18 +13,21 @@ import { setActiveList, updateUserListPosition } from '@/core/list'
 import listState from '@/store/list/state'
 import { userListsUpdatePosition } from '@/utils/listManage'
 import { useI18n } from '@/lang'
-import PlaylistIdentity, { getPlaylistLabel } from '@/components/PlaylistIdentity'
+import PlaylistIdentity, { getPlaylistLabel, getPlaylistSource } from '@/components/PlaylistIdentity'
 import { type Position } from './ListMenu'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import Loading from '@/components/common/Loading'
 import Button, { type BtnType } from '@/components/common/Button'
+import PlaylistSummary from './PlaylistSummary'
+import { SOURCE_LOGOS } from '@/components/SourceLogo'
 import { useDockInset } from '@/components/common/DockInset'
 
 type FlatListType = FlatListProps<LX.List.MyListInfo>
 
 const ITEM_HEIGHT = scaleSizeH(62)
 
-const ListItem = memo(({ item, index, activeId, onPress, onShowMenu, sorting, moving, canMoveUp, canMoveDown, onMove }: {
+const ListItem = memo(({ catalog, item, index, activeId, onPress, onShowMenu, sorting, moving, canMoveUp, canMoveDown, onMove }: {
+  catalog: boolean
   sorting: boolean
   moving: boolean
   canMoveUp: boolean
@@ -41,7 +44,7 @@ const ListItem = memo(({ item, index, activeId, onPress, onShowMenu, sorting, mo
   const moreButtonRef = useRef<BtnType>(null)
   const fetching = useListFetching(item.id)
 
-  const active = activeId == item.id
+  const active = !catalog && activeId == item.id
 
   const handleShowMenu = () => {
     if (moreButtonRef.current?.measure) {
@@ -57,16 +60,17 @@ const ListItem = memo(({ item, index, activeId, onPress, onShowMenu, sorting, mo
   }
 
   return (
-    <View style={{ ...styles.listItem, height: ITEM_HEIGHT, backgroundColor: active ? theme['q-surface-tint'] : 'transparent', borderRadius: 14, marginHorizontal: 8 }}>
+    <View style={{ ...styles.listItem, minHeight: catalog ? 80 : ITEM_HEIGHT, backgroundColor: active ? theme['q-surface-tint'] : 'transparent', borderRadius: 14, marginHorizontal: 8 }}>
       {active ? <View style={{ position: 'absolute', left: 0, top: 16, bottom: 16, width: 3, borderRadius: 2, backgroundColor: theme['q-accent'] }} /> : null}
       <Button
         accessibilityLabel={getPlaylistLabel(item)}
         accessibilityState={{ selected: active }}
-        style={styles.listName}
+        pressScale={0.985}
+        style={[styles.listName, { height: catalog ? undefined : ITEM_HEIGHT, minHeight: catalog ? 80 : ITEM_HEIGHT, paddingVertical: catalog ? 12 : 0, borderRadius: 12, overflow: 'hidden' }]}
         disabled={sorting}
         onPress={handlePress}
       >
-        <PlaylistIdentity list={item} subtitle={'source' in item} active={active} />
+        {catalog ? <PlaylistSummary list={item} /> : <PlaylistIdentity list={item} subtitle={'source' in item} active={active} />}
       </Button>
       {fetching ? <Loading color={theme['q-accent-text']} style={styles.loading} /> : null}
       {sorting ? <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -89,7 +93,7 @@ const ListItem = memo(({ item, index, activeId, onPress, onShowMenu, sorting, mo
     </View>
   )
 }, (prevProps, nextProps) => {
-  return !!(prevProps.item === nextProps.item &&
+  return !!(prevProps.catalog === nextProps.catalog && prevProps.item === nextProps.item &&
     prevProps.sorting === nextProps.sorting && prevProps.moving === nextProps.moving &&
     prevProps.canMoveUp === nextProps.canMoveUp && prevProps.canMoveDown === nextProps.canMoveDown &&
     prevProps.index === nextProps.index &&
@@ -100,13 +104,21 @@ const ListItem = memo(({ item, index, activeId, onPress, onShowMenu, sorting, mo
 })
 
 
-export default ({ onShowMenu, sorting = false }: {
+export default ({ onShowMenu, sorting = false, catalog = false, header, onSelect }: {
+  catalog?: boolean
+  header?: React.ReactElement
+  onSelect?: (id: string) => void
   sorting?: boolean
   onShowMenu: (info: { listInfo: LX.List.MyListInfo, index: number }, position: Position) => void
 }) => {
   const flatListRef = useRef<FlatList>(null)
+  const theme = useTheme()
   const dockInset = useDockInset()
   const allList = useMyList()
+  const [category, setCategory] = useState('all')
+  const categories = ['all', 'local', 'tx', 'wy', 'kg']
+  const visibleList = sorting || category == 'all' ? allList : allList.filter(item => (getPlaylistSource(item) ?? 'local') == category)
+  const data = catalog ? visibleList : allList
   const activeListId = useActiveListId()
   const t = useI18n()
   const [moving, setMoving] = useState(false)
@@ -129,7 +141,7 @@ export default ({ onShowMenu, sorting = false }: {
   }
 
   const handleToggleList = (item: LX.List.MyListInfo) => {
-    // setVisiblePanel(false)
+    if (onSelect) { onSelect(item.id); return }
     global.app_event.changeLoveListVisible(false)
     requestAnimationFrame(() => {
       setActiveList(item.id)
@@ -151,18 +163,19 @@ export default ({ onShowMenu, sorting = false }: {
     })
   }, [])
 
-  const renderItem: FlatListType['renderItem'] = ({ item, index }) => (
+  const renderItem: FlatListType['renderItem'] = ({ item }) => (
     <ListItem
       key={item.id}
+      catalog={catalog}
       item={item}
-      index={index}
+      index={allList.indexOf(item)}
       activeId={activeListId}
       onPress={handleToggleList}
       onShowMenu={showMenu}
       sorting={sorting}
       moving={moving}
-      canMoveUp={index > 2}
-      canMoveDown={index >= 2 && index < allList.length - 1}
+      canMoveUp={allList.indexOf(item) > 2}
+      canMoveDown={allList.indexOf(item) >= 2 && allList.indexOf(item) < allList.length - 1}
       onMove={moveList}
     />
   )
@@ -177,7 +190,13 @@ export default ({ onShowMenu, sorting = false }: {
       ref={flatListRef}
       onScroll={handleScroll}
       style={styles.container}
-      data={allList}
+      data={data}
+      ListHeaderComponent={<>{header}{catalog && !sorting ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingBottom: 12 }}>
+        {categories.map(id => <Button key={id} pressScale={0.96} accessibilityRole="tab" accessibilityState={{ selected: category == id }} onPress={() => { setCategory(id) }} style={{ minHeight: 44, paddingHorizontal: 12, borderRadius: 22, overflow: 'hidden', justifyContent: 'center', backgroundColor: category == id ? theme['q-surface-tint'] : 'transparent' }}>
+          <Text size={12} color={theme[category == id ? 'q-accent-text' : 'q-text-secondary']} style={{ fontWeight: category == id ? '600' : '400' }}>{id == 'all' ? t('library_all') : id == 'local' ? t('playlist_local') : SOURCE_LOGOS[id].label}</Text>
+        </Button>)}
+      </ScrollView> : null}</>}
+      ListEmptyComponent={<Text size={13} color={theme['q-text-secondary']} style={{ padding: 28, textAlign: 'center' }}>{t('library_category_empty')}</Text>}
       extraData={`${sorting}:${moving}:${activeListId}`}
       maxToRenderPerBatch={9}
       // updateCellsBatchingPeriod={80}
@@ -187,7 +206,7 @@ export default ({ onShowMenu, sorting = false }: {
       renderItem={renderItem}
       keyExtractor={getkey}
       // extraData={activeIndex}
-      getItemLayout={getItemLayout}
+      getItemLayout={catalog ? undefined : getItemLayout}
     />
   )
 }

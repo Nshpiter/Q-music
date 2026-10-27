@@ -1,23 +1,14 @@
-import StatusBarLyric from './StatusBarLyric'
-import BackgroundPlayback from './BackgroundPlayback'
 import { memo } from 'react'
 
 import Section from '../../components/Section'
 import IsSavePlayTime from './IsSavePlayTime'
 import PlayHighQuality from './PlayHighQuality'
-import IsHandleAudioFocus from './IsHandleAudioFocus'
-import IsEnableAudioOffload from './IsEnableAudioOffload'
 import IsAutoCleanPlayedList from './IsAutoCleanPlayedList'
-import IsShowBluetoothLyric from './IsShowBluetoothLyric'
-import IsShowBluetoothFullLyric from './IsShowBluetoothFullLyric'
-import IsShowNotificationImage from './IsShowNotificationImage'
-import IsShowLyricTranslation from './IsShowLyricTranslation'
-import IsShowLyricRoma from './IsShowLyricRoma'
-import IsS2T from './IsS2T'
 import MaxCache from './MaxCache'
 import { useI18n } from '@/lang'
 import PlayerStyleSelector from '@/components/player/PlayerStyleSelector'
-import LyricFontSelector from '@/components/player/LyricFontSelector'
+import IsStartupAutoPlay from '../Basic/IsStartupAutoPlay'
+import IsStartupPushPlayDetailScreen from '../Basic/IsStartupPushPlayDetailScreen'
 
 
 export default memo(() => {
@@ -26,21 +17,12 @@ export default memo(() => {
   return (
     <Section title={t('setting_player')}>
       <PlayerStyleSelector />
-      <LyricFontSelector />
+      <PlayHighQuality />
+      <IsStartupAutoPlay />
+      <IsStartupPushPlayDetailScreen />
       <IsSavePlayTime />
       <IsAutoCleanPlayedList />
-      <IsHandleAudioFocus />
-      <IsEnableAudioOffload />
-      <StatusBarLyric />
-      <IsShowBluetoothLyric />
-      <IsShowBluetoothFullLyric />
-      <IsShowNotificationImage />
-      <IsShowLyricTranslation />
-      <IsShowLyricRoma />
-      <IsS2T />
-      <BackgroundPlayback />
       <MaxCache />
-      <PlayHighQuality />
     </Section>
   )
 })

@@ -3,8 +3,6 @@ import { Animated, StyleSheet, View } from 'react-native'
 import PagerView from 'react-native-pager-view'
 import Image from '@/components/common/Image'
 import Text from '@/components/common/Text'
-import Button from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
 import TransportButton from '@/components/player/TransportButton'
 import PlayQueue, { type PlayQueueType } from '@/components/player/PlayQueue'
 import { useCoverPlayScale } from '@/components/player/useCoverPlayScale'
@@ -25,6 +23,7 @@ import MusicAddBtn from './Vertical/Player/components/MoreBtn/MusicAddBtn'
 import CommentBtn from './Vertical/Player/components/MoreBtn/CommentBtn'
 import ImmersivePlayBg from './Vertical/ImmersivePlayBg'
 import useKeepLyricsAwake from './useKeepLyricsAwake'
+import { SongMetadata, SongMoreButton } from './components/SongActions'
 
 // 独立编排 Apple 播放页，播放、队列和收藏仍复用现有功能。
 const Artwork = ({ componentId }: { componentId: string }) => {
@@ -49,35 +48,29 @@ const TrackInfo = ({ compact }: { compact: boolean }) => {
   return <Animated.View style={[styles.trackInfo, transition]}>
     <View style={styles.trackText}>
       <Text size={compact ? 19 : 23} color={theme['q-text-primary']} style={styles.title} numberOfLines={1}>{music.name}</Text>
-      <Text size={compact ? 14 : 17} color={theme['q-text-secondary']} style={styles.singer} numberOfLines={1}>{music.singer}</Text>
+      <SongMetadata size={compact ? 14 : 17} />
     </View>
-    <View style={styles.collect}><MusicAddBtn iconOnly /></View>
   </Animated.View>
 }
 
-const Controls = ({ compact, lyricActive, onToggleLyric }: { compact: boolean, lyricActive: boolean, onToggleLyric?: () => void }) => {
+const Controls = ({ compact }: { compact: boolean }) => {
   const playing = usePlayControlState()
   const { isCar } = useAdaptiveLayout()
-  const theme = useTheme()
   const queue = useRef<PlayQueueType>(null)
-  const size = isCar ? 64 : compact ? 56 : 68
+  const [availableWidth, setAvailableWidth] = useState(240)
+  const size = Math.max(48, Math.min(isCar ? 64 : compact ? 56 : 68, (availableWidth - 96) / 3))
   return <>
-    <View style={[styles.transport, compact && { paddingVertical: 0 }]}>
+    <View onLayout={event => { setAvailableWidth(event.nativeEvent.layout.width) }} style={[styles.transport, compact && { paddingVertical: 0 }]} >
+      <MusicAddBtn iconOnly />
       <TransportButton icon="prevMusic" label={global.i18n.t('play_prev')} size={size} iconSize={isCar ? 32 : 30} onPress={() => { void playPrev() }} />
       <TransportButton icon={playing ? 'pause' : 'play'} label={global.i18n.t(playing ? 'pause' : 'play')} size={size} iconSize={compact ? 36 : 42} onPress={togglePlay} />
       <TransportButton icon="nextMusic" label={global.i18n.t('play_next')} size={size} iconSize={isCar ? 32 : 30} onPress={() => { void playNext() }} />
+      <TransportButton icon="menu" label={global.i18n.t('play_queue_title')} size={48} iconSize={22} onPress={() => { queue.current?.show() }} />
     </View>
     <View style={styles.tools}>
       <PlayModeBtn />
       <CommentBtn iconOnly />
-      {onToggleLyric ? <Button
-        accessibilityRole="tab"
-        accessibilityLabel={global.i18n.t(lyricActive ? 'play_detail_page_cover' : 'play_detail_page_lyric')}
-        accessibilityState={{ selected: lyricActive }}
-        onPress={onToggleLyric} ripple={null}
-        style={[styles.lyricToggle, lyricActive && { backgroundColor: theme['q-surface-tint'] }]}
-      ><Icon name="lyric-on" rawSize={22} color={theme['q-text-primary']} /></Button> : null}
-      <TransportButton icon="menu" label={global.i18n.t('play_queue_title')} size={48} iconSize={22} onPress={() => { queue.current?.show() }} />
+      <SongMoreButton />
     </View>
     <PlayQueue ref={queue} />
   </>
@@ -87,7 +80,6 @@ export default ({ componentId }: { componentId: string }) => {
   const { wide, height, isCar } = useAdaptiveLayout()
   const compact = height < (wide ? 640 : 700)
   const [page, setPage] = useState(0)
-  const pager = useRef<PagerView>(null)
   const lyricActive = wide || page == 1
   useKeepLyricsAwake(lyricActive)
   return <>
@@ -98,18 +90,18 @@ export default ({ componentId }: { componentId: string }) => {
         <Artwork componentId={componentId} />
         <TrackInfo compact={compact} />
         <View style={styles.progress}><PlayInfo /></View>
-        <Controls compact={compact} lyricActive />
+        <Controls compact={compact} />
       </View>
       <View style={styles.lyrics}><Lyric wide immersive /></View>
     </View> : <View style={styles.phone}>
-      <PagerView ref={pager} style={styles.pages} initialPage={page} onPageSelected={({ nativeEvent }) => { setPage(nativeEvent.position) }}>
+      <PagerView style={styles.pages} initialPage={page} onPageSelected={({ nativeEvent }) => { setPage(nativeEvent.position) }}>
         <View key="cover" collapsable={false} style={styles.phoneArtwork}><Artwork componentId={componentId} /></View>
         <View key="lyrics" collapsable={false}><Lyric active={page == 1} immersive /></View>
       </PagerView>
       <View style={[styles.phoneFooter, { paddingHorizontal: compact ? 24 : 32 }]} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_player}>
         {page == 0 ? <TrackInfo compact={compact} /> : null}
         <View style={styles.progress}><PlayInfo /></View>
-        <Controls compact={compact} lyricActive={lyricActive} onToggleLyric={() => { pager.current?.setPage(page == 0 ? 1 : 0) }} />
+        <Controls compact={compact} />
       </View>
     </View>}
   </>
@@ -117,7 +109,7 @@ export default ({ componentId }: { componentId: string }) => {
 
 const styles = StyleSheet.create({
   wide: { flex: 1, flexDirection: 'row', width: '100%', maxWidth: 1440, alignSelf: 'center', paddingBottom: 12 },
-  left: { width: '38%', maxWidth: 440, minWidth: 0 },
+  left: { width: '38%', maxWidth: 440, minWidth: 240 },
   lyrics: { flex: 1, minWidth: 0, paddingVertical: 8 },
   phone: { flex: 1 },
   pages: { flex: 1 },
@@ -128,10 +120,7 @@ const styles = StyleSheet.create({
   trackInfo: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   trackText: { flex: 1, minWidth: 0 },
   title: { fontWeight: '700', letterSpacing: -0.5 },
-  singer: { marginTop: 5 },
-  collect: { borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.09)' },
   progress: { height: 44, marginTop: 2 },
   transport: { flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center', paddingVertical: 8 },
-  tools: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 },
-  lyricToggle: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 16 },
+  tools: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 4 },
 })

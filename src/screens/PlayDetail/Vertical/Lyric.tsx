@@ -17,6 +17,8 @@ import Button from '@/components/common/Button'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 import { getLyricFontFamily } from '@/core/lyricFont'
+import LyricCopy from '../components/LyricCopy'
+import { SongMetadata } from '../components/SongActions'
 
 type FlatListType = FlatListProps<Line>
 interface LineProps {
@@ -193,7 +195,7 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
         <Image url={musicInfo.pic} style={styles.cover} />
         <View style={styles.trackText}>
           <Text size={13} style={styles.trackTitle} color={theme['q-text-primary']} numberOfLines={1}>{musicInfo.name}</Text>
-          <Text size={11} color={theme['q-text-secondary']} numberOfLines={1}>{musicInfo.singer}</Text>
+          <SongMetadata size={11} />
         </View>
       </>}
       {musicInfo.tlrc ? <Button
@@ -209,6 +211,7 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
         <Icon accessible={false} name="translation" rawSize={18} color={showTranslation ? theme['q-accent-text'] : theme['q-text-secondary']} />
         <Text size={11} color={showTranslation ? theme['q-accent-text'] : theme['q-text-secondary']}>{t('play_detail_bilingual')}</Text>
       </Button> : null}
+      <LyricCopy />
     </View>
     <View style={styles.page} onLayout={onLayout}>
       {lyricLines.length ? <FlatList

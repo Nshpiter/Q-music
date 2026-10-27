@@ -136,13 +136,13 @@ export default ({
           borderRadius: radius,
           borderWidth: asset ? 0 : StyleSheet.hairlineWidth,
           borderColor: theme['q-outline'],
-          backgroundColor: theme['q-surface-tint'],
+          backgroundColor: assetUri ? 'transparent' : theme['q-surface-tint'],
           opacity: disabled ? 0.38 : 1,
         },
         style,
       ]}
     >
-      {fallback}
+      {!assetUri ? fallback : null}
       {assetUri
         ? <Image
             accessible={false}

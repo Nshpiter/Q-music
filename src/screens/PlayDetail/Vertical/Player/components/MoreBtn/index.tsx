@@ -2,12 +2,14 @@ import { createStyle } from '@/utils/tools'
 import { View } from 'react-native'
 import MusicAddBtn from './MusicAddBtn'
 import CommentBtn from './CommentBtn'
+import { SongMoreButton } from '../../../../components/SongActions'
 
 export default () => {
   return (
     <View style={styles.container}>
       <MusicAddBtn />
       <CommentBtn />
+      <SongMoreButton />
     </View>
   )
 }

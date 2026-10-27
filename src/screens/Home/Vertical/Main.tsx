@@ -221,7 +221,7 @@ const indexMap = [
 ] as const
 
 const Main = () => {
-  const { isCar } = useAdaptiveLayout()
+  const { canSwipePages, wide } = useAdaptiveLayout()
   const activeId = useNavActiveId()
   const theme = useTheme()
   const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null)
@@ -284,7 +284,7 @@ const Main = () => {
     }
     const handleConfigUpdate = (keys: Array<keyof LX.AppSetting>, setting: Partial<LX.AppSetting>) => {
       if (!keys.includes('common.homePageScroll')) return
-      pagerViewRef.current?.setScrollEnabled(!isCar && setting['common.homePageScroll']!)
+      pagerViewRef.current?.setScrollEnabled(canSwipePages && setting['common.homePageScroll']!)
     }
     // window.requestAnimationFrame(() => pagerViewRef.current && pagerViewRef.current.setPage(activeIndexRef.current))
     global.state_event.on('navActiveIdUpdated', handleUpdate)
@@ -293,7 +293,7 @@ const Main = () => {
       global.state_event.off('navActiveIdUpdated', handleUpdate)
       global.state_event.off('configUpdated', handleConfigUpdate)
     }
-  }, [isCar])
+  }, [canSwipePages])
 
 
   const component = useMemo(() => (
@@ -303,7 +303,7 @@ const Main = () => {
       offscreenPageLimit={1}
       onPageSelected={onPageSelected}
       onPageScrollStateChanged={onPageScrollStateChanged}
-      scrollEnabled={!isCar && settingState.setting['common.homePageScroll']}
+      scrollEnabled={canSwipePages && settingState.setting['common.homePageScroll']}
       style={styles.pagerView}
     >
       <View collapsable={false} key="nav_search" style={styles.pageStyle}>
@@ -337,13 +337,13 @@ const Main = () => {
         <Setting />
       </View> */}
     </PagerView>
-  ), [onPageScrollStateChanged, onPageSelected, isCar])
+  ), [onPageScrollStateChanged, onPageSelected, canSwipePages])
 
   const secondary = activeId == 'download' || activeId == 'nav_setting'
   return <View style={styles.pageStyle}>
     <View collapsable={false} style={styles.pageStyle} pointerEvents={secondary ? 'none' : 'auto'} accessibilityElementsHidden={secondary} importantForAccessibility={secondary ? 'no-hide-descendants' : 'auto'}>{component}</View>
     {secondary ? <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: theme['c-content-background'] }}>
-      <Header />
+      {activeId == 'download' || wide ? <Header /> : null}
       {activeId == 'download' ? <DownloadPage /> : <SettingPage />}
     </View> : null}
   </View>

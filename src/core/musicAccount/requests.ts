@@ -45,7 +45,7 @@ export const request = async(url: string, cookies: Record<string, string>, init:
       headers: { ...init.headers, Cookie: buildCookieHeader(cookies) },
       signal: controller.signal,
     })
-    if (!response.ok) fail(response.status == 401 || response.status == 403 ? 'login_required' : 'unavailable')
+    if (!response.ok) fail(response.status == 401 ? 'login_required' : 'unavailable')
     return await response.json()
   } finally {
     clearTimeout(timer)
@@ -74,6 +74,8 @@ export const wyRequest = async(session: AccountSession, path: string, data: Row,
     body: new URLSearchParams(form).toString(),
   }, signal)
   if (result.code == null) fail()
+  // 网易云 403 也可能是访问限制；只有明确未登录才要求重新授权。
+  if (Number(result.code) == 403) fail('unavailable')
   checkCode(result.code, 200)
   return result
 }

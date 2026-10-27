@@ -58,13 +58,15 @@ export const getMusicPlayUrlInfo = async({
   isRefresh = false,
   onToggleSource,
   allowToggleSource,
+  signal,
 }: {
   musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
   isRefresh?: boolean
   quality?: LX.Quality
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
   allowToggleSource?: boolean
-}): Promise<{ url: string, quality: LX.Quality }> => {
+  signal?: AbortSignal
+}): Promise<{ url: string, quality: LX.Quality, providerId?: string }> => {
   if ('progress' in musicInfo) {
     return getDownloadMusicUrl({ musicInfo, isRefresh, onToggleSource, allowToggleSource }).then(url => ({ url, quality: '128k' as const }))
   } else if (musicInfo.source == 'local') {
@@ -74,7 +76,7 @@ export const getMusicPlayUrlInfo = async({
       const local = await findLocalPlayback(musicInfo, quality ?? settingState.setting['player.playQuality']).catch(() => null)
       if (local) return local
     }
-    return getOnlineMusicPlayUrlInfo({ musicInfo, isRefresh, quality, onToggleSource, allowToggleSource })
+    return getOnlineMusicPlayUrlInfo({ musicInfo, isRefresh, quality, onToggleSource, allowToggleSource, signal })
   }
 }
 

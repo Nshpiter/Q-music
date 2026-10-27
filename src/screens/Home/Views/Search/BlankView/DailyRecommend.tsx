@@ -22,6 +22,7 @@ import { Icon } from '@/components/common/Icon'
 import DailyArtwork from './DailyArtwork'
 import Skeleton from '@/components/common/Skeleton'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
+import { getDailyRefreshAction } from '@/core/musicAccount/dailyPolicy'
 
 export default () => {
   const t = useI18n()
@@ -119,6 +120,7 @@ export default () => {
   }
   const sourceLabel = t(loading && !result ? 'search_daily_recommend_loading' : loadError ? 'load_failed' : result?.kind == 'official_daily' ? 'daily_official_daily' : result?.kind == 'radar' ? 'daily_radar' : result?.kind == 'netease_daily' ? 'daily_netease_daily' : result?.kind == 'kugou_daily' ? 'daily_kugou_daily' : 'daily_local')
   const playingDaily = list.some(item => item.id == playMusicInfo.musicInfo?.id)
+  const refreshAction = getDailyRefreshAction(result)
 
   const handlePlay = useCallback(async(index?: number) => {
     if (!list.length || playbackPending.current) return
@@ -154,10 +156,13 @@ export default () => {
       }}
     >
       <View style={styles.providerBar}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.providers} contentContainerStyle={styles.providerTabs}>
         {(['tx', 'wy', 'kg'] as const).map(source => <Button key={source} ripple={null} disabled={startingPlayback} accessibilityRole="tab" accessibilityState={{ selected: provider == source }} onPress={() => { changeProvider(source) }} style={[styles.providerChip, { backgroundColor: provider == source ? theme['q-surface-tint'] : 'transparent' }]}><Text size={12} color={provider == source ? theme['q-accent-text'] : theme['q-text-secondary']}>{t(source == 'tx' ? 'setting_music_account_qq' : source == 'kg' ? 'setting_music_account_kugou' : 'setting_music_account_netease')}</Text></Button>)}
+        </ScrollView>
         <Button accessibilityLabel={t('daily_settings')} style={styles.settingsButton} onPress={() => { setSettingsVisible(true) }}><Icon name="slider" rawSize={19} color={theme['q-text-secondary']} /></Button>
       </View>
-      <Button accessibilityLabel={t('search_daily_open')} style={styles.feature} onPress={() => { setDetailVisible(true) }}>
+      <View style={wide && styles.wideFeature}>
+      <Button accessibilityLabel={t('search_daily_open')} style={[styles.feature, wide && styles.wideSummary]} onPress={() => { setDetailVisible(true) }}>
         <View style={styles.mosaic}>
           {[0, 1, 2, 3].map(index => <View key={index} style={styles.tile}>{renderCover(list[index])}</View>)}
           <View style={{ ...styles.dateBadge, backgroundColor: theme['q-surface-raised'] }}>
@@ -171,26 +176,28 @@ export default () => {
           <Text size={12} style={styles.openHint} color={theme['q-accent-text']}>{t('search_daily_open')} ›</Text>
         </View>
       </Button>
+      <View style={wide && styles.wideActions}>
       {result?.reason ? <Button onPress={result.reason == 'login_required' ? openAccount : () => { setSettingsVisible(true) }} style={styles.sourceNotice}><Text size={11} color={theme['q-text-secondary']}>{t(result.reason == 'login_required' ? 'daily_fallback_login' : result.reason == 'official_unavailable' && result.kind == 'radar' ? 'daily_radar_fallback' : 'daily_fallback_unavailable')} ›</Text></Button> : null}
       <View style={[styles.actions, wide && { width: '100%', maxWidth: 400 }]}>
-        <Button accessibilityLabel={t('daily_refresh')} disabled={loading || startingPlayback} style={{ ...styles.action, backgroundColor: theme['q-surface-tint'] }} onPress={() => { void load(sourceRef.current, true) }}>
-          <Text size={12} color={theme['q-accent-text']}>{t('daily_refresh')}</Text>
-        </Button>
+        {refreshAction ? <Button accessibilityLabel={t(refreshAction == 'shuffle' ? 'daily_shuffle' : 'daily_retry_platform')} disabled={loading || startingPlayback} style={{ ...styles.action, backgroundColor: theme['q-surface-tint'] }} onPress={refresh}>
+          <Text size={12} color={theme['q-accent-text']}>{t(refreshAction == 'shuffle' ? 'daily_shuffle' : 'daily_retry_platform')}</Text>
+        </Button> : null}
         <Button accessibilityLabel={t('search_daily_recommend_play')} disabled={!list.length || startingPlayback} style={{ ...styles.action, backgroundColor: theme['q-accent'] }} onPress={() => { void handlePlay() }}>
           <Icon accessible={false} name="play" rawSize={14} color={theme['q-on-accent']} />
           <Text size={12} color={theme['q-on-accent']}>{t('search_daily_recommend_play')}</Text>
         </Button>
       </View>
+      </View>
+      </View>
       {loading && !list.length
         ? (
             <View accessible accessibilityLabel={t('search_daily_recommend_loading')} style={styles.skeleton}>
               <Skeleton width={96} height={16} radius={8} style={styles.discoveryTitle} />
-              <View style={styles.rail}>
+              <View style={styles.discoveryList}>
                 {[0, 1, 2].map(index => (
                   <View key={index} style={styles.discoveryItem}>
-                    <Skeleton height={120} radius={12} />
-                    <Skeleton width="78%" height={12} style={styles.skeletonTitle} />
-                    <Skeleton width="48%" height={10} />
+                    <Skeleton width={48} height={48} radius={12} />
+                    <View style={styles.musicInfo}><Skeleton width="78%" height={12} /><Skeleton width="48%" height={10} style={styles.skeletonLine} /></View>
                   </View>
                 ))}
               </View>
@@ -208,16 +215,25 @@ export default () => {
             )
           : list.length
             ? <>
-                <Text size={17} style={styles.discoveryTitle} color={theme['q-text-primary']}>{t('search_today_discovery')}</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
-                  {list.slice(0, 9).map((item, index) => (
-                    <Button key={`${item.source}_${item.id}`} disabled={startingPlayback} accessibilityLabel={`${t('play')} · ${item.name} · ${item.singer}`} style={styles.discoveryItem} onPress={() => { void handlePlay(index) }}>
-                      {renderCover(item)}
-                      <Text numberOfLines={1} size={13} style={styles.trackTitle} color={theme['q-text-primary']}>{item.name}</Text>
-                      <Text numberOfLines={1} size={11} color={theme['q-text-secondary']}>{item.singer}</Text>
+                <View style={styles.discoveryHeading}>
+                  <Text size={17} style={styles.title} color={theme['q-text-primary']}>{t('search_today_discovery')}</Text>
+                  <Button accessibilityLabel={t('search_daily_open')} style={styles.viewAll} onPress={() => { setDetailVisible(true) }}><Text size={12} color={theme['q-accent-text']}>{t('daily_view_all')}</Text><Icon name="chevron-right" rawSize={15} color={theme['q-accent-text']} /></Button>
+                </View>
+                {result && result.kind != 'local' ? <Text size={11} style={styles.discoveryHint} color={theme['q-text-secondary']}>{t('daily_platform_updates')}</Text> : null}
+                <View style={[styles.discoveryList, wide && styles.discoveryGrid]}>
+                  {list.slice(0, 6).map((item, index) => {
+                    const current = playMusicInfo.musicInfo?.id == item.id
+                    const playing = current && isPlay
+                    return <Button key={`${item.source}_${item.id}`} disabled={startingPlayback} accessibilityLabel={`${t(playing ? 'pause' : 'play')} · ${item.name} · ${item.singer}`} style={[styles.discoveryItem, wide && styles.discoveryColumn, current && { backgroundColor: theme['q-surface-tint'] }]} onPress={() => { if (current) togglePlay(); else void handlePlay(index) }}>
+                      <View style={styles.rowCover}>{renderCover(item)}</View>
+                      <View style={styles.musicInfo}>
+                        <Text numberOfLines={1} size={14} style={styles.trackTitle} color={current ? theme['q-accent-text'] : theme['q-text-primary']}>{item.name}</Text>
+                        <Text numberOfLines={1} size={11} color={theme['q-text-secondary']}>{item.singer}</Text>
+                      </View>
+                      <View style={styles.rowPlay}><Icon accessible={false} name={playing ? 'pause' : 'play-outline'} rawSize={18} color={theme['q-accent-text']} /></View>
                     </Button>
-                  ))}
-                </ScrollView>
+                  })}
+                </View>
               </>
             : <View style={styles.state}><Text size={12} color={theme['q-text-secondary']}>{t('search_daily_recommend_empty')}</Text></View>}
       {settingsVisible ? <DailySettings provider={provider} onClose={() => { setSettingsVisible(false) }} onChanged={refresh} onLogin={openAccount} /> : null}
@@ -235,7 +251,7 @@ export default () => {
           <FlatList
             data={list}
             refreshing={loading && list.length > 0}
-            onRefresh={() => { if (!startingPlayback) void load(sourceRef.current, true) }}
+            onRefresh={refreshAction ? () => { if (!startingPlayback) refresh() } : undefined}
             contentContainerStyle={styles.detailList}
             keyExtractor={item => `${item.source}_${item.id}`}
             ListEmptyComponent={loading
@@ -286,7 +302,9 @@ export default () => {
 }
 
 const styles = createStyle({
-  providerBar: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4, marginBottom: 14 },
+  providerBar: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 14 },
+  providers: { flex: 1, minWidth: 0 },
+  providerTabs: { alignItems: 'center', gap: 4 },
   providerChip: { minHeight: 40, paddingHorizontal: 10, borderRadius: 20, justifyContent: 'center' },
   settingsButton: { marginLeft: 'auto', width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   sourceNotice: { paddingTop: 12, paddingBottom: 4, minHeight: 36, justifyContent: 'center' },
@@ -299,20 +317,28 @@ const styles = createStyle({
     borderRadius: 20,
   },
   feature: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  wideFeature: { flexDirection: 'row', alignItems: 'center', gap: 24 },
+  wideSummary: { flex: 1, minWidth: 0 },
+  wideActions: { width: '40%', maxWidth: 400 },
   mosaic: { width: 112, height: 112, flexDirection: 'row', flexWrap: 'wrap', borderRadius: 18, overflow: 'hidden' },
   tile: { width: '50%', height: '50%', padding: 1 },
   dateBadge: { position: 'absolute', bottom: 6, right: 6, borderRadius: 10, paddingHorizontal: 9, paddingVertical: 2 },
   eyebrow: { letterSpacing: 2, fontWeight: '700', marginBottom: 6 },
   openHint: { marginTop: 10, fontWeight: '600' },
   discoveryTitle: { fontWeight: '700', marginTop: 24, marginBottom: 14 },
-  rail: { flexDirection: 'row', gap: 12, paddingBottom: 4 },
+  discoveryHeading: { marginTop: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  viewAll: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 4 },
+  discoveryHint: { marginBottom: 8 },
+  discoveryList: { gap: 4 },
+  discoveryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  discoveryColumn: { width: '49%' },
   skeleton: { overflow: 'hidden' },
-  skeletonTitle: { marginTop: 10, marginBottom: 6 },
   skeletonLine: { marginTop: 8 },
   trackNumberSkeleton: { marginRight: 12 },
   detailState: { minHeight: 240, gap: 12, alignItems: 'center', justifyContent: 'center' },
-  discoveryItem: { width: 120 },
-  trackTitle: { fontWeight: '600', marginTop: 8, marginBottom: 3 },
+  discoveryItem: { width: '100%', minHeight: 68, paddingVertical: 8, paddingHorizontal: 4, flexDirection: 'row', alignItems: 'center', borderRadius: 14 },
+  rowPlay: { width: 36, alignItems: 'center', justifyContent: 'center' },
+  trackTitle: { fontWeight: '600', marginBottom: 3 },
   detailHeader: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 8 },
   closeButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   detailList: { paddingHorizontal: 20, paddingBottom: 24 },
@@ -353,6 +379,7 @@ const styles = createStyle({
   },
   musicInfo: {
     flex: 1,
+    minWidth: 0,
     paddingLeft: 11,
     gap: 2,
   },

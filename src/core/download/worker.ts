@@ -10,11 +10,10 @@ import {
   upsertDownloadTask,
 } from './store'
 import type { DownloadStatus, DownloadTaskInfo } from './types'
+import { getDownloadDirectory } from './location'
 
 const { UtilsModule } = NativeModules
 
-// 公共音乐目录；文件操作前检查对应系统版本的存储授权，系统播放器可见。
-const DOWNLOAD_DIR = `${RNFS.ExternalStorageDirectoryPath}/Music/QMusic`
 const PROGRESS_THROTTLE = 300
 const MAX_CONCURRENT = 2
 
@@ -76,6 +75,8 @@ const runTask = async(taskId: string) => {
   patchTask(taskId, { status: 'run', statusText: '' })
 
   try {
+    // 开始任务时固定目录，解析地址或下载期间修改设置不影响当前任务。
+    const directory = getDownloadDirectory()
     const { url } = await getMusicPlayUrlInfo({
       musicInfo: task.musicInfo,
       quality: task.quality,
@@ -83,10 +84,10 @@ const runTask = async(taskId: string) => {
       allowToggleSource: false,
     })
 
-    const dirExists = await RNFS.exists(DOWNLOAD_DIR)
-    if (!dirExists) await RNFS.mkdir(DOWNLOAD_DIR)
+    const dirExists = await RNFS.exists(directory)
+    if (!dirExists) await RNFS.mkdir(directory)
 
-    const filePath = `${DOWNLOAD_DIR}/${task.fileName}`
+    const filePath = `${directory}/${task.fileName.replace(/[\\/]/g, '_')}`
     const toFile = `${RNFS.CachesDirectoryPath}/download_${taskId}.tmp`
 
     let lastEmit = 0

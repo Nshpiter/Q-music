@@ -13,7 +13,6 @@ import { type Source as MusicSource } from '@/store/search/music/state'
 import { type Source as SonglistSource } from '@/store/search/songlist/state'
 import Button from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-import { setNavActiveId } from '@/core/common'
 import { useI18n } from '@/lang'
 
 type Sources = Readonly<Array<MusicSource | SonglistSource>>
@@ -84,16 +83,12 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ showBack, onBack, on
           onFocusText={onShowTipList}
         />
       </View>
-      {!showBack ? <Button accessibilityLabel={t('nav_setting')} style={styles.settings} onPress={() => { setNavActiveId('nav_setting') }}>
-        <Icon name="setting" rawSize={22} color={theme['q-text-primary']} />
-      </Button> : null}
     </View>
   )
 })
 
 const styles = StyleSheet.create({
   back: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  settings: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   searchBar: {
     flexDirection: 'row',
     flexShrink: 0,

@@ -14,6 +14,7 @@ import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
 import { useTrackChangeAnimation } from '@/components/player/useTrackChangeAnimation'
 import { useCoverPlayScale } from '@/components/player/useCoverPlayScale'
+import { SongMetadata } from '../components/SongActions'
 
 export default ({ componentId, wide = false }: { componentId: string, wide?: boolean }) => {
   const musicInfo = usePlayerMusicInfo()
@@ -56,9 +57,9 @@ export default ({ componentId, wide = false }: { componentId: string, wide?: boo
       </Animated.View>
       <Animated.View style={[styles.trackInfo, wide && { width: '84%', marginTop: 12 }, infoAnimation]}>
         <Text size={20} style={styles.title} color={theme['q-text-primary']} numberOfLines={1}>{musicInfo.name}</Text>
-        <Text size={13} color={theme['q-text-secondary']} numberOfLines={1}>{musicInfo.singer}</Text>
+        <SongMetadata size={13} />
         {musicInfo.album && musicInfo.album != musicInfo.name
-          ? <Text size={12} style={styles.album} color={theme['q-text-secondary']} numberOfLines={1}>{musicInfo.album}</Text>
+          ? <SongMetadata album size={12} />
           : null}
       </Animated.View>
     </View>
@@ -87,8 +88,5 @@ const styles = createStyle({
   title: {
     fontWeight: '700',
     marginBottom: 6,
-  },
-  album: {
-    marginTop: 4,
   },
 })

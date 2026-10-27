@@ -1,3 +1,4 @@
+import { resolveCustomMusicUrl } from './userApiFallback'
 import musicSdk, { findMusic } from '@/utils/musicSdk'
 import {
   // getOtherSource as getOtherSourceFromStore,
@@ -156,7 +157,9 @@ export const getOnlineOtherSourceMusicUrlByLocal = async(musicInfo: LX.Music.Mus
   url: string
   quality: LX.Quality
   isFromCache: boolean
+  providerId?: string
 }> => {
+  if (isCustomApiSource()) return resolveCustomMusicUrl(musicInfo, '128k', isRefresh)
   if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
 
   const quality = '128k'
@@ -247,7 +250,9 @@ export const getPlayQuality = (highQuality: LX.Quality, musicInfo: LX.Music.Musi
   return getPlayQualityCandidates(highQuality, musicInfo)[0]
 }
 
-const getApiMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, isRefresh: boolean) => {
+const getApiMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, isRefresh: boolean, signal?: AbortSignal) => {
+  if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
+  if (isCustomApiSource()) return resolveCustomMusicUrl(musicInfo, quality, isRefresh, signal)
   if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
   if (!assertApiSupport(musicInfo.source)) throw new Error('source not supported by current API')
 
@@ -273,23 +278,26 @@ const getApiMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Qu
   throw lastError instanceof Error ? lastError : new Error('music API routes exhausted')
 }
 
-export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggleSource, isRefresh, retryedSource = [] }: {
+export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggleSource, isRefresh, signal, retryedSource = [] }: {
   musicInfos: LX.Music.MusicInfoOnline[]
   quality?: LX.Quality
   onToggleSource: (musicInfo?: LX.Music.MusicInfoOnline) => void
   isRefresh: boolean
   retryedSource?: LX.OnlineSource[]
+  signal?: AbortSignal
 }): Promise<{
   url: string
   musicInfo: LX.Music.MusicInfoOnline
   quality: LX.Quality
   isFromCache: boolean
   isOfficial?: boolean
+  providerId?: string
 }> => {
   let lastError: unknown
   let musicInfo: LX.Music.MusicInfoOnline | undefined
   const preferCustomApi = isCustomApiSource()
   while ((musicInfo = musicInfos.shift())) {
+    if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
     if (retryedSource.includes(musicInfo.source)) continue
     retryedSource.push(musicInfo.source)
     console.log('try toggle to: ', musicInfo.source, musicInfo.name, musicInfo.singer, musicInfo.interval)
@@ -301,9 +309,10 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
     }
 
     try {
-      const result = await getApiMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh)
+      const result = await getApiMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh, signal)
       return { musicInfo, ...result }
     } catch (error: any) {
+      if (signal?.aborted === true || error.message === requestMsg.cancelRequest) throw error
       lastError = error
       if (!preferCustomApi && error.message == requestMsg.tooManyRequests) throw error
     }
@@ -322,7 +331,8 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
 /**
  * 获取在线音乐URL
  */
-export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSource, isRefresh, allowToggleSource }: {
+export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSource, isRefresh, allowToggleSource, signal }: {
+  signal?: AbortSignal
   musicInfo: LX.Music.MusicInfoOnline
   quality?: LX.Quality
   isRefresh: boolean
@@ -334,7 +344,9 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   quality: LX.Quality
   isFromCache: boolean
   isOfficial?: boolean
+  providerId?: string
 }> => {
+  if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
   const targetQuality = quality ?? settingState.setting['player.playQuality']
   const preferCustomApi = isCustomApiSource()
   let routeError: any
@@ -345,9 +357,10 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   }
 
   try {
-    const result = await getApiMusicUrl(musicInfo, targetQuality, isRefresh)
+    const result = await getApiMusicUrl(musicInfo, targetQuality, isRefresh, signal)
     return { musicInfo, ...result }
   } catch (err: any) {
+    if (signal?.aborted === true || err.message === requestMsg.cancelRequest) throw err
     routeError = err
     console.warn('[music] selected API route unavailable', musicInfo.source, err)
   }
@@ -367,6 +380,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
     quality: targetQuality,
     isRefresh,
     retryedSource: [musicInfo.source],
+    signal,
   })
 }
 

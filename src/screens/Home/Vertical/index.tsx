@@ -9,18 +9,19 @@ import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 
 export default () => {
   const [dockHeight, setDockHeight] = useState(0)
-  const { wide } = useAdaptiveLayout()
+  const { wide, navigationPosition } = useAdaptiveLayout()
   return (
     <DockInsetContext.Provider value={wide ? 0 : dockHeight}>
       <View style={styles.shell}>
-        {wide ? <Aside /> : null}
+        {navigationPosition == 'left' ? <Aside /> : null}
         <View style={styles.main}>
           <Content />
           <View pointerEvents="box-none" style={wide ? styles.wideDock : styles.dock} onLayout={event => { setDockHeight(event.nativeEvent.layout.height) }}>
             <PlayerBar isHome />
-            {!wide ? <BottomNav /> : null}
+            {navigationPosition == 'bottom' ? <BottomNav /> : null}
           </View>
         </View>
+        {navigationPosition == 'right' ? <Aside /> : null}
       </View>
     </DockInsetContext.Provider>
   )

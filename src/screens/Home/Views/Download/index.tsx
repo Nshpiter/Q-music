@@ -1,3 +1,4 @@
+import DownloadLocationEntry from '@/components/DownloadLocationEntry'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, FlatList, ScrollView, View } from 'react-native'
 
@@ -165,6 +166,7 @@ export default () => {
   return (
     <View style={{ ...styles.container, backgroundColor: theme['c-main-background'] }}>
       <View style={styles.content}>
+        <DownloadLocationEntry />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterBar} contentContainerStyle={styles.filters}>
           {filters.map(key => (
             <Button key={key} accessibilityRole="tab" accessibilityState={{ selected: key == filter }} style={[styles.filter, { borderColor: key == filter ? theme['q-accent'] : theme['q-outline'], backgroundColor: key == filter ? theme['q-surface-tint'] : theme['q-surface-raised'] }]} onPress={() => {

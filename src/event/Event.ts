@@ -25,7 +25,8 @@ export default class Event {
     setImmediate(() => {
       let targetListeners = this.listeners.get(eventName)
       if (!targetListeners) return
-      for (const listener of targetListeners) {
+      // 布局更新会在回调中重新挂载控件并增删订阅；遍历快照避免漏掉后续控件。
+      for (const listener of [...targetListeners]) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         listener(...args)
       }
