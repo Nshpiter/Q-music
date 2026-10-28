@@ -1,11 +1,12 @@
 /** 自定义脚本之间的备用切换；不修改用户选中的主源，也不负责跨平台找歌。 */
 const QUALITY_ORDER: LX.Quality[] = ['flac24bit', 'flac', 'wav', 'ape', '320k', '192k', '128k']
 export const USER_API_CANCELLED = 'Cancel request'
+export type UserApiProviderScope = 'all' | 'primary' | 'backup'
 
-export const getUserApiProviderIds = (primary: string, backups: readonly string[], imported: ReadonlyArray<{ id: string }>) => {
+export const getUserApiProviderIds = (primary: string, backups: readonly string[], imported: ReadonlyArray<{ id: string }>, scope: UserApiProviderScope = 'all') => {
   if (!/^user_api/.test(primary)) return []
   const known = new Set(imported.map(api => api.id))
-  return [...new Set([primary, ...backups])].filter(id => known.has(id))
+  return [...new Set([primary, ...backups])].filter(id => known.has(id) && (scope === 'all' || (scope === 'primary' ? id === primary : id !== primary)))
 }
 
 export interface UserApiUrlResult {
@@ -36,7 +37,8 @@ interface FallbackOptions {
 
 export const resolveUserApiFallback = async(options: FallbackOptions): Promise<UserApiUrlResult> => {
   const deadline = Date.now() + (options.budgetMs ?? 40_000)
-  const timeoutMs = options.timeoutMs ?? 8_000
+  // 取址沿用宿主的 20 秒上限，不能因为启用备用就提前放弃仍在响应的主源。
+  const timeoutMs = options.timeoutMs ?? 20_000
   const assertCurrent = () => {
     if (options.signal?.aborted === true || options.isCurrent?.() === false) throw new Error(USER_API_CANCELLED)
   }

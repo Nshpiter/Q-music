@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "test:mobile-navigation": "node --test scripts/verify-setting-navigation.cjs scripts/verify-settings-search-download.cjs scripts/verify-netease-login-page.cjs scripts/verify-music-login.cjs scripts/verify-qq-authorization.cjs",
-    "test:api-fallback": "node --test scripts/verify-user-api-fallback.cjs scripts/verify-user-api-runtime.cjs",
+    "test:api-fallback": "node --test scripts/verify-user-api-fallback.cjs scripts/verify-user-api-runtime.cjs scripts/verify-user-api-routing.cjs",
     "test:feedback": "node --test scripts/verify-lyric-copy.cjs scripts/verify-music-accounts.cjs scripts/verify-playback-recovery.cjs scripts/verify-native-playback-cancel.cjs",
     "test:account-transfer": "node --test scripts/verify-account-transfer.cjs",
     "postinstall": "node scripts/patch-android-dependencies.cjs",

@@ -41,6 +41,25 @@ test('primary success never initializes a backup', async() => {
   assert.equal(result.isFromCache, false)
   assert.deepEqual(h.calls, [`init:${primary}`])
 })
+
+test('primary-only and backup-only phases never promote or duplicate the primary source', () => {
+  const imported = [{ id: primary }, { id: backup }]
+  assert.deepEqual(Array.from(getUserApiProviderIds(primary, [backup, primary], imported, 'primary')), [primary])
+  assert.deepEqual(Array.from(getUserApiProviderIds(primary, [backup, primary], imported, 'backup')), [backup])
+  assert.deepEqual(Array.from(getUserApiProviderIds('user_api_deleted', [backup], imported, 'primary')), [])
+})
+
+test('an expired cached URL is skipped and refreshed on the primary before any backup', async() => {
+  const h = harness({
+    excludedUrls: new Set(['https://music.example/expired.mp3']),
+    readCache: async() => 'https://music.example/expired.mp3',
+    request: () => ({ promise: Promise.resolve('https://music.example/fresh.mp3') }),
+  })
+  const result = await h.run()
+  assert.equal(result.url, 'https://music.example/fresh.mp3')
+  assert.equal(result.providerId, primary)
+  assert.deepEqual(h.calls, [`init:${primary}`])
+})
 test('failed primary falls back in order and reports the actual provider', async() => {
   const h = harness()
   const result = await h.run()

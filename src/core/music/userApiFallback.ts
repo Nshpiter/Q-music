@@ -1,4 +1,4 @@
-import { getUserApiProviderIds, resolveUserApiFallback, USER_API_CANCELLED } from '@/utils/userApiFallback'
+import { getUserApiProviderIds, resolveUserApiFallback, USER_API_CANCELLED, type UserApiProviderScope } from '@/utils/userApiFallback'
 import { loadUserApiRuntime, requestUserApi } from '@/core/userApiRuntime'
 import settingState from '@/store/setting/state'
 import { state } from '@/store/userApi'
@@ -13,7 +13,7 @@ export const excludeFailedUserApiUrl = (url: string) => {
   if (failedUrls.size > 80) failedUrls.delete(failedUrls.keys().next().value!)
 }
 
-export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, quality: LX.Quality, isRefresh: boolean, signal?: AbortSignal) => {
+export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, quality: LX.Quality, isRefresh: boolean, signal?: AbortSignal, providerScope: UserApiProviderScope = 'all') => {
   const controller = new AbortController()
   const cancel = () => { controller.abort() }
   const onConfigChanged = (keys: Array<keyof LX.AppSetting>) => {
@@ -24,7 +24,7 @@ export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, qualit
   global.state_event.on('configUpdated', onConfigChanged)
   try {
     for (const [url, expiresAt] of failedUrls) if (expiresAt <= Date.now()) failedUrls.delete(url)
-    const providers = getUserApiProviderIds(settingState.setting['common.apiSource'], settingState.setting['common.apiBackupSources'], state.list)
+    const providers = getUserApiProviderIds(settingState.setting['common.apiSource'], settingState.setting['common.apiBackupSources'], state.list, providerScope)
     const result = await resolveUserApiFallback({
       providers,
       source: musicInfo.source,

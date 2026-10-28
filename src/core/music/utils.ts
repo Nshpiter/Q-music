@@ -1,4 +1,5 @@
 import { resolveCustomMusicUrl } from './userApiFallback'
+import type { UserApiProviderScope } from '@/utils/userApiFallback'
 import musicSdk, { findMusic } from '@/utils/musicSdk'
 import {
   // getOtherSource as getOtherSourceFromStore,
@@ -250,9 +251,9 @@ export const getPlayQuality = (highQuality: LX.Quality, musicInfo: LX.Music.Musi
   return getPlayQualityCandidates(highQuality, musicInfo)[0]
 }
 
-const getApiMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, isRefresh: boolean, signal?: AbortSignal) => {
+const getApiMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, isRefresh: boolean, signal?: AbortSignal, providerScope: UserApiProviderScope = 'all') => {
   if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
-  if (isCustomApiSource()) return resolveCustomMusicUrl(musicInfo, quality, isRefresh, signal)
+  if (isCustomApiSource()) return resolveCustomMusicUrl(musicInfo, quality, isRefresh, signal, providerScope)
   if (!await global.lx.apiInitPromise[0]) throw new Error('source init failed')
   if (!assertApiSupport(musicInfo.source)) throw new Error('source not supported by current API')
 
@@ -309,7 +310,7 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
     }
 
     try {
-      const result = await getApiMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh, signal)
+      const result = await getApiMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh, signal, preferCustomApi ? 'primary' : 'all')
       return { musicInfo, ...result }
     } catch (error: any) {
       if (signal?.aborted === true || error.message === requestMsg.cancelRequest) throw error
@@ -320,6 +321,15 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
     if (preferCustomApi) {
       const officialResult = await getOfficialMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh)
       if (officialResult) return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
+      if (settingState.setting['common.apiBackupSources'].length) {
+        try {
+          const result = await getApiMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh, signal, 'backup')
+          return { musicInfo, ...result }
+        } catch (error: any) {
+          if (signal?.aborted === true || error.message === requestMsg.cancelRequest) throw error
+          lastError = error
+        }
+      }
       if ((lastError as Error | undefined)?.message == requestMsg.tooManyRequests) {
         throw lastError instanceof Error ? lastError : new Error(requestMsg.tooManyRequests)
       }
@@ -357,7 +367,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   }
 
   try {
-    const result = await getApiMusicUrl(musicInfo, targetQuality, isRefresh, signal)
+    const result = await getApiMusicUrl(musicInfo, targetQuality, isRefresh, signal, preferCustomApi ? 'primary' : 'all')
     return { musicInfo, ...result }
   } catch (err: any) {
     if (signal?.aborted === true || err.message === requestMsg.cancelRequest) throw err
@@ -368,6 +378,16 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   if (preferCustomApi) {
     const officialResult = await getOfficialMusicUrl(musicInfo, targetQuality, isRefresh)
     if (officialResult) return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
+    // 与不开备用时保持相同的主源/官方顺序，二者都不可用才追加备用。
+    if (settingState.setting['common.apiBackupSources'].length) {
+      try {
+        const result = await getApiMusicUrl(musicInfo, targetQuality, isRefresh, signal, 'backup')
+        return { musicInfo, ...result }
+      } catch (error: any) {
+        if (signal?.aborted === true || error.message === requestMsg.cancelRequest) throw error
+        routeError = error
+      }
+    }
   }
 
   if (!allowToggleSource || routeError?.message == requestMsg.tooManyRequests) throw routeError
