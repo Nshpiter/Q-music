@@ -7,14 +7,14 @@ import TransportButton from '@/components/player/TransportButton'
 import { useGlassColors } from '@/components/common/GlassSurface'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 
-export default () => {
+export default ({ compact = false }: { compact?: boolean }) => {
   const isPlay = usePlayControlState()
   const colors = useGlassColors()
   const { isCar, wide } = useAdaptiveLayout()
   const targetSize = isCar ? 56 : wide ? 48 : 40
   const queueRef = useRef<PlayQueueType>(null)
   return <View style={styles.container}>
-    <TransportButton color={colors.primary} icon="prevMusic" label={global.i18n.t('play_prev')} size={targetSize} iconSize={isCar ? 25 : wide ? 21 : 17} onPress={() => { void playPrev() }} />
+    {!compact ? <TransportButton color={colors.primary} icon="prevMusic" label={global.i18n.t('play_prev')} size={targetSize} iconSize={isCar ? 25 : wide ? 21 : 17} onPress={() => { void playPrev() }} /> : null}
     <View style={[styles.primaryTarget, wide && { width: 52, height: 56 }, isCar && { width: 64, height: 64 }]}>
       <TransportButton color={colors.primary} icon={isPlay ? 'pause' : 'play'} label={global.i18n.t(isPlay ? 'pause' : 'play')} primary size={isCar ? 64 : wide ? 52 : 44} faceSize={isCar ? 48 : wide ? 38 : 30} iconSize={isCar ? 23 : wide ? 19 : 15} onPress={togglePlay} />
     </View>

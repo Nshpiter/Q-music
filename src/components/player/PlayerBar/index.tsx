@@ -26,17 +26,17 @@ export default memo(({ isHome = false, onOpenDetail }: { isHome?: boolean, onOpe
   const playerComponent = useMemo(() => (
     <GlassSurface
       radius={Q_UI.radius.miniPlayer}
-      onLayout={event => { setCompact(event.nativeEvent.layout.width < (isCar ? 480 : wide ? 390 : 330)) }}
+      onLayout={event => { setCompact(event.nativeEvent.layout.width < (isCar ? 480 : wide ? 390 : 288)) }}
       style={[styles.container, wide && styles.wideContainer]}
     >
       {artworkUri ? <Image source={{ uri: artworkUri, headers: defaultHeaders }} resizeMode="cover" blurRadius={24} style={styles.ambientArt} /> : null}
       <View style={styles.topRow}>
-        {!compact ? <Pic isHome={isHome} onOpenDetail={onOpenDetail} /> : null}
-        <View style={[styles.trackInfo, compact && styles.compactInfo]}>
+        <Pic isHome={isHome} onOpenDetail={onOpenDetail} />
+        <View style={styles.trackInfo}>
           <Title isHome={isHome} onOpenDetail={onOpenDetail} />
         </View>
-        <View style={[styles.controls, wide && { width: 196 }, isCar && { width: 232 }]}>
-          <ControlBtn />
+        <View style={[styles.controls, { width: isCar ? (compact ? 176 : 232) : wide ? (compact ? 148 : 196) : compact ? 124 : 164 }]}>
+          <ControlBtn compact={compact} />
         </View>
       </View>
       <PlayInfo isHome={isHome} />
@@ -80,7 +80,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     overflow: 'hidden',
   },
-  compactInfo: { paddingLeft: 2 },
   controls: {
     width: 164,
     flexShrink: 0,

@@ -1,5 +1,5 @@
 import { forwardRef, type Ref, useImperativeHandle, useMemo, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import DorpDownMenu, { type DorpDownMenuProps as _DorpDownMenuProps } from '@/components/common/DorpDownMenu'
 import Text from '@/components/common/Text'
@@ -9,6 +9,8 @@ import { Icon } from '@/components/common/Icon'
 import { useTheme } from '@/store/theme/hook'
 import { Q_UI } from '@/theme/ui'
 import { useWindowSize } from '@/utils/hooks'
+import { getTextSize } from '@/utils/pixelRatio'
+import { useFontSize } from '@/store/common/hook'
 
 type Sources = Readonly<Array<LX.OnlineSource | 'all'>>
 
@@ -48,6 +50,8 @@ const Component = <S extends Sources>({ fontSize = 15, center, plain = false, ic
   const t = useI18n()
   const theme = useTheme()
   const { width: windowWidth } = useWindowSize()
+  const { fontScale } = useWindowDimensions()
+  const appFontScale = useFontSize()
 
   useImperativeHandle(ref, () => ({
     setSourceList(list, activeSource) {
@@ -70,9 +74,10 @@ const Component = <S extends Sources>({ fontSize = 15, center, plain = false, ic
   const currentSource = source ?? list[0] ?? 'all'
   const normalizedCurrentSource = normalizeSource(currentSource)
   const sourceLabel = t(`source_real_${currentSource}`) || SOURCE_LOGOS[normalizedCurrentSource]?.label || currentSource
-  // Keep the popup wide enough for localized provider names, but let it
-  // shrink on very narrow Android windows instead of running off-screen.
-  const sourceMenuWidth = Math.min(224, Math.max(168, windowWidth - 24))
+  // 按平台名称和字号保留文字、图标及勾选空间，避免固定宽度留下大块空白。
+  const longestLabel = Math.max(0, ...sourceList_t.map(({ label }) => Array.from(label)
+    .reduce((width, char) => width + (char.codePointAt(0)! > 255 ? 1 : 0.62), 0)))
+  const sourceMenuWidth = Math.min(windowWidth - 16, Math.max(176, Math.ceil(100 + longestLabel * getTextSize(fontSize) * appFontScale * fontScale)))
 
   return (
     <DorpDownMenu
