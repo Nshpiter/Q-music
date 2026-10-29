@@ -279,6 +279,22 @@ const getApiMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Qu
   throw lastError instanceof Error ? lastError : new Error('music API routes exhausted')
 }
 
+const getOfficialMusicUrlWithSignal = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, isRefresh: boolean, signal?: AbortSignal) => {
+  if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
+  if (!signal) return getOfficialMusicUrl(musicInfo, quality, isRefresh)
+  let cancel!: () => void
+  const cancelled = new Promise<never>((resolve, reject) => {
+    cancel = () => { reject(new Error(requestMsg.cancelRequest)) }
+    signal.addEventListener('abort', cancel, { once: true })
+  })
+  try {
+    // 官方接口可能仍在返回；取消播放后不能采用旧结果，也不能继续启动备用源。
+    return await Promise.race([getOfficialMusicUrl(musicInfo, quality, isRefresh), cancelled])
+  } finally {
+    signal.removeEventListener('abort', cancel)
+  }
+}
+
 export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggleSource, isRefresh, signal, retryedSource = [] }: {
   musicInfos: LX.Music.MusicInfoOnline[]
   quality?: LX.Quality
@@ -305,7 +321,7 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
     onToggleSource(musicInfo)
 
     if (!preferCustomApi) {
-      const officialResult = await getOfficialMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh)
+      const officialResult = await getOfficialMusicUrlWithSignal(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh, signal)
       if (officialResult) return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
     }
 
@@ -313,20 +329,22 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
       const result = await getApiMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh, signal, preferCustomApi ? 'primary' : 'all')
       return { musicInfo, ...result }
     } catch (error: any) {
-      if (signal?.aborted === true || error.message === requestMsg.cancelRequest) throw error
+      if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
+      if (error.message === requestMsg.cancelRequest) throw error
       lastError = error
       if (!preferCustomApi && error.message == requestMsg.tooManyRequests) throw error
     }
 
     if (preferCustomApi) {
-      const officialResult = await getOfficialMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh)
+      const officialResult = await getOfficialMusicUrlWithSignal(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh, signal)
       if (officialResult) return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
       if (settingState.setting['common.apiBackupSources'].length) {
         try {
           const result = await getApiMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh, signal, 'backup')
           return { musicInfo, ...result }
         } catch (error: any) {
-          if (signal?.aborted === true || error.message === requestMsg.cancelRequest) throw error
+          if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
+          if (error.message === requestMsg.cancelRequest) throw error
           lastError = error
         }
       }
@@ -362,7 +380,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   let routeError: any
 
   if (!preferCustomApi) {
-    const officialResult = await getOfficialMusicUrl(musicInfo, targetQuality, isRefresh)
+    const officialResult = await getOfficialMusicUrlWithSignal(musicInfo, targetQuality, isRefresh, signal)
     if (officialResult) return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
   }
 
@@ -370,13 +388,14 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
     const result = await getApiMusicUrl(musicInfo, targetQuality, isRefresh, signal, preferCustomApi ? 'primary' : 'all')
     return { musicInfo, ...result }
   } catch (err: any) {
-    if (signal?.aborted === true || err.message === requestMsg.cancelRequest) throw err
+    if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
+    if (err.message === requestMsg.cancelRequest) throw err
     routeError = err
     console.warn('[music] selected API route unavailable', musicInfo.source, err)
   }
 
   if (preferCustomApi) {
-    const officialResult = await getOfficialMusicUrl(musicInfo, targetQuality, isRefresh)
+    const officialResult = await getOfficialMusicUrlWithSignal(musicInfo, targetQuality, isRefresh, signal)
     if (officialResult) return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
     // 与不开备用时保持相同的主源/官方顺序，二者都不可用才追加备用。
     if (settingState.setting['common.apiBackupSources'].length) {
@@ -384,7 +403,8 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
         const result = await getApiMusicUrl(musicInfo, targetQuality, isRefresh, signal, 'backup')
         return { musicInfo, ...result }
       } catch (error: any) {
-        if (signal?.aborted === true || error.message === requestMsg.cancelRequest) throw error
+        if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
+        if (error.message === requestMsg.cancelRequest) throw error
         routeError = error
       }
     }

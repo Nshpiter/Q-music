@@ -15,7 +15,7 @@ function load(file, dependencies = {}, globals = {}) {
   }).outputText, context)
   return context.exports
 }
-function harness({ primaryFails = true, officialAvailable = true, backups = ['user_api_backup'], signal } = {}) {
+function harness({ primaryFails = true, officialAvailable = true, backups = ['user_api_backup'], signal, officialResponse } = {}) {
   const calls = []
   const setting = { 'common.apiSource': 'user_api_primary', 'common.apiBackupSources': backups, 'player.playQuality': '128k' }
   const song = { id: 'tx_test', source: 'tx', name: 'test', singer: 'artist', meta: {} }
@@ -34,6 +34,7 @@ function harness({ primaryFails = true, officialAvailable = true, backups = ['us
   }
   const official = async() => {
     calls.push('official')
+    if (officialResponse) return officialResponse()
     return officialAvailable ? { status: 'available', url: 'https://audio.test/official.mp3', quality: '128k' } : null
   }
   const requestMsg = { cancelRequest: 'Cancel request', tooManyRequests: '429', timeout: 'timeout', notConnectNetwork: 'offline', unachievable: 'unreachable' }
@@ -77,6 +78,23 @@ test('已取消的播放不能发出官方或备用请求', async() => {
   const h = harness({ signal: controller.signal })
   await assert.rejects(h.run(), /Cancel request/)
   assert.deepEqual(h.calls, [])
+})
+
+test('等待官方地址期间取消，迟到的结果不能恢复旧歌曲或启动备用源', async() => {
+  for (const route of ['run', 'alternate']) {
+    const controller = new AbortController()
+    let started, release
+    const ready = new Promise(resolve => { started = resolve })
+    const pending = new Promise(resolve => { release = resolve })
+    const h = harness({ signal: controller.signal, officialResponse: () => { started(); return pending } })
+    const result = h[route]()
+    await ready
+    const rejected = assert.rejects(result, /Cancel request/)
+    controller.abort()
+    release({ status: 'available', url: 'https://audio.test/stale.mp3', quality: '128k' })
+    await rejected
+    assert.deepEqual(h.calls, ['user_api_primary', 'official'])
+  }
 })
 
 test('跨平台候选也不会让备用脚本抢占可用的官方线路', async() => {

@@ -51,12 +51,13 @@ export const resolveUserApiFallback = async(options: FallbackOptions): Promise<U
         operation.promise,
         new Promise<T>((resolve, reject) => {
           timer = setTimeout(() => {
-            operation.cancel?.()
+            // 先确定超时结果，再清理请求；取消回调也可能拒绝 Promise，不能被误判为用户取消。
             reject(new Error('music API request timeout'))
+            operation.cancel?.()
           }, Math.max(1, Math.min(timeoutMs, deadline - Date.now())))
           abort = () => {
-            operation.cancel?.()
             reject(new Error(USER_API_CANCELLED))
+            operation.cancel?.()
           }
           options.signal?.addEventListener('abort', abort, { once: true })
         }),

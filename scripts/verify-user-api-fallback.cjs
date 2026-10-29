@@ -7,7 +7,7 @@ const ts = require('typescript')
 const root = path.join(__dirname, '..')
 const mobile = fs.existsSync(path.join(root, 'src/utils/userApiFallback.ts'))
 const source = mobile ? 'src/utils/userApiFallback.ts' : 'src/common/utils/userApiFallback.ts'
-const sandbox = { exports: {}, setTimeout, clearTimeout, AbortController, Date }
+const sandbox = { exports: {}, setTimeout, clearTimeout, AbortController, Date, Promise }
 vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(root, source), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText, sandbox)
@@ -67,6 +67,17 @@ test('failed primary falls back in order and reports the actual provider', async
   assert.equal(result.providerName, backup)
   assert.deepEqual(h.calls, [`init:${primary}`, `request:${primary}:128k`, `init:${backup}`, `request:${backup}:128k`])
 })
+test('QQ, NetEase and Kugou each fall back without changing the song platform', async() => {
+  for (const source of ['tx', 'wy', 'kg']) {
+    const requests = []
+    const h = harness({ source, getInfo: async id => ({ id, name: id, sources: { [source]: { type: 'music', actions: ['musicUrl'], qualitys: ['128k'] } } }),
+      request: id => { requests.push(id); return { promise: id === primary ? Promise.reject(Error('network error')) : Promise.resolve('https://music.example/backup.mp3') } },
+    })
+    assert.equal((await h.run()).providerId, backup)
+    assert.deepEqual(requests, [primary, backup])
+  }
+})
+
 test('a primary init failure does not block a healthy backup', async() => {
   const h = harness({ getInfo: async id => { if (id === primary) throw Error('source init failed'); return info(id) } })
   assert.equal((await h.run()).providerId, backup)
@@ -94,6 +105,16 @@ test('timeout cancels the stalled request and proceeds to backup', async() => {
   assert.equal((await h.run()).providerId, backup)
   assert.equal(cancelled, 1)
 })
+test('timeout still falls back when cancelling rejects the pending operation', async() => {
+  const pending = deferred()
+  let cancelled = 0
+  const h = harness({ request: id => id === primary
+    ? { promise: pending.promise, cancel: () => { cancelled++; pending.reject(Error(USER_API_CANCELLED)) } }
+    : { promise: Promise.resolve('https://music.example/backup.mp3') } })
+  assert.equal((await h.run()).providerId, backup)
+  assert.equal(cancelled, 1)
+})
+
 test('invalid and previously failed URLs fall through to the next script', async() => {
   for (const failedUrl of ['', 'javascript:alert(1)', 'https://music.example/bad.mp3']) {
     const h = harness({ excludedUrls: new Set(['https://music.example/bad.mp3']), request: id => ({ promise: Promise.resolve(id === primary ? failedUrl : 'https://music.example/good.mp3') }) })

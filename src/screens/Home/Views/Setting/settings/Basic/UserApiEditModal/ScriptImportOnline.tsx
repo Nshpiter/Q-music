@@ -1,4 +1,4 @@
-import { useRef, useImperativeHandle, forwardRef, useState } from 'react'
+import { useRef, useImperativeHandle, forwardRef, useState, useEffect, useCallback } from 'react'
 import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/ConfirmAlert'
 import Text from '@/components/common/Text'
 import { View } from 'react-native'
@@ -8,6 +8,7 @@ import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { httpFetch } from '@/utils/request'
 import { handleImportScript } from './action'
+import { createUserApiImporter } from '@/utils/userApiImport'
 
 interface UrlInputType {
   setText: (text: string) => void
@@ -56,13 +57,28 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
   const urlInputRef = useRef<UrlInputType>(null)
   const [visible, setVisible] = useState(false)
   const [btn, setBtn] = useState({ disabled: false, text: t('user_api_btn_import_online_input_confirm') })
+  const [importer] = useState(() => createUserApiImporter(url => httpFetch(url)))
+  const openRef = useRef(false)
+  const busyRef = useRef(false)
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout>>()
+
+  const cancelImport = useCallback(() => {
+    openRef.current = false
+    busyRef.current = false
+    clearTimeout(focusTimerRef.current)
+    importer.cancel()
+  }, [importer])
+  useEffect(() => cancelImport, [cancelImport])
 
   const handleShow = () => {
+    cancelImport()
+    openRef.current = true
     alertRef.current?.setVisible(true)
     setBtn({ disabled: false, text: t('user_api_btn_import_online_input_confirm') })
     requestAnimationFrame(() => {
+      if (!openRef.current) return
       urlInputRef.current?.setText('')
-      setTimeout(() => {
+      focusTimerRef.current = setTimeout(() => {
         urlInputRef.current?.focus()
       }, 300)
     })
@@ -80,35 +96,26 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
   }))
 
   const handleImport = async() => {
-    let url = urlInputRef.current?.getText() ?? ''
-    if (!/^https?:\/\//.test(url)) {
-      url = ''
-      urlInputRef.current?.setText('')
-    }
-    if (!url.length) return
+    if (busyRef.current || !openRef.current) return
+    busyRef.current = true
     setBtn({ disabled: true, text: t('user_api_btn_import_online_input_loading') })
-    let script: string
     try {
-      script = await httpFetch(url).promise.then(resp => resp.body) as string
+      const script = await importer.load(urlInputRef.current?.getText() ?? '')
+      if (script == null) return
+      void handleImportScript(script)
+      alertRef.current?.setVisible(false)
     } catch (err: any) {
       toast(t('user_api_import_failed_tip', { message: err.message }), 'long')
-      return
-    } finally {
-      setBtn({ disabled: false, text: t('user_api_btn_import_online_input_confirm') })
     }
-    if (script.length > 9_000_000) {
-      toast(t('user_api_import_failed_tip', { message: 'Too large script' }), 'long')
-      return
-    }
-    void handleImportScript(script)
-
-    alertRef.current?.setVisible(false)
+    busyRef.current = false
+    setBtn({ disabled: false, text: t('user_api_btn_import_online_input_confirm') })
   }
 
   return (
     visible
       ? <ConfirmAlert
           ref={alertRef}
+          onHide={cancelImport}
           onConfirm={handleImport}
           disabledConfirm={btn.disabled}
           confirmText={btn.text}
@@ -132,7 +139,7 @@ const styles = createStyle({
   input: {
     flexGrow: 1,
     flexShrink: 1,
-    minWidth: 290,
+    minWidth: 0,
     borderRadius: 4,
     // paddingTop: 2,
     // paddingBottom: 2,
