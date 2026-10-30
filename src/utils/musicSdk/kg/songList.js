@@ -3,6 +3,25 @@ import { decodeName, formatPlayTime, sizeFormate, dateFormat, formatPlayCount } 
 import infSign from './vendors/infSign.min'
 import { signatureParams } from './util'
 
+// React Native 的内置 URL(base) 不按浏览器规则处理相对地址，两端统一解析分享重定向。
+const resolveShareRedirect = (location, base) => {
+  if (/^https?:\/\//i.test(location)) return location
+  const match = /^(https?:)\/\/([^/?#]+)([^?#]*)/i.exec(base)
+  if (!match || /^[a-z][\w+.-]*:/i.test(location)) throw new Error('invalid_link')
+  if (location.startsWith('//')) return match[1] + location
+  const origin = `${match[1]}//${match[2]}`
+  if (location.startsWith('?')) return origin + (match[3] || '/') + location
+  const path = location.startsWith('/') ? location : (match[3] || '/').replace(/[^/]*$/, '') + location
+  const index = path.search(/[?#]/)
+  const segments = []
+  for (const part of (index < 0 ? path : path.slice(0, index)).split('/')) {
+    if (part == '..') {
+      if (segments.length > 1) segments.pop()
+    } else if (part != '.') segments.push(part)
+  }
+  return origin + segments.join('/') + (index < 0 ? '' : path.slice(index))
+}
+
 const handleSignature = (id, page, limit) => new Promise((resolve, reject) => {
   infSign({ appid: 1058, type: 0, module: 'playlist', page, pagesize: limit, specialid: id }, null, {
     useH5: !0,
@@ -262,23 +281,15 @@ export default {
   async createHttp(url, options, retryNum = 0) {
     if (retryNum > 2) throw new Error('try max num')
     let result
-    options.cache = 'default'
     try {
       result = await httpFetch(url, options).promise
     } catch (err) {
-      console.log(err)
       return this.createHttp(url, options, ++retryNum)
     }
-    // console.log(result.statusCode, result.body)
-    if (result.statusCode !== 200 ||
-      (
-        (result.body.error_code !== undefined
-          ? result.body.error_code
-          : result.body.errcode !== undefined
-            ? result.body.errcode
-            : result.body.err_code
-        ) !== 0)
-    ) return this.createHttp(url, options, ++retryNum)
+    const code = Number(result.body?.error_code ?? result.body?.errcode ?? result.body?.err_code)
+    if (code == 20028) throw new Error('verification_required')
+    if (result.statusCode == 401 || /未登[录陆]|重新登[录陆]|登[录陆].*(?:失效|过期)|(?:token|session).*(?:expired|invalid)/i.test(String(result.body?.error_msg ?? result.body?.errmsg ?? ''))) throw new Error('login_required')
+    if (result.statusCode !== 200 || code !== 0) return this.createHttp(url, options, ++retryNum)
     if (result.body.data) return result.body.data
     if (Array.isArray(result.body.info)) return result.body
     return result.body.info
@@ -305,7 +316,7 @@ export default {
       if (list.length < 100) break
       list = list.slice(100)
     }
-    let url = 'http://gateway.kugou.com/v2/album_audio/audio'
+    let url = 'https://gateway.kugou.com/v2/album_audio/audio'
     return tasks.map(task => this.createHttp(url, {
       method: 'POST',
       body: task,
@@ -317,16 +328,22 @@ export default {
         'User-Agent': 'Android712-AndroidPhone-11451-376-0-FeeCacheUpdate-wifi',
         'x-router': 'kmr.service.kugou.com',
       },
-    }).then(data => data.map(s => s[0])))
+    }).then(data => {
+      if (!Array.isArray(data)) throw new Error('incomplete')
+      return data.map(group => Array.isArray(group) ? group[0] : group)
+    }))
   },
   /**
-   * @param {Array<{ hash: string }>} list
+   * @param {Array<{ hash: string, audio_id?: string | number }>} list
    * @param {{ requireComplete?: boolean, shouldCancel?: () => boolean }} [options]
    */
   async getMusicInfos(list, { requireComplete = false, shouldCancel = () => false } = {}) {
     const checkCancelled = () => { if (shouldCancel()) throw new Error('cancelled') }
     checkCancelled()
-    const requested = this.deDuplication(list.map(item => ({ hash: String(item.hash).toUpperCase() })))
+    if (!Array.isArray(list)) throw new Error('incomplete')
+    const requested = this.deDuplication(list.map(item => ({ hash: String(item.hash).toUpperCase(), ...(item.audio_id ? { audio_id: item.audio_id } : {}) })))
+    if (requested.some(item => !/^[a-f0-9]{32}$/i.test(item.hash))) throw new Error('incomplete')
+    if (!requested.length) return []
     const fetchDetails = async items => {
       const rows = (await Promise.all(this.createTask(items))).flat()
       checkCancelled()
@@ -337,10 +354,10 @@ export default {
 
     // 按文件 hash（包括不同音质）核对完整性，不能比较歌曲去重后的数量。
     const byHash = new Map()
+    const isValid = item => item?.audio_info && item.album_info && item.songname && item.audio_info.audio_id != null && /^[a-f0-9]{32}$/i.test(item.audio_info.hash)
     const remember = items => {
       for (const item of items) {
-        if (!item?.audio_info || !item.album_info || !item.songname || item.audio_info.audio_id == null ||
-          !/^[a-f0-9]{32}$/i.test(item.audio_info.hash)) continue
+        if (!isValid(item)) continue
         for (const [key, value] of Object.entries(item.audio_info)) {
           if (/^hash(?:_|$)/.test(key) && typeof value == 'string' && /^[a-f0-9]{32}$/i.test(value)) {
             const hash = value.toUpperCase()
@@ -353,6 +370,22 @@ export default {
     const missing = requested.filter(item => !byHash.has(item.hash))
     // 大批详情偶发漏项时只补查一次缺失项；仍不完整时不允许覆盖原列表。
     if (missing.length) remember(await fetchDetails(missing))
+    // 酷狗会将旧 hash 重定向到新版音频，不能据此判为缺歌，也不能按批量响应顺序猜对应关系。
+    // 对仍未匹配的 hash 单独查询，以唯一有效结果确认映射；最多并发四个请求。
+    const unresolved = requested.filter(item => !byHash.has(item.hash))
+    const requestedHashes = new Set(requested.map(item => item.hash))
+    for (let index = 0; index < unresolved.length; index += 4) {
+      checkCancelled()
+      await Promise.all(unresolved.slice(index, index + 4).map(async request => {
+        const details = (await fetchDetails([request])).filter(isValid)
+        if (details.length != 1) return
+        const item = details[0]
+        const canonical = item.audio_info.hash.toUpperCase()
+        if (request.audio_id != null && String(request.audio_id) != String(item.audio_info.audio_id)) return
+        if (canonical != request.hash && requestedHashes.has(canonical) && request.audio_id == null) return
+        byHash.set(request.hash, item)
+      }))
+    }
     const ordered = requested.map(item => byHash.get(item.hash))
     if (ordered.some(item => !item)) throw new Error('incomplete')
     return this.filterData2(ordered)
@@ -524,33 +557,44 @@ export default {
     return Promise.all(tasks).then(([...datas]) => datas.flat())
   },
   async getUserListDetail2(global_collection_id) {
-    let id = global_collection_id
-    if (id.length > 1000) throw new Error('get list error')
-    const params = 'appid=1058&specialid=0&global_specialid=' + id + '&format=jsonp&srcappid=2919&clientver=20000&clienttime=1586163242519&mid=1586163242519&uuid=1586163242519&dfid=-'
-    let info = await this.createHttp(`https://mobiles.kugou.com/api/v5/special/info_v2?${params}&signature=${signatureParams(params, 'web')}`, {
-      headers: {
-        mid: '1586163242519',
-        Referer: 'https://m3ws.kugou.com/share/index.php',
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1',
-        dfid: '-',
-        clienttime: '1586163242519',
-      },
-    })
-    const songInfo = await this.createGetListDetail2Task(id, info.songcount)
-    let list = await this.getMusicInfos(songInfo)
-    // console.log(info, songInfo, list)
+    const id = String(global_collection_id)
+    if (!/^\w{1,1000}$/.test(id)) throw new Error('invalid_link')
+    // 旧 special/song_v2 对分享歌单持续返回 20028，改用当前公开歌单接口。
+    const songs = []
+    let info
+    let total
+    const pages = new Set()
+    for (let page = 0; page < 1000; page++) {
+      const params = `dfid=-&appid=1005&mid=0&clientver=20489&clienttime=${Math.floor(Date.now() / 1000)}&uuid=-&area_code=1&begin_idx=${songs.length}&plat=1&type=1&mode=1&personal_switch=1&pagesize=300&global_collection_id=${id}`
+      const data = await this.createHttp(`https://gateway.kugou.com/pubsongs/v2/get_other_list_file_nofilt?${params}&signature=${signatureParams(params)}`)
+      const count = Number(data.count)
+      if (!Array.isArray(data.songs) || !Number.isSafeInteger(count) || count < 0 || count > 100000 || (total != null && total != count)) throw new Error('incomplete')
+      total = count
+      info = info ?? data.list_info
+      const pageKey = JSON.stringify(data.songs.map(item => item.hash))
+      if (data.songs.length && pages.has(pageKey)) throw new Error('incomplete')
+      pages.add(pageKey)
+      songs.push(...data.songs)
+      if (songs.length == total) break
+      if (!data.songs.length || songs.length > total) throw new Error('incomplete')
+    }
+    if (songs.length != total || !info) throw new Error('incomplete')
+    // shield=1 是平台明确隐藏的占位条目，没有 hash，不能当作损坏歌曲送去详情接口。
+    // 手动导入仍可保留可用歌曲，同时标记不完整，防止同步覆盖本地完整列表。
+    const available = songs.filter(item => !(Number(item.shield) == 1 && !item.hash))
+    const list = await this.getMusicInfos(available, { requireComplete: true })
     return {
       list,
+      incomplete: available.length != songs.length,
       page: 1,
-      limit: this.listDetailLimit,
-      total: list.length,
+      limit: Math.max(this.listDetailLimit, total),
+      total,
       source: 'kg',
       info: {
-        name: info.specialname,
-        img: info.imgurl && info.imgurl.replace('{size}', 240),
+        name: info.name,
+        img: info.pic && info.pic.replace('{size}', 240),
         desc: info.intro,
-        author: info.nickname,
-        play_count: formatPlayCount(info.playcount),
+        author: info.list_create_username,
       },
     }
   },
@@ -646,6 +690,8 @@ export default {
   async getUserListDetail(link, page, retryNum = 0) {
     if (retryNum > 3) return Promise.reject(new Error('link try max num'))
     if (link.includes('#')) link = link.replace(/#.*$/, '')
+    const sharedId = link.match(/[?&](?:global_collection_id|global_specialid|global_special_id)=(\w+)/)?.[1]
+    if (sharedId) return this.getUserListDetail2(sharedId)
     if (link.includes('global_collection_id')) return this.getUserListDetail2(link.replace(/^.*?global_collection_id=(\w+)(?:&.*$|#.*$|$)/, '$1'))
     if (link.includes('gcid_')) {
       let gcid = link.match(/gcid_\w+/)?.[0]
@@ -672,51 +718,49 @@ export default {
         Referer: link,
       },
     })
-    const { url: location, statusCode, body } = await requestObj_listDetailLink.promise
+    const { headers: { location }, statusCode, body } = await requestObj_listDetailLink.promise
     // console.log(body, location)
     if (statusCode > 400) return this.getUserListDetail(link, page, ++retryNum)
-    if (location.split('?')[0] != link.split('?')[0]) {
-      // console.log(location)
-      if (location.includes('global_collection_id')) return this.getUserListDetail2(location.replace(/^.*?global_collection_id=(\w+)(?:&.*$|#.*$|$)/, '$1'))
-      if (location.includes('gcid_')) {
-        let gcid = link.match(/gcid_\w+/)?.[0]
-        if (gcid) {
-          const global_collection_id = await this.decodeGcid(gcid)
-          if (global_collection_id) return this.getUserListDetail2(global_collection_id)
-        }
-      }
-      if (location.includes('chain=')) return this.getUserListDetail3(location.replace(/^.*?chain=(\w+)(?:&.*$|#.*$|$)/, '$1'), page)
-      if (location.includes('.html')) {
-        if (location.includes('zlist.html')) {
-          let link = location.replace(/^(.*)zlist\.html/, 'https://m3ws.kugou.com/zlist/list')
-          if (link.includes('pagesize')) {
-            link = link.replace('pagesize=30', 'pagesize=' + this.listDetailLimit).replace('page=1', 'page=' + page)
-          } else {
-            link += `&pagesize=${this.listDetailLimit}&page=${page}`
-          }
-          return this.getUserListDetail(link, page, ++retryNum)
-        } else return this.getUserListDetail3(location.replace(/.+\/(\w+).html(?:\?.*|&.*$|#.*$|$)/, '$1'), page)
-      }
-      // console.log('location', location)
-      // return this.getUserListDetail(link, page, ++retryNum)
+    if (location) {
+      return this.getUserListDetail(resolveShareRedirect(location, link), page, retryNum + 1)
     }
-    if (typeof body == 'string') return this.getUserListDetail2(body.replace(/^[\s\S]+?"global_collection_id":"(\w+)"[\s\S]+?$/, '$1'))
+    if (typeof body == 'string') {
+      let global_collection_id = body.match(/"global_collection_id":"(\w+)"/)?.[1]
+      if (!global_collection_id) {
+        let gcid = body.match(/"encode_gic":"(\w+)"/)?.[1]
+        if (!gcid) gcid = body.match(/"encode_src_gid":"(\w+)"/)?.[1]
+        if (gcid) global_collection_id = await this.decodeGcid(gcid)
+      }
+      if (!global_collection_id) throw new Error('get list error')
+      return this.getUserListDetail2(global_collection_id)
+    }
     if (body.errcode !== 0) return this.getUserListDetail(link, page, ++retryNum)
     return this.getUserListDetailByLink(body, link)
   },
 
   async getListDetail(id, page) { // 获取歌曲列表内的音乐
-    id = id.toString()
+    id = id.toString().trim()
+    // 支持直接粘贴“分享歌单 + 链接”的完整文案，不把末尾文字带进请求。
+    const sharedUrl = id.match(/https?:\/\/[^\s<>"'，。！）】]+/i)?.[0]
+    if (sharedUrl) id = sharedUrl
+    else {
+      const code = id.match(/#(\d+)#/)?.[1] ?? id.match(/酷狗码[：:\s]*[【「]?\s*(\d+)/)?.[1]
+      if (code) return this.getUserListDetailByCode(code)
+    }
+    if (/^gcid_\w+$/.test(id)) return this.getUserListDetail2(await this.decodeGcid(id))
+    if (/^collection_[\w]+$/.test(id)) return this.getUserListDetail2(id)
     if (id.includes('special/single/')) {
       id = id.replace(this.regExps.listDetailLink, '$1')
     } else if (/https?:/.test(id)) {
       // fix https://www.kugou.com/songlist/xxx/?uid=xxx&chl=qq_client&cover=http%3A%2F%2Fimge.kugou.com%xxx.jpg&iszlist=1
       return this.getUserListDetail(id.replace(/^.*?http/, 'http'), page)
     } else if (/^\d+$/.test(id)) {
-      return this.getUserListDetailByCode(id)
+      // 分享酷狗码与公开歌单编号都是数字，兼容两种输入。
+      return this.getUserListDetailByCode(id).catch(() => this.getListDetailBySpecialId(id, page))
     } else if (id.startsWith('id_')) {
       id = id.replace('id_', '')
     }
+    if (!/^\d+$/.test(id)) throw new Error('invalid_link')
     // if ((/[?&:/]/.test(id))) id = id.replace(this.regExps.listDetailLink, '$1')
 
     return this.getListDetailBySpecialId(id, page)

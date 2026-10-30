@@ -27,7 +27,7 @@ export default {
     // https://y.qq.com/n/yqq/playlist/7217720898.html
     // https://i.y.qq.com/n2/m/share/details/taoge.html?platform=11&appshare=android_qq&appversion=9050006&id=7217720898&ADTAG=qfshare
     listDetailLink: /\/playlist\/(\d+)/,
-    listDetailLink2: /id=(\d+)/,
+    listDetailLink2: /[?&](?:id|disstid)=(\d+)/,
   },
   tagsUrl: 'https://u.y.qq.com/cgi-bin/musicu.fcg?loginUin=0&hostUin=0&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=wk_v15.json&needNewCode=0&data=%7B%22tags%22%3A%7B%22method%22%3A%22get_all_categories%22%2C%22param%22%3A%7B%22qq%22%3A%22%22%7D%2C%22module%22%3A%22playlist.PlaylistAllCategoriesServer%22%7D%7D',
   hotTagUrl: 'https://c.y.qq.com/node/pc/wk_v15/category_playlist.html',
@@ -178,8 +178,10 @@ export default {
   },
 
   async getListId(id) {
+    id = String(id).trim()
+    id = id.match(/https?:\/\/[^\s<>"'，。！）】]+/i)?.[0] ?? id
     if ((/[?&:/]/.test(id))) {
-      if (!this.regExps.listDetailLink.test(id)) {
+      if (!this.regExps.listDetailLink.test(id) && !this.regExps.listDetailLink2.test(id)) {
         id = await this.handleParseId(id)
       }
       let result = this.regExps.listDetailLink.exec(id)
@@ -190,15 +192,17 @@ export default {
       id = result[1]
       // console.log(id)
     }
+    if (!/^\d+$/.test(id)) throw new Error('invalid_link')
     return id
   },
   // 获取歌曲列表内的音乐
-  async getListDetail(id, tryNum = 0) {
+  async getListDetail(id, page = 1, tryNum = 0) {
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
 
     id = await this.getListId(id)
 
-    const requestObj_listDetail = httpFetch(this.getListDetailUrl(id), {
+    const limit = 100
+    const requestObj_listDetail = httpFetch(`${this.getListDetailUrl(id)}&song_begin=${(page - 1) * limit}&song_num=${limit}`, {
       headers: {
         Origin: 'https://y.qq.com',
         Referer: `https://y.qq.com/n/yqq/playsquare/${id}.html`,
@@ -206,13 +210,17 @@ export default {
     })
     const { body } = await requestObj_listDetail.promise
 
-    if (body.code !== this.successCode) return this.getListDetail(id, ++tryNum)
-    const cdlist = body.cdlist[0]
+    if (body?.code !== this.successCode) return this.getListDetail(id, page, ++tryNum)
+    const cdlist = body.cdlist?.[0]
+    if (!cdlist || !Array.isArray(cdlist.songlist)) throw new Error('incomplete')
+    const total = Number(cdlist.total_song_num ?? cdlist.songnum ?? cdlist.songlist.length)
+    if (!Number.isSafeInteger(total) || total < 0) throw new Error('incomplete')
+    if (cdlist.song_begin != null && Number(cdlist.song_begin) != (page - 1) * limit) throw new Error('incomplete')
     return {
       list: this.filterListDetail(cdlist.songlist),
-      page: 1,
-      limit: cdlist.songlist.length + 1,
-      total: cdlist.songlist.length,
+      page,
+      limit,
+      total,
       source: 'tx',
       info: {
         name: cdlist.dissname,

@@ -50,6 +50,8 @@ export declare interface ListInfo {
 }
 
 export declare interface ListDetailInfo {
+  /** 平台明确隐藏了部分曲目，可浏览和手动导入，不可用于覆盖同步。 */
+  incomplete?: boolean
   list: LX.Music.MusicInfoOnline[]
   source: LX.OnlineSource
   // desc: string | null

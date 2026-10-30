@@ -90,7 +90,7 @@ export default {
     // console.log(list)
     return list
   },
-  async getList(ids = [], retryNum = 0) {
+  async getList(ids = [], retryNum = 0, cookie = '') {
     if (retryNum > 2) return Promise.reject(new Error('try max num'))
 
     const requestObj = httpFetch('https://music.163.com/weapi/v3/song/detail', {
@@ -98,6 +98,7 @@ export default {
       headers: {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
         origin: 'https://music.163.com',
+        ...(cookie ? { Cookie: cookie } : {}),
       },
       form: weapi({
         c: '[' + ids.map(id => ('{"id":' + id + '}')).join(',') + ']',
@@ -105,6 +106,7 @@ export default {
       }),
     })
     const { body, statusCode } = await requestObj.promise
+    if (statusCode == 401 || body?.code == 301) throw new Error('login_required')
     if (statusCode != 200 || body.code !== 200) throw new Error('获取歌曲详情失败')
     // console.log(body)
     return { source: 'wy', list: this.filterList(body) }

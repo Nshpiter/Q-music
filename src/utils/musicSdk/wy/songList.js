@@ -47,12 +47,14 @@ export default {
   },
 
   async getListId(id) {
+    id = String(id).trim()
     let cookie
     if (/###/.test(id)) {
       const [url, token] = id.split('###')
       id = url
-      cookie = `MUSIC_U=${token}`
+      cookie = `MUSIC_U=${token.trim()}`
     }
+    id = id.match(/https?:\/\/[^\s<>"'，。！）】]+/i)?.[0] ?? id.trim()
     if ((/[?&:/]/.test(id))) {
       if (this.regExps.listDetailLink.test(id)) {
         id = id.replace(this.regExps.listDetailLink, '$1')
@@ -63,19 +65,19 @@ export default {
       }
       // console.log(id)
     }
+    if (!/^\d+$/.test(id)) throw new Error('invalid_link')
     return { id, cookie }
   },
   async getListDetail(rawId, page, tryNum = 0) { // 获取歌曲列表内的音乐
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
 
     const { id, cookie } = await this.getListId(rawId)
-    if (cookie) this.cookie = cookie
 
     const requestObj_listDetail = httpFetch('https://music.163.com/api/linux/forward', {
       method: 'post',
       headers: {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
-        Cookie: this.cookie,
+        Cookie: cookie || 'MUSIC_U=',
       },
       credentials: 'omit',
       cache: 'default',
@@ -90,22 +92,23 @@ export default {
       }),
     })
     const { statusCode, body } = await requestObj_listDetail.promise
-    if (statusCode !== 200 || body.code !== this.successCode) return this.getListDetail(id, page, ++tryNum)
+    if (statusCode == 401 || body?.code == 301) throw new Error('login_required')
+    if (statusCode !== 200 || body?.code !== this.successCode) return this.getListDetail(rawId, page, ++tryNum)
+    if (!Array.isArray(body.playlist?.trackIds)) throw new Error('incomplete')
     let limit = 1000
     let rangeStart = (page - 1) * limit
     // console.log(body)
     let list
-    if (body.playlist.trackIds.length == body.privileges.length) {
-      list = this.filterListDetail(body)
+    if (body.playlist.trackIds.length == body.playlist.tracks?.length && Array.isArray(body.privileges)) {
+      list = this.filterListDetail({ ...body, playlist: { ...body.playlist, tracks: body.playlist.tracks.slice(rangeStart, limit * page) } })
     } else {
       try {
-        list = (await musicDetailApi.getList(body.playlist.trackIds.slice(rangeStart, limit * page).map(trackId => trackId.id))).list
+        list = (await musicDetailApi.getList(body.playlist.trackIds.slice(rangeStart, limit * page).map(trackId => trackId.id), 0, cookie)).list
       } catch (err) {
-        console.log(err)
-        if (err.message == 'try max num') {
+        if (err.message == 'try max num' || err.message == 'login_required') {
           throw err
         } else {
-          return this.getListDetail(id, page, ++tryNum)
+          return this.getListDetail(rawId, page, ++tryNum)
         }
       }
     }
@@ -121,7 +124,7 @@ export default {
         name: body.playlist.name,
         img: body.playlist.coverImgUrl,
         desc: body.playlist.description,
-        author: body.playlist.creator.nickname,
+        author: body.playlist.creator?.nickname,
       },
     }
   },
@@ -133,7 +136,7 @@ export default {
       const _types = {}
       let size
       let privilege = privileges[index]
-      if (privilege.id !== item.id) privilege = privileges.find(p => p.id === item.id)
+      if (privilege?.id !== item.id) privilege = privileges.find(p => p.id === item.id)
       if (!privilege) return
 
       if (privilege.maxBrLevel == 'hires') {

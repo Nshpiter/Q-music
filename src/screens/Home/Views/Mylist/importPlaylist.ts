@@ -7,7 +7,7 @@ import { filterMusicList } from '@/utils'
 export type ExternalImportSource = 'tx' | 'wy' | 'kg'
 export type ExternalImportTarget = 'new' | 'current' | 'love'
 
-export type ExternalImportErrorCode = 'invalid_link' | 'no_match' | 'cancelled'
+export type ExternalImportErrorCode = 'invalid_link' | 'no_match' | 'cancelled' | 'login_required' | 'verification_required' | 'playlist_incomplete'
 
 export class ExternalImportError extends Error {
   code: ExternalImportErrorCode
@@ -74,7 +74,13 @@ const fetchNativeList = async(
 ) => {
   const source = params.source
   const text = source == 'wy' ? getNeteaseInput(params.text, params.neteaseToken) : params.text
-  const detail = await getListDetail(text, source, 1, true)
+  const readPage = async(page: number) => getListDetail(text, source, page, page == 1).catch((error: unknown) => {
+    const code = error instanceof Error ? error.message : ''
+    if (code == 'invalid_link' || code == 'login_required' || code == 'verification_required' || code == 'cancelled') throw new ExternalImportError(code)
+    if (code == 'incomplete') throw new ExternalImportError('playlist_incomplete')
+    throw error
+  })
+  const detail = await readPage(1)
   const list: LX.Music.MusicInfo[] = [...detail.list]
   const total = typeof detail.total == 'number' && detail.total > 0 ? detail.total : list.length
   const limit = typeof detail.limit == 'number' && detail.limit > 0 ? detail.limit : Math.max(list.length, 1)
@@ -89,9 +95,10 @@ const fetchNativeList = async(
   for (let page = 2; page <= maxPage; page++) {
     assertNotCancelled(shouldCancel)
     try {
-      const pageDetail = await getListDetail(text, source, page)
+      const pageDetail = await readPage(page)
       list.push(...pageDetail.list)
     } catch (error) {
+      if (error instanceof ExternalImportError && ['login_required', 'verification_required', 'cancelled'].includes(error.code)) throw error
       if (list.length) break
       throw error
     }

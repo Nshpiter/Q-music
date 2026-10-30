@@ -79,9 +79,9 @@ test('酷狗只补查缺失详情并按歌单顺序返回，真实缺失和取�
   let tries = 0
   const missing = loadKugouSongs(() => { tries++; return [[kugouDetail(1)]] })
   await assert.rejects(missing.getMusicInfos(input, { requireComplete: true }), /incomplete/)
-  assert.equal(tries, 2)
+  assert.equal(tries, 4)
   const wrongSong = loadKugouSongs(() => [[kugouDetail(9)]])
-  await assert.rejects(wrongSong.getMusicInfos([{ hash: hash(1) }], { requireComplete: true }), /incomplete/)
+  await assert.rejects(wrongSong.getMusicInfos([{ hash: hash(1), audio_id: 1 }], { requireComplete: true }), /incomplete/)
   let cancelled = false
   const stopped = loadKugouSongs(() => { cancelled = true; return [[kugouDetail(1)]] })
   await assert.rejects(stopped.getMusicInfos(input, { requireComplete: true, shouldCancel: () => cancelled }), /cancelled/)

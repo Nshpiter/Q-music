@@ -1,7 +1,7 @@
 {
   "name": "q-music-mobile",
-  "version": "0.4.27",
-  "versionCode": 55,
+  "version": "0.4.28",
+  "versionCode": 56,
   "private": true,
   "scripts": {
     "test:mobile-navigation": "node --test scripts/verify-setting-navigation.cjs scripts/verify-settings-search-download.cjs scripts/verify-netease-login-page.cjs scripts/verify-music-login.cjs scripts/verify-qq-authorization.cjs",
@@ -29,7 +29,7 @@
     "clear:full": "git clean -fdx -e android/keystore.properties -e android/app/*.keystore",
     "build:theme": "node src/theme/themes/createThemes.js",
     "publish": "node publish",
-    "test:accounts": "node --test scripts/verify-music-accounts.cjs",
+    "test:accounts": "node --test scripts/verify-music-accounts.cjs scripts/verify-playlist-import.cjs",
     "test:qq-sync": "node --test scripts/verify-qq-sync.cjs",
     "test:adaptive": "node --test scripts/verify-adaptive-layout.cjs",
     "test:browse": "node --test scripts/verify-browse-navigation.cjs",

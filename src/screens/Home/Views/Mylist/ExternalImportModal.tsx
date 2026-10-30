@@ -34,6 +34,9 @@ const SOURCE_OPTIONS: Array<{ id: ExternalImportSource, name: string }> = [
 const ERROR_MESSAGE_KEYS: Partial<Record<ExternalImportError['code'], keyof Message>> = {
   invalid_link: 'playlist_import_modal__error_invalid_link',
   no_match: 'playlist_import_modal__error_no_match',
+  login_required: 'list_sync_login_required',
+  verification_required: 'list_sync_verification_required',
+  playlist_incomplete: 'list_sync_incomplete',
 }
 
 const PROGRESS_STAGE_KEYS: Record<ExternalImportProgress['stage'], keyof Message> = {

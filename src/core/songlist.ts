@@ -212,8 +212,9 @@ export const getListDetailAll = async(source: LX.OnlineSource, id: string, isRef
   const loadData = async(page: number): Promise<ListDetailInfo> => {
     const pageKey = `sdetail__${source}__${id}__${page}`
     let pageCache = listCache.get(pageKey) as DetailPageCache
-    if (pageCache) return pageCache.data
-    return getListDetailLimit(source, id, page)
+    const result = pageCache ? pageCache.data : await getListDetailLimit(source, id, page)
+    if (result.incomplete) throw new Error('incomplete')
+    return result
   }
   return loadData(1).then(async result => {
     if (result.total <= result.limit) return result.list
