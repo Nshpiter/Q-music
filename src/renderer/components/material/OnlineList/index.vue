@@ -43,7 +43,7 @@
                   <input type="checkbox" :checked="selectedList.includes(item)" :aria-label="$t('list__select_song', { name: item.name })" @click.stop @change="toggleSelectData(index)">
                 </div>
                 <div class="list-item-cell auto name" :class="{ [$style.trackIdentity]: searchResults }">
-                  <span class="select name" :title="item.name" :aria-label="item.name">{{ item.name }}</span>
+                  <SongTitle class="select name" :music="item" />
                   <span :class="$style.trackBadges">
                     <span v-if="item.meta._qualitys.flac24bit" class="no-select badge badge-theme-primary">{{ $t('tag__lossless_24bit') }}</span>
                     <span v-else-if="item.meta._qualitys.ape || item.meta._qualitys.flac || item.meta._qualitys.wav" class="no-select badge badge-theme-primary">{{ $t('tag__lossless') }}</span>
@@ -81,7 +81,7 @@
                   <input type="checkbox" :checked="selectedList.includes(item)" :aria-label="$t('list__select_song', { name: item.name })" @click.stop @change="toggleSelectData(index)">
                 </div>
                 <div class="list-item-cell auto name" :class="{ [$style.trackIdentity]: searchResults }">
-                  <span class="select name" :title="item.name" :aria-label="item.name">{{ item.name }}</span>
+                  <SongTitle class="select name" :music="item" />
                   <span :class="$style.trackBadges">
                     <span v-if="item.meta._qualitys.flac24bit" class="no-select badge badge-theme-primary">{{ $t('tag__lossless_24bit') }}</span>
                     <span v-else-if="item.meta._qualitys.ape || item.meta._qualitys.flac || item.meta._qualitys.wav" class="no-select badge badge-theme-primary">{{ $t('tag__lossless') }}</span>
@@ -157,9 +157,10 @@ import useMusicActions from './useMusicActions'
 import { appSetting } from '@renderer/store/setting'
 import SourceIcon from '@renderer/components/common/SourceIcon.vue'
 import SourcePicker from '@renderer/components/common/SourcePicker.vue'
+import SongTitle from '@renderer/components/common/SongTitle.vue'
 export default {
   name: 'MaterialOnlineList',
-  components: { SourceIcon, SourcePicker },
+  components: { SourceIcon, SourcePicker, SongTitle },
   props: {
     playInContext: {
       type: Boolean,

@@ -2,11 +2,11 @@
   <div :class="$style.main" :aria-busy="disabled || saving">
     <div class="scroll" :class="$style.grid">
       <base-btn
-        v-for="item in lists" :key="item.id" type="button" :class="$style.target"
+        v-for="item in lists" :key="item.id" type="button" :class="[$style.target, { [$style.exists]: item.isExist }]"
         :disabled="disabled || saving || item.isExist" @click="$emit('select', item.id)"
       >
-        <PlaylistIdentity :list="item" subtitle />
-        <span v-if="item.isExist" :class="$style.hint">{{ $t('list_add__exists') }}</span>
+        <PlaylistIdentity :list="item" subtitle local-copy />
+        <span :class="$style.hint"><span aria-hidden="true">{{ item.isExist ? '✓' : '+' }}</span><span v-if="item.isExist"> {{ $t('favorite_local_exists') }}</span></span>
       </base-btn>
       <base-btn v-if="!editing" type="button" :class="[$style.target, $style.newList]" :disabled="disabled || saving" @click="startEditing">
         <svg-icon name="addTo" viewBox="0 0 42 42" />
@@ -25,7 +25,7 @@
       </form>
     </div>
     <p v-if="error" :class="$style.error" role="alert">{{ error }}</p>
-    <p v-if="disabled || saving" :class="$style.status" role="status">{{ $t('list_add__saving') }}</p>
+    <p v-if="(disabled && showStatus) || saving" :class="$style.status" role="status">{{ $t('list_add__saving') }}</p>
   </div>
 </template>
 
@@ -43,6 +43,7 @@ export default {
     lists: { type: Array, required: true },
     disabled: { type: Boolean, default: false },
     active: { type: Boolean, default: false },
+    showStatus: { type: Boolean, default: true },
   },
   emits: ['select', 'creating'],
   setup(props, { emit }) {
@@ -88,26 +89,36 @@ export default {
 .main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
   align-content: start;
   gap: 10px;
-  padding: 0 16px 16px;
+  padding: 0 20px 20px;
   min-height: 0;
 }
 .target {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
+  justify-content: space-between;
   align-items: center;
   min-width: 0;
-  min-height: 44px;
+  min-height: 58px;
+  border-radius: 12px !important;
   padding: 9px 12px !important;
-  gap: 4px;
+  gap: 10px;
+  color: var(--color-font);
+  background: rgb(from var(--color-font) r g b / .025);
+  box-shadow: none;
+  border: 1px solid rgb(from var(--color-font) r g b / .08);
+  &:hover:not(:disabled) { background: rgb(from var(--color-font) r g b / .055); box-shadow: none; transform: none; }
+  &:active:not(:disabled) { transform: scale(.985); }
 }
 .name { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hint { font-size: 11px; font-weight: normal; }
+.hint { flex: none; font-size: 11px; font-weight: normal; white-space: nowrap; color: var(--color-font-label); }
+.exists:disabled { opacity: 1; cursor: default; }
+.exists .hint { color: var(--color-primary); }
 .newList {
   flex-direction: row;
+  justify-content: flex-start;
   border: 1px dashed var(--color-primary-alpha-700);
   box-shadow: none;
   svg { width: 16px; height: 16px; flex: none; }
@@ -118,7 +129,7 @@ export default {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  input { flex: 1; min-width: min(160px, 100%); box-sizing: border-box; }
+  input { flex: 1; min-width: min(230px, 100%); box-sizing: border-box; }
 }
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-left: auto; }
 .status, .error { flex: none; margin: 0; padding: 0 16px 14px; font-size: 12px; line-height: 1.5; }

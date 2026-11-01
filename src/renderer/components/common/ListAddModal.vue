@@ -1,9 +1,10 @@
 <template>
-  <material-modal :show="show" :bg-close="bgClose && !busy && !creating" :close-btn="!busy && !creating" :teleport="teleport" width="620px" max-width="calc(100% - 32px)" min-width="0" @close="handleClose">
+  <material-modal :heading="$t(isMove ? 'list_add__title_first_move' : 'favorite_picker_title')" max-height="min(640px, calc(100% - 48px))" :show="show" :bg-close="bgClose && !busy && !creating" :close-btn="!busy && !creating" :teleport="teleport == '#view' ? '#root' : teleport" width="620px" max-width="calc(100% - 32px)" min-width="0" @close="handleClose">
     <main :class="$style.main">
-      <h2>{{ $t('list_add__' + (isMove ? 'title_first_move' : 'title_first_add')) }} <span :class="$style.name">{{ currentMusicInfo.name }}</span> {{ $t('list_add__title_last') }}</h2>
-      <QQFavoriteTarget v-if="show && !isMove && currentMusicInfo.id" :music-info="currentMusicInfo" :disabled="busy || creating" @busy="busy = $event" />
-      <ListTargetPicker :lists="lists" :active="show" :disabled="busy" @select="handleSelect" @creating="creating = $event" />
+      <header :class="$style.header"><p><strong>{{ currentMusicInfo.name }}</strong><span>{{ currentMusicInfo.singer }}</span></p></header>
+      <QQFavoriteTarget v-if="show && !isMove && currentMusicInfo.id" :music-info="currentMusicInfo" :disabled="busy || creating" @busy="busy = $event; cloudBusy = $event" />
+      <div :class="$style.localHeading"><h3>{{ $t('favorite_local_section') }}</h3><p>{{ $t(isMove ? 'favorite_move_hint' : 'favorite_local_hint') }}</p></div>
+      <ListTargetPicker :lists="lists" :active="show" :disabled="busy" :show-status="!cloudBusy" @select="handleSelect" @creating="creating = $event" />
       <p v-if="error" :class="$style.error" role="alert">{{ error }}</p>
     </main>
   </material-modal>
@@ -36,6 +37,7 @@ export default {
     const lists = ref([])
     const currentMusicInfo = ref({})
     const busy = ref(false)
+    const cloudBusy = ref(false)
     const creating = ref(false)
     const error = ref('')
     const addedListIds = new Set()
@@ -91,14 +93,18 @@ export default {
         busy.value = false
       }
     }
-    return { lists, currentMusicInfo, busy, creating, error, handleClose, handleSelect }
+    return { lists, currentMusicInfo, busy, cloudBusy, creating, error, handleClose, handleSelect }
   },
 }
 </script>
 
 <style lang="less" module>
 .main { display: flex; flex-direction: column; min-height: 0; }
-.main h2 { flex: none; font-size: 14px; color: var(--color-font); line-height: 1.5; text-align: center; padding: 15px 20px; overflow-wrap: anywhere; }
-.name { color: var(--color-primary); }
+.header { flex: none; padding: 0 20px 18px; }
+.header p { display: flex; flex-direction: column; gap: 6px; margin: 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.header p span { color: var(--color-font-label); font-size: 12px; }
+.localHeading { margin: 0 20px 12px; flex: none; color: var(--color-font-label); }
+.localHeading h3 { margin: 0; font-size: 11px; font-weight: 600; }
+.localHeading p { margin: 6px 0 0; font-size: 11px; line-height: 1.5; }
 .error { margin: 0; padding: 0 16px 14px; color: var(--color-primary); font-size: 12px; line-height: 1.5; }
 </style>

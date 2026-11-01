@@ -4,7 +4,7 @@
     <span v-else :class="$style.local" aria-hidden="true"><svg-icon :name="list.id == 'love' ? 'love' : 'music'" /></span>
     <span :class="$style.copy">
       <span :class="$style.name">{{ name || list.name }}</span>
-      <span v-if="subtitle" :class="$style.source">{{ sourceName }}</span>
+      <span v-if="subtitle" :class="$style.source">{{ localCopy && source ? $t('favorite_local_copy', { source: sourceName }) : sourceName }}</span>
     </span>
   </span>
 </template>
@@ -20,6 +20,7 @@ export default {
     list: { type: Object, required: true },
     name: { type: String, default: '' },
     subtitle: { type: Boolean, default: false },
+    localCopy: { type: Boolean, default: false },
   },
   setup(props) {
     const t = useI18n()

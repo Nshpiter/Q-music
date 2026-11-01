@@ -2,9 +2,14 @@
 // 仅请求酷狗 HTTPS 服务；凭证由各端安全存储，不交给第三方 API 服务。
 export interface KugouSession { userId: string, token: string, mid: string, nickname: string, avatar: string }
 export interface KugouQr { key: string, image: string, mid: string, expiresAt: number }
-export interface KugouPlaylist { id: string, name: string, cover: string, count: number, kind: 'created' | 'favorite' }
+export interface KugouPlaylist { id: string, name: string, cover: string, count: number, kind: 'created' | 'favorite', isFavorite?: boolean }
+export interface KugouCaptchaAnswer { ticket: string, randstr: string }
+export type KugouCaptchaPresenter = (appId: string) => Promise<KugouCaptchaAnswer>
+class KugouApiError extends Error {
+  constructor(reason: string, public code?: number) { super(reason) }
+}
 type Row = Record<string, any>
-type Fetch = (url: string, init: RequestInit) => Promise<Pick<Response, 'ok' | 'status' | 'json'>>
+type Fetch = (url: string, init: RequestInit) => Promise<Pick<Response, 'ok' | 'status' | 'json'> & { headers?: Pick<Headers, 'get'> }>
 const fail = (reason = 'unavailable'): never => { throw new Error(reason) }
 const numericId = (value: unknown) => /^\d+$/.test(String(value ?? '')) && !/^0+$/.test(String(value)) ? String(value) : ''
 const imageUrl = (value: unknown) => {
@@ -19,13 +24,16 @@ export const parseKugouSession = (value: unknown): KugouSession | null => {
   return { userId: String(row.userId), token: row.token, mid: row.mid, nickname: String(row.nickname ?? ''), avatar: imageUrl(row.avatar) }
 }
 
-export const createKugouApi = (fetcher: Fetch, md5: (value: string) => string) => {
-  const call = async(path: string, params: Row, body: Row | undefined, mid: string, signal?: AbortSignal, login = false, router = 'cloudlist.service.kugou.com'): Promise<Row> => {
+export const createKugouApi = (fetcher: Fetch, md5: (value: string) => string, encryptVerification?: () => Promise<{ pk: string, params: string }>) => {
+  // 验证事件只保存在内存，并绑定账号、凭证和设备。网页不接触这些信息。
+  let challenge: { identity: string, eventId: string, expiresAt: number } | undefined
+  const identity = (userId: string, token: string, mid: string) => md5(JSON.stringify([userId, token, mid]))
+  const call = async(path: string, params: Row, body: Row | undefined, mid: string, signal?: AbortSignal, login = false, router = 'cloudlist.service.kugou.com', writing = false, verification = false): Promise<Row> => {
     const query: Row = { dfid: '-', mid, uuid: '-', appid: 1005, clientver: 20489, clienttime: Math.floor(Date.now() / 1000), ...params }
     const text = body ? JSON.stringify(body) : ''
     const salt = login ? 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt' : 'OIlwieks28dk2k092lksi2UIkp'
     query.signature = md5(salt + Object.keys(query).sort().map(key => `${key}=${query[key]}`).join('') + text + salt)
-    const origin = login ? 'https://login-user.kugou.com' : 'https://gateway.kugou.com'
+    const origin = verification ? 'https://verifyservice.kugou.com' : login ? 'https://login-user.kugou.com' : 'https://gateway.kugou.com'
     const controller = new AbortController()
     const abort = () => { controller.abort() }
     signal?.addEventListener('abort', abort)
@@ -36,29 +44,76 @@ export const createKugouApi = (fetcher: Fetch, md5: (value: string) => string) =
         method: body ? 'POST' : 'GET',
         credentials: 'omit',
         signal: controller.signal,
-        headers: { 'Content-Type': 'application/json', dfid: '-', mid, clienttime: String(query.clienttime), ...(login ? {} : { 'x-router': router }) },
+        headers: { 'Content-Type': 'application/json', dfid: '-', mid, clienttime: String(query.clienttime), ...(login || !router ? {} : { 'x-router': router }) },
         ...(body ? { body: text } : {}),
       })
-      if (!response.ok) fail(response.status == 401 ? 'login_required' : 'unavailable')
+      if (!response.ok) {
+        if (writing && [403, 429].includes(response.status)) throw new KugouApiError('rejected', response.status)
+        fail(response.status == 401 ? 'login_required' : 'unavailable')
+      }
       const result = await response.json()
       const code = result.error_code ?? result.errcode
-      if (Number(code) == 20028) fail('verification_required')
-      if (Number(result.status) != 1 || (code != null && Number(code) != 0) || !result.data) {
+      if (Number(code) == 20028) {
+        const eventId = response.headers?.get('ssa-code')
+        if (params.userid && params.token && eventId && eventId.length <= 4096) {
+          challenge = { identity: identity(String(params.userid), String(params.token), mid), eventId, expiresAt: Date.now() + 5 * 60_000 }
+        }
+        fail('verification_required')
+      }
+      if (Number(result.status) != 1 || (code != null && Number(code) != 0) || (!result.data && !writing)) {
         // 部分接口以 HTTP 200 返回登录过期，只提取状态，不将原始响应或凭证交给界面。
         const message = String(result.error_msg ?? result.errmsg ?? result.msg ?? result.message ?? '')
         if (/未登录|未登陆|重新登[录陆]|登[录陆].*(?:失效|过期)|(?:token|session).*(?:expired|invalid)|(?:expired|invalid).*(?:token|session)/i.test(message)) fail('login_required')
+        if (writing && Number.isFinite(Number(code)) && Number(code) != 0) throw new KugouApiError('rejected', Number(code))
         fail()
       }
-      return result.data
+      return result.data ?? {}
     } catch (error) {
       // 底层异常可能携带含 token 的请求 URL，不透传给日志或 UI。
       if (signal?.aborted) fail('cancelled')
+      if (error instanceof KugouApiError) throw error
       if (error instanceof Error && ['login_required', 'verification_required'].includes(error.message)) fail(error.message)
       return fail()
     } finally {
       clearTimeout(timer)
       signal?.removeEventListener('abort', abort)
     }
+  }
+
+  const verifySession = async(session: KugouSession, present: KugouCaptchaPresenter, assertSession: () => Promise<void>) => {
+    const current = challenge
+    const assertCurrent = async() => {
+      await assertSession()
+      if (!current || challenge !== current || current.identity != identity(session.userId, session.token, session.mid) || Date.now() >= current.expiresAt) fail('verification_expired')
+    }
+    await assertCurrent()
+    if (!encryptVerification) fail('verification_unsupported')
+    const params = { userid: session.userId, token: session.token }
+    const data = await call('/verifyservice/v3/get_verify_info', params, {
+      eventid: current!.eventId, userid: Number(session.userId), platid: 2, rtype: 1, wasm: 1, i: '', sid: '', edt: '',
+    }, session.mid, undefined, false, '')
+    await assertCurrent()
+    const appId = String(data.txappid ?? '')
+    if (Number(data.v_type) != 23 || !/^KGCodeTX(?:\||$)/.test(String(data.url)) || !/^\d{4,32}$/.test(appId)) fail('verification_unsupported')
+    const answer = await present(appId)
+    await assertCurrent()
+    if (!answer || typeof answer.ticket != 'string' || !answer.ticket || answer.ticket.length > 8192 || typeof answer.randstr != 'string' || !answer.randstr || answer.randstr.length > 1024) fail('verification_failed')
+    const encrypted = await encryptVerification!()
+    await assertCurrent()
+    await call('/v4/verify_user_info', { ...params, clientver: 11510 }, {
+      eventid: current!.eventId,
+      userid: Number(session.userId),
+      platid: 2,
+      v_type: 23,
+      wasm: 1,
+      i: '',
+      sid: '',
+      edt: '',
+      verifycode: 'KGCodeTX|' + JSON.stringify({ ticket: answer.ticket, randstr: answer.randstr, txappid: appId }),
+      ...encrypted,
+    }, session.mid, undefined, false, '', true, true)
+    await assertCurrent()
+    if (challenge === current) challenge = undefined
   }
 
   const createQr = async(signal?: AbortSignal): Promise<KugouQr> => {
@@ -96,6 +151,7 @@ export const createKugouApi = (fetcher: Fetch, md5: (value: string) => string) =
         seen.add(id)
         lists.push({
           id,
+          isFavorite: Number(row.is_def) == 2 && String(row.list_create_userid ?? '') == session.userId && Number(row.is_collect ?? 0) != 1 && Number(row.is_del ?? 0) != 1,
           name: String(row.name ?? row.listname ?? '未命名歌单'),
           cover: imageUrl(row.pic ?? row.img ?? row.picurl),
           count: Number(row.count ?? row.songcount ?? row.filecount ?? 0),
@@ -152,6 +208,21 @@ export const createKugouApi = (fetcher: Fetch, md5: (value: string) => string) =
     }
     return fail('incomplete')
   }
+  const addFavoriteSong = async(session: KugouSession, id: string, song: { hash: string, name: string, albumId?: string | number }) => {
+    if (!numericId(id) || !/^[A-F0-9]{32}$/i.test(song.hash)) fail()
+    // songId 是 audio_id，不是 mixsongid；以 hash 识别，不能混用两种编号。
+    // 官方云歌单添加协议，参考 KuGouMusicApi playlist_tracks_add；仅追加这一首。
+    await call('/cloudlist.service/v6/add_song', { last_time: Math.floor(Date.now() / 1000), last_area: 'gztx', userid: session.userId, token: session.token }, {
+      userid: session.userId,
+      token: session.token,
+      listid: id,
+      list_ver: 0,
+      type: 0,
+      slow_upload: 1,
+      scene: 'false;null',
+      data: [{ number: 1, name: song.name, hash: song.hash.toUpperCase(), size: 0, sort: 0, timelen: 0, bitrate: 0, album_id: Number(song.albumId ?? 0), mixsongid: 0 }],
+    }, session.mid, undefined, false, '', true)
+  }
   const getDailyHashes = async(session: KugouSession, signal?: AbortSignal): Promise<string[]> => {
     const data = await call('/everyday_song_recommend', { userid: session.userId, token: session.token },
       { platform: 'android', userid: session.userId }, session.mid, signal, false, 'everydayrec.service.kugou.com')
@@ -160,5 +231,5 @@ export const createKugouApi = (fetcher: Fetch, md5: (value: string) => string) =
     if (hashes.some(hash => !/^[A-F0-9]{32}$/.test(hash))) fail('incomplete')
     return [...new Set(hashes)].slice(0, 30)
   }
-  return { createQr, checkQr, getPlaylists, getPlaylistHashes, getDailyHashes }
+  return { createQr, checkQr, getPlaylists, getPlaylistHashes, getDailyHashes, addFavoriteSong, verifySession }
 }

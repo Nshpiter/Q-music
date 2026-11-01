@@ -1,23 +1,29 @@
 <template>
-  <section :class="[$style.target, { [$style.compact]: compact }]" :aria-busy="working">
+  <section v-if="provider" :class="[$style.target, { [$style.compact]: compact }]" :aria-busy="working">
+    <h3 :class="$style.label">{{ $t('favorite_platform_section') }}</h3>
+    <div :class="$style.card">
     <div :class="$style.row">
-      <SourceIcon source="tx" :size="30" />
+      <SourceIcon :source="provider" :size="28" />
       <div :class="$style.copy">
-        <strong>{{ $t('qq_favorite_title') }}</strong>
-        <span>{{ $t(supported ? 'qq_favorite_hint' : 'qq_favorite_supported') }}</span>
+        <strong>{{ $t(prefix + 'title') }}</strong>
+        <span>{{ $t('favorite_platform_hint') }}</span>
       </div>
-      <base-btn type="button" :disabled="disabled || working || !supported || status == 'added'" @click="submit">
-        {{ $t(working ? 'qq_favorite_working' : status == 'added' ? 'qq_favorite_added_button' : status == 'login_required' ? 'qq_favorite_login' : needsCheck ? 'qq_favorite_check' : 'qq_favorite_add') }}
+      <span v-if="status == 'added'" :class="$style.done" :aria-label="$t(actionLabel)"><span aria-hidden="true">✓</span> {{ $t('favorite_action_added') }}</span>
+      <base-btn v-else type="button" :class="$style.action" :aria-label="$t(actionLabel)" :disabled="disabled || working || !supported" @click="submit">
+        {{ $t(buttonLabel) }}
       </base-btn>
     </div>
-    <p v-if="status" role="status" :class="$style.message">{{ $t('qq_favorite_' + status) }}<span v-if="errorCode != null"> {{ $t('qq_favorite_error_code', { code: errorCode }) }}</span></p>
-    <p v-if="localSync" role="status" :class="$style.message">{{ $t(localSync) }}</p>
+    <div v-if="status || !supported" :class="$style.feedback">
+      <p role="status" :class="$style.message">{{ $t(prefix + (status || 'supported')) }}<span v-if="errorCode != null"> {{ $t(prefix + 'error_code', { code: errorCode }) }}</span></p>
+      <p v-if="localSync" role="status" :class="$style.message">{{ $t(localSync) }}</p>
+    </div>
+    </div>
   </section>
 </template>
 
 <script>
 import { computed, ref, watch, onBeforeUnmount } from '@common/utils/vueTools'
-import { addQQFavoriteSong, loginMusicAccount } from '@renderer/utils/ipc'
+import { addQQFavoriteSong, addNeteaseFavoriteSong, addKugouFavoriteSong, loginMusicAccount } from '@renderer/utils/ipc'
 import { syncQQFavorites } from '@renderer/store/list/syncSourceList'
 import SourceIcon from './SourceIcon.vue'
 
@@ -34,27 +40,36 @@ export default {
     const errorCode = ref(null)
     const working = ref(false)
     const localSync = ref('')
-    const needsCheck = computed(() => status.value == 'unknown' || status.value == 'unconfirmed')
-    const supported = computed(() => props.musicInfo.source == 'tx' && /^[a-zA-Z0-9]{1,64}$/.test(String(props.musicInfo.meta?.songId ?? '')))
+    const needsCheck = computed(() => status.value == 'unknown' || status.value == 'unconfirmed' || status.value == 'verification_expired')
+    const provider = computed(() => ['tx', 'wy', 'kg'].includes(props.musicInfo.source) ? props.musicInfo.source : null)
+    const prefix = computed(() => ({ tx: 'qq_favorite_', wy: 'wy_favorite_', kg: 'kg_favorite_' })[provider.value])
+    const needsVerify = computed(() => provider.value == 'kg' && status.value.startsWith('verification_') && status.value != 'verification_expired' && status.value != 'verification_unsupported')
+    const needsLogin = computed(() => status.value == 'login_required' || status.value == 'verification_unsupported')
+    const actionLabel = computed(() => working.value ? prefix.value + 'working' : status.value == 'added' ? prefix.value + 'added_button' : needsLogin.value ? prefix.value + 'login' : needsVerify.value ? 'kg_favorite_verify' : needsCheck.value ? prefix.value + 'check' : prefix.value + 'add')
+    const buttonLabel = computed(() => working.value ? 'favorite_action_working' : needsLogin.value ? 'favorite_action_login' : needsVerify.value ? 'favorite_action_verify' : needsCheck.value ? 'favorite_action_check' : 'favorite_action_add')
+    const supported = computed(() => provider.value == 'kg' ? /^[a-f0-9]{32}$/i.test(String(props.musicInfo.meta?.hash ?? '')) : props.musicInfo.source == 'wy' ? /^[1-9]\d*$/.test(String(props.musicInfo.meta?.songId ?? '')) : props.musicInfo.source == 'tx' && /^[a-zA-Z0-9]{1,64}$/.test(String(props.musicInfo.meta?.songId ?? '')))
     let generation = 0
     watch(() => props.musicInfo, () => { generation++; status.value = ''; errorCode.value = null; localSync.value = '' })
     onBeforeUnmount(() => { generation++ })
     const submit = async() => {
       if (props.disabled || working.value || !supported.value || status.value == 'added') return
       const current = generation
-      const needsLogin = status.value == 'login_required'
+      const loggingIn = needsLogin.value
       const songMid = String(props.musicInfo.meta.songId)
       working.value = true
       errorCode.value = null
       emit('busy', true)
       try {
-        if (needsLogin) {
-          const result = await loginMusicAccount('tx')
+        if (loggingIn) {
+          const result = await loginMusicAccount(provider.value)
           if (generation == current) status.value = result.status == 'connected' ? 'ready' : 'login_required'
         } else {
           const checking = needsCheck.value
-          const result = await addQQFavoriteSong(songMid, checking ? 'check' : 'add')
-          if (result.status == 'added' && result.accountId) {
+          const action = checking ? 'check' : 'add'
+          const result = await (provider.value == 'kg'
+            ? addKugouFavoriteSong({ hash: props.musicInfo.meta.hash, name: [props.musicInfo.singer, props.musicInfo.name].filter(Boolean).join(' - '), albumId: props.musicInfo.meta.albumId || undefined, action: needsVerify.value ? 'verify' : action })
+            : (provider.value == 'wy' ? addNeteaseFavoriteSong : addQQFavoriteSong)(songMid, action))
+          if (provider.value == 'tx' && result.status == 'added' && result.accountId) {
             // 本地同步失败不能改变已经确认的云端收藏结果。
             if (generation == current) localSync.value = 'list_sync_favorite_pending'
             void syncQQFavorites(result.accountId).then(sync => {
@@ -68,28 +83,31 @@ export default {
           }
         }
       } catch {
-        if (generation == current) status.value = needsLogin ? 'unavailable' : 'unknown'
+        if (generation == current) status.value = loggingIn ? 'unavailable' : 'unknown'
       } finally {
         working.value = false
         emit('busy', false)
       }
     }
-    return { status, errorCode, working, supported, needsCheck, submit, localSync }
+    return { provider, prefix, status, errorCode, working, supported, actionLabel, buttonLabel, submit, localSync }
   },
 }
 </script>
 
 <style lang="less" module>
-.target { flex: none; margin: 0 16px 16px; padding: 14px; border: 1px solid var(--color-primary-alpha-700); border-radius: 12px; }
-.row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
-.copy { display: flex; flex: 1; min-width: 160px; flex-direction: column; gap: 6px; line-height: 1.5; }
-.copy strong { font-size: 14px; color: var(--color-font); }
-.copy span, .message { font-size: 12px; line-height: 1.6; color: var(--color-font-label); }
-.message { margin: 10px 0 0; }
-.compact { margin: 0; padding: 12px; background: rgb(from currentColor r g b / .035); border-color: rgb(from currentColor r g b / .1); }
+.target { flex: none; margin: 0 20px 18px; }
+.label { margin: 0 0 10px; font-size: 11px; font-weight: 600; color: inherit; opacity: .6; }
+.card { padding: 14px; border: 1px solid rgb(from currentColor r g b / .1); border-radius: 14px; background: rgb(from currentColor r g b / .025); }
+.row { display: flex; align-items: center; gap: 12px; }
+.copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 5px; line-height: 1.5; }
+.copy strong { font-size: 13px; font-weight: 600; color: inherit; }
+.copy span, .message { font-size: 11px; line-height: 1.6; color: inherit; opacity: .65; overflow-wrap: anywhere; }
+.action { flex: none; min-width: 64px; min-height: 36px; border-radius: 10px !important; padding: 7px 12px !important; font-size: 12px; }
+.done { flex: none; font-size: 12px; color: var(--color-primary); }
+.feedback { border-top: 1px solid rgb(from currentColor r g b / .08); margin-top: 12px; padding-top: 10px; }
+.message { margin: 0; }
+.message + .message { margin-top: 6px; }
+.compact { margin: 14px 0 0; }
+.compact .card { padding: 12px; }
 .compact .row { gap: 10px; }
-.compact .copy { min-width: 150px; }
-.compact .copy strong { color: inherit; font-size: 13px; }
-.compact .copy span, .compact .message { color: inherit; opacity: .65; font-size: 11px; }
-.compact .row > button { width: 100%; min-height: 34px; }
 </style>

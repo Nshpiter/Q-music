@@ -5,7 +5,14 @@ import { markRaw } from '@common/utils/vueTools'
 import * as hotKeys from '@common/hotKey'
 import { APP_EVENT_NAMES, DATA_KEYS, DEFAULT_SETTING } from '@common/constants'
 import { type QQFavoriteRequest, type QQFavoriteResult } from '@common/types/qqFavorite'
+import type { NeteaseFavoriteRequest, NeteaseFavoriteResult } from '@common/utils/neteaseFavorite'
+import type { KugouFavoriteRequest, KugouFavoriteResult } from '@common/utils/kugouFavorite'
 import type { AccountTransferInfo, AccountTransferState } from '@common/types/accountTransfer'
+
+export const addNeteaseFavoriteSong = async(songId: string, action: NeteaseFavoriteRequest['action'] = 'add') => {
+  return rendererInvoke<NeteaseFavoriteRequest, NeteaseFavoriteResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_wy_favorite_add, { songId, action })
+}
+export const addKugouFavoriteSong = async(request: KugouFavoriteRequest) => rendererInvoke<KugouFavoriteRequest, KugouFavoriteResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_kg_favorite_add, request)
 
 export const startAccountTransfer = async() => rendererInvoke<AccountTransferInfo>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_transfer_start)
 export const getAccountTransferState = async(id: string) => rendererInvoke<string, AccountTransferState>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_transfer_status, id)

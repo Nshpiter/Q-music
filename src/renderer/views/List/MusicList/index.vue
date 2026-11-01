@@ -58,7 +58,7 @@
             <input type="checkbox" :checked="selectedList.includes(item)" :aria-label="$t('list__select_song', { name: item.name })" @click.stop @change="toggleSelectData(index)">
           </div>
           <div class="list-item-cell auto name" :aria-label="item.name">
-            <span class="select name">{{ item.name }}</span>
+            <SongTitle class="select name" :music="item" />
             <source-icon v-if="isShowSource || item.source != 'local'" class="no-select label-source" :source="item.source" :size="14" />
           </div>
           <div class="list-item-cell" :class="$style.singerColumn"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
@@ -125,6 +125,7 @@ import { clipboardWriteText } from '@common/utils/electron'
 import { assertApiSupport } from '@renderer/store/utils'
 import SearchList from './components/SearchList.vue'
 import SourceIcon from '@renderer/components/common/SourceIcon.vue'
+import SongTitle from '@renderer/components/common/SongTitle.vue'
 import MusicSortModal from './components/MusicSortModal.vue'
 import MusicToggleModal from './components/MusicToggleModal.vue'
 import useListInfo from './useListInfo'
@@ -150,6 +151,7 @@ export default {
   components: {
     PlaylistIdentity,
     SourceIcon,
+    SongTitle,
     SearchList,
     MusicSortModal,
     MusicToggleModal,

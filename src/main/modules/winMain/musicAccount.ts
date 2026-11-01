@@ -7,6 +7,7 @@ import { getQQCredentials, getQQRequestComm, getQQWebRequestComm } from '@common
 import { signQQRequest } from '@common/utils/qqSign'
 import { collectQQPlaylistIds } from '@common/utils/qqPlaylist'
 import { type QQFavoriteRequest, type QQFavoriteResult } from '@common/types/qqFavorite'
+import { createNeteaseFavoriteClient } from '@common/utils/neteaseFavorite'
 import { closeOfficialAccountLogin, openOfficialAccountLogin } from './officialAccountLogin'
 import { allowAccountLoginNavigation, upgradeAccountLoginNavigation } from './accountLoginNavigation'
 import { fitAccountLoginWindow, getAccountLoginBounds } from './accountLoginLayout'
@@ -823,6 +824,35 @@ const getNeteaseCsrfToken = async(accountSession: Session) => {
   const cookies = await accountSession.cookies.get({ url: 'https://music.163.com' })
   return cookies.find(cookie => cookie.name == '__csrf')?.value ?? ''
 }
+
+export const addNeteaseFavoriteSong = createNeteaseFavoriteClient(async() => {
+  const accountSession = await configureAccountSessionProxy('wy')
+  const readCookies = async() => accountSession.cookies.get({ url: 'https://music.163.com/' })
+  const cookies = await readCookies()
+  const musicU = cookies.find(cookie => cookie.name == 'MUSIC_U')?.value
+  if (!musicU) throw new Error('login_required')
+  return {
+    assertSession: async() => {
+      if ((await readCookies()).find(cookie => cookie.name == 'MUSIC_U')?.value != musicU) throw new Error('account_changed')
+    },
+    request: async(path, data) => {
+      const csrf = cookies.find(cookie => cookie.name == '__csrf')?.value ?? ''
+      const response = await accountSession.fetch(`https://music.163.com/weapi/${path}?csrf_token=${encodeURIComponent(csrf)}`, {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: 'https://music.163.com', Referer: 'https://music.163.com/' },
+        body: buildNeteaseWeapiForm({ ...data, csrf_token: csrf }),
+        signal: AbortSignal.timeout(12_000),
+      })
+      if (response.status == 401) throw new Error('login_required')
+      if (!response.ok) throw new Error('unavailable')
+      const result = await response.json() as Record<string, any>
+      if ([301, 401].includes(Number(result.code))) accountValidationCache.delete('wy')
+      return result
+    },
+  }
+})
 
 const requestNeteaseWeapi = async<T>(path: string, data: Record<string, unknown>): Promise<T> => {
   const accountSession = session.fromPartition(providerConfig.wy.partition)

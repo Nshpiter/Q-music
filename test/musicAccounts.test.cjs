@@ -9,6 +9,9 @@ const root = path.join(__dirname, '..')
 const mobile = fs.existsSync(path.join(root, 'src/core/musicAccount/kugouApi.ts'))
 const base = mobile ? 'src/core/musicAccount' : 'src/common/utils'
 function load(file, dependencies = {}, extra = {}) {
+  if (file == 'src/main/modules/winMain/kugouAccount.ts') dependencies['@common/utils/kugouFavorite'] = load('src/common/utils/kugouFavorite.ts')
+  if (file == 'src/main/modules/winMain/kugouAccount.ts') dependencies['./kugouVerification'] = {}
+  if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/neteaseFavorite'] = load('src/common/utils/neteaseFavorite.ts')
   if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['./accountLoginNavigation'] = load('src/main/modules/winMain/accountLoginNavigation.ts', {
     '../../utils/navigationPolicy': load('src/main/utils/navigationPolicy.ts', { '@common/config': { navigationUrlWhiteList: [] } }),
   })

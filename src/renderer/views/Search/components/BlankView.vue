@@ -91,7 +91,7 @@
                   <svg-icon v-else name="music" />
                   <i>▶</i>
                 </span>
-                <strong :title="item.name">{{ item.name }}</strong>
+                <strong :title="item.name"><SongTitle :music="item" /></strong>
                 <small :title="item.singer">{{ item.singer }}</small>
               </button>
             </div>
@@ -162,7 +162,7 @@
                   <span v-if="isCurrentTrack(item)" :class="[$style.playingBars, { [$style.playingBarsPaused]: !isPlay }]" aria-hidden="true"><i /><i /><i /></span>
                   <template v-else>{{ String(index + 1).padStart(2, '0') }}</template>
                 </span>
-                <strong :title="item.name">{{ item.name }}</strong>
+                <strong :title="item.name"><SongTitle :music="item" /></strong>
                 <span :title="item.singer">{{ item.singer }}</span>
                 <span :title="item.meta.albumName">{{ item.meta.albumName || '—' }}</span>
                 <span :class="$style.trackDuration">{{ item.interval || '—' }}</span>
@@ -304,6 +304,7 @@ import txMusicInfo from '@renderer/utils/musicSdk/tx/musicInfo'
 import { toNewMusicInfo } from '@renderer/utils'
 import ExternalImportModal from '@renderer/views/List/MyList/components/ExternalImportModal.vue'
 import SourceIcon from '@renderer/components/common/SourceIcon.vue'
+import SongTitle from '@renderer/components/common/SongTitle.vue'
 
 const props = defineProps({
   visible: Boolean,

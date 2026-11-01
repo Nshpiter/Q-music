@@ -3,11 +3,13 @@ import { createHash } from 'node:crypto'
 import getStore from '@main/utils/store'
 import { getProxy } from '@main/utils'
 import { createKugouApi, parseKugouSession, type KugouSession, type KugouQr } from '@common/utils/kugouAccount'
+import { createKugouFavoriteClient } from '@common/utils/kugouFavorite'
+import { encryptKugouVerification, presentKugouCaptcha } from './kugouVerification'
 
 const storeName = 'music_account_credentials'
 const storeField = 'kugouSession'
 const accountSession = () => session.fromPartition('persist:qmusic-account-kugou')
-const api = createKugouApi(async(url, init) => accountSession().fetch(url, init), value => createHash('md5').update(value).digest('hex'))
+const api = createKugouApi(async(url, init) => accountSession().fetch(url, init), value => createHash('md5').update(value).digest('hex'), encryptKugouVerification)
 export const readKugouSession = (): KugouSession | null => {
   try {
     const value = getStore(storeName).get<string>(storeField)
@@ -36,6 +38,20 @@ const assertSession = (before: KugouSession) => {
   const after = readKugouSession()
   if (!after || after.userId != before.userId || after.token != before.token) throw new Error('login_required')
 }
+export const addKugouFavoriteSong = createKugouFavoriteClient(async() => {
+  const current = requireSession()
+  await configureProxy()
+  return {
+    assertSession: async() => {
+      const after = readKugouSession()
+      if (!after || after.userId != current.userId || after.token != current.token) throw new Error('account_changed')
+    },
+    getFavorites: async() => api.getPlaylists(current),
+    getHashes: async(id) => api.getPlaylistHashes(current, id),
+    addSong: async(id, song) => api.addFavoriteSong(current, id, song),
+    verifySession: async() => api.verifySession(current, presentKugouCaptcha, async() => { assertSession(current) }),
+  }
+})
 export const getKugouPlaylists = async() => {
   const current = requireSession()
   await configureProxy()
