@@ -32,6 +32,13 @@ public class CryptoModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
+  public void verificationNonce(Promise promise) {
+    byte[] bytes = new byte[16];
+    new java.security.SecureRandom().nextBytes(bytes);
+    promise.resolve(Base64.encodeToString(bytes, Base64.NO_WRAP));
+  }
+
+  @ReactMethod
   public void generateRsaKey(Promise promise) {
     KeyPair kp = RSA.getKeyPair();
     String publicKeyBytesBase64 = new String(Base64.encode(kp.getPublic().getEncoded(), Base64.DEFAULT));

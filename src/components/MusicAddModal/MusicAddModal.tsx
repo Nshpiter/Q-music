@@ -66,13 +66,13 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
   }
 
   return (
-    <Dialog ref={dialogRef} onHide={handleHide} keyHide={!busy && !creating} bgHide={!busy && !creating} closeBtn={!busy && !creating}>
+    <Dialog title={t(selectInfo.isMove ? 'list_add_title_first_move' : 'favorite_picker_title')} ref={dialogRef} onHide={handleHide} keyHide={!busy && !creating} bgHide={!busy && !creating} closeBtn={!busy && !creating}>
       {!selectInfo.musicInfo ? null : <>
         <Title musicInfo={selectInfo.musicInfo} isMove={selectInfo.isMove} />
-        <List musicInfo={selectInfo.musicInfo} onPress={info => { void handleSelect(info) }} disabled={busy || creating} onCreating={handleCreating}>
-        {!selectInfo.isMove ? <QQFavoriteTarget key={selectInfo.musicInfo.id} musicInfo={selectInfo.musicInfo} disabled={busy || creating} onBusy={value => { busyRef.current = value; setBusy(value); setCloudBusy(value) }} onLogin={() => {
+        <List musicInfo={selectInfo.musicInfo} isMove={selectInfo.isMove} onPress={info => { void handleSelect(info) }} disabled={busy || creating} onCreating={handleCreating}>
+        {!selectInfo.isMove ? <QQFavoriteTarget key={selectInfo.musicInfo.id} musicInfo={selectInfo.musicInfo} disabled={busy || creating} onBusy={value => { busyRef.current = value; setBusy(value); setCloudBusy(value) }} onLogin={provider => {
           dialogRef.current?.setVisible(false)
-          if (commonState.componentIds.home) pushMusicAccountScreen(commonState.componentIds.home, 'tx')
+          if (commonState.componentIds.home) pushMusicAccountScreen(commonState.componentIds.home, provider)
         }} /> : null}
         {busy && !cloudBusy ? <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingBottom: 12 }}>
           <ActivityIndicator size="small" color={theme['q-accent-text']} />

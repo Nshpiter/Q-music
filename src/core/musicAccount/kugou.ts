@@ -1,7 +1,8 @@
 import { NativeModules } from 'react-native'
 import { toMD5 } from '@/utils/musicSdk/utils'
 import { createKugouApi, parseKugouSession, type KugouSession } from './kugouApi'
-export const kugouApi = createKugouApi(fetch, toMD5)
+import { encryptKugouVerification } from './kugouVerification'
+export const kugouApi = createKugouApi(fetch, toMD5, encryptKugouVerification)
 const storage = () => {
   const module = NativeModules.MusicCredentialModule
   if (!module?.getKugouSession || !module?.setKugouSession) throw new Error('credential_storage')

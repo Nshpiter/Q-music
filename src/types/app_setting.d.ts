@@ -78,6 +78,10 @@ declare global {
       'common.alwaysKeepStatusbarHeight': boolean
       'common.displayMode': 'auto' | 'phone' | 'tablet' | 'car'
       'common.largeScreenNavigation': 'left' | 'right' | 'bottom'
+      'common.floatingNavigation': boolean
+      'common.floatingNavigationSide': 'left' | 'right'
+      'common.floatingNavigationOffset': number
+      'common.floatingNavigationAutoCollapse': boolean
       'common.carShowExitBtn': boolean
       'common.predictiveBack': boolean
 

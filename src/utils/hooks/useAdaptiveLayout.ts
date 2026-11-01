@@ -6,6 +6,7 @@ export default () => {
   const { width, height } = useWindowDimensions()
   const mode = useSettingValue('common.displayMode')
   const position = useSettingValue('common.largeScreenNavigation')
+  const floating = useSettingValue('common.floatingNavigation')
   const screen = Dimensions.get('screen')
-  return resolveAdaptiveLayout(width, height, mode, screen.width > screen.height, NativeModules.UtilsModule?.isAutomotive === true, position)
+  return resolveAdaptiveLayout(width, height, mode, screen.width > screen.height, NativeModules.UtilsModule?.isAutomotive === true, position, floating)
 }

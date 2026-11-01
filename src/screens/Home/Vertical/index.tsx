@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native'
 import { DockInsetContext } from '@/components/common/DockInset'
 import Aside from '../Horizontal/Aside'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
+import FloatingNav from './FloatingNav'
 
 export default () => {
   const [dockHeight, setDockHeight] = useState(0)
@@ -20,6 +21,7 @@ export default () => {
             <PlayerBar isHome />
             {navigationPosition == 'bottom' ? <BottomNav /> : null}
           </View>
+          {navigationPosition == 'floating' ? <FloatingNav bottomInset={dockHeight} /> : null}
         </View>
         {navigationPosition == 'right' ? <Aside /> : null}
       </View>

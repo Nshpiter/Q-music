@@ -10,7 +10,7 @@ import { useMotion } from '@/utils/useMotion'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 import { Q_UI } from '@/theme/ui'
 
-const MOBILE_NAV = [
+export const MOBILE_NAV = [
   { id: 'nav_search', icon: 'search-2', label: 'mobile_discover' },
   { id: 'nav_songlist', icon: 'album', label: 'nav_songlist' },
   { id: 'nav_top', icon: 'leaderboard', label: 'nav_top' },

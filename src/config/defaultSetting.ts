@@ -17,6 +17,10 @@ const defaultSetting: LX.AppSetting = {
   'common.alwaysKeepStatusbarHeight': false,
   'common.displayMode': 'auto',
   'common.largeScreenNavigation': 'left',
+  'common.floatingNavigation': false,
+  'common.floatingNavigationSide': 'right',
+  'common.floatingNavigationOffset': 0.5,
+  'common.floatingNavigationAutoCollapse': false,
   'common.carShowExitBtn': false,
   'common.predictiveBack': true,
 

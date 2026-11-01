@@ -6,6 +6,8 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { useMusicExistsList } from '@/store/list/hook'
 import { Q_UI } from '@/theme/ui'
+import Text from '@/components/common/Text'
+import { useI18n } from '@/lang'
 
 export default ({ listInfo, onPress, musicInfo, disabled = false }: {
   listInfo: LX.List.MyListInfo
@@ -14,6 +16,7 @@ export default ({ listInfo, onPress, musicInfo, disabled = false }: {
   disabled?: boolean
 }) => {
   const theme = useTheme()
+  const t = useI18n()
   const isExists = useMusicExistsList(listInfo, musicInfo)
 
   const handlePress = () => {
@@ -21,24 +24,32 @@ export default ({ listInfo, onPress, musicInfo, disabled = false }: {
     onPress(listInfo)
   }
 
-  return (
-    <View>
+  const content = <>
+    <PlaylistIdentity list={listInfo} subtitle localCopy />
+    {isExists ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      <Icon accessible={false} name="check" rawSize={14} color={theme['q-accent-text']} />
+      <Text size={11} color={theme['q-accent-text']}>{t('favorite_local_exists')}</Text>
+    </View> : <Icon accessible={false} name="add" rawSize={16} color={theme['q-text-secondary']} />}
+  </>
+  const rowStyle = { ...styles.button, backgroundColor: theme['q-surface-raised'], borderWidth: 0.5, borderColor: theme['q-outline'] }
+  return isExists
+    ? <View accessible accessibilityLabel={`${getPlaylistLabel(listInfo)}，${t('favorite_local_exists')}`} accessibilityState={{ disabled: true }} style={rowStyle}>{content}</View>
+    : (
       <Button
-        accessibilityLabel={isExists ? `${getPlaylistLabel(listInfo)}，${global.i18n.t('list_add_tip_exists')}` : getPlaylistLabel(listInfo)}
-        disabled={disabled || isExists}
-        style={{ ...styles.button, backgroundColor: theme['q-surface-tint'] }}
+        accessibilityLabel={getPlaylistLabel(listInfo)}
+        disabled={disabled}
+        style={rowStyle}
         onPress={handlePress}
       >
-        <PlaylistIdentity list={listInfo} subtitle />
-        <Icon accessible={false} name={isExists ? 'check' : 'chevron-right'} rawSize={16} color={theme['q-text-secondary']} />
+        {content}
       </Button>
-    </View>
-  )
+      )
 }
 
 export const styles = createStyle({
   button: {
     minHeight: 56,
+    paddingVertical: 10,
     flexDirection: 'row',
     gap: 12,
     paddingLeft: 16,

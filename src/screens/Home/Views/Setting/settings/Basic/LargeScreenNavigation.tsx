@@ -14,20 +14,36 @@ const positions = ['left', 'right', 'bottom'] as const
 export default () => {
   const { wide, isCar } = useAdaptiveLayout()
   const position = useSettingValue('common.largeScreenNavigation')
+  const floating = useSettingValue('common.floatingNavigation')
+  const floatingSide = useSettingValue('common.floatingNavigationSide')
+  const autoCollapse = useSettingValue('common.floatingNavigationAutoCollapse')
   const showExit = useSettingValue('common.carShowExitBtn')
   const theme = useTheme()
   const t = useI18n()
-  if (!wide && !isCar) return null
 
   return <SubTitle title={t('setting_large_navigation')}>
-    {wide ? <View style={styles.options}>
+    <CheckBoxItem label={t('setting_floating_navigation')} check={floating} onChange={value => { updateSetting({ 'common.floatingNavigation': value }) }} />
+    {floating ? <>
+      <Text size={12} color={theme['q-text-secondary']} style={styles.hint}>{t('floating_navigation_hint')}</Text>
+      <View style={styles.options}>
+        {(['left', 'right'] as const).map(value => <Button key={value} accessibilityRole="radio" accessibilityState={{ checked: floatingSide == value }}
+          onPress={() => { updateSetting({ 'common.floatingNavigationSide': value }) }}
+          style={[styles.option, { backgroundColor: floatingSide == value ? theme['q-surface-tint'] : theme['q-surface-raised'], borderColor: floatingSide == value ? theme['q-accent'] : theme['q-outline'] }]}>
+          <Text size={14} color={theme['q-text-primary']}>{t(`setting_navigation_${value}`)}</Text>
+        </Button>)}
+        <Button onPress={() => { updateSetting({ 'common.floatingNavigationOffset': 0.5 }) }} style={[styles.option, { borderColor: theme['q-outline'] }]}><Text size={14}>{t('floating_navigation_reset')}</Text></Button>
+      </View>
+      <CheckBoxItem label={t('floating_navigation_auto_collapse')} check={autoCollapse} onChange={value => { updateSetting({ 'common.floatingNavigationAutoCollapse': value }) }} />
+      <Text size={12} color={theme['q-text-secondary']} style={styles.hint}>{t('floating_navigation_collapse_hint')}</Text>
+    </> : null}
+    {wide && !floating ? <View style={styles.options}>
       {positions.map(value => <Button key={value} accessibilityLabel={t(`setting_navigation_${value}`)} accessibilityRole="radio" accessibilityState={{ checked: position == value }}
         onPress={() => { updateSetting({ 'common.largeScreenNavigation': value }) }}
         style={[styles.option, { backgroundColor: position == value ? theme['q-surface-tint'] : theme['q-surface-raised'], borderColor: position == value ? theme['q-accent'] : theme['q-outline'] }]}>
         <Text size={14} color={position == value ? theme['q-accent-text'] : theme['q-text-primary']}>{t(`setting_navigation_${value}`)}</Text>
       </Button>)}
     </View> : null}
-    <Text size={12} color={theme['q-text-secondary']} style={styles.hint}>{t('setting_large_navigation_hint')}</Text>
+    {wide && !floating ? <Text size={12} color={theme['q-text-secondary']} style={styles.hint}>{t('setting_large_navigation_hint')}</Text> : null}
     {isCar ? <>
       <CheckBoxItem label={t('setting_car_exit')} check={showExit} onChange={value => { updateSetting({ 'common.carShowExitBtn': value }) }} />
       {showExit ? <Button style={[styles.option, { borderColor: theme['q-outline'] }]} accessibilityLabel={t('setting_car_exit_action')} onPress={() => {

@@ -11,11 +11,12 @@ export const getPlaylistLabel = (list: LX.List.MyListInfo) => {
   return source ? `${list.name}，${SOURCE_LOGOS[source]?.label ?? source}` : list.name
 }
 
-export default ({ list, name, subtitle = false, active = false }: {
+export default ({ list, name, subtitle = false, active = false, localCopy = false }: {
   list: LX.List.MyListInfo
   name?: string
   subtitle?: boolean
   active?: boolean
+  localCopy?: boolean
 }) => {
   const theme = useTheme()
   const t = useI18n()
@@ -25,7 +26,7 @@ export default ({ list, name, subtitle = false, active = false }: {
     {source ? <SourceLogo source={source} size={24} /> : <View style={{ width: 24, alignItems: 'center' }}><Icon name={list.id == 'love' ? 'love' : 'album'} size={20} color={theme['q-text-secondary']} /></View>}
     <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
       <Text numberOfLines={1} size={14} color={theme[active ? 'q-accent-text' : 'q-text-primary']} style={{ fontWeight: active ? '600' : '400' }}>{name ?? list.name}</Text>
-      {subtitle ? <Text numberOfLines={1} size={11} color={theme['q-text-secondary']}>{label}</Text> : null}
+      {subtitle ? <Text numberOfLines={1} size={11} color={theme['q-text-secondary']}>{localCopy && source ? t('favorite_local_copy', { source: label }) : label}</Text> : null}
     </View>
   </View>
 }

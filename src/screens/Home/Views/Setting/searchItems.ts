@@ -84,7 +84,7 @@ export const SETTINGS_SEARCH_ITEMS: SettingSearchItem[] = [
   { id: 'Theme/PerformanceMode', title: 'setting_basic_theme_performance_mode', section: 'appearance', keywords: '性能 流畅 流暢 省电 省電 performance', component: Control8 },
   { id: 'Theme/IsFontShadow', title: 'setting_basic_theme_font_shadow', section: 'appearance', keywords: '文字 阴影 陰影 shadow', component: Control9 },
   { id: 'Basic/FontSize', title: 'setting_basic_font_size', section: 'appearance', keywords: '字 字体 字體 大小 font size', component: Control10 },
-  { id: 'Basic/LargeScreenNavigation', title: 'setting_large_navigation', section: 'appearance', keywords: '导航 位置 左侧 右侧 底部 平板 车机 退出 導航 車機 navigation position left right bottom exit', component: LargeScreenNavigation, largeScreenOnly: true },
+  { id: 'Basic/LargeScreenNavigation', title: 'setting_large_navigation', section: 'appearance', keywords: '导航 悬浮 拖动 位置 左侧 右侧 底部 平板 车机 退出 導航 懸浮 車機 navigation floating drag position left right bottom exit', component: LargeScreenNavigation },
   { id: 'Basic/DisplayMode', title: 'setting_display_mode', section: 'appearance', keywords: '手机 平板 车机 手機 車機 tablet car layout', component: Control11 },
   { id: '@/components/player/PlayerStyleSelector', title: 'player_appearance_title', section: 'player', keywords: 'apple 经典 沉浸 經典 封面 歌词 歌詞 style', component: Control12 },
   { id: 'Player/PlayHighQuality', title: 'setting_play_play_quality', section: 'player', keywords: '音质 音質 flac 无损 無損 quality', component: Control13 },

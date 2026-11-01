@@ -1,4 +1,4 @@
-import { memo, useRef } from 'react'
+import { memo, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import Button, { type BtnType } from '@/components/common/Button'
 import Text from '@/components/common/Text'
@@ -9,6 +9,7 @@ import { useTheme } from '@/store/theme/hook'
 import { usePlayMusicInfo } from '@/store/player/hook'
 import { createStyle, type RowInfo } from '@/utils/tools'
 import SourceLogo from '@/components/SourceLogo'
+import Image from '@/components/common/Image'
 import SongDownloadButton from '@/components/SongDownloadButton'
 
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
@@ -43,6 +44,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   isShowInterval: boolean
 }) => {
   const theme = useTheme()
+  const [measuredWidth, setMeasuredWidth] = useState(0)
   const { songRowHeight, isCar } = useAdaptiveLayout()
   const playMusicInfo = usePlayMusicInfo()
 
@@ -63,7 +65,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   const singer = `${item.singer}${isShowAlbumName && item.meta.albumName ? ` · ${item.meta.albumName}` : ''}`
 
   return (
-    <View style={[styles.row, { width: rowInfo.rowWidth, height: songRowHeight }]}>
+    <View style={[styles.row, { width: rowInfo.rowWidth, height: songRowHeight }]} onLayout={event => { setMeasuredWidth(event.nativeEvent.layout.width) }}>
       <View style={[
         styles.listItem,
         isPlaying
@@ -96,6 +98,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
               ? <Icon accessible={false} style={styles.sn} name="play-outline" size={13} color={theme['q-accent-text']} />
               : <Text style={styles.sn} size={13} color={theme['q-text-secondary']}>{index + 1}</Text>
           }
+          <Image url={item.meta.picUrl} style={{ width: isCar ? 48 : 36, height: isCar ? 48 : 36, borderRadius: 7, marginRight: 10, flexShrink: 0 }} />
           <View style={styles.itemInfo}>
             <Text size={isCar ? 18 : 14} style={isPlaying ? styles.playingTitle : undefined} color={isPlaying ? theme['q-accent-text'] : theme['c-font']} numberOfLines={1}>{item.name}</Text>
             <View style={styles.listItemSingle}>
@@ -105,12 +108,12 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
             </View>
           </View>
           {
-            isShowInterval ? (
+            isShowInterval && measuredWidth >= 360 ? (
               <Text size={12} color={theme['q-text-secondary']} numberOfLines={1}>{item.interval}</Text>
             ) : null
           }
         </Button>
-        <SongDownloadButton music={item} />
+        {measuredWidth >= 480 ? <SongDownloadButton music={item} /> : null}
         <Button accessibilityLabel={`${item.name} · ${global.i18n.t('more_actions')}`} onPress={handleShowMenu} ref={moreButtonRef} style={[styles.moreButton, isCar && { width: 56, height: 64 }]}>
           <Icon accessible={false} name="dots-vertical" style={{ color: theme['q-text-secondary'] }} size={14} />
         </Button>
@@ -146,7 +149,8 @@ const styles = createStyle({
     height: '100%',
   },
   sn: {
-    width: 34,
+    width: 24,
+    flexShrink: 0,
     // fontSize: 12,
     textAlign: 'center',
     // backgroundColor: 'rgba(0,0,0,0.2)',
