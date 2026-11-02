@@ -1,3 +1,4 @@
+import { getKugouArtwork } from './artwork'
 import { decodeName, formatPlayTime, sizeFormate } from '../../index'
 import { createHttpFetch } from './util'
 
@@ -22,7 +23,7 @@ const createGetMusicInfosTask = (hashs) => {
     if (list.length < 100) break
     list = list.slice(100)
   }
-  let url = 'http://gateway.kugou.com/v3/album_audio/audio'
+  let url = 'https://gateway.kugou.com/v3/album_audio/audio'
   return tasks.map(task => createHttpFetch(url, {
     method: 'POST',
     body: task,
@@ -87,7 +88,7 @@ export const filterMusicInfoList = (rawList) => {
       songmid: item.audio_info.audio_id,
       source: 'kg',
       interval: formatPlayTime(parseInt(item.audio_info.timelength) / 1000),
-      img: null,
+      img: getKugouArtwork(item),
       lrc: null,
       hash: item.audio_info.hash,
       otherSource: null,

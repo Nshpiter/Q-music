@@ -1173,5 +1173,21 @@
   "lyric_font_default": "默认字体",
   "lyric_font_preview": "让音乐陪你走过每一天",
   "lyric_font_hint": "仅更换播放详情中的歌词与翻译，不影响界面和桌面歌词。选择本机已安装的字体，缺少的字形会自动回退。",
-  "player__errors_stopped": "连续播放失败，已停止自动跳歌。请检查音源或网络后重新播放。"
+  "player__errors_stopped": "连续播放失败，已停止自动跳歌。请检查音源或网络后重新播放。",
+  "discovery_collections": "发现更多歌单",
+  "discovery_collections_hint": "平台精选 · 挑一个合集，慢慢听",
+  "discovery_hot": "热门精选",
+  "discovery_new": "新鲜上架",
+  "discovery_rise": "正在飙升",
+  "discovery_chinese": "华语",
+  "discovery_relax": "轻音乐",
+  "discovery_classic": "经典",
+  "discovery_previous": "上一批",
+  "discovery_next": "换一批",
+  "discovery_category": "歌单分类",
+  "discovery_failed": "歌单暂时没加载出来，请重试",
+  "discovery_empty": "这一批暂无歌单，可返回上一批或切换分类",
+  "discovery_playlist": "歌单",
+  "discovery_track_count": "{count} 首",
+  "discovery_daily_hint": "共 {count} 首 · 点击上方合集查看完整推荐"
 }

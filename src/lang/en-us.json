@@ -1173,5 +1173,21 @@
   "lyric_font_default": "Default",
   "lyric_font_preview": "Let music brighten your day",
   "lyric_font_hint": "Applies to lyrics and translations in the player. Interface and desktop lyrics keep their fonts. Choose an installed font; missing characters use a system fallback.",
-  "player__errors_stopped": "Playback keeps failing. Automatic skipping has stopped. Check your music source or network, then play again."
+  "player__errors_stopped": "Playback keeps failing. Automatic skipping has stopped. Check your music source or network, then play again.",
+  "discovery_collections": "More to discover",
+  "discovery_collections_hint": "Platform playlists · Choose a collection to explore",
+  "discovery_hot": "Popular",
+  "discovery_new": "Fresh picks",
+  "discovery_rise": "Trending",
+  "discovery_chinese": "Chinese",
+  "discovery_relax": "Instrumental",
+  "discovery_classic": "Classics",
+  "discovery_previous": "Previous",
+  "discovery_next": "Next picks",
+  "discovery_category": "Playlist category",
+  "discovery_failed": "Unable to load playlists. Please try again.",
+  "discovery_empty": "No playlists in this batch. Go back or choose another category.",
+  "discovery_playlist": "Playlist",
+  "discovery_track_count": "{count} tracks",
+  "discovery_daily_hint": "{count} tracks · Open the collection above to see all recommendations"
 }

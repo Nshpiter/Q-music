@@ -1173,5 +1173,21 @@
   "lyric_font_default": "預設字體",
   "lyric_font_preview": "讓音樂陪你走過每一天",
   "lyric_font_hint": "僅更換播放詳情中的歌詞與翻譯，不影響介面和桌面歌詞。選擇本機已安裝的字體，缺少的字形會自動回退。",
-  "player__errors_stopped": "連續播放失敗，已停止自動跳歌。請檢查音源或網路後重新播放。"
+  "player__errors_stopped": "連續播放失敗，已停止自動跳歌。請檢查音源或網路後重新播放。",
+  "discovery_collections": "發現更多歌單",
+  "discovery_collections_hint": "平台精選 · 挑一個合集，慢慢聽",
+  "discovery_hot": "熱門精選",
+  "discovery_new": "新鮮上架",
+  "discovery_rise": "正在飆升",
+  "discovery_chinese": "華語",
+  "discovery_relax": "輕音樂",
+  "discovery_classic": "經典",
+  "discovery_previous": "上一批",
+  "discovery_next": "換一批",
+  "discovery_category": "歌單分類",
+  "discovery_failed": "暫時無法載入歌單，請重試",
+  "discovery_empty": "這一批暫無歌單，可返回上一批或切換分類",
+  "discovery_playlist": "歌單",
+  "discovery_track_count": "{count} 首",
+  "discovery_daily_hint": "共 {count} 首 · 點擊上方合集查看完整推薦"
 }

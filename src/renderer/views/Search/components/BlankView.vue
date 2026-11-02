@@ -77,25 +77,7 @@
             </section>
           </div>
 
-          <section v-if="dailyRecommendList.length" :class="$style.playlistShelf">
-            <header>
-              <div>
-                <h3>{{ $t('search__today_discovery') }}</h3>
-                <p>{{ $t('search__today_discovery_desc') }}</p>
-              </div>
-            </header>
-            <div :class="[$style.playlistRail, $style.discoveryGrid]">
-              <button v-for="(item, index) in dailyRecommendList.slice(0, 9)" :key="`${item.source}_${item.id}`" type="button" @click="playDailyRecommend(index)">
-                <span :class="$style.playlistCover">
-                  <img v-if="dailyCoverUrls[index] || item.meta.picUrl" :class="$style.fadeImg" :src="dailyCoverUrls[index] || item.meta.picUrl" alt="" @load="handleCoverLoad">
-                  <svg-icon v-else name="music" />
-                  <i>▶</i>
-                </span>
-                <strong :title="item.name"><SongTitle :music="item" /></strong>
-                <small :title="item.singer">{{ item.singer }}</small>
-              </button>
-            </div>
-          </section>
+          <DiscoveryPlaylists :provider="selectedDailyProvider" />
 
           <section v-if="canReadAccountPlaylists(accountPlaylistsProvider)" :class="$style.playlistShelf">
             <header>
@@ -296,7 +278,7 @@ import { setTempList } from '@renderer/store/list/action'
 import { playList, togglePlay } from '@renderer/core/player/action'
 import { isPlay, playMusicInfo } from '@renderer/store/player/state'
 import { playFromPage } from '@renderer/core/player/selection'
-import { getPicPath } from '@renderer/core/music'
+import { loadTrackArtwork } from '@renderer/utils/trackArtwork'
 import { LIST_IDS } from '@common/constants'
 import { getMusicAccountDaily, getMusicAccountPlaylistDetail, getMusicAccountPlaylists, getMusicAccountStatus, getQQDailyKeyStatus, loginMusicAccount, logoutMusicAccount, openQQDailyKeyPage, saveQQDailyApiKey } from '@renderer/utils/ipc'
 import wyMusicDetail from '@renderer/utils/musicSdk/wy/musicDetail'
@@ -305,6 +287,7 @@ import { toNewMusicInfo } from '@renderer/utils'
 import ExternalImportModal from '@renderer/views/List/MyList/components/ExternalImportModal.vue'
 import SourceIcon from '@renderer/components/common/SourceIcon.vue'
 import SongTitle from '@renderer/components/common/SongTitle.vue'
+import DiscoveryPlaylists from './DiscoveryPlaylists.vue'
 
 const props = defineProps({
   visible: Boolean,
@@ -476,7 +459,7 @@ const loadDailyRecommend = async(force = false, sourceOverride = selectedDailyPr
     dailyCoverUrls.value = list.slice(0, 4).map(item => item.meta.picUrl ?? '')
     const coverUrls = await Promise.all(list.slice(0, 4).map(async item => {
       if (item.meta.picUrl) return item.meta.picUrl
-      return getPicPath({ musicInfo: item }).catch(() => '')
+      return loadTrackArtwork(item)
     }))
     if (requestId == dailyRequestId) dailyCoverUrls.value = coverUrls
   } catch {
@@ -559,7 +542,7 @@ const openAccountPlaylist = async(playlist) => {
   // 歌单列表的提供方与“每日推荐”选择可以不同；必须沿用列表请求
   // 的 provider，否则切换推荐平台后点击旧列表会请求错接口。
   const provider = accountPlaylistsProvider.value || selectedDailyProvider.value
-  if (!playlist?.id || !accountStatus.value[provider]) return
+  if (playlist?.id == null || playlist.id === '' || !canReadAccountPlaylists(provider)) return
   const requestId = ++playlistDetailRequestId
   selectedAccountPlaylist.value = playlist
   playlistDetailError.value = ''

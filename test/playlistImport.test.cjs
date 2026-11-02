@@ -22,6 +22,7 @@ function sdk(provider, request, extra = {}) {
     '../../request': { httpFetch: (url, options) => ({ promise: Promise.resolve().then(() => request(url, options)) }) },
     '../../index': { decodeName: value => value || '', formatPlayTime: String, sizeFormate: String, formatPlayCount: String },
     '../utils': { formatSingerName: () => 'artist' },
+    './artwork': load(`${sdkRoot}/kg/artwork.js`),
     './util': { signatureParams: () => 'test-signature' },
     '@renderer/utils/musicSdk/kg/vendors/infSign.min': {}, './vendors/infSign.min': {},
     './utils/crypto': { linuxapi: value => value }, './musicDetail': {}, './utils/index': {}, ...extra,

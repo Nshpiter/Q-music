@@ -96,6 +96,7 @@ function albumsHarness(overrides = {}) {
 function kugouPlaylistHarness(request = () => { throw Error('unexpected request') }) {
   return load('src/renderer/utils/musicSdk/kg/songList.js', {
     '../../request': { httpFetch: request }, '../../index': {},
+    './artwork': load('src/renderer/utils/musicSdk/kg/artwork.js'),
     '@renderer/utils/musicSdk/kg/vendors/infSign.min': {}, './util': { signatureParams: () => 'test' },
   }).default
 }
