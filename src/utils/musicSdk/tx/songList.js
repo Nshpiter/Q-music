@@ -54,7 +54,7 @@ export default {
           comm: { cv: 1602, ct: 20 },
           playlist: {
             method: 'get_playlist_by_tag',
-            param: { id: 10000000, sin: this.limit_list * (page - 1), size: this.limit_list, order: sortId, cur_page: page },
+            param: { id: 10000000, sin: this.limit_list * (page - 1), size: this.limit_list, order: Number(sortId), cur_page: page },
             module: 'playlist.PlayListPlazaServer',
           },
       }))}`

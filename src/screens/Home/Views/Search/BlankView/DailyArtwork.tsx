@@ -1,36 +1,15 @@
-import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { memo, useEffect, useLayoutEffect, useRef } from 'react'
 import { Animated, StyleSheet, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
-import { getPicUrl } from '@/core/music/online'
+import useTrackArtwork from '@/utils/hooks/useTrackArtwork'
 import { useTheme } from '@/store/theme/hook'
 import { useMotion } from '@/utils/useMotion'
-
-// 拼图和横向推荐共享请求，避免同一封面重复访问音源。
-const covers = new Map<string, Promise<string>>()
-const loadCover = async(musicInfo: LX.Music.MusicInfoOnline) => {
-  const key = `${musicInfo.source}_${musicInfo.id}`
-  let request = covers.get(key)
-  if (!request) {
-    request = getPicUrl({ musicInfo, isRefresh: false, allowToggleSource: false }).catch(() => '')
-    if (covers.size >= 64) covers.delete(covers.keys().next().value!)
-    covers.set(key, request)
-  }
-  return request
-}
 
 export default memo(({ item }: { item?: LX.Music.MusicInfoOnline }) => {
   const theme = useTheme()
   const motion = useMotion()
-  const [url, setUrl] = useState(item?.meta.picUrl ?? '')
+  const { url, onError } = useTrackArtwork(item)
   const opacity = useRef(new Animated.Value(0)).current
-  useEffect(() => {
-    let active = true
-    setUrl(item?.meta.picUrl ?? '')
-    if (item && !item.meta.picUrl) {
-      void loadCover(item).then(url => { if (active) setUrl(url) })
-    }
-    return () => { active = false }
-  }, [item])
   useLayoutEffect(() => {
     opacity.stopAnimation()
     opacity.setValue(0)
@@ -43,7 +22,7 @@ export default memo(({ item }: { item?: LX.Music.MusicInfoOnline }) => {
   return (
     <View style={{ ...styles.cover, backgroundColor: theme['q-surface-tint'] }}>
       <Icon accessible={false} name="album" color={theme['q-accent-text']} rawSize={26} />
-      {url ? <Animated.Image source={{ uri: url }} style={[StyleSheet.absoluteFill, { opacity }]} onLoad={handleLoad} onError={() => { setUrl('') }} /> : null}
+      {url ? <Animated.Image source={{ uri: url }} style={[StyleSheet.absoluteFill, { opacity }]} onLoad={handleLoad} onError={onError} /> : null}
     </View>
   )
 })

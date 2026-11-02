@@ -47,6 +47,7 @@ test('酷狗服务端缩小分页时继续读取，短页重复仍拒绝覆盖',
 const loadKugouSongs = fetchDetails => load(mobile ? 'src/utils/musicSdk/kg/songList.js' : 'src/renderer/utils/musicSdk/kg/songList.js', {
   '../../request': { httpFetch: (_url, options) => ({ promise: Promise.resolve(fetchDetails(options.body.data)).then(data => ({ statusCode: 200, body: { error_code: 0, data } })) }) },
   '../../index': { decodeName: value => value, formatPlayTime: value => String(value), sizeFormate: value => String(value) },
+  './artwork': load(mobile ? 'src/utils/musicSdk/kg/artwork.js' : 'src/renderer/utils/musicSdk/kg/artwork.js'),
   './vendors/infSign.min': {}, '@renderer/utils/musicSdk/kg/vendors/infSign.min': {}, './util': {},
 }).default
 const kugouDetail = (n, audioId = n, extras = {}) => ({

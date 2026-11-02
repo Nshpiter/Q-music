@@ -987,5 +987,21 @@
   "library_all": "All",
   "library_category_empty": "No playlists here yet. Import or create one.",
   "library_track_count": "{count} tracks",
-  "library_back": "Back to playlists"
+  "library_back": "Back to playlists",
+  "discovery_collections": "More to discover",
+  "discovery_collections_hint": "Platform playlists · Choose a collection to explore",
+  "discovery_hot": "Popular",
+  "discovery_new": "Fresh picks",
+  "discovery_rise": "Trending",
+  "discovery_chinese": "Chinese",
+  "discovery_relax": "Instrumental",
+  "discovery_classic": "Classics",
+  "discovery_previous": "Previous",
+  "discovery_next": "Next picks",
+  "discovery_category": "Playlist category",
+  "discovery_failed": "Unable to load playlists. Please try again.",
+  "discovery_empty": "No playlists in this batch. Go back or choose another category.",
+  "discovery_playlist": "Playlist",
+  "discovery_track_count": "{count} tracks",
+  "discovery_daily_hint": "{count} tracks · Open the collection above to see all recommendations"
 }

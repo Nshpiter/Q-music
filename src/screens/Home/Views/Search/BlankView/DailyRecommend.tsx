@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AppState, FlatList, InteractionManager, Modal, SafeAreaView, ScrollView, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import DailyArtwork from './DailyArtwork'
+import DiscoveryPlaylists from './DiscoveryPlaylists'
 import Skeleton from '@/components/common/Skeleton'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 import { getDailyRefreshAction } from '@/core/musicAccount/dailyPolicy'
@@ -148,6 +149,7 @@ export default () => {
   const renderCover = (item?: LX.Music.MusicInfoOnline) => <DailyArtwork item={item} />
 
   return (
+    <>
     <View
       style={{
         ...styles.container,
@@ -189,53 +191,9 @@ export default () => {
       </View>
       </View>
       </View>
-      {loading && !list.length
-        ? (
-            <View accessible accessibilityLabel={t('search_daily_recommend_loading')} style={styles.skeleton}>
-              <Skeleton width={96} height={16} radius={8} style={styles.discoveryTitle} />
-              <View style={styles.discoveryList}>
-                {[0, 1, 2].map(index => (
-                  <View key={index} style={styles.discoveryItem}>
-                    <Skeleton width={48} height={48} radius={12} />
-                    <View style={styles.musicInfo}><Skeleton width="78%" height={12} /><Skeleton width="48%" height={10} style={styles.skeletonLine} /></View>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )
-        : loadError
-          ? (
-              <View style={styles.state}>
-                <Text size={12} color={theme['q-text-secondary']}>{t('load_failed')}</Text>
-                <Button accessibilityLabel={t('list_retry')} hitSlop={Q_TOUCH_HIT_SLOP} style={{ ...styles.errorAction, backgroundColor: theme['q-surface-tint'] }} onPress={() => { void load(sourceRef.current, true) }}>
-                  <Icon accessible={false} name="available_updates" color={theme['q-accent-text']} rawSize={14} />
-                  <Text size={12} color={theme['q-accent-text']}>{t('list_retry')}</Text>
-                </Button>
-              </View>
-            )
-          : list.length
-            ? <>
-                <View style={styles.discoveryHeading}>
-                  <Text size={17} style={styles.title} color={theme['q-text-primary']}>{t('search_today_discovery')}</Text>
-                  <Button accessibilityLabel={t('search_daily_open')} style={styles.viewAll} onPress={() => { setDetailVisible(true) }}><Text size={12} color={theme['q-accent-text']}>{t('daily_view_all')}</Text><Icon name="chevron-right" rawSize={15} color={theme['q-accent-text']} /></Button>
-                </View>
-                {result && result.kind != 'local' ? <Text size={11} style={styles.discoveryHint} color={theme['q-text-secondary']}>{t('daily_platform_updates')}</Text> : null}
-                <View style={[styles.discoveryList, wide && styles.discoveryGrid]}>
-                  {list.slice(0, 6).map((item, index) => {
-                    const current = playMusicInfo.musicInfo?.id == item.id
-                    const playing = current && isPlay
-                    return <Button key={`${item.source}_${item.id}`} disabled={startingPlayback} accessibilityLabel={`${t(playing ? 'pause' : 'play')} · ${item.name} · ${item.singer}`} style={[styles.discoveryItem, wide && styles.discoveryColumn, current && { backgroundColor: theme['q-surface-tint'] }]} onPress={() => { if (current) togglePlay(); else void handlePlay(index) }}>
-                      <View style={styles.rowCover}>{renderCover(item)}</View>
-                      <View style={styles.musicInfo}>
-                        <Text numberOfLines={1} size={14} style={styles.trackTitle} color={current ? theme['q-accent-text'] : theme['q-text-primary']}>{item.name}</Text>
-                        <Text numberOfLines={1} size={11} color={theme['q-text-secondary']}>{item.singer}</Text>
-                      </View>
-                      <View style={styles.rowPlay}><Icon accessible={false} name={playing ? 'pause' : 'play-outline'} rawSize={18} color={theme['q-accent-text']} /></View>
-                    </Button>
-                  })}
-                </View>
-              </>
-            : <View style={styles.state}><Text size={12} color={theme['q-text-secondary']}>{t('search_daily_recommend_empty')}</Text></View>}
+      {loading && !list.length ? <View style={styles.state}><Skeleton width="70%" height={13} /><Skeleton width="45%" height={11} /></View>
+        : loadError ? <View style={styles.state}><Text size={12} color={theme['q-text-secondary']}>{t('load_failed')}</Text><Button style={styles.errorAction} onPress={() => { void load(sourceRef.current, true) }}><Text color={theme['q-accent-text']}>{t('list_retry')}</Text></Button></View>
+          : <Text size={12} style={styles.collectionHint} color={theme['q-text-secondary']}>{list.length ? t('discovery_daily_hint', { count: list.length }) : t('search_daily_recommend_empty')}</Text>}
       {settingsVisible ? <DailySettings provider={provider} onClose={() => { setSettingsVisible(false) }} onChanged={refresh} onLogin={openAccount} /> : null}
       <Modal visible={detailVisible} animationType="slide" onRequestClose={() => { setDetailVisible(false) }}>
         <SafeAreaView style={{ flex: 1, backgroundColor: theme['c-content-background'] }}>
@@ -298,6 +256,8 @@ export default () => {
         </SafeAreaView>
       </Modal>
     </View>
+    <DiscoveryPlaylists key={provider} provider={provider} />
+    </>
   )
 }
 
@@ -325,20 +285,10 @@ const styles = createStyle({
   dateBadge: { position: 'absolute', bottom: 6, right: 6, borderRadius: 10, paddingHorizontal: 9, paddingVertical: 2 },
   eyebrow: { letterSpacing: 2, fontWeight: '700', marginBottom: 6 },
   openHint: { marginTop: 10, fontWeight: '600' },
-  discoveryTitle: { fontWeight: '700', marginTop: 24, marginBottom: 14 },
-  discoveryHeading: { marginTop: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  viewAll: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 4 },
-  discoveryHint: { marginBottom: 8 },
-  discoveryList: { gap: 4 },
-  discoveryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  discoveryColumn: { width: '49%' },
-  skeleton: { overflow: 'hidden' },
+  collectionHint: { marginTop: 12, lineHeight: 19 },
   skeletonLine: { marginTop: 8 },
   trackNumberSkeleton: { marginRight: 12 },
   detailState: { minHeight: 240, gap: 12, alignItems: 'center', justifyContent: 'center' },
-  discoveryItem: { width: '100%', minHeight: 68, paddingVertical: 8, paddingHorizontal: 4, flexDirection: 'row', alignItems: 'center', borderRadius: 14 },
-  rowPlay: { width: 36, alignItems: 'center', justifyContent: 'center' },
-  trackTitle: { fontWeight: '600', marginBottom: 3 },
   detailHeader: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 8 },
   closeButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   detailList: { paddingHorizontal: 20, paddingBottom: 24 },

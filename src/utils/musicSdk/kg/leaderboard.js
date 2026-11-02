@@ -1,3 +1,4 @@
+import { getKugouArtwork } from './artwork'
 import { httpFetch } from '../../request'
 import { decodeName, formatPlayTime, sizeFormate } from '../../index'
 import { formatSingerName } from '../utils'
@@ -134,7 +135,7 @@ export default {
         songmid: item.audio_id,
         source: 'kg',
         interval: formatPlayTime(item.duration),
-        img: null,
+        img: getKugouArtwork(item),
         lrc: null,
         hash: item.hash,
         otherSource: null,

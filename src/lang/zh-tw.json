@@ -987,5 +987,21 @@
   "library_all": "全部",
   "library_category_empty": "這個分類還沒有歌單，可以匯入或新建",
   "library_track_count": "{count} 首",
-  "library_back": "返回歌單"
+  "library_back": "返回歌單",
+  "discovery_collections": "發現更多歌單",
+  "discovery_collections_hint": "平台精選 · 挑一個合集，慢慢聽",
+  "discovery_hot": "熱門精選",
+  "discovery_new": "新鮮上架",
+  "discovery_rise": "正在飆升",
+  "discovery_chinese": "華語",
+  "discovery_relax": "輕音樂",
+  "discovery_classic": "經典",
+  "discovery_previous": "上一批",
+  "discovery_next": "換一批",
+  "discovery_category": "歌單分類",
+  "discovery_failed": "暫時無法載入歌單，請重試",
+  "discovery_empty": "這一批暫無歌單，可返回上一批或切換分類",
+  "discovery_playlist": "歌單",
+  "discovery_track_count": "{count} 首",
+  "discovery_daily_hint": "共 {count} 首 · 點擊上方合集查看完整推薦"
 }

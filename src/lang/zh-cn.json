@@ -987,5 +987,21 @@
   "library_all": "全部",
   "library_category_empty": "这个分类还没有歌单，可以导入或新建",
   "library_track_count": "{count} 首",
-  "library_back": "返回歌单"
+  "library_back": "返回歌单",
+  "discovery_collections": "发现更多歌单",
+  "discovery_collections_hint": "平台精选 · 挑一个合集，慢慢听",
+  "discovery_hot": "热门精选",
+  "discovery_new": "新鲜上架",
+  "discovery_rise": "正在飙升",
+  "discovery_chinese": "华语",
+  "discovery_relax": "轻音乐",
+  "discovery_classic": "经典",
+  "discovery_previous": "上一批",
+  "discovery_next": "换一批",
+  "discovery_category": "歌单分类",
+  "discovery_failed": "歌单暂时没加载出来，请重试",
+  "discovery_empty": "这一批暂无歌单，可返回上一批或切换分类",
+  "discovery_playlist": "歌单",
+  "discovery_track_count": "{count} 首",
+  "discovery_daily_hint": "共 {count} 首 · 点击上方合集查看完整推荐"
 }

@@ -1,3 +1,4 @@
+import { getKugouArtwork } from './artwork'
 import { httpFetch } from '../../request'
 import { decodeName, formatPlayTime, sizeFormate } from '../../index'
 import { formatSingerName } from '../utils'
@@ -55,7 +56,7 @@ export default {
       source: 'kg',
       interval: formatPlayTime(rawData.Duration),
       _interval: rawData.Duration,
-      img: null,
+      img: getKugouArtwork(rawData),
       lrc: null,
       otherSource: null,
       hash: rawData.FileHash,

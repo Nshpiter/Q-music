@@ -1,3 +1,4 @@
+import { getKugouArtwork } from './artwork'
 import { httpFetch } from '../../request'
 import { decodeName, formatPlayTime, sizeFormate, dateFormat, formatPlayCount } from '../../index'
 import infSign from './vendors/infSign.min'
@@ -270,7 +271,7 @@ export default {
       author: item.nickname,
       name: item.specialname,
       time: dateFormat(item.publish_time || item.publishtime, 'Y-M-D'),
-      img: item.img || item.imgurl,
+      img: getKugouArtwork(item),
       total: item.songcount,
       grade: item.grade,
       desc: item.intro,
@@ -810,7 +811,7 @@ export default {
         songmid: item.audio_id,
         source: 'kg',
         interval: formatPlayTime(item.duration / 1000),
-        img: null,
+        img: getKugouArtwork(item),
         lrc: null,
         hash: item.hash,
         types,
@@ -872,7 +873,7 @@ export default {
   //       songmid: item.audio_id,
   //       source: 'kg',
   //       interval: formatPlayTime(item.timelen / 1000),
-  //       img: null,
+  //       img: getKugouArtwork(item),
   //       lrc: null,
   //       hash: item.hash,
   //       types,
@@ -934,7 +935,7 @@ export default {
         songmid: item.audio_info.audio_id,
         source: 'kg',
         interval: formatPlayTime(parseInt(item.audio_info.timelength) / 1000),
-        img: null,
+        img: getKugouArtwork(item),
         lrc: null,
         hash: item.audio_info.hash,
         otherSource: null,

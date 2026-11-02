@@ -1,7 +1,14 @@
+import { getKugouArtwork, normalizeArtwork } from './artwork'
+import { getMusicInfoRaw } from './musicInfo'
 import { httpFetch } from '../../request'
 
 export default {
-  getPic(songInfo) {
+  async getPic(songInfo) {
+    try {
+      const image = getKugouArtwork(await getMusicInfoRaw(songInfo.hash))
+      if (image) return image
+    } catch {}
+
     const requestObj = httpFetch(
       'http://media.store.kugou.com/v1/get_res_privilege',
       {
@@ -21,8 +28,8 @@ export default {
           resource: [
             {
               album_audio_id:
-                songInfo.songmid.length == 32 // 修复歌曲ID存储变更导致图片获取失败的问题
-                  ? songInfo.audioId.split('_')[0]
+                String(songInfo.songmid).length == 32 // 修复歌曲ID存储变更导致图片获取失败的问题
+                  ? String(songInfo.audioId || '').split('_')[0] || 0
                   : songInfo.songmid,
               album_id: songInfo.albumId,
               hash: songInfo.hash,
@@ -39,8 +46,8 @@ export default {
     )
     return requestObj.promise.then(({ body }) => {
       if (body.error_code !== 0) return Promise.reject(new Error('图片获取失败'))
-      let info = body.data[0].info
-      const img = info.imgsize ? info.image.replace('{size}', info.imgsize[0]) : info.image
+      const info = body.data?.[0]?.info
+      const img = normalizeArtwork(info?.image)
       if (!img) return Promise.reject(new Error('Pic get failed'))
       return img
     })

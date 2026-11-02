@@ -6,7 +6,7 @@ import { createStyle, type RowInfo } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
 import SourceLogo from '@/components/SourceLogo'
-import Image from '@/components/common/Image'
+import TrackArtwork from '@/components/TrackArtwork'
 import SongDownloadButton from '@/components/SongDownloadButton'
 import Button, { type BtnType } from '@/components/common/Button'
 
@@ -88,7 +88,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
                 ? <Icon accessible={false} style={styles.sn} name="play-outline" size={13} color={theme['q-accent-text']} />
                 : <Text style={styles.sn} size={13} color={theme['q-text-secondary']}>{index + 1}</Text>
           }
-          <Image url={item.meta.picUrl} style={{ width: isCar ? 48 : 36, height: isCar ? 48 : 36, borderRadius: 7, marginRight: 10, flexShrink: 0 }} />
+          <TrackArtwork item={item} style={{ width: isCar ? 48 : 36, height: isCar ? 48 : 36, borderRadius: 7, marginRight: 10, flexShrink: 0 }} />
           <View style={styles.itemInfo}>
             <Text size={isCar ? 18 : 14} style={active ? styles.playingTitle : undefined} color={active ? theme['q-accent-text'] : theme['q-text-primary']} numberOfLines={1}>{item.name}</Text>
             <View style={styles.listItemSingle}>
