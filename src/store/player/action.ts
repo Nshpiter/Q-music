@@ -3,6 +3,7 @@ import state from './state'
 
 type PlayerMusicInfoKeys = keyof LX.Player.MusicInfo
 const musicInfoKeys: PlayerMusicInfoKeys[] = Object.keys(state.musicInfo) as PlayerMusicInfoKeys[]
+let tempId = 0
 
 export default {
   updatePlayIndex(playIndex: number, playerPlayIndex: number) {
@@ -93,20 +94,25 @@ export default {
       }
       return true
     })
-    if (topList.length) arrUnshift(state.tempPlayList, topList.map(({ musicInfo, listId }) => ({ musicInfo, listId, isTempPlay: true })))
-    if (bottomList.length) arrPush(state.tempPlayList, bottomList.map(({ musicInfo, listId }) => ({ musicInfo, listId, isTempPlay: true })))
+    if (topList.length) arrUnshift(state.tempPlayList, topList.map(({ musicInfo, listId }) => ({ musicInfo, listId, isTempPlay: true, tempId: ++tempId })))
+    if (bottomList.length) arrPush(state.tempPlayList, bottomList.map(({ musicInfo, listId }) => ({ musicInfo, listId, isTempPlay: true, tempId: ++tempId })))
 
-    global.state_event.playTempPlayListChanged({ ...state.tempPlayList })
+    global.state_event.playTempPlayListChanged([...state.tempPlayList])
+  },
+  moveTempPlayList(from: number, to: number) {
+    if (![from, to].every(index => Number.isInteger(index) && index >= 0 && index < state.tempPlayList.length) || from == to) return
+    state.tempPlayList.splice(to, 0, state.tempPlayList.splice(from, 1)[0])
+    global.state_event.playTempPlayListChanged([...state.tempPlayList])
   },
   removeTempPlayList(index: number) {
     state.tempPlayList.splice(index, 1)
 
-    global.state_event.playTempPlayListChanged({ ...state.tempPlayList })
+    global.state_event.playTempPlayListChanged([...state.tempPlayList])
   },
   clearTempPlayeList() {
     state.tempPlayList = []
 
-    global.state_event.playTempPlayListChanged({ ...state.tempPlayList })
+    global.state_event.playTempPlayListChanged([...state.tempPlayList])
   },
   setLoadErrorPicUrl(url: string) {
     state.loadErrorPicUrl = url

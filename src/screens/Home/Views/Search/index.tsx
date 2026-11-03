@@ -50,6 +50,7 @@ export default () => {
   const t = useI18n()
   const [related, setRelated] = useState<SearchNavigationRequest['related']>()
   const [searchType, setSearchType] = useState<SearchType>('music')
+  const [selectedSource, setSelectedSource] = useState<SearchInfo['source']>('kw')
   const [hasQuery, setHasQuery] = useState(!!searchState.searchText.trim())
   const [hasDraft, setHasDraft] = useState(false)
   const [historyVisible, setHistoryVisible] = useState(false)
@@ -77,6 +78,7 @@ export default () => {
       if (!mounted || revision.current != initialRevision) return
       searchInfo.current.temp_source = info.temp_source
       searchInfo.current.source = normalizeSource(info.type, info.source)
+      setSelectedSource(searchInfo.current.source)
       searchInfo.current.searchType = info.type
       setSearchType(info.type)
       switch (info.type) {
@@ -99,6 +101,7 @@ export default () => {
       searchInfo.current.searchType = type
       const source = normalizeSource(type, searchInfo.current.source)
       searchInfo.current.source = source
+      setSelectedSource(source)
       headerBarRef.current?.setSourceList(getAvailableSources(type), source)
       if (externalTypeChange.current) return
       void saveSearchSetting({ type, source })
@@ -123,6 +126,7 @@ export default () => {
     setRelated(undefined)
     setHasQuery(!!searchState.searchText.trim())
     searchInfo.current.source = source
+    setSelectedSource(source)
     hotSearchRef.current?.show(source)
     void saveSearchSetting({ source })
     listRef.current?.loadList(searchState.searchText, source, searchInfo.current.searchType)
@@ -167,6 +171,7 @@ export default () => {
       externalTypeChange.current = false
       const source = normalizeSource('music', request.source)
       searchInfo.current.source = source
+      setSelectedSource(source)
       searchInfo.current.searchType = 'music'
       setSearchType('music')
       headerBarRef.current?.setSourceList(searchMusicState.sources, source)
@@ -235,14 +240,14 @@ export default () => {
         onShowTipList={handleShowTipList}
       />
       <View style={{ ...styles.typeTabs, display: hasQuery ? 'flex' : 'none', borderBottomColor: theme['q-outline'] }}>
-        <SearchTypeSelector selectedType={searchType} />
+        <SearchTypeSelector selectedType={searchType} musicOnly={selectedSource == 'bi'} />
       </View>
       {related ? <View style={styles.relatedHeading}>
         <Text size={12} color={theme['q-text-secondary']} style={{ flex: 1 }}>{t('song_browse_album_hint')}</Text>
         <Button accessibilityLabel={t('song_browse_search_keyword')} style={styles.keywordSearch} onPress={() => { handleSearch(searchState.searchText) }}><Text size={12} color={theme['q-accent-text']}>{t('song_browse_search_keyword')}</Text></Button>
       </View> : null}
       <View style={styles.content} onLayout={handleLayout}>
-        <TipList ref={searchTipListRef} onSearch={handleSearch} />
+        <TipList ref={searchTipListRef} source={selectedSource} onSearch={handleSearch} />
         <View style={{ flex: 1, display: related ? 'none' : 'flex' }}><List ref={listRef} onSearch={handleSearch} /></View>
         {related ? <RelatedList info={related} /> : null}
         {historyVisible && showSuggestions ? <View style={[styles.historyOverlay, { bottom: dockInset }]}>

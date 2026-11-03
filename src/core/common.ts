@@ -20,9 +20,13 @@ import { hideDesktopLyricView } from '@/utils/nativeModules/lyricDesktop'
 import { getPersistedUriList, selectManagedFolder } from '@/utils/fs'
 
 
-const throttleSaveSetting = throttle(() => {
-  void saveData(storageDataPrefix.setting, settingState.setting)
-})
+// 配置恢复需要等待落盘；串行保存也避免与普通设置的节流写入互相覆盖。
+let settingSave: Promise<void> = Promise.resolve()
+export const persistSetting = async() => {
+  settingSave = settingSave.catch(() => {}).then(async() => saveData(storageDataPrefix.setting, settingState.setting))
+  return settingSave
+}
+const throttleSaveSetting = throttle(() => { void persistSetting().catch(() => {}) })
 
 /**
  * 初始化设置

@@ -117,7 +117,7 @@ export const SETTINGS_SEARCH_ITEMS: SettingSearchItem[] = [
   { id: 'List/IsShowAlbumName', title: 'setting_list_show_album_name', section: 'list', keywords: '专辑 專輯 album', component: Control40 },
   { id: 'List/IsShowInterval', title: 'setting_list_show interval', section: 'list', keywords: '时长 時長 duration', component: Control41 },
   { id: 'List/AddMusicLocationType', title: 'setting_list_add_music_location_type', section: 'list', keywords: '添加位置 頭 尾 position', component: Control42 },
-  { id: 'Cloud', title: 'setting_cloud', section: 'cloud', keywords: 's3 webdav r2 上传 下载 导入 加密 金鑰 密钥 雲端 上傳 下載 導入 encryption', component: Control43, standalone: true },
+  { id: 'Cloud', title: 'setting_cloud', section: 'cloud', keywords: 's3 webdav r2 上传 下载 导入 加密 金鑰 密钥 雲端 上傳 下載 導入 encryption 配置备份 恢复 音源 账号 cookie 车机 備份 還原', component: Control43, standalone: true },
   { id: 'Sync', title: 'setting_sync', section: 'sync', keywords: '局域网 设备 歌单同步 區域網路 裝置 同步 sync', component: Control44, standalone: true },
   { id: 'Backup', title: 'setting_backup', section: 'backup', keywords: '备份 恢复 備份 還原 restore', component: Control45, standalone: true },
   { id: 'Other/ResourceCache', title: 'setting__other_resource_cache', section: 'other', keywords: '清理 图片 圖片 缓存 緩存 cache', component: Control46 },

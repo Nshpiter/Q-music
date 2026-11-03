@@ -22,6 +22,10 @@ export interface CloudTrack {
 }
 
 interface NativeCloudLibrary {
+  generateBackupKey: () => Promise<string>
+  listBackups: () => Promise<string[]>
+  uploadBackup: (raw: string, password: string) => Promise<string>
+  readBackup: (id: string, password: string) => Promise<string>
   getConfig: () => Promise<string>
   selectProvider: (provider: CloudProvider) => Promise<string>
   saveConfig: (value: string) => Promise<void>
@@ -31,6 +35,10 @@ interface NativeCloudLibrary {
 }
 
 const native = NativeModules.CloudLibraryModule as NativeCloudLibrary
+export const generateCloudBackupKey = async() => native.generateBackupKey()
+export const listCloudBackups = async() => native.listBackups()
+export const putCloudBackup = async(raw: string, password: string) => native.uploadBackup(raw, password)
+export const readCloudBackup = async(id: string, password: string) => native.readBackup(id, password)
 
 export const getCloudConfig = async(): Promise<SavedCloudConfig> => JSON.parse(await native.getConfig())
 export const selectCloudProvider = async(provider: CloudProvider): Promise<SavedCloudConfig> => JSON.parse(await native.selectProvider(provider))

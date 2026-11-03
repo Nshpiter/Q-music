@@ -11,6 +11,7 @@ function fixture() {
   const calls = []
   const controls = { exists: true, needsAccess: false, granted: true, removed: false, onExists: () => {} }
   const deps = {
+    '@/utils/bilibili': require('./load-pure-module.cjs')('src/utils/bilibili.ts'),
     'react-native-fs': { default: { exists: async() => { controls.onExists(); return controls.exists } } },
     '@/config/constant': { LIST_IDS: { PLAY_LATER: 'playLater' } },
     '@/core/player/player': { playNext: async() => { calls.push('next') }, togglePlay: () => { calls.push('toggle') } },
@@ -74,6 +75,7 @@ test('已有本地版本时下载另一音质仍使用在线地址，不把本�
   let finished
   const complete = new Promise(resolve => { finished = resolve })
   const deps = {
+    '@/utils/bilibili': require('./load-pure-module.cjs')('src/utils/bilibili.ts'),
     'react-native-fs': {
       ExternalStorageDirectoryPath: '/storage',
       CachesDirectoryPath: '/cache',

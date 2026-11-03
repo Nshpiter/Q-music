@@ -25,6 +25,7 @@ function directoryFixture() {
     writeFile: async file => { if (!controls.writable) throw Error('EACCES'); files.add(file); writes.push(file) },
   }
   const deps = {
+    '@/utils/bilibili': require('./load-pure-module.cjs')('src/utils/bilibili.ts'),
     'react-native-fs': native,
     '@/store/setting/state': state,
     '@/core/common': { updateSetting: update => { updates.push(update); Object.assign(state.setting, update) } },

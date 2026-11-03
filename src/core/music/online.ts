@@ -1,3 +1,4 @@
+import { bilibiliClient } from '@/utils/musicSdk/bi'
 import {
   saveLyric,
   saveMusicUrl,
@@ -71,7 +72,7 @@ export const findMatchedTranslation = async(musicInfo: LX.Music.MusicInfoOnline,
         if (checked.has(candidate.id)) continue
         checked.add(candidate.id)
         try {
-          const alternate = await (musicSdk[candidate.source].getLyric(toOldMusicInfo(candidate)) as any).promise as LX.Music.LyricInfo
+          const alternate = await (musicSdk[candidate.source].getLyric(toOldMusicInfo(candidate))).promise as LX.Music.LyricInfo
           if (!alternate.lyric || !alternate.tlyric) continue
           const otherOriginals = lyricRows(alternate.lyric)
           const otherTranslations = lyricRows(alternate.tlyric)
@@ -142,6 +143,11 @@ export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSou
   allowToggleSource?: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
 }): Promise<string> => {
+  if (musicInfo.source == 'bi') {
+    const result = await bilibiliClient.playback(String(musicInfo.meta.songId), signal)
+
+    return result.url
+  }
   // if (!musicInfo._types[type]) {
   //   // 兼容旧版酷我源搜索列表过滤128k音质的bug
   //   if (!(musicInfo.source == 'kw' && type == '128k')) throw new Error('该歌曲没有可播放的音频')
@@ -173,6 +179,7 @@ export const getMusicPlayUrlInfo = async({ musicInfo, quality, isRefresh, allowT
   allowToggleSource?: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
 }): Promise<{ url: string, quality: LX.Quality, providerId?: string }> => {
+  if (musicInfo.source == 'bi') return { ...await bilibiliClient.playback(String(musicInfo.meta.songId), signal), providerId: 'bilibili:public' }
   const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
   if (!isCustomApiSource() && musicInfo.source != 'tx' && musicInfo.source != 'wy') {
     const cachedUrl = await getStoreMusicUrl(musicInfo, targetQuality)
@@ -211,6 +218,7 @@ export const getLyricInfo = async({ musicInfo, isRefresh, allowToggleSource = tr
   allowToggleSource?: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
 }): Promise<LX.Player.LyricInfo> => {
+  if (musicInfo.source == 'bi') return buildLyricInfo({ lyric: '' })
   if (!isRefresh) {
     const lyricInfo = await getCachedLyricInfo(musicInfo)
     if (lyricInfo) return buildLyricInfo(lyricInfo)

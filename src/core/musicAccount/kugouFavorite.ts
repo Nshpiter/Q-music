@@ -5,6 +5,7 @@ import type { KugouCaptchaPresenter } from './kugouApi'
 export const createKugouFavoriteAction = (present: KugouCaptchaPresenter) => createKugouFavoriteClient(async() => {
   const session = await requireKugouSession()
   return {
+    ownerId: session.userId,
     assertSession: async() => assertKugouSession(session),
     getFavorites: async() => kugouApi.getPlaylists(session),
     getHashes: async(id) => kugouApi.getPlaylistHashes(session, id),

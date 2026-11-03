@@ -56,6 +56,7 @@ export interface PopupProps {
   closeBtn?: boolean
   position?: 'top' | 'left' | 'right' | 'bottom'
   title?: string
+  transient?: boolean
   children: React.ReactNode
 }
 
@@ -71,6 +72,7 @@ export default forwardRef<PopupType, PopupProps>(({
   closeBtn = true,
   position = 'bottom',
   title = '',
+  transient = false,
   children,
 }: PopupProps, ref) => {
   const theme = useTheme()
@@ -177,7 +179,7 @@ export default forwardRef<PopupType, PopupProps>(({
   }, [position])
 
   return (
-    <Modal onHide={onHide} onShow={onShow} keyHide={keyHide} bgHide={bgHide} bgColor={theme['q-scrim']} ref={modalRef}>
+    <Modal onHide={onHide} onShow={onShow} keyHide={keyHide} bgHide={bgHide} transient={transient} bgColor={theme['q-scrim']} ref={modalRef}>
       <View pointerEvents="box-none" style={{ ...styles.centeredView, ...centeredViewStyle, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
         <View
           style={{

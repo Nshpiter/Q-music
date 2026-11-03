@@ -21,6 +21,7 @@ import { getCloudConfig, importCloudTracks, listCloudTracks, saveCloudConfig, se
 import InputItem from '../../components/InputItem'
 import SubTitle from '../../components/SubTitle'
 import Button from '../../components/Button'
+import CloudConfigBackup from './CloudConfigBackup'
 
 const AUDIO_EXT = ['mp3', 'flac', 'wav', 'm4a', 'aac', 'ogg', 'ape']
 // 与下载设置共用保存位置。
@@ -242,6 +243,7 @@ export default memo(() => {
       <View style={styles.actions}><Button disabled={busy} onPress={save}>保存配置</Button></View>
       </> : null}
       {hasConfigChanges ? <Text style={styles.status} size={12} color={theme['q-accent-text']}>请先保存连接设置，再查看或上传歌曲。</Text> : null}
+      <CloudConfigBackup disabled={busy || !configured || hasConfigChanges} connection={JSON.stringify(config)} onBusyChange={setBusy} />
       <InputItem immediate editable={!busy} label="端到端口令" value={password} onChanged={(value, callback) => { if (value != password) { setPassword(value); resetTracks() }; callback(value) }}
         secureTextEntry placeholder="可选，至少 8 个字符；两端保持相同" />
       <Text style={styles.status} size={12} color={theme['q-text-secondary']}>当前模式：{password ? '端到端加密' : '免口令'}。两种模式的云端目录相互独立。</Text>

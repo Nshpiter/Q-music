@@ -6,10 +6,15 @@ import musicSdk from '@/utils/musicSdk'
 const loadSource = async(source: LX.OnlineSource) => {
   const cached = hotSearchState.sourceList[source]
   if (cached?.length) return { source, list: cached }
+  const request = async(): Promise<string[]> => {
+    const data: unknown = await musicSdk[source]?.hotSearch?.getList()
+    if (!data || typeof data != 'object' || !('list' in data)) return []
+    return Array.isArray(data.list) ? data.list.filter((item): item is string => typeof item == 'string') : []
+  }
   let timer: ReturnType<typeof setTimeout> | undefined
   try {
-    const list = await Promise.race([
-      musicSdk[source]?.hotSearch?.getList().then((data: { list: string[] }) => data.list) ?? Promise.resolve([]),
+    const list = await Promise.race<string[]>([
+      request(),
       new Promise<string[]>(resolve => { timer = setTimeout(() => { resolve([]) }, 8000) }),
     ])
     return { source, list }

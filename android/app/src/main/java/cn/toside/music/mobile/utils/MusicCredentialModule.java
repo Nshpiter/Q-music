@@ -18,7 +18,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import org.json.JSONObject;
 
-/** 官方账号与日推凭证只保存在本机，不参与 Android 备份或歌单导出。 */
+/** 官方账号在本机加密保存；仅用户明确选择的配置备份可以携带音乐账号凭证。 */
 public class MusicCredentialModule extends ReactContextBaseJavaModule {
   private static final String ALIAS = "qmusic.qq.daily.v1";
   private final AtomicFile storage;
@@ -35,6 +35,38 @@ public class MusicCredentialModule extends ReactContextBaseJavaModule {
   }
 
   @Override public String getName() { return "MusicCredentialModule"; }
+
+  @ReactMethod public void restoreNeteaseCookies(String raw, Promise promise) {
+    try {
+      if (raw.length() > 16384) throw new IllegalArgumentException();
+      JSONObject cookies = new JSONObject(raw);
+      if (cookies.optString("MUSIC_U").isEmpty()) throw new IllegalArgumentException();
+      for (java.util.Iterator<String> keys = cookies.keys(); keys.hasNext();) {
+        String name = keys.next();
+        if ((!name.equals("MUSIC_U") && !name.equals("__csrf")) || !cookies.getString(name).matches("[!-:<-~]*")) throw new IllegalArgumentException();
+      }
+      getReactApplicationContext().runOnUiQueueThread(() -> {
+        try {
+          android.webkit.CookieManager manager = android.webkit.CookieManager.getInstance();
+          String[] domains = {"", "; Domain=music.163.com", "; Domain=163.com"};
+          java.util.concurrent.atomic.AtomicInteger pending = new java.util.concurrent.atomic.AtomicInteger(6);
+          java.util.concurrent.atomic.AtomicBoolean failed = new java.util.concurrent.atomic.AtomicBoolean(false);
+          // 覆盖官网可能写入的域 Cookie，避免旧账号同名凭证继续被读取。
+          for (String domain : domains) for (String name : new String[]{"MUSIC_U", "__csrf"}) {
+            String value = cookies.optString(name);
+            manager.setCookie("https://music.163.com/", name + "=" + value + domain + "; Path=/; Secure; HttpOnly; Max-Age=" + (value.isEmpty() ? "0" : "2592000"), success -> {
+              if (!success) failed.set(true);
+              if (pending.decrementAndGet() == 0) {
+                manager.flush();
+                if (failed.get()) promise.reject("credential_storage", "网易云登录状态保存失败");
+                else promise.resolve(null);
+              }
+            });
+          }
+        } catch (Exception error) { promise.reject("credential_storage", "网易云登录状态保存失败"); }
+      });
+    } catch (Exception error) { promise.reject("credential_storage", "网易云登录状态格式无效"); }
+  }
 
   @ReactMethod public synchronized void getQQAccount(Promise promise) {
     try { JSONObject data = readProtected(qqAccountStorage, QQ_ACCOUNT_ALIAS); promise.resolve(data == null ? null : data.toString()); }

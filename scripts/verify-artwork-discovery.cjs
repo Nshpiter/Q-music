@@ -21,6 +21,26 @@ const { createArtworkLoader } = load(utils + 'artworkLoader.ts')
 const { createDiscoveryLoader } = load(utils + 'discoveryPlaylists.ts')
 const track = id => ({ id, source: 'kg', meta: {} })
 
+if (!mobile) test('首页账号状态暂时未确认时，仍能打开已读取的歌单并展示实际登录提示', async () => {
+  const source = fs.readFileSync(path.join(root, 'src/renderer/views/Search/components/BlankView.vue'), 'utf8')
+  const canRead = source.match(/const canReadAccountPlaylists = .*$/m)[0]
+  const open = source.slice(source.indexOf('const openAccountPlaylist ='), source.indexOf('\nconst isCurrentTrack ='))
+  let requests = 0
+  const context = {
+    accountStatus: { value: { kg: false, accounts: { kg: { hasSession: true } } } },
+    accountPlaylistsProvider: { value: 'kg' }, selectedDailyProvider: { value: 'tx' },
+    playlistDetailRequestId: 0,
+    getMusicAccountPlaylistDetail: async (provider, id) => { requests++; assert.equal(provider, 'kg'); assert.equal(id, 0); return { status: 'login_required' } },
+  }
+  for (const key of ['selectedAccountPlaylist', 'playlistDetailError', 'selectedAccountPlaylistProvider', 'playlistDetailList', 'detailKind', 'isShowDailyDetail', 'isPlaylistDetailLoading']) context[key] = { value: null }
+  vm.runInNewContext(`${canRead}\n${open}\nthis.open = openAccountPlaylist`, context)
+  await context.open({ id: 0, name: '我喜欢' })
+  assert.equal(requests, 1)
+  assert.equal(context.isShowDailyDetail.value, true)
+  assert.equal(context.playlistDetailError.value, 'search__account_expired')
+  assert.equal(context.isPlaylistDetailLoading.value, false)
+})
+
 test('酷狗真实专辑、排行榜、搜索封面字段不再丢失，并替换尺寸与 HTTP', () => {
   const image = 'http://imge.kugou.com/stdmusic/{size}/20260924/20260924154603458622.jpg'
   for (const row of [{ album_info: { sizable_cover: image } }, { album_sizable_cover: image }, { trans_param: { union_cover: image } }]) {
@@ -108,4 +128,43 @@ test('发现请求失败后可以重试，错误响应不会缓存成空歌单',
   await assert.rejects(loader('kg', 'hot', 1), /offline/)
   await assert.rejects(loader('kg', 'hot', 1), /Invalid/)
   assert.equal((await loader('kg', 'hot', 1)).list[0].name, 'ok')
+})
+
+
+test('刷新后重新进入列表复用新封面，列表元数据更新时采用最新地址', async () => {
+  let calls = 0
+  const loader = createArtworkLoader(async () => { calls++; return 'https://new/cover' })
+  const song = { ...track('recovered'), meta: { picUrl: 'https://old/cover' } }
+  assert.equal(await loader(song), 'https://old/cover')
+  assert.equal(await loader(song, true), 'https://new/cover')
+  assert.equal(await loader(song), 'https://new/cover')
+  assert.equal(calls, 1)
+  assert.equal(await loader({ ...song, meta: { picUrl: 'https://changed/cover' } }), 'https://changed/cover')
+  assert.equal(await loader({ id: 'local', source: 'local', meta: { picUrl: '/local.jpg' } }), '/local.jpg')
+})
+
+test('酷狗公共资料遇到 20028 立即退出，不连发三次，也不降级请求播放鉴权', async () => {
+  let requests = 0
+  const { createHttpFetch } = load(sdk + 'util.js', {
+    pako: {}, 'buffer': { Buffer }, '../../nativeModules/crypto': {},
+    '../utils': {}, '../../request': { httpFetch: () => { requests++; return { promise: Promise.resolve({ statusCode: 200, body: { error_code: 20028 } }) } } },
+  })
+  await assert.rejects(createHttpFetch('https://example.com', {}), /verification_required/)
+  assert.equal(requests, 1)
+  const api = load(sdk + 'pic.js', {
+    './artwork': artwork,
+    './musicInfo': { getMusicInfoRaw: async () => { throw Error('verification_required') } },
+    '../../request': { httpFetch: () => { throw Error('must not request playback API') } },
+  }).default
+  await assert.rejects(api.getPic({ hash: 'A'.repeat(32) }), /verification_required/)
+})
+
+test('排行榜转换完整保留原接口封面，不依赖点击播放', () => {
+  const api = load(sdk + 'leaderboard.js', {
+    './artwork': artwork, '../../request': {},
+    '../../index': { decodeName: String, formatPlayTime: String, sizeFormate: String },
+    '../utils': { formatSingerName: () => 'artist' },
+  }).default
+  const [song] = api.filterData([{ songname: 'song', audio_id: 12, album_sizable_cover: 'http://imge.kugou.com/{size}/cover.jpg' }])
+  assert.equal(song.img, 'https://imge.kugou.com/240/cover.jpg')
 })

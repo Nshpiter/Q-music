@@ -22,6 +22,7 @@ export interface SourceLogoDefinition {
  * First-party providers use the locally bundled square assets above.
  */
 export const SOURCE_LOGOS: Readonly<Record<string, SourceLogoDefinition>> = {
+  bi: { label: '哔哩哔哩', mark: 'B', color: '#fb7299' },
   all: { label: '聚合搜索', mark: '合', color: '#64748b' },
   bd: { label: '百度音乐', mark: '百', color: '#2f7cf6' },
   tx: { label: 'QQ音乐', mark: 'Q', color: '#16b978' },
@@ -35,6 +36,9 @@ export const SOURCE_LOGOS: Readonly<Record<string, SourceLogoDefinition>> = {
 const DEFAULT_LOGO_COLOR = '#64748b'
 const MIN_LOGO_SIZE = 12
 const AGGREGATE_MARK_CELLS = [0, 1, 2, 3] as const
+// React Native 的静态资源由 Metro 在构建时解析。
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const bilibiliLogo = require('@/resources/images/sources/bi.png')
 
 // Extensions may return legacy ids or display-name aliases. Keep the visual
 // identity canonical at this boundary so Android badges remain consistent.
@@ -75,13 +79,14 @@ export default ({
   const normalizedSource = normalizeSource(source)
   const definition = getDefinition(normalizedSource)
   const asset = SOURCE_LOGO_ASSETS[normalizedSource]
+  const bundledAsset = normalizedSource === 'bi' ? bilibiliLogo : undefined
   const [assetFailed, setAssetFailed] = useState(false)
   const dimension = Math.max(MIN_LOGO_SIZE, Math.round(size))
   const radius = Math.max(4, Math.round(dimension * 0.24))
   // Bundled marks already contain their own background and edge treatment;
   // give them the full optical box. Text fallbacks keep a one-pixel frame so
   // extension-defined providers still match the branded badges.
-  const assetInset = asset ? 0 : 1
+  const assetInset = asset || bundledAsset ? 0 : 1
   const contentDimension = Math.max(1, dimension - assetInset * 2)
 
   useEffect(() => {
@@ -89,6 +94,7 @@ export default ({
   }, [asset, normalizedSource])
 
   const assetUri = !assetFailed ? asset : undefined
+  const imageSource = !assetFailed && bundledAsset ? bundledAsset : assetUri ? { uri: assetUri } : undefined
 
   const fallback = normalizedSource === 'all'
     ? (
@@ -134,24 +140,24 @@ export default ({
           width: dimension,
           height: dimension,
           borderRadius: radius,
-          borderWidth: asset ? 0 : StyleSheet.hairlineWidth,
+          borderWidth: asset || bundledAsset ? 0 : StyleSheet.hairlineWidth,
           borderColor: theme['q-outline'],
-          backgroundColor: assetUri ? 'transparent' : theme['q-surface-tint'],
+          backgroundColor: imageSource ? 'transparent' : theme['q-surface-tint'],
           opacity: disabled ? 0.38 : 1,
         },
         style,
       ]}
     >
-      {!assetUri ? fallback : null}
-      {assetUri
+      {!imageSource ? fallback : null}
+      {imageSource
         ? <Image
             accessible={false}
             fadeDuration={0}
-            key={assetUri}
+            key={normalizedSource}
             onError={() => { setAssetFailed(true) }}
             resizeMethod="scale"
             resizeMode="contain"
-            source={{ uri: assetUri }}
+            source={imageSource}
             style={{
               position: 'absolute',
               top: assetInset,

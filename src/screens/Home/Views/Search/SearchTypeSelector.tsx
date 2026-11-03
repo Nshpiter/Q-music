@@ -14,7 +14,7 @@ const SEARCH_TYPE_LIST = [
   'songlist',
 ] as const
 
-export default ({ selectedType }: { selectedType?: SearchType }) => {
+export default ({ selectedType, musicOnly = false }: { selectedType?: SearchType, musicOnly?: boolean }) => {
   const t = useI18n()
   const theme = useTheme()
   const [type, setType] = useState<SearchType>('music')
@@ -32,8 +32,8 @@ export default ({ selectedType }: { selectedType?: SearchType }) => {
   const activeType = selectedType ?? type
 
   const list = useMemo(() => {
-    return SEARCH_TYPE_LIST.map(type => ({ label: t(`search_type_${type}`), id: type }))
-  }, [t])
+    return SEARCH_TYPE_LIST.filter(type => !musicOnly || type == 'music').map(type => ({ label: t(`search_type_${type}`), id: type }))
+  }, [t, musicOnly])
 
   const handleTypeChange = (type: SearchType) => {
     setType(type)

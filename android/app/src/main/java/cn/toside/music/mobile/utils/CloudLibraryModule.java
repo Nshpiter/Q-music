@@ -79,6 +79,82 @@ public class CloudLibraryModule extends ReactContextBaseJavaModule {
 
   @Override public String getName() { return "CloudLibraryModule"; }
 
+  private String configBackupKey(JSONObject config, String id) {
+    if (!id.matches("[0-9]{13}-[a-f0-9]{16}\\.qmc")) throw new IllegalArgumentException("配置备份文件名无效");
+    String prefix = config.optString("prefix").replaceAll("^/+|/+$", "");
+    return (prefix.isEmpty() ? "" : prefix + "/") + "qmusic-cloud/config/v1/" + id;
+  }
+
+  private String randomHex(int size) {
+    byte[] bytes = new byte[size]; random.nextBytes(bytes);
+    StringBuilder result = new StringBuilder();
+    for (byte value : bytes) result.append(String.format("%02x", value & 0xff));
+    return result.toString();
+  }
+
+  private void requireBackupKey(String password) {
+    if (password.length() < 8 || password.length() > 1024) throw new IllegalArgumentException("请填写至少 8 位的配置备份密钥，两端使用同一密钥");
+  }
+
+  @ReactMethod public void generateBackupKey(Promise promise) { promise.resolve(randomHex(24)); }
+
+  @ReactMethod public void listBackups(Promise promise) {
+    executor.execute(() -> {
+      try {
+        JSONObject config = readConfig();
+        String prefix = configBackupKey(config, "1000000000000-0000000000000000.qmc").replaceAll("[^/]+$", "");
+        java.util.TreeSet<String> ids = new java.util.TreeSet<>(java.util.Collections.reverseOrder());
+        for (String key : storage(config).list(prefix)) {
+          String id = key.substring(key.lastIndexOf('/') + 1);
+          if (key.equals(prefix + id) && id.matches("[0-9]{13}-[a-f0-9]{16}\\.qmc")) ids.add(id);
+        }
+        WritableArray result = Arguments.createArray();
+        int count = 0;
+        for (String id : ids) { if (count++ >= 50) break; result.pushString(id); }
+        promise.resolve(result);
+      } catch (Exception error) { promise.reject("cloud_backup", error.getMessage()); }
+    });
+  }
+
+  @ReactMethod public void uploadBackup(String raw, String password, Promise promise) {
+    executor.execute(() -> {
+      File temp = null;
+      try {
+        requireBackupKey(password);
+        byte[] value = raw.getBytes(StandardCharsets.UTF_8);
+        if (value.length > 8 * 1024 * 1024) throw new IllegalArgumentException("配置备份超过 8 MB，请减少音源数量");
+        JSONObject data = new JSONObject(raw);
+        if (!"qmusic-config".equals(data.optString("format")) || data.optInt("version") != 1) throw new IllegalArgumentException("配置备份格式无效");
+        JSONObject config = readConfig();
+        String id = System.currentTimeMillis() + "-" + randomHex(8) + ".qmc";
+        temp = File.createTempFile("cloud-config-", ".qmc", context.getCacheDir());
+        try (OutputStream output = new FileOutputStream(temp)) { output.write(encryptBytes(value, password)); }
+        storage(config).put(configBackupKey(config, id), temp);
+        promise.resolve(id);
+      } catch (Exception error) { promise.reject("cloud_backup", error.getMessage()); }
+      finally { if (temp != null) temp.delete(); }
+    });
+  }
+
+  @ReactMethod public void readBackup(String id, String password, Promise promise) {
+    executor.execute(() -> {
+      File temp = null;
+      try {
+        requireBackupKey(password);
+        JSONObject config = readConfig();
+        String key = configBackupKey(config, id);
+        temp = File.createTempFile("cloud-config-", ".qmc", context.getCacheDir());
+        storage(config).get(key, temp, 8 * 1024 * 1024 + 64);
+        if (temp.length() > 8 * 1024 * 1024 + 64) throw new IllegalArgumentException("配置备份超过大小限制");
+        byte[] plain;
+        try { plain = decryptBytes(readBytes(temp), password); }
+        catch (Exception error) { throw new IllegalArgumentException("密钥不匹配或备份已损坏，未修改本地配置"); }
+        promise.resolve(new String(plain, StandardCharsets.UTF_8));
+      } catch (Exception error) { promise.reject("cloud_backup", error.getMessage()); }
+      finally { if (temp != null) temp.delete(); }
+    });
+  }
+
   private SecretKey localKey() throws Exception {
     KeyStore store = KeyStore.getInstance("AndroidKeyStore");
     store.load(null);
@@ -274,7 +350,17 @@ public class CloudLibraryModule extends ReactContextBaseJavaModule {
   private interface Storage {
     List<String> list(String prefix) throws Exception;
     void put(String key, File file) throws Exception;
-    void get(String key, File file) throws Exception;
+    default void get(String key, File file) throws Exception { get(key, file, Long.MAX_VALUE); }
+    void get(String key, File file, long maximum) throws Exception;
+  }
+
+  private static void copyLimited(InputStream input, OutputStream output, long maximum) throws Exception {
+    byte[] buffer = new byte[65536]; int count; long total = 0;
+    while ((count = input.read(buffer)) != -1) {
+      total += count;
+      if (total > maximum) throw new IllegalArgumentException("云端文件超过大小限制");
+      output.write(buffer, 0, count);
+    }
   }
 
   private Storage storage(JSONObject config) throws Exception {
@@ -305,8 +391,8 @@ public class CloudLibraryModule extends ReactContextBaseJavaModule {
             if (!response.isSuccessful()) throw new IllegalStateException("S3 上传失败 (HTTP " + response.code() + ")");
           }
         }
-        public void get(String key, File file) throws Exception {
-          try (S3Object object = client.getObject(bucket, key); InputStream input = object.getObjectContent(); OutputStream output = new FileOutputStream(file)) { copy(input, output); }
+        public void get(String key, File file, long maximum) throws Exception {
+          try (S3Object object = client.getObject(bucket, key); InputStream input = object.getObjectContent(); OutputStream output = new FileOutputStream(file)) { copyLimited(input, output, maximum); }
         }
       };
     }
@@ -368,8 +454,8 @@ public class CloudLibraryModule extends ReactContextBaseJavaModule {
         dav.dirs(key);
         try (Response ignored = dav.call("PUT", key, RequestBody.create(MediaType.parse("application/octet-stream"), file))) {}
       }
-      public void get(String key, File file) throws Exception {
-        try (Response response = dav.call("GET", key, null); InputStream input = response.body().byteStream(); OutputStream output = new FileOutputStream(file)) { copy(input, output); }
+      public void get(String key, File file, long maximum) throws Exception {
+        try (Response response = dav.call("GET", key, null); InputStream input = response.body().byteStream(); OutputStream output = new FileOutputStream(file)) { copyLimited(input, output, maximum); }
       }
     };
   }

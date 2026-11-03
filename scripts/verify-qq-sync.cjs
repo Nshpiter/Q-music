@@ -31,6 +31,8 @@ function favoriteHarness(options = {}) {
   let written = false
   let changed = false
   const api = load('src/core/musicAccount/qqFavorite.ts', {
+    '@/utils/qqPlaylistTarget': require('./load-pure-module.cjs')('src/utils/qqPlaylistTarget.ts'),
+    './playlists': { openPlaylistSession: async() => { throw Error('unexpected playlist request') } },
     './qqCredentials': qq,
     '@/utils/musicSdk/tx/utils/crypto': sign,
     './requests': {

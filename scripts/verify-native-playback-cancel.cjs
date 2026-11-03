@@ -26,6 +26,7 @@ function harness(holdCleanup = false) {
   }
   const state = { musicInfo: {} }
   const dependencies = {
+    '@/utils/bilibili': require('./load-pure-module.cjs')('src/utils/bilibili.ts'),
     'react-native-track-player': { __esModule: true, default: player, State: { Playing: 'playing' } },
     'react-native-background-timer': { setTimeout: () => 1, clearTimeout() {} },
     '@/config': { defaultUrl: 'placeholder' }, '@/store/setting/state': { setting: {} }, '@/store/player/state': state,

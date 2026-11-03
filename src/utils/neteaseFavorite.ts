@@ -1,5 +1,6 @@
 export interface NeteaseFavoriteRequest {
   songId: string
+  playlistId?: string
   action?: 'add' | 'check'
 }
 
@@ -36,19 +37,19 @@ export const createNeteaseFavoriteClient = (open: () => Promise<NeteaseFavoriteT
       const profile = await call('w/nuser/account/get', {})
       const uid = String(profile.profile?.userId ?? profile.account?.id ?? '')
       if (!/^[1-9]\d*$/.test(uid)) throw new Error('login_required')
-      // 与官网收藏一致：只定位当前账号 specialType=5 的喜欢歌单，不能按名称或首项猜测。
+      // 默认定位官方喜欢歌单；指定歌单必须属于当前账号，禁止写入收藏的他人歌单。
       let playlistId = ''
       for (let page = 0; page < 20; page++) {
         const result = await call('user/playlist', { uid, limit: 100, offset: page * 100, includeVideo: false })
         if (!Array.isArray(result.playlist)) throw new Error('unavailable')
-        const favorite = result.playlist.find(item => Number(item?.specialType) == 5 && String(item?.creator?.userId ?? item?.userId ?? '') == uid)
+        const favorite = result.playlist.find(item => (input.playlistId ? String(item?.id) == input.playlistId : Number(item?.specialType) == 5) && String(item?.creator?.userId ?? item?.userId ?? '') == uid)
         if (favorite) {
           playlistId = String(favorite.id ?? '')
           break
         }
         if (!(result.more === true || result.more === 1 || result.more === '1') || !result.playlist.length) break
       }
-      if (!/^[1-9]\d*$/.test(playlistId)) throw new Error('unavailable')
+      if (!/^[1-9]\d*$/.test(playlistId)) return { status: input.playlistId ? 'unsupported' : 'unavailable' }
       const check = async() => {
         const result = await call('v6/playlist/detail', { id: playlistId, n: 100000, s: 0, timestamp: Date.now() })
         const playlist = result.playlist
@@ -84,12 +85,14 @@ export const createNeteaseFavoriteClient = (open: () => Promise<NeteaseFavoriteT
   }
   return async(input: NeteaseFavoriteRequest): Promise<NeteaseFavoriteResult> => {
     if (typeof input?.songId != 'string' || !/^[1-9]\d{0,15}$/.test(input.songId) || !Number.isSafeInteger(Number(input.songId)) ||
+      (input.playlistId != null && (typeof input.playlistId != 'string' || !/^[1-9]\d{0,15}$/.test(input.playlistId) || !Number.isSafeInteger(Number(input.playlistId)))) ||
       (input.action != null && input.action != 'add' && input.action != 'check')) return { status: 'unsupported' }
     // 同一歌曲的重复点击共用请求；切换账号会由 assertSession 拒绝。
-    const existing = pending.get(input.songId)
+    const key = `${input.songId}:${input.playlistId ?? 'favorite'}`
+    const existing = pending.get(key)
     if (existing) return existing
-    const task = perform(input).finally(() => { pending.delete(input.songId) })
-    pending.set(input.songId, task)
+    const task = perform(input).finally(() => { pending.delete(key) })
+    pending.set(key, task)
     return task
   }
 }

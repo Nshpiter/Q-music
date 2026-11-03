@@ -1,5 +1,6 @@
 import { useImperativeHandle, forwardRef, useState, useMemo, useRef, useCallback, useEffect } from 'react'
-import { Animated, Modal as NativeModal, Pressable, StyleSheet, View, type ModalProps as _ModalProps } from 'react-native'
+import { Animated, AppState, Modal as NativeModal, Platform, Pressable, StyleSheet, View, type ModalProps as _ModalProps } from 'react-native'
+import { Navigation } from 'react-native-navigation'
 import { useStatusbarHeight } from '@/store/common/hook'
 import { useMotion } from '@/utils/useMotion'
 import { Q_UI } from '@/theme/ui'
@@ -23,6 +24,8 @@ export interface ModalProps extends Omit<_ModalProps, 'visible'> {
    * 是否填充状态栏
    */
   statusBarPadding?: boolean
+  /** 播放等临时菜单离开页面或进入后台时关闭，不恢复旧操作。 */
+  transient?: boolean
 }
 
 
@@ -36,6 +39,7 @@ export default forwardRef<ModalType, ModalProps>(({
   bgHide = true,
   bgColor = 'rgba(0,0,0,0)',
   statusBarPadding = true,
+  transient = false,
   children,
   onShow,
   animationType,
@@ -75,7 +79,19 @@ export default forwardRef<ModalType, ModalProps>(({
 
   useImperativeHandle(ref, () => ({ setVisible: setModalVisible }), [setModalVisible])
 
+  useEffect(() => {
+    if (!transient) return
+    const appListener = AppState.addEventListener('change', state => {
+      if (state != 'active') setModalVisible(false)
+    })
+    const pageListener = Navigation.events().registerComponentDidDisappearListener(() => { setModalVisible(false) })
+    return () => { appListener.remove(); pageListener.remove() }
+  }, [transient, setModalVisible])
+
   const memoChildren = useMemo(() => children, [children])
+
+  // Android 原生 Dialog 不应在隐藏状态保留生命周期监听。
+  if (Platform.OS == 'android' && !visible) return null
 
   return (
     <NativeModal

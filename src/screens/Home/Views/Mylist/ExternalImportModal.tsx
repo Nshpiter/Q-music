@@ -26,6 +26,7 @@ export interface ExternalImportModalType {
 }
 
 const SOURCE_OPTIONS: Array<{ id: ExternalImportSource, name: string }> = [
+  { id: 'bi', name: '哔哩哔哩' },
   { id: 'tx', name: 'QQ音乐' },
   { id: 'wy', name: '网易云' },
   { id: 'kg', name: '酷狗' },
@@ -251,7 +252,7 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
           editable={!isLoading}
           clearBtn
           onChangeText={setText}
-          placeholder={t('playlist_import_modal__link_placeholder')}
+          placeholder={t(source == 'bi' ? 'playlist_import_bilibili_hint' : 'playlist_import_modal__link_placeholder')}
         />
 
         {source == 'wy'

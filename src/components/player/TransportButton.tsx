@@ -49,7 +49,9 @@ export default ({ icon, label, onPress, size = 48, faceSize = size, iconSize = 2
     onPress={onPress}
     onPressIn={() => { press(true) }}
     onPressOut={() => { press(false) }}
-    hitSlop={size < 44 ? (44 - size) / 2 : 0}
+    // 横向相邻按钮共用连续栏位，不扩张到另一按钮的点击区域。
+    hitSlop={{ top: Math.max(0, (44 - size) / 2), bottom: Math.max(0, (44 - size) / 2), left: 0, right: 0 }}
+    pressRetentionOffset={{ top: 12, bottom: 12, left: 0, right: 0 }}
     style={[styles.button, { width: size, height: size }]}
   >
     <Animated.View pointerEvents="none" style={[styles.button, {

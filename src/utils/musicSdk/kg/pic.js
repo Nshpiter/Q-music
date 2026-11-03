@@ -7,7 +7,9 @@ export default {
     try {
       const image = getKugouArtwork(await getMusicInfoRaw(songInfo.hash))
       if (image) return image
-    } catch {}
+    } catch (error) {
+      if (error?.message == 'verification_required') throw error
+    }
 
     const requestObj = httpFetch(
       'http://media.store.kugou.com/v1/get_res_privilege',

@@ -13,14 +13,14 @@ export default ({ compact = false }: { compact?: boolean }) => {
   const { isCar, wide } = useAdaptiveLayout()
   const targetSize = isCar ? 56 : wide ? 48 : 40
   const queueRef = useRef<PlayQueueType>(null)
-  return <View style={styles.container}>
-    {!compact ? <TransportButton color={colors.primary} icon="prevMusic" label={global.i18n.t('play_prev')} size={targetSize} iconSize={isCar ? 25 : wide ? 21 : 17} onPress={() => { void playPrev() }} /> : null}
-    <View style={[styles.primaryTarget, wide && { width: 52, height: 56 }, isCar && { width: 64, height: 64 }]}>
+  return <View collapsable={false} style={styles.container}>
+    {!compact ? <TransportButton key="previous" color={colors.primary} icon="prevMusic" label={global.i18n.t('play_prev')} size={targetSize} iconSize={isCar ? 25 : wide ? 21 : 17} onPress={() => { void playPrev() }} /> : null}
+    <View key="toggle" collapsable={false} style={[styles.primaryTarget, wide && { width: 52, height: 56 }, isCar && { width: 64, height: 64 }]}>
       <TransportButton color={colors.primary} icon={isPlay ? 'pause' : 'play'} label={global.i18n.t(isPlay ? 'pause' : 'play')} primary size={isCar ? 64 : wide ? 52 : 44} faceSize={isCar ? 48 : wide ? 38 : 30} iconSize={isCar ? 23 : wide ? 19 : 15} onPress={togglePlay} />
     </View>
-    <TransportButton color={colors.primary} icon="nextMusic" label={global.i18n.t('play_next')} size={targetSize} iconSize={isCar ? 25 : wide ? 21 : 17} onPress={() => { void playNext() }} />
-    <TransportButton color={colors.primary} icon="menu" label={global.i18n.t('play_queue_title')} size={targetSize} iconSize={isCar ? 25 : wide ? 22 : 19} onPress={() => { queueRef.current?.show() }} />
-    <PlayQueue ref={queueRef} />
+    <TransportButton key="next" color={colors.primary} icon="nextMusic" label={global.i18n.t('play_next')} size={targetSize} iconSize={isCar ? 25 : wide ? 21 : 17} onPress={() => { void playNext() }} />
+    <TransportButton key="queue" color={colors.primary} icon="menu" label={global.i18n.t('play_queue_title')} size={targetSize} iconSize={isCar ? 25 : wide ? 22 : 19} onPress={() => { queueRef.current?.show() }} />
+    <PlayQueue key="queue-popup" ref={queueRef} />
   </View>
 }
 

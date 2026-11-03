@@ -138,7 +138,7 @@ export const searchListMusic = (list: LX.Music.MusicInfo[], text: string) => {
 
 export const handleShowMusicSourceDetail = async(minfo: SelectInfo['musicInfo']) => {
   const url = musicSdk[minfo.source as LX.OnlineSource]?.getMusicDetailPageUrl(toOldMusicInfo(minfo))
-  if (!url) return
+  if (typeof url != 'string' || !url) return
   void openUrl(url)
 }
 

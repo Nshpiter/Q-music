@@ -11,6 +11,7 @@ import { createStyle, type RowInfo } from '@/utils/tools'
 import SourceLogo from '@/components/SourceLogo'
 import TrackArtwork from '@/components/TrackArtwork'
 import SongDownloadButton from '@/components/SongDownloadButton'
+import BilibiliPartsButton from '@/components/BilibiliPartsButton'
 
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 
@@ -62,7 +63,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   }
   const tagInfo = useQualityTag(item)
 
-  const singer = `${item.singer}${isShowAlbumName && item.meta.albumName ? ` · ${item.meta.albumName}` : ''}`
+  const singer = `${item.singer}${isShowAlbumName && item.meta.albumName && item.source != 'bi' ? ` · ${item.meta.albumName}` : ''}`
 
   return (
     <View style={[styles.row, { width: rowInfo.rowWidth, height: songRowHeight }]} onLayout={event => { setMeasuredWidth(event.nativeEvent.layout.width) }}>
@@ -100,7 +101,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
           }
           <TrackArtwork item={item} style={{ width: isCar ? 48 : 36, height: isCar ? 48 : 36, borderRadius: 7, marginRight: 10, flexShrink: 0 }} />
           <View style={styles.itemInfo}>
-            <Text size={isCar ? 18 : 14} style={isPlaying ? styles.playingTitle : undefined} color={isPlaying ? theme['q-accent-text'] : theme['c-font']} numberOfLines={1}>{item.name}</Text>
+            <Text size={isCar ? 18 : 14} style={[isPlaying ? styles.playingTitle : undefined, item.source == 'bi' ? { lineHeight: isCar ? 23 : 17 } : undefined]} color={isPlaying ? theme['q-accent-text'] : theme['c-font']} numberOfLines={item.source == 'bi' ? 2 : 1}>{item.name}</Text>
             <View style={styles.listItemSingle}>
               { tagInfo.type ? <Badge type={tagInfo.type}>{tagInfo.text}</Badge> : null }
               { showSource ? <SourceLogo source={item.source} size={18} style={styles.sourceLogo} /> : null }
@@ -108,11 +109,12 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
             </View>
           </View>
           {
-            isShowInterval && measuredWidth >= 360 ? (
+            isShowInterval && measuredWidth >= 360 && item.source != 'bi' ? (
               <Text size={12} color={theme['q-text-secondary']} numberOfLines={1}>{item.interval}</Text>
             ) : null
           }
         </Button>
+        {item.source == 'bi' ? <BilibiliPartsButton music={item} /> : null}
         {measuredWidth >= 480 ? <SongDownloadButton music={item} /> : null}
         <Button accessibilityLabel={`${item.name} · ${global.i18n.t('more_actions')}`} onPress={handleShowMenu} ref={moreButtonRef} style={[styles.moreButton, isCar && { width: 56, height: 64 }]}>
           <Icon accessible={false} name="dots-vertical" style={{ color: theme['q-text-secondary'] }} size={14} />

@@ -25,7 +25,7 @@ export const search = async(text: string, page: number, sourceId: Source): Promi
     listInfo.key = key
     let task = []
     for (const source of searchMusicState.sources) {
-      if (source == 'all') continue
+      if (source == 'all' || source == 'bi') continue
       task.push(((musicSdk[source]?.musicSearch.search(text, page, searchMusicState.listInfos.all.limit) as Promise<SearchResult>) ?? Promise.reject(new Error('source not found: ' + source))).catch((error: any) => {
         console.log(error)
         return {

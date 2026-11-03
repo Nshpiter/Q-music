@@ -27,7 +27,7 @@ export const handleShare = (musicInfo: LX.Music.MusicInfoOnline) => {
 
 export const handleShowMusicSourceDetail = async(minfo: LX.Music.MusicInfoOnline) => {
   const url = musicSdk[minfo.source as LX.OnlineSource]?.getMusicDetailPageUrl(toOldMusicInfo(minfo))
-  if (!url) return
+  if (typeof url != 'string' || !url) return
   void openUrl(url)
 }
 

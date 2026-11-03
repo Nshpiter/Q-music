@@ -1,7 +1,8 @@
 import { NativeModules } from 'react-native'
 import { toMD5 } from '@/utils/musicSdk/utils'
-import { createKugouApi, parseKugouSession, type KugouSession } from './kugouApi'
+import { createKugouApi, parseKugouSession, type KugouSession, type KugouCaptchaPresenter } from './kugouApi'
 import { encryptKugouVerification } from './kugouVerification'
+import { kugouVerificationStatus, type KugouVerificationStatus } from '@/utils/kugouVerification'
 export const kugouApi = createKugouApi(fetch, toMD5, encryptKugouVerification)
 const storage = () => {
   const module = NativeModules.MusicCredentialModule
@@ -26,4 +27,16 @@ export const requireKugouSession = async() => {
 export const assertKugouSession = async(before: KugouSession) => {
   const after = await readKugouSession()
   if (!after || before.userId != after.userId || before.token != after.token) throw new Error('account_changed')
+}
+let verificationTask: Promise<KugouVerificationStatus> | undefined
+export const verifyKugouAccess = async(present: KugouCaptchaPresenter): Promise<KugouVerificationStatus> => {
+  if (verificationTask) return verificationTask
+  verificationTask = (async(): Promise<KugouVerificationStatus> => {
+    try {
+      const session = await requireKugouSession()
+      await kugouApi.verifyAccess(session, present, async() => assertKugouSession(session))
+      return 'available'
+    } catch (error) { return kugouVerificationStatus(error) }
+  })().finally(() => { verificationTask = undefined })
+  return verificationTask
 }

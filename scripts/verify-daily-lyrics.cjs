@@ -10,6 +10,7 @@ let searchCandidates
 let translation = lines('中文译文', 3)
 let alternateLyric = lines('さくらひらひら', 3)
 const online = h.load('core/music/online.ts', {
+  '@/utils/musicSdk/bi': { bilibiliClient: {} },
   '@/utils/data': { saveLyric: async(...args) => { saved = args } },
   '@/core/list': {},
   '@/store/setting/state': { default: { setting: {} } },

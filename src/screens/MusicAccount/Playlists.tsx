@@ -3,6 +3,7 @@ import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native'
 import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
 import Image from '@/components/common/Image'
+import KugouVerifyButton from '@/components/KugouVerifyButton'
 import { Icon } from '@/components/common/Icon'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
@@ -25,7 +26,9 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState<'all' | 'created' | 'favorite'>('all')
   const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState(false)
+  const [syncing, setBusy] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const busy = syncing || verifying
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [lastListId, setLastListId] = useState('')
@@ -35,7 +38,7 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
   const mounted = useRef(true)
   const errorText = useCallback((reason: unknown) => {
     const code = reason instanceof Error ? reason.message : ''
-    return t(code == 'login_required' || code == 'account_changed' ? 'account_lists_login_expired' : code == 'incomplete' ? 'account_lists_incomplete' : 'account_lists_failed')
+    return t(code == 'verification_required' ? 'list_sync_verification_required' : code == 'login_required' || code == 'account_changed' ? 'account_lists_login_expired' : code == 'incomplete' ? 'account_lists_incomplete' : 'account_lists_failed')
   }, [t])
 
   const load = useCallback(async() => {
@@ -69,7 +72,7 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
 
   const sync = async() => {
     const account = session.current
-    if (!account || running.current || !selected.size) return
+    if (!account || running.current || busy || !selected.size) return
     running.current = true
     setBusy(true)
     onBusyChange(true)
@@ -99,6 +102,8 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
           if (controller.signal.aborted) break
           failed++
           failure = errorText(reason)
+          // 安全验证和掉登录不会因重试下一张歌单恢复，停止本批，保留未同步选项。
+          if (reason instanceof Error && ['verification_required', 'login_required', 'account_changed'].includes(reason.message)) break
         }
       }
       if (mounted.current) {
@@ -153,6 +158,7 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
       }}
     />}
     <View style={[styles.footer, { borderColor: theme['q-outline'], backgroundColor: theme['c-main-background'] }]}>
+      {provider == 'kg' ? <KugouVerifyButton disabled={busy || loading} onBusy={value => { setVerifying(value); onBusyChange(value) }} onVerified={() => { void load() }} /> : null}
       {message ? <Text accessibilityLiveRegion="polite" size={12} style={styles.feedback}>{message}</Text> : null}
       {error ? <View><Text accessibilityLiveRegion="polite" size={12} color={theme['q-text-secondary']} style={styles.feedback}>{error}</Text><View style={styles.actions}><Button disabled={busy} onPress={() => { void load() }} style={styles.smallButton}><Text size={12} color={theme['q-accent-text']}>{t('list_retry')}</Text></Button><Button disabled={busy} onPress={onLogin} style={styles.smallButton}><Text size={12} color={theme['q-accent-text']}>{t('account_lists_relogin')}</Text></Button></View></View> : null}
       <View style={styles.actions}>

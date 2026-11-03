@@ -2,9 +2,10 @@ import { LIST_IDS } from '@/config/constant'
 import { addListMusics, createList } from '@/core/list'
 import { getListDetail } from '@/core/songlist'
 import settingState from '@/store/setting/state'
-import { filterMusicList } from '@/utils'
+import { filterMusicList, toNewMusicInfo } from '@/utils'
+import { bilibiliClient } from '@/utils/musicSdk/bi'
 
-export type ExternalImportSource = 'tx' | 'wy' | 'kg'
+export type ExternalImportSource = 'tx' | 'wy' | 'kg' | 'bi'
 export type ExternalImportTarget = 'new' | 'current' | 'love'
 
 export type ExternalImportErrorCode = 'invalid_link' | 'no_match' | 'cancelled' | 'login_required' | 'verification_required' | 'playlist_incomplete'
@@ -47,6 +48,7 @@ const SOURCE_NAMES: Record<ExternalImportSource, string> = {
   tx: 'QQ音乐',
   wy: '网易云音乐',
   kg: '酷狗音乐',
+  bi: '哔哩哔哩',
 }
 
 const NATIVE_MAX_FETCH_PAGES = 500
@@ -73,6 +75,14 @@ const fetchNativeList = async(
   shouldCancel?: ShouldCancel,
 ) => {
   const source = params.source
+  if (source == 'bi') {
+    const result = await bilibiliClient.importCollection(params.text, (current, total) => onProgress?.({ stage: 'fetch', current, total }), shouldCancel).catch((error: Error) => {
+      if (error.message == 'invalid_link' || error.message == 'cancelled') throw new ExternalImportError(error.message)
+      if (error.message == 'incomplete') throw new ExternalImportError('playlist_incomplete')
+      throw error
+    })
+    return { listName: result.name, list: result.list.map(item => toNewMusicInfo(item as unknown as LX.Music.MusicInfoOnline)), unmatched: 0, sourceTotal: result.total }
+  }
   const text = source == 'wy' ? getNeteaseInput(params.text, params.neteaseToken) : params.text
   const readPage = async(page: number) => getListDetail(text, source, page, page == 1).catch((error: unknown) => {
     const code = error instanceof Error ? error.message : ''

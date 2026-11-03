@@ -1,3 +1,4 @@
+import { BILIBILI_HEADERS, isBilibiliMediaUrl } from '@/utils/bilibili'
 import TrackPlayer, { State } from 'react-native-track-player'
 import BackgroundTimer from 'react-native-background-timer'
 import { defaultUrl } from '@/config'
@@ -54,7 +55,8 @@ const buildTracks = (musicInfo: LX.Player.PlayMusic, url?: LX.Player.Track['url'
       artist: mInfo.singer || 'Unknow',
       album,
       artwork,
-      userAgent: defaultUserAgent,
+      ...(typeof url == 'string' && isBilibiliMediaUrl(url) ? { headers: BILIBILI_HEADERS } : {}),
+      userAgent: typeof url == 'string' && isBilibiliMediaUrl(url) ? BILIBILI_HEADERS['User-Agent'] : defaultUserAgent,
       musicId: mInfo.id,
       lyric,
       // original: { ...musicInfo },

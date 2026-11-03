@@ -236,3 +236,32 @@ test('写入错误码保留，网络异常不泄露凭证', async () => {
   const network = createKugouApi(async () => { throw Error('failed token=' + session.token) }, md5)
   await assert.rejects(network.addFavoriteSong(session, '2', song), e => e.message === 'unavailable')
 })
+
+
+test('账号安全验证入口可独立使用，无风控时只读检查，不打开验证码或写入歌曲', async () => {
+  const paths = []
+  const api = createKugouApi(async url => {
+    paths.push(new URL(url).pathname)
+    return { ok: true, status: 200, json: async () => ({ status: 1, error_code: 0, data: { info: [], count: 0 } }) }
+  }, md5)
+  await api.verifyAccess(session, async () => { throw Error('must not open captcha') }, async () => {})
+  assert.deepEqual(paths, ['/v7/get_all_list'])
+})
+
+test('独立验证会刷新过期事件，取消或缺少事件明确失败，始终不提交收藏', async () => {
+  for (const expired of [false, true]) {
+    const f = verificationFixture()
+    if (expired) { await assert.rejects(f.api.getPlaylists(session)); f.expire() }
+    await assert.rejects(f.api.verifyAccess(session, async () => { throw Error('verification_cancelled') }, async () => {}), /verification_cancelled/)
+    assert.equal(f.calls.filter(x => x.path === '/v7/get_all_list').length, expired ? 2 : 1)
+    assert.equal(f.calls.some(x => x.path.endsWith('verify_user_info')), false)
+  }
+  const missing = verificationFixture({ missingEvent: true })
+  await assert.rejects(missing.api.verifyAccess(session, async () => { throw Error('must not open') }, async () => {}), /verification_unsupported/)
+})
+
+test('验证码完成后仍被风控拦截不能误报访问恢复', async () => {
+  const f = verificationFixture()
+  await assert.rejects(f.api.verifyAccess(session, async () => ({ ticket: 'ticket', randstr: 'random' }), async () => {}), /verification_required/)
+  assert.deepEqual(f.calls.map(x => x.path), ['/v7/get_all_list', '/verifyservice/v3/get_verify_info', '/v4/verify_user_info', '/v7/get_all_list'])
+})

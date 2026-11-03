@@ -5,16 +5,17 @@ import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import musicSdk from '@/utils/musicSdk'
-import searchState, { type InitState as SearchState } from '@/store/search/state'
+import searchState from '@/store/search/state'
 import { setSearchText, setTipList, setTipListInfo } from '@/core/search/search'
 import { debounce } from '@/utils'
 import { Q_UI } from '@/theme/ui'
 
 export const ITEM_HEIGHT = Math.max(Q_UI.touchSize, Math.round(scaleSizeH(44)))
 
-export const debounceTipSearch = debounce((keyword: string, source: SearchState['temp_source'], callback: (list: string[]) => void) => {
-  // console.log(reslutList)
-  void musicSdk[source].tipSearch.search(keyword).then(callback).catch(() => { callback([]) })
+export const debounceTipSearch = debounce((keyword: string, source: LX.OnlineSource, callback: (list: string[]) => void) => {
+  const api = musicSdk[source]?.tipSearch
+  if (!api) { callback([]); return }
+  void Promise.resolve().then(() => api.search(keyword)).then(callback).catch(() => { callback([]) })
 }, 200)
 
 
@@ -22,6 +23,7 @@ export type SearchTipListProps = _SearchTipListProps<string>
 export type SearchTipListType = _SearchTipListType<string>
 
 interface TipListProps {
+  source: LX.OnlineSource | 'all'
   onSearch: (keyword: string) => void
 }
 export interface TipListType {
@@ -30,12 +32,16 @@ export interface TipListType {
   hide: () => void
 }
 
-export default forwardRef<TipListType, TipListProps>(({ onSearch }, ref) => {
+export default forwardRef<TipListType, TipListProps>(({ onSearch, source: selectedSource }, ref) => {
   const searchTipListRef = useRef<SearchTipListType>(null)
   const [visible, setVisible] = useState(false)
   const visibleListRef = useRef(false)
   const isUnmountedRef = useRef(false)
   const searchRequestRef = useRef(0)
+  const source = selectedSource == 'all' ? searchState.temp_source : selectedSource
+  const sourceRef = useRef(source)
+  sourceRef.current = source
+  const lastQuery = useRef({ keyword: '', height: 0 })
 
   useEffect(() => {
     isUnmountedRef.current = false
@@ -49,16 +55,16 @@ export default forwardRef<TipListType, TipListProps>(({ onSearch }, ref) => {
     searchTipListRef.current?.setHeight(height)
     setSearchText(keyword)
     if (keyword) {
-      const source = searchState.temp_source
+      const source = sourceRef.current
       setTipListInfo(keyword, source)
       debounceTipSearch(keyword, source, (list) => {
         if (!visibleListRef.current || isUnmountedRef.current || searchRequestRef.current != requestId) return
-        if (keyword != searchState.tipListInfo.text || source != searchState.tipListInfo.source) return
+        if (keyword != searchState.tipListInfo.text || source != searchState.tipListInfo.source || source != sourceRef.current) return
         setTipList(list)
         searchTipListRef.current?.setList(list)
       })
     } else {
-      setTipListInfo(keyword, searchState.temp_source)
+      setTipListInfo(keyword, sourceRef.current)
       setTipList([])
       searchTipListRef.current?.setList([])
     }
@@ -66,7 +72,7 @@ export default forwardRef<TipListType, TipListProps>(({ onSearch }, ref) => {
 
   const handleShowList = (height: number) => {
     searchTipListRef.current?.setHeight(height)
-    if (searchState.tipListInfo.list.length) {
+    if (searchState.tipListInfo.source == sourceRef.current && searchState.tipListInfo.list.length) {
       visibleListRef.current = true
       searchTipListRef.current?.setList([...searchState.tipListInfo.list])
     }
@@ -78,8 +84,18 @@ export default forwardRef<TipListType, TipListProps>(({ onSearch }, ref) => {
     searchTipListRef.current?.setList([])
   }
 
+  useEffect(() => {
+    const requestId = ++searchRequestRef.current
+    setTipList([])
+    searchTipListRef.current?.setList([])
+    if (visibleListRef.current) handleSearch(lastQuery.current.keyword, lastQuery.current.height, requestId)
+  // 切换平台重新联想；回调通过 ref 拒绝旧平台的迟到响应。
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source])
+
   useImperativeHandle(ref, () => ({
     search(keyword, height) {
+      lastQuery.current = { keyword, height }
       const requestId = ++searchRequestRef.current
       visibleListRef.current = true
       if (visible) handleSearch(keyword, height, requestId)

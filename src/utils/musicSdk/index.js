@@ -1,3 +1,4 @@
+import bi from './bi'
 import kw from './kw'
 import kg from './kg'
 import tx from './tx'
@@ -10,6 +11,7 @@ import { supportQuality } from './api-source'
 
 const sources = {
   sources: [
+    { name: '哔哩哔哩', id: 'bi' },
     {
       name: '酷我音乐',
       id: 'kw',
@@ -35,6 +37,7 @@ const sources = {
     //   id: 'bd',
     // },
   ],
+  bi,
   kw,
   kg,
   tx,
@@ -62,7 +65,7 @@ export const searchMusic = async({ name, singer, source: s, limit = 25 }) => {
   const trimStr = str => typeof str == 'string' ? str.trim() : str
   const musicName = trimStr(name)
   const tasks = []
-  const excludeSource = ['xm']
+  const excludeSource = ['xm', 'bi']
   for (const source of sources.sources) {
     if (!sources[source.id].musicSearch || source.id == s || excludeSource.includes(source.id)) continue
     tasks.push(sources[source.id].musicSearch.search(`${musicName} ${singer || ''}`.trim(), 1, limit).catch(_ => null))

@@ -1,3 +1,4 @@
+import { BILIBILI_HEADERS, isBilibiliMediaUrl } from '@/utils/bilibili'
 import RNFS from 'react-native-fs'
 
 // 下载只解析在线地址，不能复用播放器的本地文件优先策略。
@@ -38,7 +39,7 @@ const formatSpeed = (bytesPerSecond: number) => {
 }
 
 const buildTask = (musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality): DownloadTaskInfo => {
-  const fileName = `${musicInfo.singer} - ${musicInfo.name}.${QUALITY_EXT[quality]}`
+  const fileName = `${musicInfo.singer} - ${musicInfo.name}.${(musicInfo.source == 'bi' ? 'm4a' : QUALITY_EXT[quality])}`
   return {
     id: `${musicInfo.id}_${quality}`,
     status: 'waiting',
@@ -95,6 +96,7 @@ const runTask = async(taskId: string) => {
     let lastTime = 0
     const downloadPromise = RNFS.downloadFile({
       fromUrl: url,
+      headers: isBilibiliMediaUrl(url) ? BILIBILI_HEADERS : undefined,
       toFile,
       background: false,
       progressInterval: PROGRESS_THROTTLE,

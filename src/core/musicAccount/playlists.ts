@@ -9,6 +9,7 @@ import { assertKugouSession, kugouApi, requireKugouSession } from './kugou'
 import type { KugouSession } from './kugouApi'
 
 export interface AccountPlaylist {
+  writable?: boolean
   id: string
   name: string
   cover: string

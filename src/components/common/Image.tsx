@@ -66,10 +66,6 @@ const Image = memo(({ url, cache, resizeMode = 'cover', style, onError, nativeID
           />
         )
   )
-}, (prevProps, nextProps) => {
-  return prevProps.url == nextProps.url &&
-    prevProps.style == nextProps.style &&
-    prevProps.nativeID == nextProps.nativeID
 })
 
 export const getSize = (uri: string, success: (width: number, height: number) => void, failure?: (error: any) => void) => {

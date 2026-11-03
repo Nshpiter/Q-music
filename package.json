@@ -1,9 +1,11 @@
 {
   "name": "q-music-mobile",
-  "version": "0.4.30",
-  "versionCode": 58,
+  "version": "0.4.31",
+  "versionCode": 59,
   "private": true,
   "scripts": {
+    "test:cloud-config": "node --test scripts/verify-cloud-snapshot.cjs scripts/verify-cloud-config-restore.cjs",
+    "test:player-overlays": "node --test scripts/verify-player-overlays.cjs scripts/verify-mini-player.cjs scripts/verify-playback-session.cjs",
     "test:mobile-navigation": "node --test scripts/verify-setting-navigation.cjs scripts/verify-settings-search-download.cjs scripts/verify-netease-login-page.cjs scripts/verify-music-login.cjs scripts/verify-qq-authorization.cjs",
     "test:api-fallback": "node --test scripts/verify-user-api-fallback.cjs scripts/verify-user-api-runtime.cjs scripts/verify-user-api-routing.cjs scripts/verify-user-api-import.cjs",
     "test:feedback": "node --test scripts/verify-lyric-copy.cjs scripts/verify-music-accounts.cjs scripts/verify-playback-recovery.cjs scripts/verify-native-playback-cancel.cjs",
@@ -39,7 +41,10 @@
     "test:playlist-merge": "node --test scripts/verify-playlist-merge.cjs",
     "test:download-selection": "node --test scripts/verify-download-selection.cjs",
     "test:theme-appearance": "node --test scripts/verify-theme-appearance.cjs",
-    "test:ui-interactions": "node --test scripts/verify-discovery-controls.cjs scripts/verify-event-dispatch.cjs scripts/verify-search-navigation.cjs scripts/verify-settings-motion.cjs scripts/verify-motion-preferences.cjs scripts/verify-media-session.cjs scripts/verify-song-browse.cjs scripts/verify-lyric-copy.cjs scripts/verify-mini-player.cjs scripts/verify-artwork-discovery.cjs"
+    "test:ui-interactions": "node --test scripts/verify-discovery-controls.cjs scripts/verify-event-dispatch.cjs scripts/verify-search-navigation.cjs scripts/verify-settings-motion.cjs scripts/verify-motion-preferences.cjs scripts/verify-media-session.cjs scripts/verify-song-browse.cjs scripts/verify-lyric-copy.cjs scripts/verify-mini-player.cjs scripts/verify-artwork-discovery.cjs",
+    "test:playlist-targets": "node --test scripts/verify-playlist-targets.cjs scripts/verify-netease-favorite.cjs scripts/verify-kugou-favorite.cjs",
+    "test:playback-session": "node --test scripts/verify-playback-session.cjs scripts/verify-playback-recovery.cjs",
+    "test:bilibili": "node --test scripts/verify-bilibili.cjs"
   },
   "engines": {
     "node": ">= 18",
