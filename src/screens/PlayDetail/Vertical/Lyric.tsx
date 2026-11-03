@@ -1,3 +1,4 @@
+import { isInstrumental } from '@/utils/lyricStatus'
 import { memo, useMemo, useEffect, useRef, useCallback, useState } from 'react'
 import { Animated, View, FlatList, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
 import { type Line, useLrcPlay, useLrcSet } from '@/plugins/lyric'
@@ -63,7 +64,9 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
   const { isCar } = useAdaptiveLayout()
   const musicInfo = usePlayerMusicInfo()
   const motion = useMotion()
-  const lyricLines = useLrcSet()
+  const rawLines = useLrcSet()
+  const instrumental = isInstrumental({ title: musicInfo.name, lyric: musicInfo.lrc })
+  const lyricLines = useMemo(() => instrumental ? [] : rawLines, [instrumental, rawLines])
   const { line } = useLrcPlay(active)
   const fontSize = useSettingValue('playDetail.vertical.style.lrcFontSize')
   const showProgress = useSettingValue('playDetail.isShowLyricProgressSetting')
@@ -234,9 +237,9 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
         onScrollToIndexFailed={handleScrollToIndexFailed}
         onScroll={handleScroll}
         scrollEventThrottle={32}
-      /> : <View style={styles.empty}>
+      /> : <View style={[styles.empty, immersive && { opacity: 1 }]}>
         <Icon name="lyric-on" rawSize={28} color={theme['q-text-secondary']} />
-        <Text size={14} color={theme['q-text-secondary']} style={styles.emptyText}>{t('mobile_no_lyrics')}</Text>
+        <Text size={14} color={theme['q-text-secondary']} style={styles.emptyText}>{t(instrumental ? 'mobile_instrumental' : 'mobile_no_lyrics')}</Text>
       </View>}
       {showProgress && lyricLines.length > 0 ? <PlayLine ref={playLineRef} onPlayLine={handlePlayLine} /> : null}
     </View>

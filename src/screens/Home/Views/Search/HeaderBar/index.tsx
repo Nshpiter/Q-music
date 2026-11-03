@@ -14,6 +14,7 @@ import { type Source as SonglistSource } from '@/store/search/songlist/state'
 import Button from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { useI18n } from '@/lang'
+import MusicRecognition from '@/components/MusicRecognition'
 
 type Sources = Readonly<Array<MusicSource | SonglistSource>>
 type SourceSelectorProps = _SourceSelectorProps<Sources>
@@ -82,6 +83,7 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ showBack, onBack, on
           onBlur={onHideTipList}
           onFocusText={onShowTipList}
         />
+        <MusicRecognition />
       </View>
     </View>
   )

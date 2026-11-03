@@ -38,6 +38,9 @@ export default memo(() => {
   const [config, setConfig] = useState<CloudConfig>(defaultConfig)
   const [savedConfig, setSavedConfig] = useState<CloudConfig>(defaultConfig)
   const [showConfig, setShowConfig] = useState(true)
+  const [advanced, setAdvanced] = useState(false)
+  const [options, setOptions] = useState(false)
+  const [section, setSection] = useState<'songs' | 'backup'>('songs')
   const [configured, setConfigured] = useState(false)
   const [password, setPassword] = useState('')
   const [playlist, setPlaylist] = useState('云端曲库')
@@ -211,7 +214,7 @@ export default memo(() => {
   return (
     <>
       <SubTitle title="远程存储">
-        <Text size={12} color={theme['q-text-secondary']}>上传本地歌曲，在其他设备按歌单或歌曲导入。</Text>
+        <Text size={12} color={theme['q-text-secondary']}>云端歌曲用于上传与导入音乐；设置与音源用于迁移配置、音源脚本和可选的登录状态。</Text>
         <View style={styles.providers}>
           {(['s3', 'webdav'] as const).map(provider => (
             <PressButton key={provider} accessibilityRole="radio" accessibilityState={{ selected: config.provider == provider }}
@@ -236,18 +239,28 @@ export default memo(() => {
         <InputItem immediate editable={!busy} label="区域" value={config.region} onChanged={update('region')} placeholder="us-east-1" />
         <InputItem immediate editable={!busy} label="存储桶" value={config.bucket} onChanged={update('bucket')} />
       </> : null}
-      <InputItem immediate editable={!busy} label="云端目录" value={config.prefix} onChanged={update('prefix')} placeholder="qmusic" />
+
       <InputItem immediate editable={!busy} label={config.provider == 's3' ? 'Access Key' : '用户名'} value={config.accessKey} onChanged={update('accessKey')} />
       <InputItem immediate editable={!busy} label={config.provider == 's3' ? 'Secret Key' : '密码'} value={config.secretKey} onChanged={update('secretKey')}
         secureTextEntry placeholder={configured ? '已保存；留空则保持不变' : ''} />
+      {config.provider == 'webdav' ? <Text style={styles.status} size={12} color={theme['q-text-secondary']}>填写服务商提供的 WebDAV 地址和账号；需要应用密码的服务请填写应用密码。</Text> : null}
+      <View style={styles.actions}><Button disabled={busy} onPress={() => { setAdvanced(value => !value) }}>{advanced ? '收起高级设置' : '高级设置 · 可选'}</Button></View>
+      {advanced ? <InputItem immediate editable={!busy} label="云端目录" value={config.prefix} onChanged={update('prefix')} placeholder="留空使用默认目录" /> : null}
       <View style={styles.actions}><Button disabled={busy} onPress={save}>保存配置</Button></View>
       </> : null}
       {hasConfigChanges ? <Text style={styles.status} size={12} color={theme['q-accent-text']}>请先保存连接设置，再查看或上传歌曲。</Text> : null}
-      <CloudConfigBackup disabled={busy || !configured || hasConfigChanges} connection={JSON.stringify(config)} onBusyChange={setBusy} />
-      <InputItem immediate editable={!busy} label="端到端口令" value={password} onChanged={(value, callback) => { if (value != password) { setPassword(value); resetTracks() }; callback(value) }}
+      <View style={styles.actions}>
+        {(['songs', 'backup'] as const).map(item => <PressButton key={item} disabled={busy} accessibilityRole="tab" accessibilityState={{ selected: section == item }} onPress={() => { setSection(item) }} style={{ flex: 1, minHeight: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', backgroundColor: section == item ? theme['q-surface-tint'] : 'transparent' }}><Text size={14} color={section == item ? theme['q-accent-text'] : theme['q-text-secondary']}>{item == 'songs' ? '云端歌曲' : '设置与音源'}</Text></PressButton>)}
+      </View>
+      <View style={{ display: section == 'backup' ? 'flex' : 'none' }}><CloudConfigBackup defaultExpanded disabled={busy || !configured || hasConfigChanges} connection={JSON.stringify(config)} onBusyChange={setBusy} /></View>
+      <View style={{ display: section == 'songs' ? 'flex' : 'none' }}>
+      <View style={styles.actions}><Button disabled={busy} onPress={() => { setOptions(value => !value) }}>{options ? '收起歌曲选项' : '歌曲选项 · 加密与上传位置'}</Button></View>
+      {options ? <>
+      <InputItem immediate editable={!busy} label="歌曲加密口令" value={password} onChanged={(value, callback) => { if (value != password) { setPassword(value); resetTracks() }; callback(value) }}
         secureTextEntry placeholder="可选，至少 8 个字符；两端保持相同" />
       <Text style={styles.status} size={12} color={theme['q-text-secondary']}>当前模式：{password ? '端到端加密' : '免口令'}。两种模式的云端目录相互独立。</Text>
       <InputItem immediate editable={!busy} label="上传到歌单" value={playlist} onChanged={(value, callback) => { setPlaylist(value); callback(value) }} />
+      </> : null}
       <View style={styles.actions}>
         <Button disabled={busy || !canUse} onPress={() => picker.current?.show({ title: '选择歌曲', dirOnly: false, filter: AUDIO_EXT })}>上传歌曲</Button>
         <Button disabled={busy || !canUse} onPress={uploadDownloaded}>上传已下载歌曲</Button>
@@ -282,6 +295,7 @@ export default memo(() => {
           {!visibleTracks.length ? <Text style={styles.empty} size={13} color={theme['q-text-secondary']}>没有匹配的歌曲，试试其他关键词。</Text> : null}
         </View>
       </> : loaded && !busy ? <Text style={styles.empty} size={13} color={theme['q-text-secondary']}>云端还没有歌曲。上传本地歌曲后，便可在其他设备导入。</Text> : null}
+      </View>
       <ChoosePath ref={picker} onConfirm={path => { upload([path]) }} />
     </>
   )

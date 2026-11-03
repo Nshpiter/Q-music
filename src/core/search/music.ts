@@ -1,9 +1,11 @@
 import searchMusicState, { type Source } from '@/store/search/music/state'
 import searchMusicActions, { type SearchResult } from '@/store/search/music/action'
 import musicSdk from '@/utils/musicSdk'
+import { bilibiliClient } from '@/utils/musicSdk/bi'
 
 export const setSource: typeof searchMusicActions['setSource'] = (source) => {
   searchMusicActions.setSource(source)
+  if (source == 'bi') void bilibiliClient.prepareSearch().catch(() => {})
 }
 export const setSearchText: typeof searchMusicActions['setSearchText'] = (text) => {
   searchMusicActions.setSearchText(text)

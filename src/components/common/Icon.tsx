@@ -27,6 +27,7 @@ const IcoMoon = createIconSetFromIcoMoon(icoMoonConfig)
 
 // 常用操作统一为细线图标，播放控制使用同一套实心字形。
 const outlineIcons: Record<string, string> = {
+  mic: 'mic',
   'dots-horizontal': 'more-horizontal',
   disc: 'disc',
   radio: 'radio',

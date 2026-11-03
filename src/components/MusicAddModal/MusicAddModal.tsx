@@ -70,7 +70,7 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
       {!selectInfo.musicInfo ? null : <>
         <Title musicInfo={selectInfo.musicInfo} isMove={selectInfo.isMove} />
         <List musicInfo={selectInfo.musicInfo} isMove={selectInfo.isMove} onPress={info => { void handleSelect(info) }} disabled={busy || creating} onCreating={handleCreating}>
-        {!selectInfo.isMove ? <QQFavoriteTarget key={selectInfo.musicInfo.id} musicInfo={selectInfo.musicInfo} disabled={busy || creating} onBusy={value => { busyRef.current = value; setBusy(value); setCloudBusy(value) }} onLogin={provider => {
+        {!selectInfo.isMove && ['tx', 'wy', 'kg'].includes(selectInfo.musicInfo.source) ? <QQFavoriteTarget key={selectInfo.musicInfo.id} musicInfo={selectInfo.musicInfo} disabled={busy || creating} onBusy={value => { busyRef.current = value; setBusy(value); setCloudBusy(value) }} onLogin={provider => {
           dialogRef.current?.setVisible(false)
           if (commonState.componentIds.home) pushMusicAccountScreen(commonState.componentIds.home, provider)
         }} /> : null}

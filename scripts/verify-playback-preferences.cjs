@@ -60,6 +60,8 @@ function selectionFixture(mode, hasCurrent = true, setTempList = async() => {}) 
     '@renderer/store/setting': { appSetting: setting }, '@renderer/store/list/action': lists,
     '@renderer/store/player/action': { addTempPlayList }, '@renderer/store/player/state': { playMusicInfo: playback }, './action': player,
   }
+  deps[mobile ? '@/utils/musicSdk/bi' : '@renderer/utils/musicSdk/bi'] = { bilibiliClient: { videoContents: async() => { throw Error('unexpected Bilibili lookup') } } }
+  deps[mobile ? '@/utils' : '@renderer/utils'] = { toNewMusicInfo: item => item }
   return { api: load(file.selection, deps), events }
 }
 test('插入单曲保留当前队列，只播放选中歌曲', async() => {

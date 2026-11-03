@@ -33,8 +33,12 @@ export const SongMoreButton = () => {
 export const SongMetadata = ({ album = false, size = 14 }: { album?: boolean, size?: number }) => {
   const open = useSongActions()
   const music = usePlayerMusicInfo()
+  const current = usePlayMusicInfo().musicInfo
   const theme = useTheme()
   const text = album ? music.album : music.singer
+  if (!album && current && !('progress' in current) && current.source == 'bi') {
+    return <Text size={size} numberOfLines={1} color={theme['q-text-secondary']}>{text}</Text>
+  }
   if (!text) return null
   return <Button accessibilityRole="button" accessibilityLabel={`${global.i18n.t(album ? 'song_actions_album' : 'song_actions_artist')} · ${text}`} onPress={() => { open(album ? 'album' : 'artist') }} style={styles.metadata}>
     <Text size={size} numberOfLines={1} color={theme['q-text-secondary']} style={{ flexShrink: 1 }}>{text}</Text>

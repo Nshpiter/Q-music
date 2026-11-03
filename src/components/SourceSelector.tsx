@@ -74,10 +74,10 @@ const Component = <S extends Sources>({ fontSize = 15, center, plain = false, ic
   const currentSource = source ?? list[0] ?? 'all'
   const normalizedCurrentSource = normalizeSource(currentSource)
   const sourceLabel = t(`source_real_${currentSource}`) || SOURCE_LOGOS[normalizedCurrentSource]?.label || currentSource
-  // 按平台名称和字号保留文字、图标及勾选空间，避免固定宽度留下大块空白。
+  // 按平台名称和字号保留文字与图标空间，选中仅用底色标识，避免固定宽度留下大块空白。
   const longestLabel = Math.max(0, ...sourceList_t.map(({ label }) => Array.from(label)
     .reduce((width, char) => width + (char.codePointAt(0)! > 255 ? 1 : 0.62), 0)))
-  const sourceMenuWidth = Math.min(windowWidth - 16, Math.max(176, Math.ceil(100 + longestLabel * getTextSize(fontSize) * appFontScale * fontScale)))
+  const sourceMenuWidth = Math.min(windowWidth - 16, Math.max(152, Math.ceil(74 + longestLabel * getTextSize(fontSize) * appFontScale * fontScale)))
 
   return (
     <DorpDownMenu
@@ -86,6 +86,7 @@ const Component = <S extends Sources>({ fontSize = 15, center, plain = false, ic
       onPress={handleChangeSource}
       fontSize={fontSize}
       activeId={source}
+      showCheckmark={false}
       menuWidth={sourceMenuWidth}
       accessibilityLabel={sourceLabel}
       accessibilityHint={t('source_select')}

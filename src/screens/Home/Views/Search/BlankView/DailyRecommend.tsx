@@ -194,7 +194,7 @@ export default () => {
       {loading && !list.length ? <View style={styles.state}><Skeleton width="70%" height={13} /><Skeleton width="45%" height={11} /></View>
         : loadError ? <View style={styles.state}><Text size={12} color={theme['q-text-secondary']}>{t('load_failed')}</Text><Button style={styles.errorAction} onPress={() => { void load(sourceRef.current, true) }}><Text color={theme['q-accent-text']}>{t('list_retry')}</Text></Button></View>
           : <Text size={12} style={styles.collectionHint} color={theme['q-text-secondary']}>{list.length ? t('discovery_daily_hint', { count: list.length }) : t('search_daily_recommend_empty')}</Text>}
-      {settingsVisible ? <DailySettings provider={provider} onClose={() => { setSettingsVisible(false) }} onChanged={refresh} onLogin={openAccount} /> : null}
+      <DailySettings visible={settingsVisible} provider={provider} onClose={() => { setSettingsVisible(false) }} onChanged={refresh} onLogin={openAccount} />
       <Modal visible={detailVisible} animationType="slide" onRequestClose={() => { setDetailVisible(false) }}>
         <SafeAreaView style={{ flex: 1, backgroundColor: theme['c-content-background'] }}>
           <View style={styles.detailHeader}>

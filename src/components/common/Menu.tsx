@@ -77,6 +77,7 @@ interface Props<M extends Menus = Menus> {
   fontSize?: number
   center?: boolean
   activeId?: M[number]['action'] | null
+  showCheckmark?: boolean
 }
 
 const finiteOr = (value: number | undefined, fallback: number) => {
@@ -99,6 +100,7 @@ const Menu = ({
   activeId,
   fontSize = 13,
   center = false,
+  showCheckmark = true,
 }: Props) => {
   const theme = useTheme()
   const windowSize = useWindowSize()
@@ -214,7 +216,7 @@ const Menu = ({
                     >
                       {menu.label}
                     </Text>
-                    {menu.action == activeId
+                    {showCheckmark && menu.action == activeId
                       ? <View style={styles.menuItemTrailing}><Text accessible={false} size={17} color={theme['q-accent-text']}>✓</Text></View>
                       : null}
                   </View>
@@ -235,6 +237,7 @@ export interface MenuProps<M extends Menus = Menus> {
   fontSize?: number
   center?: boolean
   activeId?: M[number]['action'] | null
+  showCheckmark?: boolean
 }
 
 export interface MenuType {
@@ -242,7 +245,7 @@ export interface MenuType {
   hide: () => void
 }
 
-const Component = <M extends Menus>({ menus, width, height, activeId, onHide, onPress, fontSize, center }: MenuProps<M>, ref: Ref<MenuType>) => {
+const Component = <M extends Menus>({ menus, width, height, activeId, onHide, onPress, fontSize, center, showCheckmark }: MenuProps<M>, ref: Ref<MenuType>) => {
   const modalRef = useRef<ModalType>(null)
   const [position, setPosition] = useState<Position>({ w: 0, h: 0, x: 0, y: 0 })
   const [menuSize, setMenuSize] = useState<MenuSize>({})
@@ -264,7 +267,7 @@ const Component = <M extends Menus>({ menus, width, height, activeId, onHide, on
   // renders edge-to-edge, so do not add a second status-bar inset.
   return (
     <Modal statusBarPadding={false} onHide={onHide} ref={modalRef}>
-      <Menu menus={menus} width={width} height={height} activeId={activeId} buttonPosition={position} menuSize={menuSize} onPress={onPress} onHide={hide} fontSize={fontSize} center={center} />
+      <Menu showCheckmark={showCheckmark} menus={menus} width={width} height={height} activeId={activeId} buttonPosition={position} menuSize={menuSize} onPress={onPress} onHide={hide} fontSize={fontSize} center={center} />
     </Modal>
   )
 }

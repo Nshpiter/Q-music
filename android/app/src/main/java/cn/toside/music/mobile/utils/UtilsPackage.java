@@ -12,11 +12,11 @@ public class UtilsPackage implements ReactPackage {
 
   @Override
   public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
-    return Arrays.<ViewManager>asList(new GlassViewManager(), new ElasticScrollBoundaryManager(), new SettingsBackViewManager());
+    return Arrays.<ViewManager>asList(new GlassViewManager(), new ElasticScrollBoundaryManager(), new SettingsBackViewManager(), new ModalBackViewManager());
   }
 
   @Override
   public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
-    return Arrays.<NativeModule>asList(new UtilsModule(reactContext), new MusicCredentialModule(reactContext), new CloudLibraryModule(reactContext), new AccountTransferModule(reactContext), new LyricFontModule(reactContext));
+    return Arrays.<NativeModule>asList(new UtilsModule(reactContext), new MusicCredentialModule(reactContext), new CloudLibraryModule(reactContext), new AccountTransferModule(reactContext), new LyricFontModule(reactContext), new MusicRecognitionModule(reactContext));
   }
 }

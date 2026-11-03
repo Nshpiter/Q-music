@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Animated, PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
+import { Animated, AppState, PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
+import { Navigation } from 'react-native-navigation'
 import Modal, { type ModalType } from './Modal'
 import { useTheme } from '@/store/theme/hook'
 import { useMotion } from '@/utils/useMotion'
 import { Q_UI } from '@/theme/ui'
 
 // 内容保持有界高度，FlatList 才能正确测量并滚动；退场结束后再关闭原生窗口。
-export default ({ visible, onClose, onClosed, onBack = onClose, maxHeight = 680, testID = 'playlist-bottom-sheet', children }: { visible: boolean, onClose: () => void, onClosed?: () => void, onBack?: () => void, maxHeight?: number, testID?: string, children: React.ReactNode }) => {
+export default ({ visible, onClose, onClosed, onOpened, onBack = onClose, transient = false, maxHeight = 680, testID = 'playlist-bottom-sheet', children }: { visible: boolean, onClose: () => void, onClosed?: () => void, onOpened?: () => void, onBack?: () => void, transient?: boolean, maxHeight?: number, testID?: string, children: React.ReactNode }) => {
   const modal = useRef<ModalType>(null)
   const { height } = useWindowDimensions()
   const sheetHeight = Math.min(height * 0.8, maxHeight)
@@ -19,10 +20,13 @@ export default ({ visible, onClose, onClosed, onBack = onClose, maxHeight = 680,
   desired.current = visible
   const afterClose = useRef(onClosed)
   afterClose.current = onClosed
+  const afterOpen = useRef(onOpened)
+  afterOpen.current = onOpened
 
   const settle = useCallback((open: boolean) => {
     offset.stopAnimation()
     const finish = () => {
+      if (open && desired.current) afterOpen.current?.()
       if (!open && !desired.current && shown.current) {
         shown.current = false
         modal.current?.setVisible(false)
@@ -41,6 +45,22 @@ export default ({ visible, onClose, onClosed, onBack = onClose, maxHeight = 680,
     } else if (shown.current) settle(visible)
     return () => { offset.stopAnimation() }
   }, [visible, sheetHeight, motion, offset, settle])
+
+  useEffect(() => {
+    if (!transient) return
+    const dismiss = () => {
+      if (!shown.current) return
+      offset.stopAnimation()
+      offset.setValue(sheetHeight)
+      shown.current = false
+      modal.current?.setVisible(false)
+      onClose()
+      afterClose.current?.()
+    }
+    const app = AppState.addEventListener('change', state => { if (state != 'active') dismiss() })
+    const page = Navigation.events().registerComponentDidDisappearListener(dismiss)
+    return () => { app.remove(); page.remove() }
+  }, [transient, offset, sheetHeight, onClose])
 
   const drag = useMemo(() => PanResponder.create({
     // 仅拖动柄捕获起点，手指离开柄后仍连续跟随；不接管下面的列表滚动。

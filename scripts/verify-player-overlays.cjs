@@ -31,6 +31,7 @@ function harness(file, more = {}) {
     '@/utils/useMotion': { useMotion: () => true },
     '@/theme/ui': { Q_UI: { motion: { settle: {}, press: {} } } },
     './DockInset': { DockInsetContext: { Provider: 'Provider' } },
+    './ModalBackHandler': 'ModalBackHandler',
     ...more,
   }
   const context = { exports: {}, require: id => { if (!(id in deps)) throw Error(id); return deps[id] } }
@@ -66,6 +67,23 @@ test('临时面板进入后台或离开页面后关闭，回前台不重开；�
   assert.equal(h.render(props), null)
   h.render({ transient: false })
   assert.equal(h.listeners.size, 0)
+})
+
+test('系统新返回与旧返回共用关闭回调，受控面板由父组件关闭，普通弹窗可再次打开', () => {
+  const h = harness('src/components/common/Modal.tsx')
+  h.render(); h.ref.current.setVisible(true)
+  const native = h.render()
+  const bridge = native.props.children.props.children.find(node => node?.type === 'ModalBackHandler')
+  bridge.props.onBack()
+  assert.equal(h.render(), null)
+  h.ref.current.setVisible(true)
+  assert.equal(h.render().type, 'NativeModal')
+  let requests = 0
+  const controlled = h.render({ keyHide: false, onRequestClose: () => requests++ })
+  const controlledBridge = controlled.props.children.props.children.find(node => node?.type === 'ModalBackHandler')
+  controlledBridge.props.onBack()
+  assert.equal(requests, 1)
+  assert.equal(h.render({ keyHide: false }).type, 'NativeModal')
 })
 
 test('播放设置关闭后清理子面板，不留下下一帧回调重开；再次打开仍正常', () => {

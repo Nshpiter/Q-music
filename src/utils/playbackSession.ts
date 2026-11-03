@@ -2,11 +2,12 @@
 export class PlaybackSession<T> {
   history: T[] = []
   cursor = -1
+  continuous = false
   private ordered: { id: string, items: unknown[] } | null = null
   private readonly listeners = new Set<() => void>()
   subscribe(listener: () => void) { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
   changed() { for (const listener of this.listeners) listener() }
-  reset() { this.history = []; this.cursor = -1; this.ordered = null; this.changed() }
+  reset() { this.continuous = false; this.history = []; this.cursor = -1; this.ordered = null; this.changed() }
   record(item: T) {
     this.history.splice(this.cursor + 1)
     this.history.push(item)

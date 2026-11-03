@@ -1,9 +1,9 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { ActivityIndicator, FlatList, View } from 'react-native'
 import Button from '@/components/common/Button'
 import SourceLogo from '@/components/SourceLogo'
 
-import Popup, { type PopupType } from '@/components/common/Popup'
+import BottomSheet from '@/components/common/BottomSheet'
 import Text from '@/components/common/Text'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
@@ -73,12 +73,13 @@ const PlayQueue = forwardRef<PlayQueueType>((_, ref) => {
   const isPlay = useIsPlay()
   const theme = useTheme()
   const [visible, setVisible] = useState(false)
+  const [sheetHeight, setSheetHeight] = useState(680)
+  const close = useCallback(() => { setVisible(false) }, [])
   const [tab, setTab] = useState<'queue' | 'history'>('queue')
   const [sorting, setSorting] = useState(false)
   const [savingQueue, setSavingQueue] = useState(false)
   const savingRef = useRef(false)
   const [, refresh] = useState(0)
-  const popupRef = useRef<PopupType>(null)
   const listRef = useRef<FlatList<Row>>(null)
   const pendingPlay = useRef(false)
   const pendingScroll = useRef(false)
@@ -94,7 +95,6 @@ const PlayQueue = forwardRef<PlayQueueType>((_, ref) => {
       global.state_event.off('playTempPlayListChanged', update)
     }
   }, [])
-  useEffect(() => { popupRef.current?.setVisible(visible) }, [visible])
   const sourceList = getList(playInfo.playerListId)
   const upcoming = playerState.tempPlayList
   const rows: Row[] = tab == 'history'
@@ -118,7 +118,7 @@ const PlayQueue = forwardRef<PlayQueueType>((_, ref) => {
   const scrollToCurrent = () => {
     if (activeIndex >= 0) listRef.current?.scrollToOffset({ offset: Math.max((activeIndex - 1) * ITEM_HEIGHT, 0), animated: false })
   }
-  useImperativeHandle(ref, () => ({ show() { pendingScroll.current = true; setVisible(true) } }))
+  useImperativeHandle(ref, () => ({ show() { setSheetHeight(Math.min(680, Math.max(300, 218 + (sourceList.length + upcoming.length + (playMusicInfo.isTempPlay ? 1 : 0)) * ITEM_HEIGHT))); pendingScroll.current = true; setTab('queue'); setSorting(false); setVisible(true) } }))
   const handlePress = async(row: Row) => {
     if (pendingPlay.current || sorting) return
     pendingPlay.current = true; setBusyKey(row.key)
@@ -144,13 +144,17 @@ const PlayQueue = forwardRef<PlayQueueType>((_, ref) => {
       updatePlayIndex(); resetRandomNextMusicInfo()
     }
   }
-  return visible ? <Popup ref={popupRef} transient title={`${t('play_queue_title')} · ${rows.length}`} onHide={() => { setVisible(false); setSorting(false) }} onShow={scrollToCurrent}>
+  return <BottomSheet visible={visible} transient maxHeight={sheetHeight} onClose={close} onClosed={() => { setSorting(false) }} onOpened={scrollToCurrent} testID="play-queue-sheet">
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, minHeight: 48 }}>
+      <Text size={17} style={{ flex: 1, fontWeight: '600' }}>{t(tab == 'queue' ? 'play_queue_title' : 'queue_session_history')} · {rows.length}</Text>
+      <Button accessibilityLabel={t('close')} onPress={close} style={{ width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}><Icon name="close" rawSize={20} color={theme['q-text-secondary']} /></Button>
+    </View>
     <View style={{ flexDirection: 'row', paddingHorizontal: 12, gap: 6 }}>
       {(['queue', 'history'] as const).map(value => <Button key={value} accessibilityState={{ selected: value == tab }} onPress={() => { setTab(value); setSorting(false) }} style={{ flex: 1, minHeight: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', backgroundColor: tab == value ? theme['q-surface-tint'] : 'transparent' }}><Text size={13} color={tab == value ? theme['q-accent-text'] : theme['q-text-secondary']}>{t(value == 'queue' ? 'play_queue_title' : 'queue_session_history')}</Text></Button>)}
       {tab == 'queue' ? <Button onPress={() => { setSorting(!sorting) }} style={{ paddingHorizontal: 12, minHeight: 44, justifyContent: 'center', borderRadius: 12 }}><Text size={12} color={theme['q-accent-text']}>{t(sorting ? 'playlist_order_done' : 'playlist_order_title')}</Text></Button> : null}
     </View>
     <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, minHeight: 40 }}>
-      <Text size={11} style={{ flex: 1 }} color={theme['q-text-secondary']}>{t('queue_session_local_hint')}</Text>
+      <Text size={11} style={{ flex: 1 }} color={theme['q-text-secondary']}>{t(playbackSession.continuous && sourceList.every(item => ('progress' in item ? item.metadata.musicInfo.source : item.source) == 'bi') ? 'queue_bilibili_hint' : 'queue_session_local_hint')}</Text>
       <Button onPress={scrollToCurrent} style={{ padding: 10, borderRadius: 10 }}><Text size={12} color={theme['q-accent-text']}>{t('queue_locate')}</Text></Button>
     </View>
     {tab == 'queue' && rows.length ? <Button disabled={savingQueue} onPress={() => { void saveQueue() }} style={{ marginHorizontal: 20, marginBottom: 6, padding: 10, borderRadius: 10, alignItems: 'center', backgroundColor: theme['q-surface-tint'] }}><Text size={12} color={theme['q-accent-text']}>{t('queue_save_audition')}</Text></Button> : null}
@@ -168,14 +172,14 @@ const PlayQueue = forwardRef<PlayQueueType>((_, ref) => {
           </View> : row.kind == 'later' ? <Button disabled={!!busyKey} accessibilityLabel={t('queue_session_remove')} onPress={() => { const at = playerState.tempPlayList.findIndex(item => `later:${item.tempId}` == row.key); if (at >= 0) playerActions.removeTempPlayList(at) }} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 }}><Text size={18} color={theme['q-text-secondary']}>×</Text></Button> : null}
         </View>
       }} />
-  </Popup> : null
+  </BottomSheet>
 })
 
 const styles = createStyle({
   locate: { minHeight: 44, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'flex-end' },
   empty: { padding: 28, textAlign: 'center' },
   list: {
-    maxHeight: 420,
+    flex: 1,
   },
   item: {
     height: ITEM_HEIGHT,

@@ -5,7 +5,8 @@ import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
-import { assertPlaylistSession, getAccountPlaylists, openPlaylistSession, type AccountPlaylist } from '@/core/musicAccount/playlists'
+import { type AccountPlaylist } from '@/core/musicAccount/playlists'
+import { getWritablePlaylists } from '@/core/musicAccount/playlistTargets'
 import type { MusicAccountProvider } from '@/core/musicAccount/types'
 import KugouVerifyButton from '@/components/KugouVerifyButton'
 
@@ -23,15 +24,19 @@ export default ({ provider, selected, disabled, onSelect, onLogin }: {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<'login' | 'error' | 'verification'>()
   const revision = useRef(0)
-  useEffect(() => () => { revision.current++ }, [])
+  const controller = useRef<AbortController>()
+  useEffect(() => () => { revision.current++; controller.current?.abort() }, [provider])
   const load = async() => {
     const current = ++revision.current
+    controller.current?.abort()
+    const request = controller.current = new AbortController()
     setLoading(true); setError(undefined)
     try {
-      const session = await openPlaylistSession(provider)
-      const next = await getAccountPlaylists(session)
-      await assertPlaylistSession(session)
-      if (current == revision.current) setLists(next.filter(list => list.kind == 'created' && (provider != 'kg' || list.writable === true) && list.id != 'dir:201').map(list => provider == 'kg' ? { ...list, id: `account:${session.owner}:${list.id}` } : list))
+      const next = await getWritablePlaylists(provider, request.signal)
+      if (current == revision.current) {
+        setLists(next)
+        if (selected && !next.some(item => item.id == selected)) onSelect('')
+      }
     } catch (err) {
       if (current == revision.current) setError(err instanceof Error && err.message == 'verification_required' ? 'verification' : err instanceof Error && err.message == 'login_required' ? 'login' : 'error')
     } finally { if (current == revision.current) setLoading(false) }
@@ -43,10 +48,11 @@ export default ({ provider, selected, disabled, onSelect, onLogin }: {
   </Button>
   return <View style={{ gap: 6 }}>
     <Button disabled={disabled || loading} accessibilityState={{ expanded }} onPress={() => { setExpanded(!expanded); if (!expanded) void load() }} style={{ minHeight: 44, padding: 10, borderRadius: 10, borderWidth: 0.5, borderColor: theme['q-outline'], flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <Text size={13} numberOfLines={1} style={{ flex: 1 }}>{selected ? lists.find(list => list.id == selected)?.name : t('favorite_destination_liked')}</Text>
+      <Text size={13} numberOfLines={1} style={{ flex: 1 }}>{selected ? lists.find(list => list.id == selected)?.name ?? t('favorite_destination_retry') : t('favorite_destination_liked')}</Text>
       {loading ? <ActivityIndicator size="small" color={theme['q-accent-text']} /> : <Text size={14}>{expanded ? '⌃' : '⌄'}</Text>}
     </Button>
     {expanded ? <ScrollView nestedScrollEnabled style={{ maxHeight: 200, borderRadius: 10, borderWidth: 0.5, borderColor: theme['q-outline'] }} contentContainerStyle={{ padding: 4 }}>
+      <Button disabled={disabled || loading} onPress={() => { void load() }} style={{ padding: 12, borderRadius: 10 }}><Text size={12} color={theme['q-accent-text']}>{loading ? t('bili_loading') : t('favorite_destination_retry')}</Text></Button>
       {row('', t('favorite_destination_liked'))}
       {lists.map(list => row(list.id, list.name))}
       {error ? <View style={{ padding: 8, gap: 6 }}><Text size={12} color={theme['q-text-secondary']}>{t(error == 'verification' ? 'list_sync_verification_required' : `favorite_destination_${error}`)}</Text><Button onPress={() => { if (error == 'login') onLogin(); else void load() }} style={{ padding: 10, borderRadius: 10 }}><Text size={13} color={theme['q-accent-text']}>{t(error == 'login' ? 'favorite_action_login' : 'favorite_destination_retry')}</Text></Button></View> : !loading && !lists.length ? <Text size={12} style={{ padding: 10 }} color={theme['q-text-secondary']}>{t('favorite_destination_empty')}</Text> : null}

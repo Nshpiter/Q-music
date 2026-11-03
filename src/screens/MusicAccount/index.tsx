@@ -116,7 +116,7 @@ export default ({ componentId, initialProvider = 'tx' }: { componentId: string, 
       }}><Text size={12} color={theme['q-accent-text']}>{t(dailyProvider == provider ? 'daily_provider_current' : 'daily_provider_use')}</Text></Button>
       <Button disabled={loggingOut || syncing} style={styles.recommendButton} onPress={() => { setDailySettings(true) }}><Text size={12} color={theme['q-text-secondary']}>{t(provider == 'tx' ? 'daily_official_daily' : 'daily_settings')} ›</Text></Button>
     </View>
-    {dailySettings ? <DailySettings provider={provider} onClose={() => { setDailySettings(false) }} onChanged={checkConnections} /> : null}
+    <DailySettings visible={dailySettings} provider={provider} onClose={() => { setDailySettings(false) }} onChanged={checkConnections} />
     {provider == 'tx' && connected.tx ? <View style={styles.recommendActions}><Button disabled={loggingOut || syncing} style={styles.recommendButton} onPress={() => { setTransferring(true) }}><Text size={12} color={theme['q-accent-text']}>从电脑更换账号 ›</Text></Button></View> : null}
     {connected[provider] ? <Playlists key={`${provider}-${revision}`} provider={provider} onBusyChange={setSyncing} onLogin={() => { void reconnect().catch(() => {}) }} onOpenLibrary={() => { void pop(componentId) }} /> : <>
       {provider == 'tx' ? <View style={styles.loginMethods}>

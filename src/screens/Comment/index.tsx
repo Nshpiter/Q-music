@@ -4,6 +4,7 @@ import PagerView, { type PagerViewOnPageSelectedEvent } from 'react-native-pager
 import Header from './components/Header'
 import CommentHot from './CommentHot'
 import CommentNew from './CommentNew'
+import BilibiliComments from './BilibiliComments'
 import { createStyle, toast } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
@@ -185,7 +186,7 @@ export default memo(({ componentId }: {
                   <Text>{t('comment_not support')}</Text>
                 </View>
                   )
-                : commentComponent
+                : musicInfo.source == 'bi' ? <BilibiliComments musicInfo={musicInfo} /> : commentComponent
             }
         </>
       }

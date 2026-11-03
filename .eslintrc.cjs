@@ -76,6 +76,9 @@ module.exports = {
     },
   },
   ignorePatterns: [
+    // 上游生成的指纹引擎保留原始格式；自有 bridge.js 仍参与检查。
+    '/android/app/src/main/assets/recognition/afp.js',
+    '/android/app/src/main/assets/recognition/afp.wasm.js',
     'node_modules',
     '/artifacts/',
     '/android/app/build-*/',

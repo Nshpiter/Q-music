@@ -5,6 +5,7 @@ import { useStatusbarHeight } from '@/store/common/hook'
 import { useMotion } from '@/utils/useMotion'
 import { Q_UI } from '@/theme/ui'
 import { DockInsetContext } from './DockInset'
+import ModalBackHandler from './ModalBackHandler'
 
 export interface ModalProps extends Omit<_ModalProps, 'visible'> {
   onHide?: () => void
@@ -115,6 +116,7 @@ export default forwardRef<ModalType, ModalProps>(({
        * taps without stealing events from descendants.
        */}
       <View style={styles.root}>
+        <ModalBackHandler onBack={props.onRequestClose ?? handleRequestClose} />
         {bgHide
           ? <Pressable
               accessible={false}

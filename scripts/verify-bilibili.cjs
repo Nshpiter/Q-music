@@ -6,6 +6,38 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(root, file),'utf
 const { createBilibiliClient, isBilibiliMediaUrl } = context.exports
 const bvid = 'BV1xx411c7mD'
 
+test('B站评论按视频AV号请求公开预览，不使用分P CID或伪造全量分页', async() => {
+  const calls = []
+  const item = { rpid_str: '999999999999999999', content: { message: '不错 <3' }, member: { uname: '听众', avatar: 'https://i0.hdslb.com/bfs/test.jpg' }, like: 12 }
+  const client = createBilibiliClient(async(url, headers) => {
+    calls.push(url)
+    assert.equal(headers.Cookie, undefined)
+    if (url.includes('/view?')) return { code: 0, data: { aid: 80433022, pages: [{ cid: 55 }] } }
+    const parsed = new URL(url)
+    assert.equal(parsed.searchParams.get('oid'), '80433022')
+    assert.equal(parsed.searchParams.get('sort'), '2')
+    return { code: 0, data: { page: { count: 100000 }, replies: [item, item, { rpid: 2, content: {} }] } }
+  })
+  const result = await client.comments(bvid + ':55')
+  assert.equal(result.comments.length, 1)
+  assert.equal(result.comments[0].id, item.rpid_str)
+  assert.equal(result.comments[0].text, '不错 <3')
+  assert.equal(result.comments[0].likedCount, 12)
+  assert.equal(result.total, undefined)
+  assert.equal(calls.length, 2)
+  const cancelled = new AbortController(); cancelled.abort()
+  await assert.rejects(client.comments(bvid, cancelled.signal), /cancelled/)
+  assert.equal(calls.length, 2)
+})
+
+test('B站评论区空结果和访问失败分别处理', async() => {
+  let denied = false
+  const client = createBilibiliClient(async url => url.includes('/view?') ? { code: 0, data: { aid: 1, pages: [{ cid: 1 }] } } : denied ? { code: -412 } : { code: 0, data: { replies: null } })
+  assert.equal((await client.comments(bvid)).comments.length, 0)
+  denied = true
+  await assert.rejects(client.comments(bvid), /-412/)
+})
+
 test('B站联想使用官方suggest，清除高亮、解码实体、去重，不掺其他平台', async() => {
   const client = createBilibiliClient(async(url, headers) => {
     const parsed = new URL(url)

@@ -15,9 +15,9 @@ import SubTitle from '../../components/SubTitle'
 
 const names = { tx: 'QQ 音乐', wy: '网易云音乐', kg: '酷狗音乐' }
 const choices = [{ key: 'settings', name: '通用设置' }, { key: 'sources', name: '音源与主备顺序' }, { key: 'accounts', name: '账号登录状态' }] as const
-export default ({ disabled, connection, onBusyChange }: { disabled: boolean, connection: string, onBusyChange: (value: boolean) => void }) => {
+export default ({ disabled, connection, onBusyChange, defaultExpanded = false }: { defaultExpanded?: boolean, disabled: boolean, connection: string, onBusyChange: (value: boolean) => void }) => {
   const theme = useTheme()
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(defaultExpanded)
   const [selected, setSelected] = useState<SnapshotSelection>({ settings: true, sources: true, accounts: false })
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)

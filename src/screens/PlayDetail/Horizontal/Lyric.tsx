@@ -6,13 +6,16 @@ import { createStyle } from '@/utils/tools'
 // import { useComponentIds } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { useSettingValue } from '@/store/setting/hook'
-import { AnimatedColorText } from '@/components/common/Text'
+import Text, { AnimatedColorText } from '@/components/common/Text'
 import { setSpText } from '@/utils/pixelRatio'
 import playerState from '@/store/player/state'
 import { scrollTo } from '@/utils/scroll'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
 import { getLyricFontFamily } from '@/core/lyricFont'
 import LyricCopy from '../components/LyricCopy'
+import { isInstrumental } from '@/utils/lyricStatus'
+import { usePlayerMusicInfo } from '@/store/player/hook'
+import { useI18n } from '@/lang'
 // import { screenkeepAwake } from '@/utils/nativeModules/utils'
 // import { log } from '@/utils/log'
 // import { toast } from '@/utils/tools'
@@ -80,7 +83,12 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
 const wait = async() => new Promise(resolve => setTimeout(resolve, 100))
 
 export default () => {
-  const lyricLines = useLrcSet()
+  const rawLines = useLrcSet()
+  const music = usePlayerMusicInfo()
+  const theme = useTheme()
+  const t = useI18n()
+  const instrumental = isInstrumental({ title: music.name, lyric: music.lrc })
+  const lyricLines = useMemo(() => instrumental ? [] : rawLines, [instrumental, rawLines])
   const fontFamily = getLyricFontFamily(useSettingValue('playDetail.style.font'))
   const { line } = useLrcPlay()
   const flatListRef = useRef<FlatList>(null)
@@ -277,7 +285,7 @@ export default () => {
   return (
     <>
       <View style={{ alignItems: 'flex-end', paddingHorizontal: 12 }}><LyricCopy /></View>
-      <FlatList
+      {lyricLines.length ? <FlatList
         key={fontFamily ?? 'default'}
         data={lyricLines}
         renderItem={renderItem}
@@ -293,8 +301,8 @@ export default () => {
         initialNumToRender={Math.max(line + 10, 10)}
         onScrollToIndexFailed={handleScrollToIndexFailed}
         onScroll={handleScroll}
-      />
-      { isShowLyricProgressSetting ? <PlayLine ref={playLineRef} onPlayLine={handlePlayLine} /> : null }
+      /> : <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}><Text size={14} color={theme['q-text-secondary']}>{t(instrumental ? 'mobile_instrumental' : 'mobile_no_lyrics')}</Text></View>}
+      { lyricLines.length > 0 && isShowLyricProgressSetting ? <PlayLine ref={playLineRef} onPlayLine={handlePlayLine} /> : null }
     </>
   )
 }

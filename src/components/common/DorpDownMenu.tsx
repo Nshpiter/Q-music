@@ -24,6 +24,7 @@ export default <T extends Menus>({
   center,
   children,
   activeId,
+  showCheckmark,
   btnStyle,
   menuWidth,
   accessibilityLabel,
@@ -82,6 +83,7 @@ export default <T extends Menus>({
         fontSize={fontSize}
         height={height}
         activeId={activeId}
+        showCheckmark={showCheckmark}
       />
     </>
   )

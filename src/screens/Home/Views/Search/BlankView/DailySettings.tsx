@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, Modal, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from 'react-native'
+import { ActivityIndicator, ScrollView, StyleSheet, TextInput, View } from 'react-native'
+import BottomSheet from '@/components/common/BottomSheet'
 import Text from '@/components/common/Text'
 import Button from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -11,7 +12,8 @@ import LoginPage from '@/screens/MusicAccount/LoginPage'
 import { QQ_DAILY_PAGE } from '@/core/musicAccount/dailyAuthorization'
 
 const noop = () => {}
-export default ({ provider, onClose, onChanged, onLogin }: {
+export default ({ visible, provider, onClose, onChanged, onLogin }: {
+  visible: boolean
   provider: MusicAccountProvider
   onClose: () => void
   onChanged: () => void
@@ -27,11 +29,16 @@ export default ({ provider, onClose, onChanged, onLogin }: {
   const [notice, setNotice] = useState('')
   const busy = useRef(false)
   const alive = useRef(true)
+  const loginAfterClose = useRef(false)
   const request = useRef<AbortController>()
   useEffect(() => {
-    void getQQDailyKeyStatus().then(value => { if (alive.current) setStatus(value) }).catch(() => { if (alive.current) setStatus({ configured: false, available: false }) })
-    return () => { alive.current = false; request.current?.abort() }
-  }, [])
+    if (!visible) return
+    let active = true
+    alive.current = true
+    setAuthorizing(false); setManual(false); setKey(''); setNotice(''); setSaving(false)
+    void getQQDailyKeyStatus().then(value => { if (active) setStatus(value) }).catch(() => { if (active) setStatus({ configured: false, available: false }) })
+    return () => { active = false; alive.current = false; request.current?.abort(); request.current = undefined; busy.current = false }
+  }, [visible])
   const save = useCallback(async(value: string) => {
     if (busy.current) return
     busy.current = true
@@ -41,7 +48,7 @@ export default ({ provider, onClose, onChanged, onLogin }: {
     request.current = controller
     try {
       await saveQQDailyKey(value, controller.signal)
-      if (!alive.current || controller.signal.aborted) return
+      if (!alive.current || controller.signal.aborted || request.current != controller) return
       setKey('')
       setAuthorizing(false)
       setManual(false)
@@ -49,20 +56,27 @@ export default ({ provider, onClose, onChanged, onLogin }: {
       setNotice(t('daily_key_saved'))
       onChanged()
     } catch (error) {
-      if (!alive.current || controller.signal.aborted) return
+      if (!alive.current || controller.signal.aborted || request.current != controller) return
       const reason = error instanceof Error ? error.message : ''
       setNotice(t(reason == 'login_required' || reason == 'account_changed' ? 'daily_login_needed' : reason == 'credential_storage' ? 'daily_key_storage' : reason == 'invalid_key' ? 'daily_key_invalid' : 'daily_key_unavailable'))
     } finally {
-      busy.current = false
-      if (alive.current) setSaving(false)
+      if (request.current == controller) { busy.current = false; if (alive.current) setSaving(false) }
     }
   }, [onChanged, t])
   const close = () => {
     request.current?.abort()
+    request.current = undefined
+    busy.current = false
     if (authorizing) { setAuthorizing(false); setSaving(false) } else onClose()
   }
-  return <Modal visible animationType="slide" onRequestClose={close}>
-    <SafeAreaView style={[styles.container, { backgroundColor: theme['c-main-background'] }]}>
+  const dismiss = () => {
+    request.current?.abort(); request.current = undefined; busy.current = false
+    onClose()
+  }
+  return <BottomSheet visible={visible} onClose={dismiss} onBack={close} onClosed={() => {
+    if (loginAfterClose.current) { loginAfterClose.current = false; requestAnimationFrame(() => { onLogin?.() }) }
+  }} maxHeight={720} testID="daily-settings-sheet">
+    <View style={[styles.container, { backgroundColor: theme['c-content-background'] }]}>
       <View style={styles.header}>
         <Button accessibilityLabel={t('back')} style={styles.icon} onPress={close}><Icon name="chevron-left" size={24} color={theme['q-text-primary']} /></Button>
         <Text size={17} style={styles.title}>{t(authorizing ? 'daily_key_authorize' : 'daily_settings')}</Text>
@@ -73,7 +87,7 @@ export default ({ provider, onClose, onChanged, onLogin }: {
       {authorizing ? <LoginPage provider="tx" initialUrl={QQ_DAILY_PAGE} connected={false} onConnected={noop} onDailyKey={value => { void save(value) }} /> : <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text size={22} style={styles.heading}>{t(provider == 'tx' ? 'setting_music_account_qq' : provider == 'kg' ? 'setting_music_account_kugou' : 'setting_music_account_netease')}</Text>
         <Text size={13} color={theme['q-text-secondary']} style={styles.description}>{t(provider == 'tx' ? 'daily_qq_explanation' : provider == 'kg' ? 'daily_kg_explanation' : 'daily_wy_explanation')}</Text>
-        {onLogin ? <Button style={[styles.button, { backgroundColor: theme['q-surface-tint'] }]} onPress={onLogin}><Text color={theme['q-accent-text']}>{t('daily_manage_account')}</Text><Icon name="chevron-right" size={18} color={theme['q-accent-text']} /></Button> : null}
+        {onLogin ? <Button style={[styles.button, { backgroundColor: theme['q-surface-tint'] }]} onPress={() => { loginAfterClose.current = true; onClose() }}><Text color={theme['q-accent-text']}>{t('daily_manage_account')}</Text><Icon name="chevron-right" size={18} color={theme['q-accent-text']} /></Button> : null}
         {provider == 'tx' ? <View style={[styles.card, { backgroundColor: theme['q-surface-raised'], borderColor: theme['q-outline'] }]}>
           <View style={styles.row}><Text size={17} style={styles.heading}>{t('daily_official_daily')}</Text><Text size={12} color={theme['q-accent-text']}>{t(status.configured ? 'daily_key_enabled' : 'daily_key_disabled')}</Text></View>
           <Text size={12} color={theme['q-text-secondary']} style={styles.description}>{t('daily_key_description')}</Text>
@@ -88,8 +102,8 @@ export default ({ provider, onClose, onChanged, onLogin }: {
         </View> : null}
         <Text size={12} color={theme['q-text-secondary']} style={styles.description}>{t('daily_fallback_explanation')}</Text>
       </ScrollView>}
-    </SafeAreaView>
-  </Modal>
+    </View>
+  </BottomSheet>
 }
 const styles = StyleSheet.create({
   container: { flex: 1 },

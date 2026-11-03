@@ -387,16 +387,18 @@ export const playListById = async(listId: string, id: string) => {
  * @param listId 列表id
  * @param index 播放的歌曲位置
  */
-export const playList = async(listId: string, index: number) => {
+export const playList = async(listId: string, index: number, continuous = false) => {
   const selected = getSourceList(listId)[index]
   if (!selected) return
   playbackRecovery.resetFailures()
   playbackSession.reset()
+  playbackSession.continuous = continuous
+  resetRandomNextMusicInfo()
   const prevListId = playerState.playInfo.playerListId
   setPlayListId(listId)
   setPlayMusicInfo(listId, selected)
   playbackSession.record({ listId, musicInfo: selected, isTempPlay: false })
-  if (settingState.setting['player.isAutoCleanPlayedList'] || prevListId != listId) clearPlayedList()
+  if (continuous || settingState.setting['player.isAutoCleanPlayedList'] || prevListId != listId) clearPlayedList()
   clearTempPlayeList()
   await handlePlay()
 }
@@ -440,7 +442,7 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
   if (!currentListId) return null
   const currentList = getList(currentListId)
 
-  const playedList = playerState.playedList
+  const playedList = playbackSession.continuous ? [] : playerState.playedList
   if (playedList.length) { // 移除已播放列表内不存在原列表的歌曲
     let currentId: string
     if (playMusicInfo.isTempPlay) {
@@ -477,7 +479,7 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
   if (playerIndex == -1 && filteredList.length) playerIndex = 0
   let nextIndex = playerIndex
 
-  let togglePlayMethod = settingState.setting['player.togglePlayMethod']
+  let togglePlayMethod = playbackSession.continuous ? 'listLoop' : settingState.setting['player.togglePlayMethod']
   switch (togglePlayMethod) {
     case 'listLoop':
       nextIndex = playerIndex === filteredList.length - 1 ? 0 : playerIndex + 1
@@ -549,7 +551,7 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
   if (!currentListId) return handleToggleStop()
   const currentList = getList(currentListId)
 
-  const playedList = playerState.playedList
+  const playedList = playbackSession.continuous ? [] : playerState.playedList
 
   if (playedList.length) { // 移除已播放列表内不存在原列表的歌曲
     let currentId: string
@@ -596,7 +598,7 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
   if (playerIndex == -1 && filteredList.length) playerIndex = 0
   let nextIndex = playerIndex
 
-  let togglePlayMethod = settingState.setting['player.togglePlayMethod']
+  let togglePlayMethod = playbackSession.continuous ? 'listLoop' : settingState.setting['player.togglePlayMethod']
   if (!isAutoToggle) {
     switch (togglePlayMethod) {
       case 'list':
@@ -650,7 +652,7 @@ export const playPrev = async(isAutoToggle = false): Promise<void> => {
   if (!currentListId) return handleToggleStop()
   const currentList = getList(currentListId)
 
-  const playedList = playerState.playedList
+  const playedList = playbackSession.continuous ? [] : playerState.playedList
   if (playedList.length) {
     let currentId: string
     if (playMusicInfo.isTempPlay) {
@@ -692,7 +694,7 @@ export const playPrev = async(isAutoToggle = false): Promise<void> => {
   if (playerIndex == -1 && filteredList.length) playerIndex = 0
   let nextIndex = playerIndex
   if (!playMusicInfo.isTempPlay) {
-    let togglePlayMethod = settingState.setting['player.togglePlayMethod']
+    let togglePlayMethod = playbackSession.continuous ? 'listLoop' : settingState.setting['player.togglePlayMethod']
     if (!isAutoToggle) {
       switch (togglePlayMethod) {
         case 'list':
