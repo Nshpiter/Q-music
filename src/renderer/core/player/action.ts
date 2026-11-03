@@ -1,8 +1,10 @@
+import { playbackSession } from './session'
 import { isEmpty, setPause, setPlay, setResource, setStop } from '@renderer/plugins/player'
 import { isPlay, isPlayPending, playedList, playInfo, playMusicInfo, playbackSourceInfo, tempPlayList, musicInfo as _musicInfo } from '@renderer/store/player/state'
 import { playbackRecovery } from './recovery'
 import {
   getList,
+  getSourceList,
   clearPlayedList,
   clearTempPlayeList,
   setPlayMusicInfo,
@@ -472,13 +474,15 @@ const handlePlay = () => {
  * @param id 歌曲id
  */
 export const playListById = (listId: string, id: string) => {
+  const musicInfo = getSourceList(listId).find(m => m.id == id)
+  if (!musicInfo) return
   playbackRecovery.resetFailures()
+  playbackSession.reset()
   const prevListId = playInfo.playerListId
   setPlayListId(listId)
   // pause()
-  const musicInfo = getList(listId).find(m => m.id == id)
-  if (!musicInfo) return
   setPlayMusicInfo(listId, musicInfo)
+  playbackSession.record({ listId, musicInfo, isTempPlay: false })
   if (appSetting['player.isAutoCleanPlayedList'] || prevListId != listId) clearPlayedList()
   clearTempPlayeList()
   handlePlay()
@@ -490,11 +494,15 @@ export const playListById = (listId: string, id: string) => {
  * @param index 播放的歌曲位置
  */
 export const playList = (listId: string, index: number) => {
+  const selected = getSourceList(listId)[index]
+  if (!selected) return
   playbackRecovery.resetFailures()
+  playbackSession.reset()
   const prevListId = playInfo.playerListId
   setPlayListId(listId)
   // pause()
-  setPlayMusicInfo(listId, getList(listId)[index])
+  setPlayMusicInfo(listId, selected)
+  playbackSession.record({ listId, musicInfo: selected, isTempPlay: false })
   if (appSetting['player.isAutoCleanPlayedList'] || prevListId != listId) clearPlayedList()
   clearTempPlayeList()
   handlePlay()
@@ -521,6 +529,9 @@ export const resetRandomNextMusicInfo = () => {
 }
 
 export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | null> => {
+  const forward = playbackSession.history[playbackSession.cursor + 1]
+  if (forward) return forward
+
   if (tempPlayList.length) { // 如果稍后播放列表存在歌曲则直接播放改列表的歌曲
     const playMusicInfo = tempPlayList[0]
     return playMusicInfo
@@ -602,7 +613,17 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
   return nextPlayMusicInfo
 }
 
-const handlePlayNext = (playMusicInfo: LX.Player.PlayMusicInfo) => {
+const getCurrentPlayMusicInfo = () => playMusicInfo
+
+const handlePlayNext = (playMusicInfo: LX.Player.PlayMusicInfo, replay = false) => {
+  if (!replay) {
+    const current = getCurrentPlayMusicInfo()
+    if (!playbackSession.history.length && current.musicInfo) {
+      const initial: LX.Player.PlayMusicInfo = { listId: current.listId, musicInfo: current.musicInfo, isTempPlay: current.isTempPlay }
+      playbackSession.record(initial)
+    }
+    playbackSession.record(playMusicInfo)
+  }
   // pause()
   setPlayMusicInfo(playMusicInfo.listId, playMusicInfo.musicInfo, playMusicInfo.isTempPlay)
   handlePlay()
@@ -632,6 +653,8 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
   const token = playbackRecovery.begin()
   isPlayPending.value = true
   console.log('skip next', isAutoToggle)
+  const forward = playbackSession.forward()
+  if (forward) { handlePlayNext(forward, true); return }
   if (tempPlayList.length) { // 如果稍后播放列表存在歌曲则直接播放改列表的歌曲
     playTempListByIndex(0, isAutoToggle)
     console.log('play temp list')
@@ -752,6 +775,8 @@ export const playPrev = async(isAutoToggle = false): Promise<void> => {
   cancelPendingPlayback()
   const token = playbackRecovery.begin()
   isPlayPending.value = true
+  const previous = playbackSession.back()
+  if (previous) { handlePlayNext(previous, true); return }
   if (playMusicInfo.musicInfo == null) {
     handleToggleStop()
     return
@@ -914,4 +939,20 @@ export const dislikeMusic = async() => {
   const minfo = 'progress' in playMusicInfo.musicInfo ? playMusicInfo.musicInfo.metadata.musicInfo : playMusicInfo.musicInfo
   await addDislikeInfo([{ name: minfo.name, singer: minfo.singer }])
   await playNext(true)
+}
+
+export const playQueueIndex = (index: number) => {
+  const id = playInfo.playerListId
+  if (!id) return
+  const musicInfo = getList(id)[index]
+  if (!musicInfo) return
+  playbackRecovery.resetFailures()
+  handlePlayNext({ listId: id, musicInfo, isTempPlay: false })
+}
+
+export const playHistoryIndex = (index: number) => {
+  const item = playbackSession.select(index)
+  if (!item) return
+  playbackRecovery.resetFailures()
+  handlePlayNext(item, true)
 }

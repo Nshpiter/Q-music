@@ -152,7 +152,7 @@ export default {
       }
 
       let source = selectedSource.value
-      if (source == 'all' || !music[source]?.tipSearch) {
+      if (source == 'all') {
         const setting = await getSearchSetting().catch(() => ({ ...DEFAULT_SETTING.search }))
         if (generation != tipSearchGeneration) return
         source = setting.temp_source

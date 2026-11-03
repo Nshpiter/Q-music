@@ -42,7 +42,7 @@ function harness() {
   const noop = () => {}
   const setting = { 'player.togglePlayMethod': 'listLoop', 'player.autoSkipOnError': true, 'player.playQuality': '128k' }
   const info = {
-    getList: () => tracks, setPlayListId: id => { state.playInfo.playerListId = id },
+    getList: () => tracks, getSourceList: () => tracks, setPlayListId: id => { state.playInfo.playerListId = id },
     setPlayMusicInfo: (listId, musicInfo, isTempPlay = false) => { state.playMusicInfo = { listId, musicInfo, isTempPlay }; state.musicInfo.id = musicInfo?.id; state.playInfo.playerPlayIndex = tracks.indexOf(musicInfo) },
     setMusicInfo: data => Object.assign(state.musicInfo, data),
   }
@@ -55,12 +55,14 @@ function harness() {
   const music = { getMusicUrl: (...args) => request(...args), getMusicPlayUrlInfo: async(...args) => ({ url: await request(...args), quality: '128k' }),
     getPicPath: async() => '', getLyricInfo: async() => ({ lyric: '', tlyric: 'translated', rawlrcInfo: { lyric: '' } }), isCustomApiSource: () => true,
   }
-  const common = { './recovery': recovery, './utils': { filterList: (...args) => filter(...args) } }
+  const { PlaybackSession } = load(mobile ? 'src/utils/playbackSession.ts' : 'src/common/utils/playbackSession.ts')
+  const playbackSession = new PlaybackSession()
+  const common = { './session': { playbackSession }, './recovery': recovery, './utils': { filterList: (...args) => filter(...args) } }
   const dep = mobile ? {
     ...common, '@/plugins/player': plugins, '@/core/player/playStatus': { setStatusText: val => { status = val }, setIsPlayPending: val => { state.isPlayPending = val } },
     '@/store/player/state': state, '@/store/setting/state': { setting }, '@/core/player/playInfo': info,
     '@/core/player/playedList': { clearPlayedList: noop, addPlayedList: noop, removePlayedList: noop },
-    '@/core/player/tempPlayList': { clearTempPlayeList: noop, removeTempPlayList: noop },
+    '@/core/player/tempPlayList': { clearTempPlayeList: noop, removeTempPlayList: index => state.tempPlayList.splice(index, 1) },
     '@/core/music': music, '@/core/music/online': { findMatchedTranslation: async() => '' },
     '@/utils/message': { requestMsg: { tooManyRequests: 'rate limited', cancelRequest: 'cancelled' } }, '@/utils/common': { getRandom: () => 2 },
     'react-native-background-timer': { setTimeout, clearTimeout },
@@ -70,7 +72,7 @@ function harness() {
   } : {
     ...common, '@renderer/plugins/player': plugins,
     '@renderer/store/player/state': { ...state, isPlay, isPlayPending, playMusicInfo: pcPlayback, playbackSourceInfo: { value: null } },
-    '@renderer/store/player/action': { ...pcInfo, clearPlayedList: noop, clearTempPlayeList: noop, addPlayedList: noop, setAllStatus: val => { status = val }, removeTempPlayList: noop, removePlayedList: noop },
+    '@renderer/store/player/action': { ...pcInfo, clearPlayedList: noop, clearTempPlayeList: noop, addPlayedList: noop, setAllStatus: val => { status = val }, removeTempPlayList: index => state.tempPlayList.splice(index, 1), removePlayedList: noop },
     '@renderer/store/setting': { appSetting: setting }, '../music/index': music, '../music/translation': { findMatchedTranslation: async() => '' },
     '@renderer/utils/message': { requestMsg: { tooManyRequests: 'rate limited', cancelRequest: 'cancelled' } }, '@renderer/utils/index': { getRandom: () => 2 },
     '@renderer/store/list/action': { addListMusics: noop, removeListMusics: noop }, '@renderer/store/list/state': { loveList: { id: 'love' } },
@@ -81,7 +83,7 @@ function harness() {
     for (const [id, timer] of [...timers]) if (timer.delay === delay) { timers.delete(id); timer.fn() }
     await flush()
   }
-  return { api, state, setting, tracks, resources, timers, recovery: recovery.playbackRecovery, fire, status: () => status,
+  return { api, state, setting, tracks, resources, timers, playbackSession, recovery: recovery.playbackRecovery, fire, status: () => status,
     request: fn => { request = fn }, filter: fn => { filter = fn },
     start: async(index = 0) => { await api.playList('test', index); await fire(200); await flush() },
   }
@@ -187,4 +189,36 @@ if (mobile) test('安卓限流只延迟重试一次，不无限重试同一首',
   assert.equal(requests, 2)
   assert.equal([...h.timers.values()].some(t => t.delay === 2000), false)
   assert.equal([...h.timers.values()].some(t => t.delay === 5000), true)
+})
+
+test('插播消费后仍可上一首/下一首回听，历史选择不吞掉待播项', async() => {
+  const h = harness()
+  h.request(async() => 'https://example.test/audio.mp3')
+  await h.start()
+  const inserted = { musicInfo: { ...h.tracks[1], id: 'inserted' }, listId: null, isTempPlay: true }
+  h.state.tempPlayList.push(inserted)
+  await h.api.playNext()
+  assert.equal(h.state.playMusicInfo.musicInfo.id, 'inserted')
+  assert.equal(h.state.tempPlayList.length, 0)
+  await h.api.playPrev()
+  assert.equal(h.state.playMusicInfo.musicInfo.id, 'one')
+  await h.api.playNext()
+  assert.equal(h.state.playMusicInfo.musicInfo.id, 'inserted')
+  h.state.tempPlayList.push({ ...inserted, musicInfo: { ...h.tracks[2], id: 'waiting' } })
+  await h.api.playHistoryIndex(0)
+  assert.equal(h.state.tempPlayList.length, 1)
+  await h.api.playNext()
+  assert.equal(h.state.playMusicInfo.musicInfo.id, 'inserted')
+  await h.api.playNext()
+  assert.equal(h.state.playMusicInfo.musicInfo.id, 'waiting')
+})
+
+test('无效的列表播放请求不清空播放会话或修改当前列表', async() => {
+  const h = harness()
+  await h.start()
+  const before = h.playbackSession.history.length
+  await h.api.playList('missing', 999)
+  await h.api.playListById('missing', 'not-found')
+  assert.equal(h.playbackSession.history.length, before)
+  assert.equal(h.state.playInfo.playerListId, 'test')
 })

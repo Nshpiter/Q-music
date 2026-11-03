@@ -5,6 +5,7 @@ import { getProxy } from '@main/utils'
 import { createKugouApi, parseKugouSession, type KugouSession, type KugouQr } from '@common/utils/kugouAccount'
 import { createKugouFavoriteClient } from '@common/utils/kugouFavorite'
 import { encryptKugouVerification, presentKugouCaptcha } from './kugouVerification'
+import { kugouVerificationStatus, type KugouVerificationStatus } from '@common/utils/kugouVerification'
 
 const storeName = 'music_account_credentials'
 const storeField = 'kugouSession'
@@ -18,6 +19,11 @@ export const readKugouSession = (): KugouSession | null => {
   } catch { return null }
 }
 let loginWindow: BrowserWindow | null = null
+export const saveKugouSession = (value: unknown) => {
+  const data = parseKugouSession(value)
+  if (!data || !safeStorage.isEncryptionAvailable()) throw new Error('无法保存酷狗登录状态')
+  getStore(storeName).set(storeField, safeStorage.encryptString(JSON.stringify(data)).toString('base64'))
+}
 let loginTask: Promise<'connected' | 'cancelled'> | null = null
 export const logoutKugou = () => {
   loginWindow?.close()
@@ -38,10 +44,24 @@ const assertSession = (before: KugouSession) => {
   const after = readKugouSession()
   if (!after || after.userId != before.userId || after.token != before.token) throw new Error('login_required')
 }
+let verificationTask: Promise<KugouVerificationStatus> | undefined
+export const verifyKugouAccess = async(): Promise<KugouVerificationStatus> => {
+  if (verificationTask) return verificationTask
+  verificationTask = (async(): Promise<KugouVerificationStatus> => {
+    try {
+      const current = requireSession()
+      await configureProxy()
+      await api.verifyAccess(current, presentKugouCaptcha, async() => { assertSession(current) })
+      return 'available'
+    } catch (error) { return kugouVerificationStatus(error) }
+  })().finally(() => { verificationTask = undefined })
+  return verificationTask
+}
 export const addKugouFavoriteSong = createKugouFavoriteClient(async() => {
   const current = requireSession()
   await configureProxy()
   return {
+    ownerId: current.userId,
     assertSession: async() => {
       const after = readKugouSession()
       if (!after || after.userId != current.userId || after.token != current.token) throw new Error('account_changed')

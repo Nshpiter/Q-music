@@ -42,6 +42,7 @@
             </button>
           </div>
 
+          <kugou-verify-button v-if="accountProvider == 'kg'" :disabled="isLoading || isAccountLoading" @verified="loadAccountPlaylists('kg')" />
           <div v-if="isAccountLoading" :class="$style.accountState">{{ $t('playlist_import_modal__account_loading') }}</div>
           <div v-else-if="accountPlaylists.length" :class="$style.accountPlaylists">
             <button
@@ -149,14 +150,17 @@ import { dialog } from '@renderer/plugins/Dialog'
 import { getMusicAccountPlaylists, getMusicAccountStatus, loginMusicAccount } from '@renderer/utils/ipc'
 import { ExternalImportError, importAccountPlaylist, importExternalPlaylist } from '../importPlaylist'
 import SourceIcon from '@renderer/components/common/SourceIcon.vue'
+import KugouVerifyButton from '@renderer/components/common/KugouVerifyButton.vue'
 
 const sourceOptions = [
+  { id: 'bi', name: '哔哩哔哩' },
   { id: 'tx', name: 'QQ音乐' },
   { id: 'wy', name: '网易云' },
   { id: 'kg', name: '酷狗' },
 ]
 
 const sourceNames = {
+  bi: '哔哩哔哩',
   tx: 'QQ音乐',
   wy: '网易云音乐',
   kg: '酷狗音乐',
@@ -169,7 +173,7 @@ const accountProviderOptions = [
 ]
 
 export default {
-  components: { SourceIcon },
+  components: { SourceIcon, KugouVerifyButton },
   props: {
     initialProvider: { type: String, default: '' },
     visible: {
@@ -245,7 +249,7 @@ export default {
     })
 
     const inputPlaceholder = computed(() => {
-      return t('playlist_import_modal__link_placeholder')
+      return t(source.value == 'bi' ? 'playlist_import_bilibili_hint' : 'playlist_import_modal__link_placeholder')
     })
 
     const defaultListName = computed(() => {

@@ -34,6 +34,9 @@ export const createHttpFetch = async(url, options, retryNum = 0) => {
     console.log(err)
     return createHttpFetch(url, options, ++retryNum)
   }
+  // 风控不是瞬时网络故障，立即停止重试，避免同一请求连续触发验证。
+  const code = Number(result.body?.error_code ?? result.body?.errcode ?? result.body?.err_code)
+  if (code == 20028) throw new Error('verification_required')
   // console.log(result.statusCode, result.body)
   if (result.statusCode !== 200 ||
     (

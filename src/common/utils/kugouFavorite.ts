@@ -2,6 +2,7 @@ export interface KugouFavoriteRequest {
   hash: string
   name: string
   albumId?: string | number
+  playlistId?: string
   action?: 'add' | 'check' | 'verify'
 }
 
@@ -11,8 +12,9 @@ export interface KugouFavoriteResult {
 }
 
 export interface KugouFavoriteTransport {
+  ownerId?: string
   assertSession: () => Promise<void>
-  getFavorites: () => Promise<Array<{ id: string, isFavorite?: boolean }>>
+  getFavorites: () => Promise<Array<{ id: string, isFavorite?: boolean, writable?: boolean }>>
   getHashes: (id: string) => Promise<string[]>
   addSong: (id: string, song: KugouFavoriteRequest) => Promise<void>
   verifySession?: () => Promise<void>
@@ -26,6 +28,9 @@ export const createKugouFavoriteClient = (open: () => Promise<KugouFavoriteTrans
     let verifying = false
     try {
       const transport = await open()
+      const scoped = /^account:(\d+):(\d+)$/.exec(input.playlistId ?? '')
+      if (scoped && scoped[1] != transport.ownerId) return { status: 'account_changed' }
+      const targetId = scoped?.[2] ?? input.playlistId
       if (input.action == 'verify') {
         await transport.assertSession()
         if (!transport.verifySession) return { status: 'verification_unsupported' }
@@ -40,8 +45,8 @@ export const createKugouFavoriteClient = (open: () => Promise<KugouFavoriteTrans
       }
       const lists = await checked(transport.getFavorites)
       // 我喜欢由官方 is_def=2 标识，不能误写默认收藏、同名歌单或收藏他人的歌单。
-      const favorites = lists.filter(list => list.isFavorite)
-      if (favorites.length != 1 || !/^[1-9]\d*$/.test(favorites[0].id)) return { status: 'unavailable' }
+      const favorites = lists.filter(list => targetId ? list.id == targetId && list.writable === true : list.isFavorite)
+      if (favorites.length != 1 || !/^[1-9]\d*$/.test(favorites[0].id)) return { status: input.playlistId ? 'unsupported' : 'unavailable' }
       const id = favorites[0].id
       const check = async() => (await checked(async() => transport.getHashes(id))).some(hash => hash.toUpperCase() == input.hash)
       if (await check()) return { status: 'added' }
@@ -70,12 +75,13 @@ export const createKugouFavoriteClient = (open: () => Promise<KugouFavoriteTrans
   return async(input: KugouFavoriteRequest): Promise<KugouFavoriteResult> => {
     const validId = (id: unknown) => id == null || (/^\d{1,16}$/.test(String(id)) && Number.isSafeInteger(Number(id)))
     if (typeof input?.hash != 'string' || !/^[a-f0-9]{32}$/i.test(input.hash) || typeof input.name != 'string' || !input.name.trim() || input.name.length > 512 ||
-      !validId(input.albumId) || (input.action != null && !['add', 'check', 'verify'].includes(input.action))) return { status: 'unsupported' }
+      !validId(input.albumId) || (input.playlistId != null && (typeof input.playlistId != 'string' || !/^(?:account:[1-9]\d{0,15}:)?[1-9]\d{0,15}$/.test(input.playlistId))) || (input.action != null && !['add', 'check', 'verify'].includes(input.action))) return { status: 'unsupported' }
     const song = { ...input, hash: input.hash.toUpperCase(), name: input.name.trim() }
-    const existing = pending.get(song.hash)
+    const key = `${song.hash}:${song.playlistId ?? 'favorite'}`
+    const existing = pending.get(key)
     if (existing) return existing
-    const task = perform(song).finally(() => { pending.delete(song.hash) })
-    pending.set(song.hash, task)
+    const task = perform(song).finally(() => { pending.delete(key) })
+    pending.set(key, task)
     return task
   }
 }

@@ -50,8 +50,8 @@ const verifyQueryParams = async(to, from, next) => {
   let _page = to.query.page
   const pageNeedsNormalization = _page != null && _page != normalizePageQuery(_page)
 
-  if (to.query.source != _source || _type == null || pageNeedsNormalization) {
-    _type ??= setting.type
+  if (to.query.source != _source || _type == null || pageNeedsNormalization || (_source == 'bi' && _type != 'music')) {
+    _type = _source == 'bi' ? 'music' : _type ?? setting.type
 
     next({
       path: to.path,
@@ -105,6 +105,7 @@ export default {
     const isSearchEmpty = computed(() => typeof searchText.value != 'string' || !searchText.value.trim())
 
     const searchTypes = computed(() => {
+      if (source.value == 'bi') return [{ label: window.i18n.t('search__type_music'), id: 'music' }]
       return [
         { label: window.i18n.t('search__type_music'), id: 'music' },
         { label: window.i18n.t('search__type_songlist'), id: 'songlist' },

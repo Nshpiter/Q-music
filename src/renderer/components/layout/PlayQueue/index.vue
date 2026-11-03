@@ -33,6 +33,7 @@
         </header>
 
         <div :class="$style.tabs">
+          <button type="button" :class="{ [$style.activeTab]: activeTab == 'history' }" :aria-pressed="activeTab == 'history'" @click="activeTab = 'history'">{{ $t('queue_session_history') }}<span>{{ history.length }}</span></button>
           <button
             type="button"
             :class="{ [$style.activeTab]: activeTab == 'playlist' }"
@@ -54,8 +55,17 @@
         </div>
 
         <section v-show="activeTab == 'playlist'" :class="$style.tabPanel">
+          <div v-if="playMusicInfo.isTempPlay && playMusicInfo.musicInfo" :class="$style.nowPlaying">
+            <strong>{{ $t('play_queue__now_playing') }}</strong>
+            <QueueItem :music-info="playMusicInfo.musicInfo" :index="0" active :playing="isPlay" @play="isPlay ? pause() : play()" />
+          </div>
+          <div v-if="tempPlayList.length" :class="['scroll', $style.upcoming]">
+            <strong>{{ $t('queue_session_next') }} · {{ tempPlayList.length }}</strong>
+            <QueueItem v-for="(item, index) in tempPlayList" :key="item.tempId" :music-info="item.musicInfo" :index="index" removable draggable="true" @dragstart="startDrag('later', item)" @dragover.prevent @drop.prevent="dropAt('later', index)" @play="handlePlayLater(index)" @remove="removeTempPlayList(index)" />
+          </div>
           <div :class="$style.listMeta">
             <strong>{{ currentListName }}</strong>
+            <button type="button" :class="$style.locateBtn" :disabled="savingQueue || !currentList.length && !tempPlayList.length" @click="saveQueue">{{ $t('queue_save_audition') }}</button>
             <button v-if="currentIndex >= 0 && !isListLoading && !listError" type="button" :class="$style.locateBtn" @click="scrollToCurrent(true)">{{ $t('play_queue__locate') }}</button>
             <span v-else>{{ $t('play_queue__songs', { num: currentList.length }) }}</span>
           </div>
@@ -79,6 +89,12 @@
               :index="index"
               :active="currentIndex == index"
               :playing="isPlay && currentIndex == index"
+              draggable="true"
+              @dragstart="startDrag('playlist', item)"
+              @dragover.prevent
+              @drop.prevent="dropAt('playlist', index)"
+              @keydown.alt.up.prevent="moveCurrent(index, index - 1)"
+              @keydown.alt.down.prevent="moveCurrent(index, index + 1)"
               @play="handlePlayCurrent(index, item)"
             />
           </base-virtualized-list>
@@ -95,7 +111,7 @@
 
         <section v-show="activeTab == 'later'" :class="$style.tabPanel">
           <div :class="$style.listMeta">
-            <strong>{{ $t('list__play_later') }}</strong>
+            <strong>{{ $t('queue_session_sort_hint') }}</strong>
             <button
               v-if="tempPlayList.length"
               type="button"
@@ -120,6 +136,12 @@
               :music-info="item.musicInfo"
               :index="index"
               removable
+              draggable="true"
+              @dragstart="startDrag('later', item)"
+              @dragover.prevent
+              @drop.prevent="dropAt('later', index)"
+              @keydown.alt.up.prevent="moveTempPlayList(index, index - 1)"
+              @keydown.alt.down.prevent="moveTempPlayList(index, index + 1)"
               @play="handlePlayLater(index)"
               @remove="removeTempPlayList(index)"
             />
@@ -135,6 +157,10 @@
             <p>{{ $t('play_queue__empty_later') }}</p>
           </div>
         </section>
+        <section v-show="activeTab == 'history'" :class="[$style.tabPanel, $style.history, 'scroll']">
+          <QueueItem v-for="(item, index) in history" :key="index" :music-info="item.musicInfo" :index="index" :active="index == historyCursor" :playing="isPlay && index == historyCursor" @play="playHistoryIndex(index)" />
+          <p v-if="!history.length" :class="$style.feedback">{{ $t('queue_session_history_empty') }}</p>
+        </section>
       </aside>
     </div>
   </transition>
@@ -143,9 +169,11 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from '@common/utils/vueTools'
 import { LIST_IDS } from '@common/constants'
-import { play, pause, playList, playTempListByIndex } from '@renderer/core/player'
+import { play, pause, playQueueIndex, playHistoryIndex, playTempListByIndex, resetRandomNextMusicInfo } from '@renderer/core/player'
+import { playbackSession } from '@renderer/core/player/session'
 import { useI18n } from '@renderer/plugins/i18n'
-import { getListMusics } from '@renderer/store/list/action'
+import { getListMusics, addListMusics } from '@renderer/store/list/action'
+import { dialog } from '@renderer/plugins/Dialog'
 import { defaultList, loveList, userLists } from '@renderer/store/list/state'
 import { downloadList } from '@renderer/store/download/state'
 import {
@@ -161,6 +189,9 @@ import {
   clearTempPlayeList,
   removeTempPlayList,
   setShowPlayQueue,
+  getList,
+  updatePlayIndex,
+  moveTempPlayList,
 } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
 import QueueItem from './QueueItem.vue'
@@ -170,7 +201,44 @@ const SCROLL_TOP_OFFSET = -112
 
 const t = useI18n()
 const activeTab = ref('playlist')
+const history = ref([...playbackSession.history])
+const historyCursor = ref(playbackSession.cursor)
+const unsubscribeSession = playbackSession.subscribe(() => {
+  history.value = [...playbackSession.history]
+  historyCursor.value = playbackSession.cursor
+})
+let dragged = null
+const startDrag = (kind, item) => { dragged = { kind, item } }
+const moveCurrent = (from, to) => {
+  const id = playInfo.playerListId
+  const anchor = currentList.value[playInfo.playerPlayIndex]
+  if (!id || !playbackSession.reorder(id, currentList.value, from, to)) return
+  if (playMusicInfo.isTempPlay && anchor) playInfo.playerPlayIndex = getList(id).findIndex(item => item.id == anchor.id)
+  updatePlayIndex()
+  resetRandomNextMusicInfo()
+  void loadCurrentList()
+}
+const dropAt = (kind, to) => {
+  if (dragged?.kind != kind) return
+  const from = (kind == 'later' ? tempPlayList : currentList.value).indexOf(dragged.item)
+  if (kind == 'later') moveTempPlayList(from, to)
+  else moveCurrent(from, to)
+  dragged = null
+}
 const currentList = ref([])
+const savingQueue = ref(false)
+const saveQueue = async() => {
+  if (savingQueue.value) return
+  savingQueue.value = true
+  try {
+    const queue = [...currentList.value]
+    const next = tempPlayList.map(item => item.musicInfo)
+    if (playMusicInfo.isTempPlay && playMusicInfo.musicInfo) next.unshift(playMusicInfo.musicInfo)
+    queue.splice(Math.max(0, playInfo.playerPlayIndex + 1), 0, ...next)
+    await addListMusics(LIST_IDS.DEFAULT, queue.map(item => 'progress' in item ? item.metadata.musicInfo : item))
+    void dialog({ message: t('queue_save_audition_done') })
+  } catch { void dialog({ message: t('queue_play_failed') }) } finally { savingQueue.value = false }
+}
 const isListLoading = ref(false)
 const listError = ref('')
 const playError = ref('')
@@ -230,7 +298,7 @@ const loadCurrentList = async() => {
       ? [...downloadList]
       : [...await getListMusics(listId)]
     if (requestId != loadId || listId != playInfo.playerListId) return
-    currentList.value = list
+    currentList.value = [...playbackSession.list(listId, list)]
   } catch (err) {
     if (requestId != loadId || listId != playInfo.playerListId) return
     currentList.value = []
@@ -259,7 +327,7 @@ const handlePlayCurrent = async(index, item) => {
   playError.value = ''
   try {
     // 本地快照可能落后于源列表，播放前按来源与歌曲身份校正索引。
-    const list = listId == LIST_IDS.DOWNLOAD ? downloadList : await getListMusics(listId)
+    const list = getList(listId)
     if (requestId != playRequestId || listId != playInfo.playerListId || !isShowPlayQueue.value) return
     const matches = music => music?.id == item.id && music?.source == item.source
     const targetIndex = matches(list[index]) ? index : list.findIndex(matches)
@@ -270,7 +338,7 @@ const handlePlayCurrent = async(index, item) => {
     if (targetIndex == currentIndex.value) {
       if (isPlay.value) pause()
       else play()
-    } else playList(listId, targetIndex)
+    } else playQueueIndex(targetIndex)
   } catch {
     if (requestId == playRequestId) playError.value = t('play_queue__play_error')
   }
@@ -323,6 +391,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  unsubscribeSession()
   ++loadId
   ++playRequestId
   ++showId
@@ -575,7 +644,7 @@ onBeforeUnmount(() => {
   height: 44px;
   padding: 0 14px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 4px;
   border-bottom: 1px solid var(--q-outline);
 
@@ -664,6 +733,10 @@ onBeforeUnmount(() => {
   // 底部渐隐，避免最后一行被硬裁切
   -webkit-mask-image: linear-gradient(180deg, #fff calc(100% - 24px), transparent 100%);
 }
+.upcoming { flex: none; max-height: 160px; overflow-y: auto; border-bottom: 1px solid var(--q-outline); }
+.upcoming > strong, .nowPlaying > strong { display: block; padding: 9px 18px 4px; font-size: 11px; color: var(--color-font-label); }
+.nowPlaying { flex: none; }
+.history { overflow-y: auto; }
 
 .laterList {
   overflow-y: auto;

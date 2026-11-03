@@ -5,6 +5,7 @@ const path = require('node:path')
 const vm = require('node:vm')
 const ts = require('typescript')
 function load(file, dependencies = {}, extra = {}) {
+  if (file == 'src/renderer/views/List/MyList/importPlaylist.ts') dependencies['@renderer/utils/musicSdk/bi'] ??= { bilibiliClient: {} }
   if (file != 'src/common/utils/playlistMerge.ts') dependencies['@common/utils/playlistMerge'] = load('src/common/utils/playlistMerge.ts')
   const context = { exports: {}, Error, console, ...extra, require: id => {
     if (!(id in dependencies)) throw Error(id)

@@ -1,5 +1,5 @@
 <template>
-  <div :class="[$style.songList, $style.listColumns, { [$style.selecting]: isSelectionMode }, { [$style.searchResults]: searchResults }]">
+  <div :class="[$style.songList, $style.listColumns, { [$style.selecting]: isSelectionMode }, { [$style.searchResults]: searchResults, [$style.videoResults]: videoResults }]">
     <!-- <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut"> -->
     <div :class="$style.list">
       <material-list-toolbar
@@ -162,6 +162,7 @@ export default {
   name: 'MaterialOnlineList',
   components: { SourceIcon, SourcePicker, SongTitle },
   props: {
+    videoResults: Boolean,
     playInContext: {
       type: Boolean,
       default: false,
@@ -452,6 +453,11 @@ export default {
   .noitem p { font-size: 13px; line-height: 1.6; }
 }
 .emptyIcon { width: 36px; height: 36px; fill: none; stroke: var(--color-font-label); stroke-width: 1.4; opacity: .6; }
+.videoResults {
+  .albumColumn { display: none; }
+  .singerColumn { width: 150px; flex: 0 0 150px; }
+  :global(.list) :global(.list-item) :global(.list-item-cell).trackIdentity > :global(.name) { flex: 1; }
+}
 .emptyActions { display: flex; gap: 10px; }
 .searchPagination { flex: none; text-align: center; padding: 10px; border-top: 1px solid rgb(from var(--color-font) r g b / .07); }
 

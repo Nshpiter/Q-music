@@ -1,10 +1,11 @@
 {
   "name": "q-music",
-  "version": "0.4.30",
+  "version": "0.4.31",
   "description": "一个免费的音乐查找助手",
   "main": "./dist/main.js",
   "private": true,
   "scripts": {
+    "test:cloud-config": "node --test --experimental-strip-types test/cloudSnapshot.test.cjs test/cloudConfigBackup.test.cjs test/cloudLibrary.test.mts",
     "test:api-fallback": "node --test test/userApiFallback.test.cjs test/userApiRuntime.test.cjs test/userApiRouting.test.cjs test/userApiImport.test.cjs",
     "test:feedback": "node --test test/accountAvailability.test.cjs test/audioPlayback.test.cjs test/officialAccountLogin.test.cjs test/musicAccounts.test.cjs test/playbackRecovery.test.cjs",
     "test:account-transfer": "node --test test/accountTransfer.test.cjs",
@@ -66,7 +67,7 @@
     "build:renderer": "cross-env NODE_ENV=production webpack --config build-config/renderer/webpack.config.prod.js --progress",
     "build:renderer-lyric": "cross-env NODE_ENV=production webpack --config build-config/renderer-lyric/webpack.config.prod.js --progress",
     "build:renderer-scripts": "cross-env NODE_ENV=production webpack --config build-config/renderer-scripts/webpack.config.prod.js --progress",
-    "test": "node --no-warnings --test --experimental-strip-types test/search/musicRanking.test.mts test/releaseMetadata.test.mts test/releasePlatform.test.mts test/music/translationMatch.test.mts test/cloudLibrary.test.mts test/updateNetwork.test.cjs test/musicAccounts.test.cjs test/officialAccountLogin.test.cjs test/qqPlaylistSync.test.cjs test/accountTransfer.test.cjs test/browseNavigation.test.cjs test/themeAppearance.test.cjs test/listSelection.test.cjs test/playlistDrag.test.cjs test/playbackRecovery.test.cjs test/dailyRecommendPolicy.test.mts test/accountAvailability.test.cjs test/audioPlayback.test.cjs test/macosPackaging.test.cjs test/userApiFallback.test.cjs test/userApiRuntime.test.cjs test/userApiRouting.test.cjs test/userApiImport.test.cjs test/playlistImport.test.cjs test/neteaseFavorite.test.cjs test/kugouFavorite.test.cjs test/artworkDiscovery.test.cjs",
+    "test": "node --no-warnings --test --experimental-strip-types test/search/musicRanking.test.mts test/releaseMetadata.test.mts test/releasePlatform.test.mts test/music/translationMatch.test.mts test/cloudLibrary.test.mts test/updateNetwork.test.cjs test/musicAccounts.test.cjs test/officialAccountLogin.test.cjs test/qqPlaylistSync.test.cjs test/accountTransfer.test.cjs test/browseNavigation.test.cjs test/themeAppearance.test.cjs test/listSelection.test.cjs test/playlistDrag.test.cjs test/playbackRecovery.test.cjs test/dailyRecommendPolicy.test.mts test/accountAvailability.test.cjs test/audioPlayback.test.cjs test/macosPackaging.test.cjs test/userApiFallback.test.cjs test/userApiRuntime.test.cjs test/userApiRouting.test.cjs test/userApiImport.test.cjs test/playlistImport.test.cjs test/neteaseFavorite.test.cjs test/kugouFavorite.test.cjs test/artworkDiscovery.test.cjs test/bilibili.test.cjs test/playbackSession.test.cjs test/playlistTargets.test.cjs test/cloudSnapshot.test.cjs test/cloudConfigBackup.test.cjs",
     "lint": "eslint --ext .ts,.js,.vue -f node_modules/eslint-formatter-friendly src",
     "lint:fix": "eslint --ext .ts,.js,.vue -f node_modules/eslint-formatter-friendly --fix src",
     "postinstall": "electron-builder install-app-deps",
@@ -81,7 +82,10 @@
     "test:playback-preferences": "node --test test/playbackPreferences.test.cjs",
     "test:playback-recovery": "node --test test/playbackRecovery.test.cjs",
     "test:playlist-merge": "node --test test/playlistMerge.test.cjs",
-    "test:theme-appearance": "node --test test/themeAppearance.test.cjs"
+    "test:theme-appearance": "node --test test/themeAppearance.test.cjs",
+    "test:playlist-targets": "node --test test/playlistTargets.test.cjs test/neteaseFavorite.test.cjs test/kugouFavorite.test.cjs",
+    "test:playback-session": "node --test test/playbackSession.test.cjs test/playbackRecovery.test.cjs",
+    "test:bilibili": "node --test test/bilibili.test.cjs"
   },
   "browserslist": [
     "Electron 22.3.0"

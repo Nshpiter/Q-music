@@ -1,6 +1,7 @@
 import { createReadStream, createWriteStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { pipeline } from 'node:stream/promises'
+import { Transform } from 'node:stream'
 import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
 import { XMLParser } from 'fast-xml-parser'
@@ -26,7 +27,17 @@ export const objectKey = (config: CloudConfig, type: 'audio' | 'meta', id: strin
 export interface CloudStorage {
   list: (prefix: string) => Promise<string[]>
   put: (key: string, file: string) => Promise<void>
-  get: (key: string, file: string) => Promise<void>
+  get: (key: string, file: string, maxBytes?: number) => Promise<void>
+}
+
+const byteLimit = (maximum: number) => {
+  let count = 0
+  return new Transform({
+    transform(chunk, _, callback) {
+      count += chunk.length
+      callback(count > maximum ? new Error('云端文件超过大小限制') : null, chunk)
+    },
+  })
 }
 
 const s3Storage = (config: CloudConfig): CloudStorage => {
@@ -45,10 +56,10 @@ const s3Storage = (config: CloudConfig): CloudStorage => {
     async put(key, file) {
       await new Upload({ client, params: { Bucket: config.bucket, Key: key, Body: createReadStream(file), ContentType: 'application/octet-stream' }, leavePartsOnError: false }).done()
     },
-    async get(key, file) {
+    async get(key, file, maxBytes = Infinity) {
       const result = await client.send(new GetObjectCommand({ Bucket: config.bucket, Key: key }))
       if (!result.Body) throw new Error('云端文件为空')
-      await pipeline(result.Body as NodeJS.ReadableStream, createWriteStream(file))
+      await pipeline(result.Body as NodeJS.ReadableStream, byteLimit(maxBytes), createWriteStream(file))
     },
   }
 }
@@ -83,7 +94,7 @@ const webdavStorage = (config: CloudConfig): CloudStorage => {
         .filter((key: string) => key.startsWith(prefix) && key.endsWith('.qmc'))
     },
     async put(key, file) { await ensureDirs(key); await request('PUT', key, createReadStream(file), (await stat(file)).size) },
-    async get(key, file) { await pipeline((await request('GET', key)).body, createWriteStream(file)) },
+    async get(key, file, maxBytes = Infinity) { await pipeline((await request('GET', key)).body, byteLimit(maxBytes), createWriteStream(file)) },
   }
 }
 

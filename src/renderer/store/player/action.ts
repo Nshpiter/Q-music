@@ -1,3 +1,4 @@
+import { playbackSession } from '@renderer/core/player/session'
 // import { reactive, ref, shallowRef } from '@common/utils/vueTools'
 import {
   type PlayerMusicInfo,
@@ -82,8 +83,12 @@ export const setPlayListId = (listId: string | null) => {
   playInfo.playerListId = listId
 }
 
-export const getList = (listId: string | null): Array<LX.Music.MusicInfo | LX.Download.ListItem> => {
+export const getSourceList = (listId: string | null): Array<LX.Music.MusicInfo | LX.Download.ListItem> => {
   return listId == LIST_IDS.DOWNLOAD ? downloadList : getListMusicsFromCache(listId)
+}
+
+export const getList = (listId: string | null): Array<LX.Music.MusicInfo | LX.Download.ListItem> => {
+  return playbackSession.list<LX.Download.ListItem | LX.Music.MusicInfo>(listId, getSourceList(listId))
 }
 
 /**
@@ -258,6 +263,10 @@ export const addTempPlayList = (list: LX.Player.TempPlayListItem[]) => {
  */
 export const removeTempPlayList = (index: number) => {
   tempPlayList.splice(index, 1)
+}
+export const moveTempPlayList = (from: number, to: number) => {
+  if (![from, to].every(index => Number.isInteger(index) && index >= 0 && index < tempPlayList.length) || from == to) return
+  tempPlayList.splice(to, 0, tempPlayList.splice(from, 1)[0])
 }
 /**
  * 清空稍后播放列表

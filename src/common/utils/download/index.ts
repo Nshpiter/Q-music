@@ -1,3 +1,4 @@
+import { BILIBILI_HEADERS, isBilibiliMediaUrl } from '@common/utils/bilibili'
 import Downloader, { type Options as DownloaderOptions } from './Downloader'
 import { getRequestAgent } from './util'
 import { sizeFormate } from '@common/utils'
@@ -50,6 +51,7 @@ export const createDownload = ({
     requestOptions: {
       method,
       headers: {
+        ...(isBilibiliMediaUrl(url) ? BILIBILI_HEADERS : {}),
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
       },
       agent: getRequestAgent(url, proxy),

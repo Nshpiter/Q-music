@@ -23,6 +23,7 @@
             <p v-else-if="isQQSyncList(list) && !updateInfo[list.id]?.sourceAccountId" :class="$style.status">{{ $t('list_sync_binding_required') }}</p>
           </div>
           <div :class="$style.btns">
+            <KugouVerifyButton v-if="list.source == 'kg' && listSyncStates[list.id]?.error == 'kugou__verification_required'" :disabled="batchWorking || loginWorking" @verified="handleUpdate(list)" />
             <base-btn v-if="listSyncStates[list.id]?.error == 'list_sync_login_required'" :disabled="batchWorking || loginWorking" @click.stop="relogin(list)">{{ $t('list_sync_relogin') }}</base-btn>
             <button :class="$style.btn" :disabled="fetchingListStatus[list.id]" outline="outline" :aria-label="$t('list_update_modal__update')" @click.stop="handleUpdate(list)">
               <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="transform: rotate(45deg);" viewBox="0 0 24 24" space="preserve">
@@ -50,12 +51,13 @@ import handleSyncSourceList, { isQQSyncList, listSyncStates } from '@renderer/st
 import musicSdk from '@renderer/utils/musicSdk'
 import { getListUpdateInfo, setListAutoUpdate } from '@renderer/utils/data'
 import SourceIcon from '@renderer/components/common/SourceIcon.vue'
+import KugouVerifyButton from '@renderer/components/common/KugouVerifyButton.vue'
 import { useI18n } from '@renderer/plugins/i18n'
 import { dialog } from '@renderer/plugins/Dialog'
 import { loginMusicAccount } from '@renderer/utils/ipc'
 
 export default {
-  components: { SourceIcon },
+  components: { SourceIcon, KugouVerifyButton },
   props: { visible: { type: Boolean, default: false } },
   emits: ['update:visible'],
   setup(props) {

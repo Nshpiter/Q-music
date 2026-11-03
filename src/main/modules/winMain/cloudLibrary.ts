@@ -55,7 +55,7 @@ const readProfiles = (): CloudProfiles => {
   return profiles
 }
 
-const readCloudConfig = (): CloudConfig => {
+export const readCloudConfig = (): CloudConfig => {
   const store = readProfiles()
   const config = store.profiles[store.activeProvider]
   if (!config) throw new Error('请先配置云服务')

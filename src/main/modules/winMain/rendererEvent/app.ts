@@ -29,13 +29,21 @@ import { addQQFavoriteSong, getMusicAccountDailySongIds, getMusicAccountMusicUrl
 import { type QQFavoriteRequest, type QQFavoriteResult } from '@common/types/qqFavorite'
 import type { NeteaseFavoriteRequest, NeteaseFavoriteResult } from '@common/utils/neteaseFavorite'
 import { addNeteaseFavoriteSong } from '../musicAccount'
-import { addKugouFavoriteSong } from '../kugouAccount'
+import { addKugouFavoriteSong, verifyKugouAccess } from '../kugouAccount'
 import type { KugouFavoriteRequest, KugouFavoriteResult } from '@common/utils/kugouFavorite'
 import { startAccountTransfer, getAccountTransferState, cancelAccountTransfer } from '../accountTransfer'
 import type { AccountTransferInfo, AccountTransferState } from '@common/types/accountTransfer'
 import { getCloudConfig, getSavedCloudPassword, importCloudTracks, listCloudTracks, saveCloudConfig, saveCloudPassword, selectCloudProvider, uploadCloudTrack, type CloudConfig, type CloudTrack } from '../cloudLibrary'
+import { generateSnapshotKey, listConfigBackups, uploadConfigBackup, previewConfigBackup, restoreConfigBackup } from '../cloudConfigBackup'
+import type { SnapshotSelection } from '@common/utils/cloudSnapshot'
 
 export default () => {
+  mainHandle<string>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_key, async() => generateSnapshotKey())
+  mainHandle<string[]>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_list, listConfigBackups)
+  mainHandle<{ password: string, selected: SnapshotSelection }, string>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_upload, async({ params }) => uploadConfigBackup(params.password, params.selected))
+  mainHandle<{ id: string, password: string }, Awaited<ReturnType<typeof previewConfigBackup>>>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_preview, async({ params }) => previewConfigBackup(params.id, params.password))
+  mainHandle<{ token: string, selected: SnapshotSelection }, Awaited<ReturnType<typeof restoreConfigBackup>>>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_restore, async({ params }) => restoreConfigBackup(params.token, params.selected))
+  mainHandle(WIN_MAIN_RENDERER_EVENT_NAME.music_account_kg_verify, verifyKugouAccess)
   mainHandle<AccountTransferInfo>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_transfer_start, startAccountTransfer)
   mainHandle<string, AccountTransferState>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_transfer_status, async({ params }) => getAccountTransferState(params))
   mainHandle<string, undefined>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_transfer_cancel, async({ params }) => { cancelAccountTransfer(params); return undefined })

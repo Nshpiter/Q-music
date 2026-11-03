@@ -90,6 +90,7 @@ export const getSourceI18nPrefix = () => {
 export const sourceNames = computed(() => {
   const prefix = getSourceI18nPrefix()
   const sourceNames: Record<LX.OnlineSource | 'all', string> = {
+    bi: 'Bilibili',
     kw: 'kw',
     tx: 'tx',
     kg: 'kg',

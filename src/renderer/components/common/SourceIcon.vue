@@ -13,6 +13,7 @@ import { computed, ref, watch } from '@common/utils/vueTools'
 import kugouIcon from '@renderer/assets/images/sources/kg.svg'
 import qqMusicIcon from '@renderer/assets/images/sources/tx.svg'
 import neteaseIcon from '@renderer/assets/images/sources/wy.svg'
+import bilibiliIcon from '@renderer/assets/images/sources/bi.svg'
 
 const props = withDefaults(defineProps<{
   source: string
@@ -24,6 +25,7 @@ const props = withDefaults(defineProps<{
 })
 
 const sourceLabels: Record<string, string> = {
+  bi: '哔哩哔哩',
   tx: 'QQ音乐',
   wy: '网易云音乐',
   kg: '酷狗音乐',
@@ -33,6 +35,7 @@ const sourceLabels: Record<string, string> = {
   local: '本地音乐',
 }
 const officialIcons: Record<string, string> = {
+  bi: bilibiliIcon,
   tx: qqMusicIcon,
   wy: neteaseIcon,
   kg: kugouIcon,

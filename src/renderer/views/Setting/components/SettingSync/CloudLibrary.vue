@@ -37,6 +37,7 @@ dd
           svg-icon(:name="secretVisible ? 'eye-off' : 'eye'")
     .p
       base-btn.btn(min :disabled="busy" @click="saveConfig") 保存配置
+  CloudConfigBackup(:disabled="busy || !configured || hasConfigChanges" :connection="JSON.stringify(config)" @busy="busy = $event")
   .p(:class="$style.row")
     span 端到端口令
     div(:class="$style.passwordField")
@@ -79,9 +80,11 @@ import { addListMusics, createUserList } from '@renderer/store/list/action'
 import { userLists } from '@renderer/store/list/state'
 import { LIST_IDS } from '@common/constants'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
+import CloudConfigBackup from './CloudConfigBackup.vue'
 
 export default {
   name: 'CloudLibrary',
+  components: { CloudConfigBackup },
   setup() {
     const router = useRouter()
     const route = useRoute()

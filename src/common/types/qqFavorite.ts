@@ -1,5 +1,6 @@
 export interface QQFavoriteRequest {
   songMid: string
+  playlistId?: string
   action?: 'add' | 'check'
 }
 

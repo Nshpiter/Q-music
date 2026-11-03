@@ -13,6 +13,7 @@
       :source-name="getSourceName"
       check-api-source
       search-results
+      :video-results="props.sourceId == 'bi'"
       @retry="search(searchText, props.sourceId, props.page)"
       @toggle-page="handleTogglePage"
       @play-list="handlePlayList"
@@ -75,7 +76,7 @@ const handleTogglePage = (page: number) => {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  padding: 4px 16px calc(@height-player + 18px);
+  padding: 4px 16px calc(@height-player - 6px);
 }
 
 .list {

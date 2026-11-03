@@ -2,7 +2,7 @@
 // 仅请求酷狗 HTTPS 服务；凭证由各端安全存储，不交给第三方 API 服务。
 export interface KugouSession { userId: string, token: string, mid: string, nickname: string, avatar: string }
 export interface KugouQr { key: string, image: string, mid: string, expiresAt: number }
-export interface KugouPlaylist { id: string, name: string, cover: string, count: number, kind: 'created' | 'favorite', isFavorite?: boolean }
+export interface KugouPlaylist { id: string, name: string, cover: string, count: number, kind: 'created' | 'favorite', isFavorite?: boolean, writable?: boolean }
 export interface KugouCaptchaAnswer { ticket: string, randstr: string }
 export type KugouCaptchaPresenter = (appId: string) => Promise<KugouCaptchaAnswer>
 class KugouApiError extends Error {
@@ -151,6 +151,7 @@ export const createKugouApi = (fetcher: Fetch, md5: (value: string) => string, e
         seen.add(id)
         lists.push({
           id,
+          writable: String(row.list_create_userid ?? '') == session.userId && Number(row.is_collect ?? 0) != 1 && Number(row.is_del ?? 0) != 1,
           isFavorite: Number(row.is_def) == 2 && String(row.list_create_userid ?? '') == session.userId && Number(row.is_collect ?? 0) != 1 && Number(row.is_del ?? 0) != 1,
           name: String(row.name ?? row.listname ?? '未命名歌单'),
           cover: imageUrl(row.pic ?? row.img ?? row.picurl),
@@ -231,5 +232,24 @@ export const createKugouApi = (fetcher: Fetch, md5: (value: string) => string, e
     if (hashes.some(hash => !/^[A-F0-9]{32}$/.test(hash))) fail('incomplete')
     return [...new Set(hashes)].slice(0, 30)
   }
-  return { createQr, checkQr, getPlaylists, getPlaylistHashes, getDailyHashes, addFavoriteSong, verifySession }
+  // 用户主动打开验证时，复用当前事件；事件过期则只读刷新，不尝试收藏写入。
+  const verifyAccess = async(session: KugouSession, present: KugouCaptchaPresenter, assertSession: () => Promise<void>) => {
+    await assertSession()
+    const hasChallenge = () => challenge?.identity == identity(session.userId, session.token, session.mid) && Date.now() < challenge.expiresAt
+    if (!hasChallenge()) {
+      try {
+        await getPlaylists(session)
+        await assertSession()
+        return
+      } catch (error) {
+        if (!(error instanceof Error) || error.message != 'verification_required') throw error
+        if (!hasChallenge()) fail('verification_unsupported')
+      }
+    }
+    await verifySession(session, present, assertSession)
+    await getPlaylists(session)
+    await assertSession()
+  }
+
+  return { createQr, checkQr, getPlaylists, getPlaylistHashes, getDailyHashes, addFavoriteSong, verifySession, verifyAccess }
 }

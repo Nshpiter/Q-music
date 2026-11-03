@@ -55,6 +55,7 @@ export const getExt = (type: string): LX.Download.FileExt => {
  * @param qualityList
  */
 export const getMusicType = (musicInfo: LX.Music.MusicInfoOnline, type: LX.Quality, qualityList: LX.QualityList): LX.Quality => {
+  if (musicInfo.source == 'bi') return '192k'
   let list = qualityList[musicInfo.source]
   if (!list) return '128k'
   if (!list.includes(type)) type = list[list.length - 1]
@@ -71,7 +72,7 @@ export const getMusicType = (musicInfo: LX.Music.MusicInfoOnline, type: LX.Quali
 
 export const createDownloadInfo = (musicInfo: LX.Music.MusicInfoOnline, type: LX.Quality, fileName: string, qualityList: LX.QualityList, listId?: string) => {
   type = getMusicType(musicInfo, type, qualityList)
-  let ext = getExt(type)
+  const ext = musicInfo.source == 'bi' ? 'm4a' : getExt(type)
   const key = `${musicInfo.id}_${type}_${ext}`
   // if (checkExistList(list, musicInfo, type, ext)) return null
   const downloadInfo: LX.Download.ListItem = {

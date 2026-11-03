@@ -187,6 +187,7 @@ export default {
     if (++retryNum > 3) throw new Error('try max num')
     const { body } = await this.getData(this.getUrl(page, bangid, this.listDetailLimit))
 
+    if (Number(body.error_code ?? body.errcode) == 20028) throw new Error('verification_required')
     if (body.errcode != 0) return this.getList(bangid, page, retryNum)
 
     // console.log(body)

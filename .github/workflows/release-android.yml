@@ -188,6 +188,14 @@ jobs:
         working-directory: mobile
         run: npm run test:update
 
+      - name: Verify Bilibili, playlist targets, cloud configuration and player overlays
+        working-directory: mobile
+        run: |
+          npm run test:bilibili
+          npm run test:playlist-targets
+          npm run test:cloud-config
+          npm run test:player-overlays
+
       - name: Validate signing secrets
         shell: bash
         env:

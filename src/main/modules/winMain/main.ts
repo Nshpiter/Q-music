@@ -1,3 +1,4 @@
+import { BILIBILI_HEADERS } from '@common/utils/bilibili'
 import { BrowserWindow, dialog, screen, session } from 'electron'
 import path from 'node:path'
 import { createTaskBarButtons, getWindowSizeInfo } from './utils'
@@ -137,6 +138,9 @@ export const createWindow = () => {
     options.fullscreen = true
   }
   browserWindow = new BrowserWindow(options)
+  browserWindow.webContents.session.webRequest.onBeforeSendHeaders({ urls: ['https://*.bilivideo.com/*', 'https://*.bilivideo.cn/*', 'https://upos-hz-mirrorakam.akamaized.net/*'] }, (details, callback) => {
+    callback({ requestHeaders: { ...details.requestHeaders, ...BILIBILI_HEADERS } })
+  })
 
   const winURL = process.env.NODE_ENV !== 'production' ? 'http://localhost:9080' : `file://${path.join(encodePath(__dirname), 'index.html')}`
   void browserWindow.loadURL(winURL + `?os=${getPlatform()}&dt=${global.envParams.cmdParams.dt}&wayland=${isNativeWayland}&dark=${shouldUseDarkColors}&theme=${encodeURIComponent(JSON.stringify(theme))}`)

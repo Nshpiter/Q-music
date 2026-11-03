@@ -9,6 +9,9 @@ const root = path.join(__dirname, '..')
 const mobile = fs.existsSync(path.join(root, 'src/core/musicAccount/kugouApi.ts'))
 const base = mobile ? 'src/core/musicAccount' : 'src/common/utils'
 function load(file, dependencies = {}, extra = {}) {
+  if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/cloudSnapshot'] = load('src/common/utils/cloudSnapshot.ts')
+  if (file == 'src/renderer/views/List/MyList/importPlaylist.ts') dependencies['@renderer/utils/musicSdk/bi'] ??= { bilibiliClient: {} }
+  if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/qqPlaylistTarget'] = load('src/common/utils/qqPlaylistTarget.ts')
   if (file == 'src/main/modules/winMain/kugouAccount.ts') dependencies['@common/utils/kugouFavorite'] = load('src/common/utils/kugouFavorite.ts')
   if (file == 'src/main/modules/winMain/kugouAccount.ts') dependencies['./kugouVerification'] = {}
   if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/neteaseFavorite'] = load('src/common/utils/neteaseFavorite.ts')
@@ -432,6 +435,7 @@ if (!mobile) {
       close() { this.destroyed = true; this.emit('closed') }
     }
     const main = load('src/main/modules/winMain/kugouAccount.ts', {
+      '@common/utils/kugouVerification': load('src/common/utils/kugouVerification.ts'),
       electron: { BrowserWindow: Window, safeStorage: { isEncryptionAvailable: () => true }, session: { fromPartition: () => ({ setProxy: () => proxyReady ? Promise.resolve() : new Promise(resolve => { releaseProxy = resolve }) }) } },
       '@main/utils': { getProxy: () => null }, '@main/utils/store': () => ({}), 'node:crypto': require('node:crypto'),
       '@common/utils/kugouAccount': { ...kg, createKugouApi: () => ({ createQr: async () => { createCalls++; return { ...qr, image: 'data:image/png;base64,YQ==' } }, checkQr: async () => ({ status: 'waiting' }) }) },

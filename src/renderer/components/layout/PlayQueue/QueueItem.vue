@@ -10,7 +10,7 @@
       </span>
       <span :class="$style.info">
         <span :class="$style.name">{{ displayInfo.name }}</span>
-        <span :class="$style.singer">{{ displayInfo.singer || '--' }}</span>
+        <span :class="$style.singer"><SourceIcon v-if="displayInfo.source != 'local'" :source="displayInfo.source" :size="12" /> {{ displayInfo.singer || '--' }}</span>
       </span>
       <span :class="$style.duration">{{ displayInfo.interval || '--:--' }}</span>
     </button>
@@ -32,6 +32,7 @@
 
 <script setup lang="ts">
 import { computed } from '@common/utils/vueTools'
+import SourceIcon from '@renderer/components/common/SourceIcon.vue'
 
 const props = defineProps<{
   musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
@@ -55,6 +56,11 @@ const displayInfo = computed(() => {
 @import '@renderer/assets/styles/layout.less';
 
 .row {
+  &[draggable=true] {
+    -webkit-user-drag: element;
+    cursor: grab;
+    .track { cursor: grab; }
+  }
   position: relative;
   height: 56px;
   display: flex;

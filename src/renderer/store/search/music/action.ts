@@ -195,7 +195,7 @@ export const search = async(text: string, page: number, sourceId: LX.OnlineSourc
     listInfo!.key = key
     let task = []
     for (const source of sources) {
-      if (source == 'all') continue
+      if (source == 'all' || source == 'bi') continue
       task.push((music[source]?.musicSearch.search(text, page, listInfos.all.limit) ?? Promise.reject(new Error('source not found: ' + source))).catch((error: any) => {
         console.log(error)
         return {

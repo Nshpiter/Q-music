@@ -1,6 +1,6 @@
 <template>
   <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
-    <div v-show="props.visible" :class="$style.noitem">
+    <div v-show="props.visible" :class="[$style.noitem, { [$style.detailView]: isShowDailyDetail }]">
       <transition
         mode="out-in"
         :enter-active-class="$style.panelEnterActive" :leave-active-class="$style.panelLeaveActive"
@@ -105,6 +105,7 @@
               <div v-for="index in 5" :key="index"><i /><b /><b /></div>
             </div>
             <div v-else-if="accountPlaylistsError" :class="$style.playlistEmpty" role="status">
+              <KugouVerifyButton v-if="accountPlaylistsProvider == 'kg' && accountPlaylistsError == 'verification_required'" @verified="loadAccountPlaylists(true, 'kg')" />
               <p>{{ $t(accountPlaylistsError == 'login_required' ? 'search__account_expired' : accountPlaylistsError == 'verification_required' ? 'kugou__verification_required' : 'playlist_import_modal__account_unavailable') }}</p>
               <base-btn min @click="accountPlaylistsError == 'login_required' ? openAccountModal() : loadAccountPlaylists(true, accountPlaylistsProvider)">{{ $t(accountPlaylistsError == 'login_required' ? 'search__account_manage' : 'search__retry') }}</base-btn>
             </div>
@@ -217,6 +218,7 @@
                   <button type="button" :disabled="!accountStatus[provider.id] || isAccountLoginPending || !!isAccountLogoutPending" @click="openAccountImport(provider.id)">{{ $t('search__account_import') }}</button>
                   <button type="button" :aria-pressed="selectedDailyProvider == provider.id" @click="useAccountRecommendation(provider.id)">{{ $t(selectedDailyProvider == provider.id ? 'search__recommend_current' : 'search__recommend_use') }}</button>
                 </div>
+                <KugouVerifyButton v-if="provider.id == 'kg'" :disabled="isAccountLoginPending || !!isAccountLogoutPending" @verified="refreshAccountStatus()" />
                 <details v-if="provider.id == 'tx'" :class="$style.officialDailySetup">
                   <summary>
                     <strong>{{ $t('search__qq_daily_title') }}</strong>
@@ -269,6 +271,7 @@
 </template>
 
 <script setup>
+import KugouVerifyButton from '@renderer/components/common/KugouVerifyButton.vue'
 import AccountTransferModal from '@renderer/components/common/AccountTransferModal.vue'
 import { computed, watch, shallowRef, ref } from '@common/utils/vueTools'
 import { onDeactivated } from 'vue'
@@ -1133,7 +1136,7 @@ void refreshAccountStatus().then(() => {
   width: min(1160px, 100%);
   height: 100%;
   min-height: 0;
-  padding: 4px 8px 12px;
+  padding: 0;
   box-sizing: border-box;
   display: flex;
   flex-flow: column nowrap;
@@ -1719,5 +1722,9 @@ void refreshAccountStatus().then(() => {
   }
   .dailyCover { width: 168px; height: 168px; }
   .trackPreview li:nth-child(n + 3) { display: none; }
+}
+.noitem.detailView {
+  padding: 12px 16px calc(@height-player - 6px);
+  .detailHeader { min-height: 84px; padding: 4px 8px 12px; }
 }
 </style>

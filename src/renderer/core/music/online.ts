@@ -1,3 +1,4 @@
+import { bilibiliClient } from '@renderer/utils/musicSdk/bi'
 import { updateListMusics } from '@renderer/store/list/action'
 import { appSetting } from '@renderer/store/setting'
 import {
@@ -46,6 +47,11 @@ export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSou
   onResolved?: (info: MusicUrlResolvedInfo) => void
   requestOptions?: MusicUrlRequestOptions
 }): Promise<string> => {
+  if (musicInfo.source == 'bi') {
+    const result = await bilibiliClient.playback(String(musicInfo.meta.songId), requestOptions?.signal)
+    onResolved?.({ requestedSource: 'bi', resolvedSource: 'bi', quality: result.quality, mode: 'official', routeKey: 'bilibili:public', resolvedMusicInfo: musicInfo })
+    return result.url
+  }
   // if (!musicInfo._types[type]) {
   //   // 兼容旧版酷我源搜索列表过滤128k音质的bug
   //   if (!(musicInfo.source == 'kw' && type == '128k')) throw new Error('该歌曲没有可播放的音频')
@@ -95,6 +101,7 @@ export const getLyricInfo = async({ musicInfo, isRefresh, allowToggleSource = tr
   allowToggleSource?: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
 }): Promise<LX.Player.LyricInfo> => {
+  if (musicInfo.source == 'bi') return buildLyricInfo({ lyric: '' })
   if (!isRefresh) {
     const lyricInfo = await getCachedLyricInfo(musicInfo)
     if (lyricInfo) return buildLyricInfo(lyricInfo)

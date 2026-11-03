@@ -7,13 +7,48 @@ import { getQQCredentials, getQQRequestComm, getQQWebRequestComm } from '@common
 import { signQQRequest } from '@common/utils/qqSign'
 import { collectQQPlaylistIds } from '@common/utils/qqPlaylist'
 import { type QQFavoriteRequest, type QQFavoriteResult } from '@common/types/qqFavorite'
+import { isQQPlaylistId, resolveQQPlaylistTarget, checkQQPlaylistSong } from '@common/utils/qqPlaylistTarget'
 import { createNeteaseFavoriteClient } from '@common/utils/neteaseFavorite'
 import { closeOfficialAccountLogin, openOfficialAccountLogin } from './officialAccountLogin'
 import { allowAccountLoginNavigation, upgradeAccountLoginNavigation } from './accountLoginNavigation'
 import { fitAccountLoginWindow, getAccountLoginBounds } from './accountLoginLayout'
-import { getKugouDailyHashes, getKugouPlaylistHashes, getKugouPlaylists, logoutKugou, openKugouLogin, readKugouSession } from './kugouAccount'
+import { getKugouDailyHashes, getKugouPlaylistHashes, getKugouPlaylists, logoutKugou, openKugouLogin, readKugouSession, saveKugouSession } from './kugouAccount'
+import { parseSnapshotAccounts, type CloudSnapshot } from '@common/utils/cloudSnapshot'
 
 export type MusicAccountProvider = 'tx' | 'wy' | 'kg'
+
+// 仅在用户勾选账号备份后调用；不导出 QQ/微信通用站点 Cookie。
+export const exportSnapshotAccounts = async(): Promise<NonNullable<CloudSnapshot['accounts']>> => {
+  const result: NonNullable<CloudSnapshot['accounts']> = {}
+  const { uin, authst, isWeChat } = await getQQAccountCredentials()
+  if (uin && authst) result.tx = { qqmusic_uin: uin, qqmusic_key: authst, musicid: uin, musickey: authst, login_type: isWeChat ? '2' : '1', ...(isWeChat ? { wxuin: uin } : { uin }) }
+  const wy = Object.fromEntries((await session.fromPartition(providerConfig.wy.partition).cookies.get({ url: 'https://music.163.com/' })).filter(cookie => ['MUSIC_U', '__csrf'].includes(cookie.name)).map(cookie => [cookie.name, cookie.value]))
+  if (wy.MUSIC_U) result.wy = wy
+  const kg = readKugouSession()
+  if (kg) result.kg = { ...kg }
+  return parseSnapshotAccounts(result)
+}
+
+export const restoreSnapshotAccounts = async(value: NonNullable<CloudSnapshot['accounts']>) => {
+  const accounts = parseSnapshotAccounts(value)
+  for (const provider of ['tx', 'wy', 'kg'] as const) {
+    const data = accounts[provider]
+    if (!data) continue
+    if (provider == 'kg') { saveKugouSession(data); continue }
+    const store = session.fromPartition(providerConfig[provider].partition).cookies
+    const urls = provider == 'tx' ? ['https://y.qq.com/', 'https://u.y.qq.com/'] : ['https://music.163.com/']
+    const names = new Set(provider == 'tx' ? ['qqmusic_key', 'qm_keyst', 'musickey', 'qqmusic_uin', 'musicid', 'login_type', 'wxuin', 'uin'] : ['MUSIC_U', '__csrf'])
+    for (const cookie of await store.get({})) {
+      if (names.has(cookie.name) && cookie.domain) await store.remove(`https://${cookie.domain.replace(/^\./, '')}${cookie.path ?? '/'}`, cookie.name)
+    }
+    for (const url of urls) {
+      for (const [name, content] of Object.entries(data)) await store.set({ url, name, value: content, path: '/', secure: true, httpOnly: true, expirationDate: Date.now() / 1000 + 30 * 86400 })
+    }
+    await store.flushStore()
+  }
+  accountValidationCache.clear()
+  officialMusicUrlCache.clear()
+}
 
 export type MusicAccountConnectionState = 'connected' | 'expired' | 'disconnected' | 'unavailable'
 
@@ -60,6 +95,7 @@ export interface QQDailyKeySaveResult extends QQDailyKeyStatus {
 }
 
 export interface MusicAccountPlaylist {
+  writable?: boolean
   accountId?: string
   id: string
   name: string
@@ -398,6 +434,7 @@ const checkQQFavoriteSong = async(songMid: string, account: string) => {
 // 只按 QQ songmid 查找确切歌曲，不用文件 ID 或其他平台的数字 ID 猜测收藏对象。
 export const addQQFavoriteSong = async(request: QQFavoriteRequest): Promise<QQFavoriteResult> => {
   if (typeof request?.songMid != 'string' || !/^[a-zA-Z0-9]{1,64}$/.test(request.songMid) ||
+    (request.playlistId != null && !isQQPlaylistId(request.playlistId)) ||
     (request.action != null && request.action != 'add' && request.action != 'check')) return { status: 'unsupported' }
   let writing = false
   const startedAt = Date.now()
@@ -407,7 +444,16 @@ export const addQQFavoriteSong = async(request: QQFavoriteRequest): Promise<QQFa
     if (!uin || !authst) return { status: 'login_required' }
     const account = qqAccountIdentity(cookies)
     await configureAccountSessionProxy('tx')
-    const alreadyLiked = await checkQQFavoriteSong(request.songMid, account)
+    const call = async(name: string, module: string, method: string, param: Record<string, unknown>) => {
+      const response = await requestQQMusicU<Record<string, { data?: Record<string, any> }>>({ [name]: { module, method, param } }, undefined, account)
+      if (qqAccountIdentity((await getQQAccountCredentials()).cookies) != account) throw new Error('account_changed')
+      if (!response[name]?.data) throw new Error('unavailable')
+      return response[name].data
+    }
+    const target = request.playlistId ? await resolveQQPlaylistTarget(request.playlistId, uin, call) : { dirId: 201, dissId: 0 }
+    const encryptedUin = request.playlistId && !target.dissId && target.dirId != 201 ? await getQQEncryptedUin() : ''
+    const check = async() => target.dirId == 201 ? checkQQFavoriteSong(request.songMid, account) : checkQQPlaylistSong(target, request.songMid, encryptedUin, call)
+    const alreadyLiked = await check()
     if (alreadyLiked) return { status: 'added', accountId: qqAccountId(cookies) }
     if (request.action == 'check') return { status: 'not_found' }
 
@@ -435,7 +481,7 @@ export const addQQFavoriteSong = async(request: QQFavoriteRequest): Promise<QQFa
       favorite: {
         module: 'music.musicasset.PlaylistDetailWrite',
         method: 'AddSonglist',
-        param: { dirId: 201, v_songInfo: [{ songId: track.id, songType: 0 }] },
+        param: { dirId: target.dirId, v_songInfo: [{ songId: track.id, songType: 0 }] },
       },
     }, undefined, account, true)
     if (qqAccountIdentity((await getQQAccountCredentials()).cookies) != account) return { status: 'account_changed' }
@@ -453,7 +499,7 @@ export const addQQFavoriteSong = async(request: QQFavoriteRequest): Promise<QQFa
     // 只重查，不重写；给平台短暂同步时间，避免刚受理就显示成功。
     for (let attempt = 0; attempt < 2; attempt++) {
       if (attempt) await new Promise<void>(resolve => { setTimeout(resolve, 800) })
-      if (await checkQQFavoriteSong(request.songMid, account)) {
+      if (await check()) {
         console.info('[qq-favorite]', { phase, confirmed: true, elapsedMs: Date.now() - startedAt })
         return { status: 'added', accountId: qqAccountId(cookies) }
       }
@@ -467,6 +513,7 @@ export const addQQFavoriteSong = async(request: QQFavoriteRequest): Promise<QQFa
     const stage = error instanceof QQMusicURequestError ? error.message : undefined
     console.warn('[qq-favorite]', { phase, kind: error instanceof Error ? error.name : 'unknown', stage, code, networkCode, elapsedMs: Date.now() - startedAt })
     if (error instanceof Error && error.message == 'account_changed') return { status: 'account_changed' }
+    if (error instanceof Error && error.message == 'unsupported') return { status: 'unsupported' }
     if (isQQMusicLoginRequiredError(error)) return { status: 'login_required', code }
     if (phase == 'write-request' && code != null && (code < 500 || code > 599)) return { status: 'rejected', code }
     // 结果不明时提供只读核对，绝不自动重发写请求。

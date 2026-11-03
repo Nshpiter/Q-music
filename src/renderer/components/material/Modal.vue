@@ -2,7 +2,7 @@
   <teleport :to="teleport">
     <div v-if="showModal" ref="dom_container" data-modal-container="true" :class="$style.container">
       <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
-        <div v-show="showContent" :class="[$style.modal, {[$style.filter]: filter, [$style.viewModal]: isViewModal}]" @click="bgClose && close()">
+        <div v-show="showContent" :class="[$style.modal, {[$style.filter]: filter, [$style.viewModal]: isViewModal, [$style.playerPanel]: placement == 'player'}]" @click="bgClose && close()">
           <transition :enter-active-class="inClass" :leave-active-class="outClass" @after-enter="$emit('after-enter', $event)" @after-leave="handleAfterLeave">
             <div v-show="showContent" ref="dom_content" :class="[$style.content, { [$style.headed]: heading }]" :style="contentStyle" role="dialog" aria-modal="true" :aria-labelledby="dialogTitleId || undefined" :aria-label="$attrs['aria-label'] || (!dialogTitleId ? 'Q-music' : undefined)" tabindex="-1" @click.stop>
               <header :class="$style.header">
@@ -38,6 +38,10 @@ const focusableSelector = 'button, input, select, textarea, a[href], [tabindex],
 const isFocusable = element => element?.isConnected && !element.matches(':disabled') && !element.closest('[inert], [aria-hidden="true"]') && element.getClientRects().length > 0
 export default {
   props: {
+    placement: {
+      type: String,
+      default: 'center',
+    },
     heading: {
       type: String,
       default: '',
@@ -331,6 +335,11 @@ export default {
       node.classList.remove('show-modal')
     },
     setRandomAnimation() {
+      if (this.placement == 'player') {
+        this.inClass = 'q-modal-anim q-modal-right-in'
+        this.outClass = 'q-modal-anim q-modal-fade-out'
+        return
+      }
       if (appSetting['common.randomAnimate']) {
         const [animIn, animOut] = this.animates[getRandom(0, this.animates.length)]
         // const [animIn, animOut] = this.animates[this.ai]
@@ -421,6 +430,22 @@ export default {
   backdrop-filter: blur(18px);
 }
 
+// 播放辅助面板靠右展开，并为底部播放控件保留空间。
+.modal.playerPanel {
+  justify-items: end;
+  align-items: end;
+  padding: 48px 24px 148px;
+  &.filter {
+    background: rgba(0, 0, 0, .16);
+    backdrop-filter: none;
+  }
+  .content { height: min(620px, 100%); max-height: 100%; }
+}
+
+@media (max-height: 680px) {
+  .modal.playerPanel { padding: 36px 16px 148px; }
+}
+
 .viewModal {
   .content {
     max-height: min(var(--modal-max-height), calc(100% - @height-player - 24px));
@@ -474,6 +499,10 @@ export default {
   &.filter {
     background: rgba(9, 13, 16, .36);
     backdrop-filter: blur(18px) saturate(.92);
+  }
+  &.playerPanel.filter {
+    background: rgba(9, 13, 16, .2);
+    backdrop-filter: none;
   }
 }
 

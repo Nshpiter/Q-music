@@ -7,10 +7,14 @@ import { APP_EVENT_NAMES, DATA_KEYS, DEFAULT_SETTING } from '@common/constants'
 import { type QQFavoriteRequest, type QQFavoriteResult } from '@common/types/qqFavorite'
 import type { NeteaseFavoriteRequest, NeteaseFavoriteResult } from '@common/utils/neteaseFavorite'
 import type { KugouFavoriteRequest, KugouFavoriteResult } from '@common/utils/kugouFavorite'
+import type { KugouVerificationStatus } from '@common/utils/kugouVerification'
+import type { SnapshotSelection, snapshotSummary } from '@common/utils/cloudSnapshot'
+
 import type { AccountTransferInfo, AccountTransferState } from '@common/types/accountTransfer'
 
-export const addNeteaseFavoriteSong = async(songId: string, action: NeteaseFavoriteRequest['action'] = 'add') => {
-  return rendererInvoke<NeteaseFavoriteRequest, NeteaseFavoriteResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_wy_favorite_add, { songId, action })
+export const verifyKugouAccess = async() => rendererInvoke<KugouVerificationStatus>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_kg_verify)
+export const addNeteaseFavoriteSong = async(songId: string, action: NeteaseFavoriteRequest['action'] = 'add', playlistId?: string) => {
+  return rendererInvoke<NeteaseFavoriteRequest, NeteaseFavoriteResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_wy_favorite_add, { songId, action, playlistId })
 }
 export const addKugouFavoriteSong = async(request: KugouFavoriteRequest) => rendererInvoke<KugouFavoriteRequest, KugouFavoriteResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_kg_favorite_add, request)
 
@@ -91,6 +95,7 @@ export interface QQDailyKeySaveResult extends QQDailyKeyStatus {
   songCount: number
 }
 export interface MusicAccountPlaylist {
+  writable?: boolean
   accountId?: string
   id: string
   name: string
@@ -135,8 +140,8 @@ export interface MusicAccountPlaybackReportResult {
 export const getMusicAccountStatus = async() => {
   return rendererInvoke<MusicAccountStatus>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_status)
 }
-export const addQQFavoriteSong = async(songMid: string, action: QQFavoriteRequest['action'] = 'add') => {
-  return rendererInvoke<QQFavoriteRequest, QQFavoriteResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_favorite_add, { songMid, action })
+export const addQQFavoriteSong = async(songMid: string, action: QQFavoriteRequest['action'] = 'add', playlistId?: string) => {
+  return rendererInvoke<QQFavoriteRequest, QQFavoriteResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_qq_favorite_add, { songMid, action, playlistId })
 }
 export const loginMusicAccount = async(provider: MusicAccountProvider) => {
   return rendererInvoke<MusicAccountProvider, MusicAccountLoginResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_login, provider)
@@ -196,6 +201,11 @@ export interface CloudTrackInfo {
   playlist: string
 }
 export const getCloudConfig = async() => rendererInvoke<Partial<CloudConfigInput> & { configured: boolean }>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_config_get)
+export const generateCloudBackupKey = async() => rendererInvoke<string>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_key)
+export const listCloudBackups = async() => rendererInvoke<string[]>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_list)
+export const uploadCloudBackup = async(password: string, selected: SnapshotSelection) => rendererInvoke<{ password: string, selected: SnapshotSelection }, string>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_upload, { password, selected })
+export const previewCloudBackup = async(id: string, password: string) => rendererInvoke<{ id: string, password: string }, ReturnType<typeof snapshotSummary> & { token: string }>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_preview, { id, password })
+export const restoreCloudBackup = async(token: string, selected: SnapshotSelection) => rendererInvoke<{ token: string, selected: SnapshotSelection }, ReturnType<typeof snapshotSummary>>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_restore, { token, selected })
 export const saveCloudConfig = async(config: CloudConfigInput) => rendererInvoke<CloudConfigInput, Partial<CloudConfigInput> & { configured: boolean }>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_config_save, config)
 export const selectCloudProvider = async(provider: CloudConfigInput['provider']) => rendererInvoke<CloudConfigInput['provider'], Partial<CloudConfigInput> & { configured: boolean }>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_config_select, provider)
 export const getSavedCloudPassword = async() => rendererInvoke<string>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_password_get)
