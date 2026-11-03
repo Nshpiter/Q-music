@@ -222,3 +222,21 @@ test('无效的列表播放请求不清空播放会话或修改当前列表', as
   assert.equal(h.playbackSession.history.length, before)
   assert.equal(h.state.playInfo.playerListId, 'test')
 })
+
+test('连续选集忽略随机历史，并按顺序下一集、上一集且不改用户模式', async() => {
+  const h = harness()
+  h.request(async() => 'https://example.test/audio.mp3')
+  h.setting['player.togglePlayMethod'] = 'random'
+  h.state.playedList.push({ listId: 'test', musicInfo: h.tracks[0], isTempPlay: false }, { listId: 'test', musicInfo: h.tracks[3], isTempPlay: false })
+  h.filter(async ({ playedList }) => { assert.equal(playedList.length, 0); return {filteredList:h.tracks, playerIndex:h.state.playInfo.playerPlayIndex} })
+  await h.api.playList('test', 0, true)
+  await h.api.playNext()
+  assert.equal(h.state.playMusicInfo.musicInfo.id, 'two')
+  await h.api.playNext()
+  assert.equal(h.state.playMusicInfo.musicInfo.id, 'three')
+  await h.api.playPrev()
+  assert.equal(h.state.playMusicInfo.musicInfo.id, 'two')
+  await h.api.playNext()
+  assert.equal(h.state.playMusicInfo.musicInfo.id, 'three')
+  assert.equal(h.setting['player.togglePlayMethod'], 'random')
+})

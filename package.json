@@ -1,6 +1,6 @@
 {
   "name": "q-music",
-  "version": "0.4.31",
+  "version": "0.4.32",
   "description": "一个免费的音乐查找助手",
   "main": "./dist/main.js",
   "private": true,
@@ -67,7 +67,7 @@
     "build:renderer": "cross-env NODE_ENV=production webpack --config build-config/renderer/webpack.config.prod.js --progress",
     "build:renderer-lyric": "cross-env NODE_ENV=production webpack --config build-config/renderer-lyric/webpack.config.prod.js --progress",
     "build:renderer-scripts": "cross-env NODE_ENV=production webpack --config build-config/renderer-scripts/webpack.config.prod.js --progress",
-    "test": "node --no-warnings --test --experimental-strip-types test/search/musicRanking.test.mts test/releaseMetadata.test.mts test/releasePlatform.test.mts test/music/translationMatch.test.mts test/cloudLibrary.test.mts test/updateNetwork.test.cjs test/musicAccounts.test.cjs test/officialAccountLogin.test.cjs test/qqPlaylistSync.test.cjs test/accountTransfer.test.cjs test/browseNavigation.test.cjs test/themeAppearance.test.cjs test/listSelection.test.cjs test/playlistDrag.test.cjs test/playbackRecovery.test.cjs test/dailyRecommendPolicy.test.mts test/accountAvailability.test.cjs test/audioPlayback.test.cjs test/macosPackaging.test.cjs test/userApiFallback.test.cjs test/userApiRuntime.test.cjs test/userApiRouting.test.cjs test/userApiImport.test.cjs test/playlistImport.test.cjs test/neteaseFavorite.test.cjs test/kugouFavorite.test.cjs test/artworkDiscovery.test.cjs test/bilibili.test.cjs test/playbackSession.test.cjs test/playlistTargets.test.cjs test/cloudSnapshot.test.cjs test/cloudConfigBackup.test.cjs",
+    "test": "node --no-warnings --test --experimental-strip-types test/search/musicRanking.test.mts test/releaseMetadata.test.mts test/releasePlatform.test.mts test/music/translationMatch.test.mts test/cloudLibrary.test.mts test/updateNetwork.test.cjs test/musicAccounts.test.cjs test/officialAccountLogin.test.cjs test/qqPlaylistSync.test.cjs test/accountTransfer.test.cjs test/browseNavigation.test.cjs test/themeAppearance.test.cjs test/listSelection.test.cjs test/playlistDrag.test.cjs test/playbackRecovery.test.cjs test/dailyRecommendPolicy.test.mts test/accountAvailability.test.cjs test/audioPlayback.test.cjs test/macosPackaging.test.cjs test/userApiFallback.test.cjs test/userApiRuntime.test.cjs test/userApiRouting.test.cjs test/userApiImport.test.cjs test/playlistImport.test.cjs test/neteaseFavorite.test.cjs test/kugouFavorite.test.cjs test/artworkDiscovery.test.cjs test/bilibili.test.cjs test/playbackSession.test.cjs test/playlistTargets.test.cjs test/cloudSnapshot.test.cjs test/cloudConfigBackup.test.cjs test/lyricStatus.test.cjs",
     "lint": "eslint --ext .ts,.js,.vue -f node_modules/eslint-formatter-friendly src",
     "lint:fix": "eslint --ext .ts,.js,.vue -f node_modules/eslint-formatter-friendly --fix src",
     "postinstall": "electron-builder install-app-deps",

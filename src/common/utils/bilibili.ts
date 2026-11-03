@@ -46,6 +46,18 @@ const format = (item: Record<string, any>, part?: Record<string, any>) => {
 export const createBilibiliClient = (request: Request) => {
   let fingerprint: { cookie: string, expires: number } | undefined
   let fingerprintTask: Promise<string> | undefined
+  const cache = new Map<string, { value: Record<string, any>, expires: number }>()
+  const readVideo = async(bvid: string, signal?: AbortSignal) => {
+    if (signal?.aborted) throw new Error('cancelled')
+    const key = 'video:' + bvid
+    const saved = cache.get(key)
+    if (saved && saved.expires > Date.now()) return saved.value
+    const value = await call('/x/web-interface/view', { bvid }, signal)
+    if (!Array.isArray(value.pages) || !value.pages.length) throw new Error('Bilibili: invalid_pages')
+    cache.set(key, { value, expires: Date.now() + 300_000 })
+    if (cache.size > 80) cache.delete(cache.keys().next().value!)
+    return value
+  }
   const call = async(path: string, params: Record<string, unknown>, signal?: AbortSignal, cookie = '') => {
     if (signal?.aborted) throw new Error('cancelled')
     const query = Object.entries(params).map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`).join('&')
@@ -76,7 +88,7 @@ export const createBilibiliClient = (request: Request) => {
   const videoContents = async(id: string, signal?: AbortSignal) => {
     const bvid = id.split(':')[0]
     if (!bvidPattern.test(bvid)) throw new Error('Bilibili: invalid_track')
-    const data = await call('/x/web-interface/view', { bvid }, signal)
+    const data = await readVideo(bvid, signal)
     if (!Array.isArray(data.pages) || !data.pages.length || data.pages.some((part: Record<string, any>) => !Number.isSafeInteger(part.cid) || part.cid <= 0)) throw new Error('Bilibili: invalid_pages')
     const parts: Array<ReturnType<typeof format>> = data.pages.map((part: Record<string, any>) => format({ ...data, bvid }, part))
     const season = data.ugc_season
@@ -106,20 +118,21 @@ export const createBilibiliClient = (request: Request) => {
     }
     const matched = /^(?:https?:\/\/(?:www\.)?bilibili\.com\/video\/)?(BV[0-9A-Za-z]{10})(?:\/?(?:[?#].*)?)$/.exec(input.trim())
     if (!matched) throw new Error('invalid_link')
-    const data = await call('/x/web-interface/view', { bvid: matched[1] }, signal)
+    const data = await readVideo(matched[1], signal)
     if (!Array.isArray(data.pages) || data.pages.some((part: Record<string, any>) => !Number.isSafeInteger(part.cid) || part.cid <= 0)) throw new Error('Bilibili: invalid_pages')
     const list: Array<ReturnType<typeof format>> = data.pages.slice((page - 1) * limit, page * limit).map((part: Record<string, any>) => format(data, part))
     return { list, total: data.pages.length, limit, page, allPage: Math.ceil(data.pages.length / limit), source: 'bi', info: { name: clean(data.title) }, incomplete: false }
   }
-  const importCollection = async(input: string, progress?: (current: number, total: number) => void, shouldCancel?: () => boolean) => {
+  const importCollection = async(input: string, progress?: (current: number, total: number) => void, shouldCancel?: () => boolean, signal?: AbortSignal) => {
+    const isCancelled = () => signal?.aborted === true || shouldCancel?.() === true
     const list: Array<ReturnType<typeof format>> = []
     const seen = new Set<string>()
     let name = ''
     let total = 0
     for (let page = 1; page <= 500; page++) {
-      if (shouldCancel?.()) throw new Error('cancelled')
-      const result = await collection(input, page, 30)
-      if (shouldCancel?.()) throw new Error('cancelled')
+      if (isCancelled()) throw new Error('cancelled')
+      const result = await collection(input, page, 30, signal)
+      if (isCancelled()) throw new Error('cancelled')
       if (page == 1) { name = result.info.name; total = result.total }
       if (result.incomplete || total != result.total) throw new Error('incomplete')
       for (const item of result.list) {
@@ -137,20 +150,27 @@ export const createBilibiliClient = (request: Request) => {
     if (parseBilibiliCollection(keyword)) return collection(keyword, page, limit, signal)
     const matched = /(?:^|\/)(BV[0-9A-Za-z]{10})(?:$|[/?#:])/.exec(keyword.trim())
     if (matched) {
-      const data = await call('/x/web-interface/view', { bvid: matched[1] }, signal)
+      const data = await readVideo(matched[1], signal)
       if (!Array.isArray(data.pages)) throw new Error('Bilibili: invalid_pages')
       const pages: Array<Record<string, any>> = data.pages
       return { list: pages.slice((page - 1) * limit, page * limit).map(part => format(data, part)), total: pages.length, allPage: Math.ceil(pages.length / limit), limit, source: 'bi' }
     }
+    const cacheKey = 'search:' + JSON.stringify([keyword.trim(), page, limit])
+    const cached = cache.get(cacheKey)
+    if (signal?.aborted) throw new Error('cancelled')
+    if (cached && cached.expires > Date.now()) return cached.value as { list: Array<ReturnType<typeof format>>, total: number, allPage: number, limit: number, source: string }
     const data = await call('/x/web-interface/search/type', { search_type: 'video', keyword, page, page_size: limit }, signal, await getFingerprint())
     if (!Array.isArray(data.result)) throw new Error('Bilibili: invalid_search')
     const results: Array<Record<string, any>> = data.result
-    return { list: results.filter(item => bvidPattern.test(String(item.bvid))).map(item => format(item)), total: Number(data.numResults) || 0, allPage: Number(data.numPages) || 0, limit, source: 'bi' }
+    const result = { list: results.filter(item => bvidPattern.test(String(item.bvid))).map(item => format(item)), total: Number(data.numResults) || 0, allPage: Number(data.numPages) || 0, limit, source: 'bi' }
+    cache.set(cacheKey, { value: result, expires: Date.now() + 30_000 })
+    if (cache.size > 80) cache.delete(cache.keys().next().value!)
+    return result
   }
   const playback = async(id: string, signal?: AbortSignal) => {
     const [bvid, rawCid] = id.split(':')
     if (!bvidPattern.test(bvid) || !/^\d+$/.test(rawCid ?? '')) throw new Error('Bilibili: invalid_track')
-    const detail = await call('/x/web-interface/view', { bvid }, signal)
+    const detail = await readVideo(bvid, signal)
     const pages: Array<Record<string, any>> = detail.pages
     if (!Array.isArray(pages)) throw new Error('Bilibili: invalid_pages')
     const part = rawCid == '0' ? pages[0] : pages.find(item => String(item.cid) == rawCid)
@@ -166,5 +186,5 @@ export const createBilibiliClient = (request: Request) => {
     if (!url) throw new Error('Bilibili: audio_unavailable')
     return { url, quality: '192k' as const }
   }
-  return { search, suggest, videoContents, playback, collection, importCollection }
+  return { search, suggest, videoContents, playback, collection, importCollection, prepareSearch: getFingerprint }
 }

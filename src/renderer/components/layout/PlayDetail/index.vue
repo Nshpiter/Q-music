@@ -27,8 +27,6 @@ transition(enter-active-class="q-detail-enter-active" leave-active-class="q-deta
               button(v-for="(singer, index) in singers" :key="`${singer}:${index}`" type="button" :class="$style.metadataLink" :title="$t('player__search_artist', { name: singer })" @click="openMetadata('music', singer)") {{ singer }}
             p(v-if="musicInfo.album")
               button(type="button" :class="$style.metadataLink" :title="$t('player__open_album', { name: musicInfo.album })" @click="openMetadata('album', musicInfo.album)") {{ musicInfo.album }}
-        div(v-if="currentTrack?.source == 'bi'" :class="$style.episodeAction")
-          BilibiliPartsButton(:music="currentTrack" player :dark="appSetting['playDetail.style.layout'] == 'immersive'")
 
       LyricPlayer(:comment-layout-visible="isCommentLayoutVisible" :comment-layout-settling="isCommentLayoutSettling")
       button(
@@ -69,7 +67,6 @@ import MusicComment from './components/MusicComment/index.vue'
 import ControlBtnsLeftHeader from './ControlBtnsLeftHeader.vue'
 import ControlBtnsRightHeader from './ControlBtnsRightHeader.vue'
 import EmptyCoverMark from '@renderer/components/common/EmptyCoverMark.vue'
-import BilibiliPartsButton from '@renderer/components/common/BilibiliPartsButton.vue'
 import { registerAutoHideMounse, unregisterAutoHideMounse } from './autoHideMounse'
 import { appSetting } from '@renderer/store/setting'
 import { closeWindow, maxWindow, minWindow, setFullScreen } from '@renderer/utils/ipc'
@@ -115,16 +112,11 @@ export default {
     ControlBtnsLeftHeader,
     ControlBtnsRightHeader,
     EmptyCoverMark,
-    BilibiliPartsButton,
     LyricPlayer,
     MusicComment,
   },
   setup() {
     const router = useRouter()
-    const currentTrack = computed(() => {
-      const song = playMusicInfo.musicInfo
-      return song && 'progress' in song ? song.metadata.musicInfo : song
-    })
     const singers = computed(() => musicInfo.singer?.split('、').map(name => name.trim()).filter(Boolean) || [])
     const openMetadata = async(type, text) => {
       if (!text?.trim()) return
@@ -604,7 +596,6 @@ export default {
 
 
     return {
-      currentTrack,
       singers,
       openMetadata,
       appSetting,
@@ -1270,8 +1261,6 @@ export default {
     }
   }
 }
-.episodeAction { width: min(100%, 430px); box-sizing: border-box; padding: 10px 8px 0; flex: none; }
-.classic .episodeAction { text-align: center; }
 
 
 .comment {

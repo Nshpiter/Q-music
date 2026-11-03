@@ -7,7 +7,7 @@ import { getQQCredentials, getQQRequestComm, getQQWebRequestComm } from '@common
 import { signQQRequest } from '@common/utils/qqSign'
 import { collectQQPlaylistIds } from '@common/utils/qqPlaylist'
 import { type QQFavoriteRequest, type QQFavoriteResult } from '@common/types/qqFavorite'
-import { isQQPlaylistId, resolveQQPlaylistTarget, checkQQPlaylistSong } from '@common/utils/qqPlaylistTarget'
+import { isQQPlaylistId, resolveQQPlaylistTarget, checkQQPlaylistSong, getQQPlaylistTargets } from '@common/utils/qqPlaylistTarget'
 import { createNeteaseFavoriteClient } from '@common/utils/neteaseFavorite'
 import { closeOfficialAccountLogin, openOfficialAccountLogin } from './officialAccountLogin'
 import { allowAccountLoginNavigation, upgradeAccountLoginNavigation } from './accountLoginNavigation'
@@ -1299,14 +1299,23 @@ export const getMusicAccountStatus = async(): Promise<MusicAccountStatus> => {
   }
 }
 
-export const getMusicAccountPlaylists = async(provider: MusicAccountProvider): Promise<MusicAccountPlaylistsResult> => {
-  const validation = await validateMusicAccount(provider)
+export const getMusicAccountPlaylists = async(provider: MusicAccountProvider, ownedOnly = false): Promise<MusicAccountPlaylistsResult> => {
+  const validation = ownedOnly && provider == 'tx' ? { connected: true, state: 'connected' } : await validateMusicAccount(provider)
   if (!validation.connected) return { provider, playlists: [], status: validation.state == 'unavailable' ? 'unavailable' : 'login_required' }
   try {
     if (provider == 'kg') return { provider, playlists: await getKugouPlaylists(), status: 'available' }
     if (provider == 'tx') {
-      const { uin, cookies } = await getQQAccountCredentials()
+      const { uin, authst, cookies } = await getQQAccountCredentials()
+      if (!uin || !authst) return { provider, playlists: [], status: 'login_required' }
       const account = qqAccountIdentity(cookies)
+      if (ownedOnly) {
+        const targets = await getQQPlaylistTargets(uin, async(name, module, method, param) => {
+          const result = await requestQQMusicU<Record<string, { data: Record<string, any> }>>({ [name]: { module, method, param } }, undefined, account)
+          return result[name].data
+        })
+        if (qqAccountIdentity((await getQQAccountCredentials()).cookies) != account) throw new Error('account_changed')
+        return { provider, status: 'available', playlists: targets.map(item => ({ ...item, trackCount: item.count, creator: '', accountId: qqAccountId(cookies) })) }
+      }
       const encryptedUin = await getQQEncryptedUin()
       if (!encryptedUin) {
         return { provider, playlists: [], status: await resolveQQAccountFailureStatus() }

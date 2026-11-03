@@ -1226,7 +1226,7 @@
   "bili_video_parts": "Video parts",
   "bili_collection": "Collection",
   "bili_single_part": "This video has one part only.",
-  "bili_play_hint": "Choose an episode to play. Parts queue the full video; collections queue this page.",
+  "bili_play_hint": "Play in collection order, including subsequent pages.",
   "bili_loading": "Loading episodes…",
   "bili_load_failed": "Could not load episodes. Please try again.",
   "bili_play": "Play",
@@ -1238,5 +1238,6 @@
   "bili_no_parts": "No matching parts",
   "bili_playing": "Playing",
   "bili_current": "Current track",
-  "bili_play_hint_add": "Play the selected part now and keep your existing queue."
+  "bili_play_hint_add": "Play the selected part now and keep your existing queue.",
+  "player__instrumental": "Instrumental · Enjoy the music"
 }

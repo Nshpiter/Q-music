@@ -21,7 +21,6 @@
         <div :class="$style.trackTitle">{{ title || status }}</div>
         <div :class="$style.trackMetaRow">
           <div :class="$style.trackMeta">{{ artist }}</div>
-          <BilibiliPartsButton v-if="currentTrack?.source == 'bi'" :music="currentTrack" player :dark="isImmersiveDetail" />
         </div>
       </div>
     </div>
@@ -88,14 +87,13 @@
 <script setup>
 import { playNext, playPrev, togglePlay } from '@renderer/core/player'
 import { computed } from '@common/utils/vueTools'
-import { status, isPlay, isPlayPending, isShowPlayComment, isShowPlayQueue, musicInfo, playMusicInfo, tempPlayList } from '@renderer/store/player/state'
+import { status, isPlay, isPlayPending, isShowPlayComment, isShowPlayQueue, musicInfo, tempPlayList } from '@renderer/store/player/state'
 import { setMusicInfo, setShowPlayerDetail, setShowPlayQueue } from '@renderer/store/player/action'
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
 import { appSetting } from '@renderer/store/setting'
 
 import ControlBtns from './PlayDetail/components/ControlBtns.vue'
 import EmptyCoverMark from '@renderer/components/common/EmptyCoverMark.vue'
-import BilibiliPartsButton from '@renderer/components/common/BilibiliPartsButton.vue'
 
 const props = defineProps({
   detail: {
@@ -115,10 +113,6 @@ const {
 // 歌手已在第二行单独展示，标题只显示歌名，避免拼接后被截断
 const title = computed(() => musicInfo.name || '')
 const artist = computed(() => musicInfo.singer || status.value || '')
-const currentTrack = computed(() => {
-  const song = playMusicInfo.musicInfo
-  return song && 'progress' in song ? song.metadata.musicInfo : song
-})
 const queueBadgeText = computed(() => tempPlayList.length > 99 ? '99+' : String(tempPlayList.length))
 const isImmersiveDetail = computed(() => props.detail && appSetting['playDetail.style.layout'] == 'immersive')
 

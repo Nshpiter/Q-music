@@ -85,7 +85,7 @@ export default {
       const current = generation
       loadingTargets.value = true; targetError.value = ''
       try {
-        const result = await getMusicAccountPlaylists(provider.value)
+        const result = await getMusicAccountPlaylists(provider.value, true)
         if (current != generation) return
         if (result.status != 'available') {
           targetError.value = result.status == 'verification_required' ? 'kugou__verification_required' : 'favorite_destination_' + (result.status == 'login_required' ? 'login' : 'error')

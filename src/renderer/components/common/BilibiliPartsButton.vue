@@ -119,10 +119,19 @@ const open = async() => {
   } catch { if (!current.signal.aborted) { error.value = true; loading.value = false } }
 }
 const play = async(index) => {
-  // 多 P 使用完整分 P 队列；跨视频合集只使用当前明确展示的一页。
-  const tracks = mode.value == 'parts' ? contents.value.parts : list.value
-  const selected = mode.value == 'parts' ? contents.value.parts.indexOf(list.value[index]) : index
-  try { await playFromPage(`bilibili:${props.music.id}:${mode.value}:${page.value}`, tracks.map(toNewMusicInfo), selected); close() } catch { error.value = true }
+  if (loading.value) return
+  const chosen = list.value[index]?.songmid
+  if (!chosen) return
+  const current = controller = new AbortController()
+  loading.value = true
+  try {
+    const tracks = mode.value == 'parts' ? contents.value.parts : (await bilibiliClient.importCollection(contents.value.collection.url, undefined, undefined, current.signal)).list
+    if (current.signal.aborted) return
+    const selected = tracks.findIndex(item => item.songmid == chosen)
+    if (selected < 0) throw new Error('part_removed')
+    await playFromPage('bilibili:' + props.music.id + ':' + mode.value, tracks.map(toNewMusicInfo), selected, true)
+    close()
+  } catch { if (!current.signal.aborted) error.value = true } finally { if (!current.signal.aborted) loading.value = false }
 }
 watch(() => String(props.music.meta.songId).split(':')[0], close)
 onBeforeUnmount(close)

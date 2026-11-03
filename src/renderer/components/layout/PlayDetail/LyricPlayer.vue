@@ -6,7 +6,7 @@
     </div>
     <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
       <div
-        v-show="!isShowLrcSelectContent"
+        v-show="!isShowLrcSelectContent && !instrumental"
         ref="dom_lyric"
         :class="['lyric', $style.lyric, { [$style.draging]: isMsDown }, { [$style.lrcActiveZoom]: isZoomActiveLrc }]" :style="lrcStyles"
         @wheel="handleWheel" @mousedown="handleLyricMouseDown" @touchstart="handleLyricTouchStart"
@@ -24,7 +24,7 @@
         <circle cx="6" cy="18" r="3" />
         <circle cx="16" cy="16" r="3" />
       </svg>
-      <p>{{ $t('player__no_lyric') }}</p>
+      <p>{{ $t(instrumental ? 'player__instrumental' : 'player__no_lyric') }}</p>
     </div>
     <teleport to="#root">
       <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
@@ -75,6 +75,7 @@
 </template>
 
 <script>
+import { isInstrumental } from '@common/utils/lyricStatus'
 import { clipboardWriteText } from '@common/utils/electron'
 import { lyric } from '@renderer/store/player/lyric'
 import { playProgress } from '@renderer/store/player/playProgress'
@@ -105,7 +106,8 @@ export default {
     commentLayoutSettling: Boolean,
   },
   setup(props) {
-    const isShowNoLyric = computed(() => !!playerMusicInfo.id && !lyric.lines.length && !isShowLrcSelectContent.value)
+    const instrumental = computed(() => isInstrumental({ title: playerMusicInfo.name, lyric: playerMusicInfo.lrc }))
+    const isShowNoLyric = computed(() => !!playerMusicInfo.id && (!lyric.lines.length || instrumental.value) && !isShowLrcSelectContent.value)
     const isZoomActiveLrc = computed(() => appSetting['playDetail.isZoomActiveLrc'])
     const isShowLyricProgressSetting = computed(() => appSetting['playDetail.isShowLyricProgressSetting'])
     const isCommentLayoutVisible = computed(() => props.commentLayoutVisible || isShowPlayComment.value)
@@ -259,6 +261,7 @@ export default {
     return {
       appSetting,
       isShowNoLyric,
+      instrumental,
       dom_lyric,
       dom_lyric_text,
       dom_skip_line,
@@ -745,6 +748,10 @@ export default {
 }
 
 .immersive {
+  .noLyric {
+    color: rgba(255, 255, 255, .72);
+  }
+
   .lyricSelectContent {
     color: rgba(255, 255, 255, .62);
     border: 1px solid rgba(255, 255, 255, .1);

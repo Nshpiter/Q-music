@@ -281,6 +281,7 @@ export default songmid => {
   })
   requestObj.promise = requestObj.promise.then(({ body }) => {
     // console.log(body)
+    if (body.code === 200 && body.nolyric === true) return { lyric: '[00:00.00]纯音乐，请欣赏', tlyric: '', rlyric: '', lxlyric: '' }
     if (body.code !== 200 || !body?.lrc?.lyric) return Promise.reject(new Error('Get lyric failed'))
     const fixTimeLabelLrc = fixTimeLabel(body.lrc.lyric, body.tlyric?.lyric, body.romalrc?.lyric)
     const info = parseTools.parse(body.yrc?.lyric, body.ytlrc?.lyric, body.yromalrc?.lyric, fixTimeLabelLrc.lrc, fixTimeLabelLrc.tlrc, fixTimeLabelLrc.romalrc)

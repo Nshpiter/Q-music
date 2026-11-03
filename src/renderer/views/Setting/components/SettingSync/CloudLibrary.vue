@@ -5,7 +5,7 @@ dd
     div(v-if="fromList" :class="$style.cloudHeaderActions")
       base-btn.btn(min @click="backToList") 返回列表
       button(type="button" :class="$style.cloudClose" aria-label="关闭云端曲库" title="关闭云端曲库" @click="backToList") ×
-  .p.small 上传本地歌曲，在其他设备按歌单或歌曲导入。
+  .p.small 云端歌曲用于上传与导入音乐；设置与音源用于跨设备迁移配置、音源脚本和可选的登录状态。
   button(type="button" :class="$style.configToggle" :aria-expanded="showConfig" @click="showConfig = !showConfig")
     span {{ config.provider == 's3' ? 'S3 / 兼容 S3' : 'WebDAV' }} · {{ hasConfigChanges ? '有修改待保存' : configured ? '已保存连接' : '请设置连接' }}
     span {{ showConfig ? '收起设置' : '编辑连接' }}
@@ -23,7 +23,9 @@ dd
       .p(:class="$style.row")
         span 存储桶
         base-input(:class="$style.input" :model-value="config.bucket" @update:model-value="config.bucket = $event")
-    .p(:class="$style.row")
+    .p
+      base-btn.btn(min @click="advanced = !advanced") {{ advanced ? '收起高级设置' : '高级设置 · 可选' }}
+    .p(v-show="advanced" :class="$style.row")
       span 云端目录
       base-input(:class="$style.input" :model-value="config.prefix" placeholder="qmusic" @update:model-value="config.prefix = $event")
     .p(:class="$style.row")
@@ -37,40 +39,47 @@ dd
           svg-icon(:name="secretVisible ? 'eye-off' : 'eye'")
     .p
       base-btn.btn(min :disabled="busy" @click="saveConfig") 保存配置
-  CloudConfigBackup(:disabled="busy || !configured || hasConfigChanges" :connection="JSON.stringify(config)" @busy="busy = $event")
-  .p(:class="$style.row")
-    span 端到端口令
-    div(:class="$style.passwordField")
-      input(v-model="password" :disabled="busy" :class="$style.passwordInput" :type="passwordVisible ? 'text' : 'password'" autocomplete="off" placeholder="可选，至少 8 个字符；两端保持相同" @input="resetTracks")
-      button(type="button" :class="$style.eyeButton" :aria-label="passwordVisible ? '隐藏口令' : '显示口令'" :title="passwordVisible ? '隐藏口令' : '显示口令'" @click="passwordVisible = !passwordVisible")
-        svg-icon(:name="passwordVisible ? 'eye-off' : 'eye'")
-    base-btn.btn(min :disabled="busy || password.length < 8 || password === savedPassword" @click="savePassword") 保存口令
-    base-btn.btn(v-if="savedPassword" min :disabled="busy" @click="clearPassword") 清除
-  .p(:class="$style.row")
-    span 上传到歌单
-    base-input(:disabled="busy" :class="$style.input" :model-value="uploadPlaylist" @update:model-value="uploadPlaylist = $event")
-  .p.small 当前模式：{{ password ? '端到端加密' : '免口令' }}。两种模式的云端目录相互独立。
-  .p
-    base-btn.btn(min :disabled="busy || !canUse" @click="uploadFiles") 上传歌曲
-    base-btn.btn.gap-left(min :disabled="busy || !canUse" @click="refreshTracks") {{ loaded ? '刷新云端歌曲' : '连接并查看歌曲' }}
-  .p.small(v-if="hasConfigChanges" :class="$style.hint") 请先保存连接设置，再查看或上传歌曲。
-  .p.small(v-if="status" :class="[$style.status, statusKind == 'error' ? $style.error : null]" :role="statusKind == 'error' ? 'alert' : 'status'" aria-live="polite") {{ status }}
-  .p(v-if="tracks.length" :class="$style.searchRow")
-    base-input(:model-value="query" placeholder="搜索歌曲、歌手或歌单" aria-label="搜索云端歌曲" @update:model-value="query = $event")
-  .p(v-if="tracks.length" :class="$style.actions")
-    span(:class="$style.selectionCount") 已选 {{ selectedIds.length }}/{{ tracks.length }} 首
-    base-btn.btn(min :disabled="busy || !visibleTracks.length" @click="toggleAll") {{ allVisibleSelected ? '取消当前选择' : query ? '选中搜索结果' : '全选' }}
-    base-btn.btn(min :disabled="busy || !canUse || !selectedIds.length" @click="importSelected('playlist')") 导入歌单
-    base-btn.btn.gap-left(min :disabled="busy || !canUse || !selectedIds.length" @click="importSelected('songs')") 导入歌曲
-    base-btn.btn.gap-left(v-if="importedListId" min @click="openImportedList") 查看导入结果
-  div(v-if="tracks.length" :class="$style.trackList")
-    label(v-for="track in visibleTracks" :key="track.id" :class="[$style.track, selectedIds.includes(track.id) ? $style.selectedTrack : null]")
-      input(v-model="selectedIds" type="checkbox" :value="track.id" :disabled="busy" :aria-label="`选择 ${track.name}`")
-      span(:class="$style.trackInfo")
-        strong {{ track.name }}
-        small {{ [track.singer, track.playlist].filter(Boolean).join(' · ') }}
-    .p.small(v-if="!visibleTracks.length" :class="$style.empty") 没有匹配的歌曲，试试其他关键词。
-  .p.small(v-else-if="loaded && !busy" :class="$style.empty") 云端还没有歌曲。上传本地歌曲后，便可在其他设备导入。
+  .p(:class="$style.row" role="tablist")
+    base-btn.btn(min :disabled="busy" :aria-selected="section == 'songs'" @click="section = 'songs'") 云端歌曲
+    base-btn.btn(min :disabled="busy" :aria-selected="section == 'backup'" @click="section = 'backup'") 设置与音源
+  CloudConfigBackup(v-show="section == 'backup'" :disabled="busy || !configured || hasConfigChanges" :connection="JSON.stringify(config)" @busy="busy = $event")
+  div(v-show="section == 'songs'")
+    .p
+      base-btn.btn(min @click="options = !options") {{ options ? '收起歌曲选项' : '歌曲选项 · 加密与上传位置' }}
+    div(v-show="options")
+      .p(:class="$style.row")
+        span 歌曲加密口令
+        div(:class="$style.passwordField")
+          input(v-model="password" :disabled="busy" :class="$style.passwordInput" :type="passwordVisible ? 'text' : 'password'" autocomplete="off" placeholder="可选，至少 8 个字符；两端保持相同" @input="resetTracks")
+          button(type="button" :class="$style.eyeButton" :aria-label="passwordVisible ? '隐藏口令' : '显示口令'" :title="passwordVisible ? '隐藏口令' : '显示口令'" @click="passwordVisible = !passwordVisible")
+            svg-icon(:name="passwordVisible ? 'eye-off' : 'eye'")
+        base-btn.btn(min :disabled="busy || password.length < 8 || password === savedPassword" @click="savePassword") 保存口令
+        base-btn.btn(v-if="savedPassword" min :disabled="busy" @click="clearPassword") 清除
+      .p(:class="$style.row")
+        span 上传到歌单
+        base-input(:disabled="busy" :class="$style.input" :model-value="uploadPlaylist" @update:model-value="uploadPlaylist = $event")
+      .p.small 当前模式：{{ password ? '端到端加密' : '免口令' }}。两种模式的云端目录相互独立。
+    .p
+      base-btn.btn(min :disabled="busy || !canUse" @click="uploadFiles") 上传歌曲
+      base-btn.btn.gap-left(min :disabled="busy || !canUse" @click="refreshTracks") {{ loaded ? '刷新云端歌曲' : '连接并查看歌曲' }}
+    .p.small(v-if="hasConfigChanges" :class="$style.hint") 请先保存连接设置，再查看或上传歌曲。
+    .p.small(v-if="status" :class="[$style.status, statusKind == 'error' ? $style.error : null]" :role="statusKind == 'error' ? 'alert' : 'status'" aria-live="polite") {{ status }}
+    .p(v-if="tracks.length" :class="$style.searchRow")
+      base-input(:model-value="query" placeholder="搜索歌曲、歌手或歌单" aria-label="搜索云端歌曲" @update:model-value="query = $event")
+    .p(v-if="tracks.length" :class="$style.actions")
+      span(:class="$style.selectionCount") 已选 {{ selectedIds.length }}/{{ tracks.length }} 首
+      base-btn.btn(min :disabled="busy || !visibleTracks.length" @click="toggleAll") {{ allVisibleSelected ? '取消当前选择' : query ? '选中搜索结果' : '全选' }}
+      base-btn.btn(min :disabled="busy || !canUse || !selectedIds.length" @click="importSelected('playlist')") 导入歌单
+      base-btn.btn.gap-left(min :disabled="busy || !canUse || !selectedIds.length" @click="importSelected('songs')") 导入歌曲
+      base-btn.btn.gap-left(v-if="importedListId" min @click="openImportedList") 查看导入结果
+    div(v-if="tracks.length" :class="$style.trackList")
+      label(v-for="track in visibleTracks" :key="track.id" :class="[$style.track, selectedIds.includes(track.id) ? $style.selectedTrack : null]")
+        input(v-model="selectedIds" type="checkbox" :value="track.id" :disabled="busy" :aria-label="`选择 ${track.name}`")
+        span(:class="$style.trackInfo")
+          strong {{ track.name }}
+          small {{ [track.singer, track.playlist].filter(Boolean).join(' · ') }}
+      .p.small(v-if="!visibleTracks.length" :class="$style.empty") 没有匹配的歌曲，试试其他关键词。
+    .p.small(v-else-if="loaded && !busy" :class="$style.empty") 云端还没有歌曲。上传本地歌曲后，便可在其他设备导入。
 </template>
 
 <script>
@@ -94,6 +103,9 @@ export default {
     const config = ref(emptyConfig('s3'))
     const savedConfig = ref(emptyConfig('s3'))
     const showConfig = ref(true)
+    const advanced = ref(false)
+    const options = ref(false)
+    const section = ref('songs')
     const secretVisible = ref(false)
     const drafts = new Map()
     const configured = ref(false)
@@ -269,7 +281,7 @@ export default {
     const backToList = () => { void router.push({ path: '/list' }) }
     const openImportedList = () => { void router.push({ path: '/list', query: { id: importedListId.value, from: 'cloud-library' } }) }
 
-    return { providers, config, configured, canUse, fromList, password, savedPassword, passwordVisible, uploadPlaylist, status, statusKind, busy, loaded, tracks, visibleTracks, query, allVisibleSelected, showConfig, secretVisible, hasConfigChanges, selectedIds, importedListId, resetTracks, changeProvider, saveConfig, savePassword, clearPassword, refreshTracks, toggleAll, uploadFiles, importSelected, backToList, openImportedList }
+    return { advanced, options, section, providers, config, configured, canUse, fromList, password, savedPassword, passwordVisible, uploadPlaylist, status, statusKind, busy, loaded, tracks, visibleTracks, query, allVisibleSelected, showConfig, secretVisible, hasConfigChanges, selectedIds, importedListId, resetTracks, changeProvider, saveConfig, savePassword, clearPassword, refreshTracks, toggleAll, uploadFiles, importSelected, backToList, openImportedList }
   },
 }
 </script>

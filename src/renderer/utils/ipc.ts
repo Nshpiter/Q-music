@@ -152,8 +152,8 @@ export const logoutMusicAccount = async(provider: MusicAccountProvider) => {
 export const getMusicAccountDaily = async(provider: MusicAccountProvider) => {
   return rendererInvoke<MusicAccountProvider, MusicAccountDailyResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_daily, provider)
 }
-export const getMusicAccountPlaylists = async(provider: MusicAccountProvider) => {
-  return rendererInvoke<MusicAccountProvider, MusicAccountPlaylistsResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playlists, provider)
+export const getMusicAccountPlaylists = async(provider: MusicAccountProvider, ownedOnly = false) => {
+  return rendererInvoke<MusicAccountProvider | { provider: MusicAccountProvider, ownedOnly: boolean }, MusicAccountPlaylistsResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playlists, ownedOnly ? { provider, ownedOnly } : provider)
 }
 export const getMusicAccountPlaylistDetail = async(provider: MusicAccountProvider, id: string) => {
   return rendererInvoke<{ provider: MusicAccountProvider, id: string }, MusicAccountPlaylistDetailResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playlist_detail, { provider, id })

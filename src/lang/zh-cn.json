@@ -1226,7 +1226,7 @@
   "bili_video_parts": "视频分 P",
   "bili_collection": "所属合集",
   "bili_single_part": "此视频只有 1 集，不含独立分 P。",
-  "bili_play_hint": "点选即可播放；分 P 连播整个视频，合集连播当前页。",
+  "bili_play_hint": "选集后按完整列表顺序连播，不受单曲插播影响。",
   "bili_loading": "正在读取选集…",
   "bili_load_failed": "读取失败，请稍后重试。",
   "bili_play": "播放",
@@ -1238,5 +1238,6 @@
   "bili_no_parts": "没有匹配的分 P",
   "bili_playing": "正在播放",
   "bili_current": "当前歌曲",
-  "bili_play_hint_add": "点选后立即播放该集，并保留现有播放队列。"
+  "bili_play_hint_add": "点选后立即播放该集，并保留现有播放队列。",
+  "player__instrumental": "纯音乐，请欣赏"
 }

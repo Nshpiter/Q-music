@@ -179,8 +179,8 @@ export default () => {
   mainHandle<MusicAccountProvider, MusicAccountDailyResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_daily, async({ params: provider }) => {
     return getMusicAccountDailySongIds(provider)
   })
-  mainHandle<MusicAccountProvider, MusicAccountPlaylistsResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playlists, async({ params: provider }) => {
-    return getMusicAccountPlaylists(provider)
+  mainHandle<MusicAccountProvider | { provider: MusicAccountProvider, ownedOnly: boolean }, MusicAccountPlaylistsResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playlists, async({ params }) => {
+    return typeof params == 'string' ? getMusicAccountPlaylists(params) : getMusicAccountPlaylists(params.provider, params.ownedOnly === true)
   })
   mainHandle<{ provider: MusicAccountProvider, id: string }, MusicAccountPlaylistDetailResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playlist_detail, async({ params }) => {
     return getMusicAccountPlaylistDetail(params.provider, params.id)
