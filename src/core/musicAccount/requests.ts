@@ -11,7 +11,7 @@ type Row = Record<string, any>
 export const fail = (reason = 'unavailable'): never => { throw new Error(reason) }
 export const checkCode = (code: unknown, success: number) => {
   if (code == null || Number(code) == success) return
-  fail([301, 401, 403, 1000, 104400, 104401].includes(Number(code)) ? 'login_required' : 'unavailable')
+  throw Object.assign(new Error([301, 401, 403, 1000, 104400, 104401].includes(Number(code)) ? 'login_required' : 'unavailable'), { platformCode: Number(code) })
 }
 export const openAccountSession = async(provider: MusicAccountProvider): Promise<AccountSession> => {
   if (provider == 'kg') fail('unavailable')
@@ -45,7 +45,7 @@ export const request = async(url: string, cookies: Record<string, string>, init:
       headers: { ...init.headers, Cookie: buildCookieHeader(cookies) },
       signal: controller.signal,
     })
-    if (!response.ok) fail(response.status == 401 ? 'login_required' : 'unavailable')
+    if (!response.ok) throw Object.assign(new Error(response.status == 401 ? 'login_required' : 'unavailable'), { platformCode: response.status })
     return await response.json()
   } finally {
     clearTimeout(timer)

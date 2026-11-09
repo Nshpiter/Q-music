@@ -1,4 +1,6 @@
 import { getQQCredentials } from './cookies'
+import { getQQAccountCatalog } from '@/utils/qqAccountCatalog'
+import { resolveQQPlaylistReadTarget, getQQPlaylistReadPage } from '@/utils/qqPlaylistTarget'
 import { request, qqRequest, wyRequest, fail, checkCode, openAccountSession, assertAccountSession } from './requests'
 import type { MusicAccountProvider } from './types'
 import qqSongList from '@/utils/musicSdk/tx/songList'
@@ -21,6 +23,7 @@ export interface PlaylistSession {
   provider: MusicAccountProvider
   owner: string
   encryptedUin: string
+  catalogPartial?: boolean
   cookies: Record<string, string>
 }
 type Row = Record<string, any>
@@ -35,12 +38,16 @@ export const openPlaylistSession = async(provider: MusicAccountProvider, signal?
   const session: PlaylistSession = { provider, cookies, owner: '', encryptedUin: '' }
   if (provider == 'tx') {
     session.owner = getQQCredentials(cookies).uin
-    const result = await request(`https://c6.y.qq.com/rsc/fcgi-bin/fcg_get_profile_homepage.fcg?ct=20&cv=4747474&cid=205360838&userid=${session.owner}`, cookies, {
-      headers: { Referer: 'https://y.qq.com/' },
-    }, signal)
-    checkCode(result.code, 0)
-    session.encryptedUin = String(result.data?.creator?.encrypt_uin ?? '')
-    if (!session.encryptedUin) fail()
+    try {
+      const result = await request(`https://c6.y.qq.com/rsc/fcgi-bin/fcg_get_profile_homepage.fcg?ct=20&cv=4747474&cid=205360838&userid=${session.owner}`, cookies, {
+        headers: { Referer: 'https://y.qq.com/' },
+      }, signal)
+      checkCode(result.code, 0)
+      session.encryptedUin = String(result.data?.creator?.encrypt_uin ?? '')
+    } catch (error) {
+      if (signal?.aborted === true || (error instanceof Error && ['login_required', 'account_changed', 'cancelled'].includes(error.message))) throw error
+      // 公开主页失败不等于登录失效，自建歌单仍使用音乐账号接口读取。
+    }
   } else {
     const result = await wyRequest(session, 'w/nuser/account/get', {}, signal)
     session.owner = String(result.profile?.userId ?? result.account?.id ?? '')
@@ -72,26 +79,13 @@ const qqPlaylist = (item: Row, kind: AccountPlaylist['kind']): AccountPlaylist =
     kind,
   }
 }
-const qqDetailCall = (session: PlaylistSession, id: string, offset: number, size = 100) => ({
-  module: 'music.srfDissInfo.DissInfo',
-  method: 'CgiGetDiss',
-  param: {
-    disstid: id.startsWith('dir:') ? 0 : Number(id),
-    dirid: id.startsWith('dir:') ? Number(id.slice(4)) : 0,
-    tag: true,
-    song_begin: offset,
-    song_num: size,
-    userinfo: true,
-    orderlist: true,
-    enc_host_uin: session.encryptedUin,
-  },
-})
 
 export const getAccountPlaylists = async(session: PlaylistSession, signal?: AbortSignal): Promise<AccountPlaylist[]> => {
   if (session.provider == 'kg') {
     if (!session.kugou) fail('login_required')
     const lists = await kugouApi.getPlaylists(session.kugou!, signal)
     await assertPlaylistSession(session)
+    if (signal?.aborted) fail('cancelled')
     return lists
   }
   const lists: AccountPlaylist[] = []
@@ -105,31 +99,16 @@ export const getAccountPlaylists = async(session: PlaylistSession, signal?: Abor
       if (!rows.length) fail('incomplete')
     }
   } else {
-    const favoriteCall = (offset: number) => ({ module: 'music.musicasset.PlaylistFavRead', method: 'CgiGetPlaylistFavInfo', param: { uin: session.encryptedUin, offset, size: 100 } })
-    const result = await qqRequest(session, {
-      created: { module: 'music.musicasset.PlaylistBaseRead', method: 'GetPlaylistByUin', param: { uin: session.owner } },
-      favorite: favoriteCall(0),
-      liked: qqDetailCall(session, 'dir:201', 0, 1),
-    }, signal)
-    if (!Array.isArray(result.created.data.v_playlist)) fail()
-    const created: Row[] = result.created.data.v_playlist
-    if (more(result.created.data.hasmore)) fail('incomplete')
-    lists.push(...created.map(item => qqPlaylist(item, 'created')))
-    const likedCount = result.liked.data.total_song_num ?? result.liked.data.songnum ?? result.liked.data.totalnum
-    const likedList = lists.find(item => item.id == 'dir:201')
-    if (likedList && likedCount != null) likedList.count = Number(likedCount)
-    if (!lists.some(item => item.id == 'dir:201')) lists.unshift({ id: 'dir:201', name: '我喜欢', cover: '', count: Number(result.liked.data.total_song_num ?? result.liked.data.songnum ?? result.liked.data.totalnum ?? 0), kind: 'created' })
-    let data: Row = result.favorite.data
-    let offset = 0
-    for (let page = 0; page < MAX_PAGES; page++) {
-      const rows: Row[] = data.v_list ?? data.v_playlist
-      if (!Array.isArray(rows)) fail()
-      lists.push(...rows.map(item => qqPlaylist(item, 'favorite')))
-      if (!more(data.hasmore)) return unique(lists.filter(item => item.id && item.name))
-      if (!rows.length) fail('incomplete')
-      offset += rows.length
-      data = (await qqRequest(session, { favorite: favoriteCall(offset) }, signal)).favorite.data
-    }
+    const catalog = await getQQAccountCatalog(session.owner, session.encryptedUin, async(name, module, method, param) => {
+      if (signal?.aborted) fail('cancelled')
+      return (await qqRequest(session, { [name]: { module, method, param } }, signal))[name].data
+    })
+    await assertPlaylistSession(session)
+    session.catalogPartial = catalog.warnings.length > 0
+    return unique([
+      ...catalog.created.map(item => qqPlaylist(item, 'created')),
+      ...catalog.favorite.map(item => qqPlaylist(item, 'favorite')),
+    ].filter(item => item.id && item.name))
   }
   return fail('incomplete')
 }
@@ -171,11 +150,17 @@ export const getAccountPlaylistTracks = async(session: PlaylistSession, id: stri
     if (tracks.length != ids.length) fail('incomplete')
     return tracks
   }
+  const read = async(name: string, module: string, method: string, param: Row) => {
+    if (signal?.aborted) fail('cancelled')
+    const key = name == 'targets' ? 'created' : name
+    return (await qqRequest(session, { [key]: { module, method, param } }, signal))[key].data
+  }
+  const target = await resolveQQPlaylistReadTarget(id, session.owner, read)
   const seen = new Set<string>()
   let offset = 0
   let expected: number | undefined
   for (let page = 0; page < MAX_PAGES; page++) {
-    const data = (await qqRequest(session, { detail: qqDetailCall(session, id, offset) }, signal)).detail.data
+    const data = await getQQPlaylistReadPage(target, session.encryptedUin, offset, read)
     const rows: Row[] = data.songlist ?? data.songList ?? data.track_list
     if (!Array.isArray(rows)) fail()
     const rawTotal = data.total_song_num ?? data.songnum ?? data.totalnum

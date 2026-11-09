@@ -219,6 +219,7 @@
   "account_lists_progress": "{current}/{total} · 正在同步「{name}」",
   "account_lists_result": "已同步 {success} 个歌单，失败 {failed} 个。",
   "account_lists_failed": "暂时无法读取平台歌单，请检查网络后重试。本地歌单未被替换。",
+  "account_lists_partial": "QQ 音乐部分歌单暂未读到，已显示成功读取的歌单。可重新加载其余歌单。",
   "account_lists_incomplete": "平台返回的歌曲不完整，本次未覆盖原歌单，请稍后重试。",
   "account_lists_login_expired": "登录已失效或账号已切换，请重新登录对应账号。",
   "account_lists_relogin": "重新登录",

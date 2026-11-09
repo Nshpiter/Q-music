@@ -31,6 +31,7 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
   const busy = syncing || verifying
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [partial, setPartial] = useState(false)
   const [lastListId, setLastListId] = useState('')
   const session = useRef<PlaylistSession>()
   const request = useRef<AbortController>()
@@ -38,7 +39,10 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
   const mounted = useRef(true)
   const errorText = useCallback((reason: unknown) => {
     const code = reason instanceof Error ? reason.message : ''
-    return t(code == 'verification_required' ? 'list_sync_verification_required' : code == 'login_required' || code == 'account_changed' ? 'account_lists_login_expired' : code == 'incomplete' ? 'account_lists_incomplete' : 'account_lists_failed')
+    const message = t(code == 'verification_required' ? 'list_sync_verification_required' : code == 'login_required' || code == 'account_changed' ? 'account_lists_login_expired' : code == 'incomplete' ? 'account_lists_incomplete' : 'account_lists_failed')
+    return reason instanceof Error && 'platformCode' in reason && typeof reason.platformCode == 'number' && Number.isFinite(reason.platformCode)
+      ? message + t('qq_favorite_error_code', { code: reason.platformCode })
+      : message
   }, [t])
 
   const load = useCallback(async() => {
@@ -48,6 +52,7 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
     setLoading(true)
     setError('')
     setMessage('')
+    setPartial(false)
     setLists([])
     session.current = undefined
     setSelected(new Set())
@@ -57,6 +62,7 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
       if (controller.signal.aborted || !mounted.current) return
       session.current = account
       setLists(playlists)
+      setPartial(!!account.catalogPartial)
     } catch (reason) {
       if (!controller.signal.aborted && mounted.current) setError(errorText(reason))
     } finally {
@@ -159,6 +165,7 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
     />}
     <View style={[styles.footer, { borderColor: theme['q-outline'], backgroundColor: theme['c-main-background'] }]}>
       {provider == 'kg' ? <KugouVerifyButton disabled={busy || loading} onBusy={value => { setVerifying(value); onBusyChange(value) }} onVerified={() => { void load() }} /> : null}
+      {partial && !error ? <View><Text accessibilityLiveRegion="polite" size={12} color={theme['q-text-secondary']} style={styles.feedback}>{t('account_lists_partial')}</Text><Button disabled={busy || loading} onPress={() => { void load() }} style={styles.smallButton}><Text size={12} color={theme['q-accent-text']}>{t('list_retry')}</Text></Button></View> : null}
       {message ? <Text accessibilityLiveRegion="polite" size={12} style={styles.feedback}>{message}</Text> : null}
       {error ? <View><Text accessibilityLiveRegion="polite" size={12} color={theme['q-text-secondary']} style={styles.feedback}>{error}</Text><View style={styles.actions}><Button disabled={busy} onPress={() => { void load() }} style={styles.smallButton}><Text size={12} color={theme['q-accent-text']}>{t('list_retry')}</Text></Button><Button disabled={busy} onPress={onLogin} style={styles.smallButton}><Text size={12} color={theme['q-accent-text']}>{t('account_lists_relogin')}</Text></Button></View></View> : null}
       <View style={styles.actions}>

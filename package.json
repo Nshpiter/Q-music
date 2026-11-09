@@ -1,7 +1,7 @@
 {
   "name": "q-music-mobile",
-  "version": "0.4.33",
-  "versionCode": 61,
+  "version": "0.4.34",
+  "versionCode": 62,
   "private": true,
   "scripts": {
     "test:cloud-config": "node --test scripts/verify-cloud-snapshot.cjs scripts/verify-cloud-config-restore.cjs",
@@ -32,7 +32,7 @@
     "build:theme": "node src/theme/themes/createThemes.js",
     "publish": "node publish",
     "test:accounts": "node --test scripts/verify-music-accounts.cjs scripts/verify-playlist-import.cjs scripts/verify-migu-playlist.cjs scripts/verify-netease-favorite.cjs scripts/verify-kugou-favorite.cjs",
-    "test:qq-sync": "node --test scripts/verify-qq-sync.cjs",
+    "test:qq-sync": "node --test scripts/verify-qq-sync.cjs scripts/verify-qq-catalog.cjs",
     "test:adaptive": "node --test scripts/verify-adaptive-layout.cjs scripts/verify-floating-navigation.cjs",
     "test:browse": "node --test scripts/verify-browse-navigation.cjs",
     "test:downloads": "node --test scripts/verify-download-actions.cjs",

@@ -219,6 +219,7 @@
   "account_lists_progress": "{current}/{total} · Syncing “{name}”",
   "account_lists_result": "Synced {success} playlists; {failed} failed.",
   "account_lists_failed": "Unable to read playlists. Check your connection and retry. Your local playlist was not replaced.",
+  "account_lists_partial": "Some QQ Music playlists could not be loaded. Available playlists are shown; retry to load the rest.",
   "account_lists_incomplete": "The platform returned an incomplete playlist. Your local playlist was not replaced. Try again later.",
   "account_lists_login_expired": "Your session expired or the account changed. Sign in to the matching account again.",
   "account_lists_relogin": "Sign in again",

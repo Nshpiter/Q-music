@@ -7,6 +7,8 @@ const crypto = require('node:crypto')
 const ts = require('typescript')
 const root = path.join(__dirname, '../src')
 function load(file, dependencies, globals = {}) {
+  if (file == 'core/musicAccount/playlists.ts') dependencies['@/utils/qqAccountCatalog'] = load('utils/qqAccountCatalog.ts', {})
+  if (file == 'core/musicAccount/playlists.ts') dependencies['@/utils/qqPlaylistTarget'] = load('utils/qqPlaylistTarget.ts', {})
   if (file == 'core/musicAccount/cookies.ts') {
     dependencies['./qqCredentials'] = load('core/musicAccount/qqCredentials.ts', {})
     dependencies['./qqImportedSession'] = { getQQImportedCookies: async () => null, clearQQImportedCookies: async () => {} }
@@ -159,10 +161,14 @@ async function main() {
     for (const [key, call] of Object.entries(calls)) {
       if (key === 'comm') continue
       let data
-      if (key === 'created') data = { v_playlist: [{ dirId: 201, dirName: '我喜欢' }, { tid: 99, dirName: '自建' }] }
+      if (key === 'created') data = { v_playlist: [{ dirId: 201, tid: 777, dirName: '我喜欢', songNum: 205 }, { tid: 99, dirName: '自建' }] }
       if (key === 'favorite') data = { v_list: [{ tid: call.param.offset + 100, title: '收藏歌单' }], hasmore: call.param.offset === 0 ? 1 : 0 }
       if (key === 'liked') data = { total_song_num: 205 }
       if (key === 'detail') {
+        assert.equal(call.param.disstid, 777)
+        assert.equal(call.param.dirid, 0)
+        assert.equal(call.method, 'uniform_get_Dissinfo')
+        assert.equal('enc_host_uin' in call.param, false)
         const start = call.param.song_begin
         const size = start === 200 && truncatedQQ ? 0 : Math.min(100, 205 - start)
         data = { total_song_num: 205, songlist: Array.from({ length: size }, (_, i) => qqTrack(start + i + 1)) }
@@ -176,6 +182,30 @@ async function main() {
   assert.equal(qqLists.length, 4)
   assert.equal(qqLists[0].id, 'dir:201')
   assert.equal(qqLists[0].count, 205)
+  const qqHandler = handler
+  handler = (url, init) => {
+    if (url.includes('profile_homepage')) throw new Error('network unavailable')
+    return qqHandler(url, init)
+  }
+  const noProfileSession = await api.openPlaylistSession('tx')
+  const ownLists = await api.getAccountPlaylists(noProfileSession)
+  assert.equal(ownLists.length, 2, '公开主页失败仍显示自建和我喜欢')
+  assert.equal(noProfileSession.catalogPartial, true, '不能把部分结果宣称完整')
+  const noProfileResult = await sync.syncAccountPlaylist(noProfileSession, ownLists[0])
+  assert.equal(noProfileResult.count, 205, '主页完全不可用时，也应按真实歌单 ID 完成所有分页和本地同步')
+  handler = (url, init) => {
+    if (url.includes('profile_homepage')) return qqHandler(url, init)
+    if (JSON.parse(init.body).favorite) throw new Error('network unavailable')
+    return qqHandler(url, init)
+  }
+  assert.equal((await api.getAccountPlaylists(qqSession)).length, 2, '收藏接口失败不遮住自建列表')
+  handler = (url, init) => {
+    if (url.includes('profile_homepage')) return qqHandler(url, init)
+    if (JSON.parse(init.body).favorite) return { code: 0, favorite: { code: 104401, data: {} } }
+    return qqHandler(url, init)
+  }
+  await assert.rejects(api.getAccountPlaylists(qqSession), /login_required/, '失效凭证不能伪装部分成功')
+  handler = qqHandler
   const qqResult = await sync.syncAccountPlaylist(qqSession, qqLists[0])
   assert.equal(qqResult.count, 205)
   assert.equal(storage.get(qqResult.id)[0].meta.strMediaMid, 'media1')
@@ -184,9 +214,9 @@ async function main() {
   await assert.rejects(sync.syncAccountPlaylist(qqSession, qqLists[0]), /incomplete/)
   assert.equal(storage.get(qqResult.id).length, 205)
   handler = () => ({ code: 0, detail: { code: 104401, data: {} } })
-  await assert.rejects(api.getAccountPlaylistTracks(qqSession, 'dir:201'), /login_required/)
+  await assert.rejects(api.getAccountPlaylistTracks(qqSession, '777'), /login_required/)
   handler = () => ({ code: 0 })
-  await assert.rejects(api.getAccountPlaylistTracks(qqSession, 'dir:201'), /unavailable/)
+  await assert.rejects(api.getAccountPlaylistTracks(qqSession, '777'), /unavailable/)
   assert.notEqual(sync.accountSourceId('42', 'dir:201'), sync.accountSourceId('123', 'dir:201'))
   assert.equal(sync.parseAccountSourceId('account:42:dir:201').id, 'dir:201')
   console.log('PASS: real WEAPI encryption, both catalogs and pagination, 205-track imports, metadata/order, repeat updates, incomplete/error protection, empty list, cancellation, account isolation and storage failures (fixture network/storage)')
