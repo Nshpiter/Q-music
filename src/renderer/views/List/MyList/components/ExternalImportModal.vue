@@ -43,6 +43,7 @@
           </div>
 
           <kugou-verify-button v-if="accountProvider == 'kg'" :disabled="isLoading || isAccountLoading" @verified="loadAccountPlaylists('kg')" />
+          <div v-if="accountPartial && !isAccountLoading" :class="$style.accountState" role="status">{{ $t('playlist_import_modal__account_partial') }}<base-btn min :disabled="isLoading" @click="loadAccountPlaylists(accountProvider)">{{ $t('search__retry') }}</base-btn></div>
           <div v-if="isAccountLoading" :class="$style.accountState">{{ $t('playlist_import_modal__account_loading') }}</div>
           <div v-else-if="accountPlaylists.length" :class="$style.accountPlaylists">
             <button
@@ -204,6 +205,7 @@ export default {
     const selectedAccountPlaylistId = ref('')
     const isAccountLoading = ref(false)
     const accountLoadError = ref('')
+    const accountPartial = ref(false)
     const progressStageKeys = {
       fetch: 'playlist_import_modal__stage_fetch',
       save: 'playlist_import_modal__stage_save',
@@ -294,6 +296,7 @@ export default {
 
     const loadAccountPlaylists = async(provider = accountProvider.value) => {
       accountLoadError.value = ''
+      accountPartial.value = false
       accountProvider.value = provider
       selectedAccountPlaylistId.value = ''
       accountPlaylists.value = []
@@ -305,6 +308,7 @@ export default {
         if (result.status == 'available') {
           accountStatus.value[provider] = true
           accountPlaylists.value = result.playlists
+          accountPartial.value = !!result.partial
           selectedAccountPlaylistId.value = result.playlists[0]?.id ?? ''
         } else if (result.status == 'login_required') {
           accountStatus.value = { ...accountStatus.value, [provider]: false }
@@ -452,6 +456,7 @@ export default {
       selectedAccountPlaylist,
       isAccountLoading,
       accountLoadError,
+      accountPartial,
       loadAccountPlaylists,
       handleAccountProvider,
       handleClose,

@@ -7,7 +7,7 @@ const ts = require('typescript')
 const root = path.resolve(__dirname, '..')
 const utils = fs.existsSync(path.join(root, 'src/core/musicAccount')) ? 'src/utils' : 'src/common/utils'
 const load = name => {
-  const context = { exports: {}, setTimeout }
+  const context = { exports: {}, setTimeout, Error }
   vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(root, utils, name + '.ts'), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, context)
   return context.exports
 }
@@ -70,4 +70,65 @@ test('酷狗明确只读/未知权限的歌单不能写入；并发不同目标�
   assert.deepEqual(writes.sort(), ['10', '20'])
   for (const playlistId of ['30', '40', '99']) assert.equal((await client({ hash, name: 'test', playlistId })).status, 'unsupported')
   assert.equal(writes.length, 2)
+})
+
+test('QQ 目录 201 映射为账号歌单真实 tid，230 首分页不依赖旧主页', async() => {
+  const { resolveQQPlaylistReadTarget, getQQPlaylistReadPage } = load('qqPlaylistTarget')
+  const pages = []
+  const call = async(name, module, method, param) => {
+    if (name == 'targets') return { v_playlist: [{ dirId: 201, tid: '987654321', songNum: 230 }], bFinish: true }
+    assert.equal(module, 'music.srfDissInfo.aiDissInfo')
+    assert.equal(method, 'uniform_get_Dissinfo')
+    assert.equal(param.disstid, 987654321)
+    assert.equal(param.dirid, 0)
+    assert.equal('enc_host_uin' in param, false)
+    pages.push(param.song_begin)
+    return { code: 0, total_song_num: 230, songlist: Array.from({ length: Math.min(100, 230 - param.song_begin) }, (_, i) => ({ mid: 'song' + (param.song_begin + i) })) }
+  }
+  const target = await resolveQQPlaylistReadTarget('dir:201', '123', call)
+  let count = 0
+  while (count < 230) count += (await getQQPlaylistReadPage(target, '', count, call)).songlist.length
+  assert.equal(count, 230)
+  assert.deepEqual(pages, [0, 100, 200])
+})
+
+test('QQ 新接口不可用才回退同一 tid；过期、换号、取消与缺页不回退', async() => {
+  const { getQQPlaylistReadPage } = load('qqPlaylistTarget')
+  const calls = []
+  const target = { dirId: 201, dissId: 900 }
+  const result = await getQQPlaylistReadPage(target, '', 100, async(name, module, method, param) => {
+    calls.push(method)
+    assert.equal(param.disstid, 900)
+    assert.equal(param.song_begin, 100)
+    if (method == 'uniform_get_Dissinfo') throw Error('unavailable')
+    return { code: 0, songlist: [{ mid: 'a' }], total_song_num: 101 }
+  })
+  assert.equal(result.songlist[0].mid, 'a')
+  assert.deepEqual(calls, ['uniform_get_Dissinfo', 'CgiGetDiss'])
+  for (const reason of ['login_required', 'account_changed', 'cancelled', 'incomplete']) {
+    let reads = 0
+    await assert.rejects(getQQPlaylistReadPage(target, '', 0, async() => { reads++; throw Error(reason) }), new RegExp(reason))
+    assert.equal(reads, 1)
+  }
+  let reads = 0
+  await assert.rejects(getQQPlaylistReadPage(target, '', 0, async() => { reads++; return { code: 104401, songlist: [] } }), /login_required/)
+  assert.equal(reads, 1, '内层错误不能被 code=0 的外层掩盖')
+  await assert.rejects(getQQPlaylistReadPage(target, '', 0, async() => ({ code: 0, total_song_num: 230 })), /incomplete/)
+  await assert.rejects(getQQPlaylistReadPage({ ...target, count: 230 }, '', 0, async() => ({ code: 0, total_song_num: 0, songlist: [] })), /incomplete/, '非空目录不能被异常空响应清空')
+})
+
+test('QQ 公共 ID 不误当目录 ID；无 tid 的旧目录保留经账号标识读取的兼容路径', async() => {
+  const { resolveQQPlaylistReadTarget, getQQPlaylistReadPage } = load('qqPlaylistTarget')
+  const direct = await resolveQQPlaylistReadTarget('123456789', '123', async() => { throw Error('unexpected account request') })
+  assert.equal(direct.dissId, 123456789)
+  assert.equal(direct.dirId, 0)
+  const old = await resolveQQPlaylistReadTarget('dir:201', '123', async() => ({ v_playlist: [{ dirId: 201 }] }))
+  await getQQPlaylistReadPage(old, 'encrypted', 0, async(name, module, method, param) => {
+    assert.equal(method, 'CgiGetDiss')
+    assert.equal(param.disstid, 0)
+    assert.equal(param.dirid, 201)
+    assert.equal(param.enc_host_uin, 'encrypted')
+    return { songlist: [], total_song_num: 0 }
+  })
+  await assert.rejects(getQQPlaylistReadPage(old, '', 0, async() => { throw Error('must not request with unknown owner') }), /unavailable/)
 })

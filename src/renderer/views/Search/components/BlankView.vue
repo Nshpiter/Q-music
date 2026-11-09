@@ -91,6 +91,7 @@
               </button>
             </header>
             <button type="button" :class="$style.libraryImportButton" @click="openAccountImport(accountPlaylistsProvider)">{{ $t('search__account_import') }} ›</button>
+            <p v-if="accountPlaylistsPartial && !isPlaylistsLoading" :class="$style.playlistEmpty" role="status">{{ $t('playlist_import_modal__account_partial') }}</p>
             <div v-if="accountPlaylists.length" :class="$style.playlistRail">
               <button v-for="playlist in accountPlaylists" :key="playlist.id" type="button" @click="openAccountPlaylist(playlist)">
                 <span :class="$style.playlistCover">
@@ -311,6 +312,7 @@ const selectedAccountPlaylistProvider = ref('wy')
 const playlistDetailList = shallowRef([])
 const accountPlaylists = shallowRef([])
 const accountPlaylistsError = ref('')
+const accountPlaylistsPartial = ref(false)
 const accountPlaylistsProvider = ref('')
 const isPlaylistsLoading = shallowRef(false)
 const isPlaylistDetailLoading = shallowRef(false)
@@ -511,6 +513,7 @@ const closeDailyDetail = () => {
 const canReadAccountPlaylists = provider => !!accountStatus.value[provider] || !!accountStatus.value.accounts[provider]?.hasSession
 const loadAccountPlaylists = async(force = false, provider = selectedDailyProvider.value) => {
   accountPlaylistsError.value = ''
+  accountPlaylistsPartial.value = false
   if (!canReadAccountPlaylists(provider)) {
     accountPlaylistsRequestId++
     if (accountPlaylistsProvider.value == provider) {
@@ -529,6 +532,7 @@ const loadAccountPlaylists = async(force = false, provider = selectedDailyProvid
     const result = await getMusicAccountPlaylists(provider)
     if (requestId == accountPlaylistsRequestId && accountPlaylistsProvider.value == provider) {
       accountPlaylists.value = result?.status == 'available' && Array.isArray(result.playlists) ? result.playlists : []
+      accountPlaylistsPartial.value = !!result?.partial
       if (result?.status != 'available') accountPlaylistsError.value = result?.status || 'unavailable'
     }
   } catch {

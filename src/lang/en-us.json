@@ -316,6 +316,7 @@
   "playlist_import_modal__account_playlists_tip": "Syncing the same playlist again updates the existing list",
   "playlist_import_modal__account_tab": "Account sync",
   "playlist_import_modal__account_unavailable": "Account playlists are temporarily unavailable. Your session is preserved. Check your connection and retry.",
+  "playlist_import_modal__account_partial": "Some QQ Music playlists could not be loaded. Available playlists are shown; retry to load the rest.",
   "playlist_import_modal__created": "Created",
   "playlist_import_modal__error_invalid_link": "Invalid playlist link or ID",
   "playlist_import_modal__error_no_match": "No importable songs matched",

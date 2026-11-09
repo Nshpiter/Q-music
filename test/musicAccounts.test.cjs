@@ -12,6 +12,7 @@ function load(file, dependencies = {}, extra = {}) {
   if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/cloudSnapshot'] = load('src/common/utils/cloudSnapshot.ts')
   if (file == 'src/renderer/views/List/MyList/importPlaylist.ts') dependencies['@renderer/utils/musicSdk/bi'] ??= { bilibiliClient: {} }
   if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/qqPlaylistTarget'] = load('src/common/utils/qqPlaylistTarget.ts')
+  if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/qqAccountCatalog'] = load('src/common/utils/qqAccountCatalog.ts')
   if (file == 'src/main/modules/winMain/kugouAccount.ts') dependencies['@common/utils/kugouFavorite'] = load('src/common/utils/kugouFavorite.ts')
   if (file == 'src/main/modules/winMain/kugouAccount.ts') dependencies['./kugouVerification'] = {}
   if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/neteaseFavorite'] = load('src/common/utils/neteaseFavorite.ts')

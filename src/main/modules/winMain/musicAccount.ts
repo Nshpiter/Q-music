@@ -5,9 +5,10 @@ import getStore from '@main/utils/store'
 import { constants, createCipheriv, createHash, publicEncrypt, randomBytes } from 'node:crypto'
 import { getQQCredentials, getQQRequestComm, getQQWebRequestComm } from '@common/utils/qqCredentials'
 import { signQQRequest } from '@common/utils/qqSign'
+import { getQQAccountCatalog } from '@common/utils/qqAccountCatalog'
 import { collectQQPlaylistIds } from '@common/utils/qqPlaylist'
 import { type QQFavoriteRequest, type QQFavoriteResult } from '@common/types/qqFavorite'
-import { isQQPlaylistId, resolveQQPlaylistTarget, checkQQPlaylistSong, getQQPlaylistTargets } from '@common/utils/qqPlaylistTarget'
+import { isQQPlaylistId, resolveQQPlaylistTarget, checkQQPlaylistSong, getQQPlaylistTargets, resolveQQPlaylistReadTarget, getQQPlaylistReadPage } from '@common/utils/qqPlaylistTarget'
 import { createNeteaseFavoriteClient } from '@common/utils/neteaseFavorite'
 import { closeOfficialAccountLogin, openOfficialAccountLogin } from './officialAccountLogin'
 import { allowAccountLoginNavigation, upgradeAccountLoginNavigation } from './accountLoginNavigation'
@@ -106,6 +107,7 @@ export interface MusicAccountPlaylist {
 }
 
 export interface MusicAccountPlaylistsResult {
+  partial?: boolean
   provider: MusicAccountProvider
   playlists: MusicAccountPlaylist[]
   status: 'available' | 'login_required' | 'unavailable' | 'verification_required'
@@ -1255,11 +1257,6 @@ const verifyMusicAccount = async(provider: MusicAccountProvider, force = false):
   return (await validateMusicAccount(provider, force)).connected
 }
 
-const resolveQQAccountFailureStatus = async(): Promise<'login_required' | 'unavailable'> => {
-  const validation = await validateMusicAccount('tx', true)
-  return validation.state == 'expired' || validation.state == 'disconnected' ? 'login_required' : 'unavailable'
-}
-
 export const getMusicAccountStatus = async(): Promise<MusicAccountStatus> => {
   const inspectAccount = async(provider: MusicAccountProvider): Promise<MusicAccountProfile> => {
     if (provider == 'kg') {
@@ -1317,85 +1314,11 @@ export const getMusicAccountPlaylists = async(provider: MusicAccountProvider, ow
         return { provider, status: 'available', playlists: targets.map(item => ({ ...item, trackCount: item.count, creator: '', accountId: qqAccountId(cookies) })) }
       }
       const encryptedUin = await getQQEncryptedUin()
-      if (!encryptedUin) {
-        return { provider, playlists: [], status: await resolveQQAccountFailureStatus() }
-      }
-
-      interface FavoritePlaylistData {
-        v_list?: Array<Record<string, unknown>>
-        v_playlist?: Array<Record<string, unknown>>
-        hasmore?: boolean | number
-      }
-      interface QQPlaylistsResponse {
-        created?: { code?: number, data?: { v_playlist?: Array<Record<string, unknown>> } }
-        favorite?: { code?: number, data?: FavoritePlaylistData }
-        liked?: {
-          code?: number
-          data?: {
-            songlist?: Array<Record<string, unknown>>
-            total_song_num?: number
-            songnum?: number
-            totalnum?: number
-          }
-        }
-      }
-      const favoritePageSize = 100
-      const result = await requestQQMusicU<QQPlaylistsResponse>({
-        created: {
-          module: 'music.musicasset.PlaylistBaseRead',
-          method: 'GetPlaylistByUin',
-          param: { uin },
-        },
-        favorite: {
-          module: 'music.musicasset.PlaylistFavRead',
-          method: 'CgiGetPlaylistFavInfo',
-          param: { uin: encryptedUin, offset: 0, size: favoritePageSize },
-        },
-        liked: {
-          module: 'music.srfDissInfo.DissInfo',
-          method: 'CgiGetDiss',
-          param: {
-            disstid: 0,
-            dirid: 201,
-            tag: true,
-            song_begin: 0,
-            song_num: 1,
-            userinfo: true,
-            orderlist: true,
-            enc_host_uin: encryptedUin,
-          },
-        },
+      const catalog = await getQQAccountCatalog(uin, encryptedUin, async(name, module, method, param) => {
+        const result = await requestQQMusicU<Record<string, { data?: Record<string, any> }>>({ [name]: { module, method, param } }, undefined, account)
+        if (!result[name]?.data) throw new Error('unavailable')
+        return result[name].data
       })
-      if (!result.created?.data || !result.favorite?.data || !result.liked?.data) {
-        throw new QQMusicURequestError('unavailable', undefined, 'QQ Music playlists response missing data')
-      }
-
-      const favoriteItems = [
-        ...(result.favorite.data.v_list ?? result.favorite.data.v_playlist ?? []),
-      ]
-      let favoriteOffset = favoriteItems.length
-      let favoriteHasMore = result.favorite.data.hasmore === true || parseQQMusicCode(result.favorite.data.hasmore) == 1
-      for (let page = 1; favoriteHasMore && page < 100; page++) {
-        const pageResult = await requestQQMusicU<{ favorite?: { code?: number, data?: FavoritePlaylistData } }>({
-          favorite: {
-            module: 'music.musicasset.PlaylistFavRead',
-            method: 'CgiGetPlaylistFavInfo',
-            param: { uin: encryptedUin, offset: favoriteOffset, size: favoritePageSize },
-          },
-        })
-        const pageData = pageResult.favorite?.data
-        if (!pageData) throw new QQMusicURequestError('unavailable', undefined, 'QQ Music favorite playlists response missing data')
-        const pageItems = pageData.v_list ?? pageData.v_playlist ?? []
-        if (!pageItems.length) break
-        const nextOffset = favoriteOffset + pageItems.length
-        if (nextOffset <= favoriteOffset) break
-        favoriteItems.push(...pageItems)
-        favoriteOffset = nextOffset
-        favoriteHasMore = pageData.hasmore === true || parseQQMusicCode(pageData.hasmore) == 1
-      }
-      if (favoriteHasMore) {
-        throw new QQMusicURequestError('unavailable', undefined, 'QQ Music favorite playlists pagination incomplete')
-      }
       const normalize = (items: Array<Record<string, unknown>>, kind: MusicAccountPlaylist['kind']) => items.map(item => {
         const dirId = String(item.dirId ?? item.dirid ?? '')
         const dissId = [item.tid, item.dissid, item.dissId, item.id]
@@ -1410,26 +1333,13 @@ export const getMusicAccountPlaylists = async(provider: MusicAccountProvider, ow
           kind,
         }
       }).filter(item => item.id && item.name)
-      const created = normalize(result.created?.data?.v_playlist ?? [], 'created')
-      const favorite = normalize(favoriteItems, 'favorite')
-      const existingLiked = created.find(item => item.id == 'dir:201')
-      const likedData = result.liked.data
-      const liked = {
-        id: 'dir:201',
-        name: existingLiked?.name ?? '我喜欢',
-        cover: existingLiked?.cover ?? '',
-        trackCount: Number(likedData.total_song_num ?? likedData.songnum ?? likedData.totalnum ?? likedData.songlist?.length ?? 0),
-        creator: '',
-        kind: 'created' as const,
-      }
       const playlistMap = new Map([
-        liked,
-        ...created.filter(item => item.id != 'dir:201'),
-        ...favorite,
+        ...normalize(catalog.created, 'created'),
+        ...normalize(catalog.favorite, 'favorite'),
       ].map(item => [item.id, item]))
       if (qqAccountIdentity((await getQQAccountCredentials()).cookies) != account) throw new Error('account_changed')
       const playlists = [...playlistMap.values()].map(item => ({ ...item, accountId: qqAccountId(cookies) }))
-      return { provider, playlists, status: playlists.length ? 'available' : 'unavailable' }
+      return { provider, playlists, partial: catalog.warnings.length > 0, status: 'available' }
     }
 
     const uid = await getNeteaseUserId()
@@ -1480,45 +1390,21 @@ export const getMusicAccountPlaylistDetail = async(
       const account = qqAccountIdentity(cookies)
 
       if (!dirId && !Number.isFinite(dissId)) return { provider, id, ids: [], status: 'unavailable' }
-      const encryptedUin = dirId ? await getQQEncryptedUin() : ''
-      if (dirId && !encryptedUin) {
-        return { provider, id, ids: [], status: await resolveQQAccountFailureStatus() }
+      const read = async(name: string, module: string, method: string, param: Record<string, unknown>) => {
+        const result = await requestQQMusicU<Record<string, { data?: Record<string, any> }>>({ [name]: { module, method, param } }, undefined, account)
+        if (!result[name]?.data) throw new Error('unavailable')
+        return result[name].data
       }
+      const target = await resolveQQPlaylistReadTarget(dirId ? 'dir:' + String(dirId) : id, getQQCredentials(cookies).uin, read)
+      const encryptedUin = target.dissId ? '' : await getQQEncryptedUin()
       const tracks: Array<Record<string, unknown>> = []
       const ids = await collectQQPlaylistIds(async offset => {
-        const result = await requestQQMusicU<{
-          detail?: { data?: {
-            songlist?: Array<Record<string, unknown>>
-            songList?: Array<Record<string, unknown>>
-            track_list?: Array<Record<string, unknown>>
-            total_song_num?: number
-            songnum?: number
-            totalnum?: number
-            hasmore?: boolean | number
-          } }
-        }>({
-          detail: {
-            module: 'music.srfDissInfo.DissInfo',
-            method: 'CgiGetDiss',
-            param: {
-              disstid: dissId,
-              dirid: dirId,
-              tag: true,
-              song_begin: offset,
-              song_num: 100,
-              userinfo: true,
-              orderlist: true,
-              ...(encryptedUin ? { enc_host_uin: encryptedUin } : {}),
-            },
-          },
-        }, undefined, account)
-        const data = result.detail?.data
-        const songs = data?.songlist ?? data?.songList ?? data?.track_list
-        if (!data || !Array.isArray(songs)) throw new Error('playlist_incomplete')
-        tracks.push(...songs.map(item => (item.track_info ?? item) as Record<string, unknown>))
+        const data = await getQQPlaylistReadPage(target, encryptedUin, offset, read)
+        const songs = data.songlist ?? data.songList ?? data.track_list
+        tracks.push(...songs.map((item: Record<string, unknown>) => (item.track_info ?? item) as Record<string, unknown>))
         const total = data.total_song_num ?? data.songnum ?? data.totalnum
         return {
-          ids: songs.map(item => {
+          ids: songs.map((item: Record<string, unknown>) => {
             const track = (item.track_info ?? item) as Record<string, unknown>
             return String(track.mid ?? track.songmid ?? track.songMid ?? track.song_mid ?? '')
           }),

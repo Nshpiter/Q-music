@@ -105,6 +105,7 @@ export interface MusicAccountPlaylist {
   kind?: 'created' | 'favorite'
 }
 export interface MusicAccountPlaylistsResult {
+  partial?: boolean
   provider: MusicAccountProvider
   playlists: MusicAccountPlaylist[]
   status: 'available' | 'login_required' | 'unavailable' | 'verification_required'

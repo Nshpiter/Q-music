@@ -8,6 +8,11 @@ const vm = require('node:vm')
 const ts = require('typescript')
 const root = path.join(__dirname, '..')
 const load = (file, dependencies = {}) => {
+  if (file == 'src/main/modules/winMain/musicAccount.ts') {
+    for (const name of ['qqAccountCatalog', 'qqPlaylistTarget', 'neteaseFavorite', 'cloudSnapshot']) {
+      dependencies[`@common/utils/${name}`] = load(`src/common/utils/${name}.ts`)
+    }
+  }
   const context = { exports: {}, Error, URL, URLSearchParams, AbortSignal, setTimeout, clearTimeout, console, Buffer,
     require: id => { if (!(id in dependencies)) throw Error(id); return dependencies[id] },
   }

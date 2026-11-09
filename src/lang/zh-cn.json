@@ -316,6 +316,7 @@
   "playlist_import_modal__account_playlists_tip": "再次同步同一歌单会更新已有列表，不会重复创建",
   "playlist_import_modal__account_tab": "账号歌单同步",
   "playlist_import_modal__account_unavailable": "账号歌单暂时无法读取，登录状态仍保留。请检查网络后重试。",
+  "playlist_import_modal__account_partial": "QQ 音乐部分歌单暂未读到，已显示成功读取的歌单。可重新加载其余歌单。",
   "playlist_import_modal__created": "创建的",
   "playlist_import_modal__error_invalid_link": "歌单链接或 ID 无效",
   "playlist_import_modal__error_no_match": "没有匹配到可导入的歌曲",
