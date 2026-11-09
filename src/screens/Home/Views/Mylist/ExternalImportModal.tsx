@@ -22,7 +22,7 @@ import {
 } from './importPlaylist'
 
 export interface ExternalImportModalType {
-  show: (currentListId: string) => void
+  show: (currentListId: string, provider?: ExternalImportSource) => void
 }
 
 const SOURCE_OPTIONS: Array<{ id: ExternalImportSource, name: string }> = [
@@ -73,8 +73,9 @@ export default forwardRef<ExternalImportModalType>((props, ref) => {
   }, [])
 
   useImperativeHandle(ref, () => ({
-    show(listId) {
+    show(listId, provider) {
       reset()
+      if (provider) setSource(provider)
       setCurrentListId(listId)
       requestAnimationFrame(() => {
         dialogRef.current?.setVisible(true)

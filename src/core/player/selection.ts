@@ -4,7 +4,29 @@ import { toNewMusicInfo } from '@/utils'
 import settingState from '@/store/setting/state'
 import { getListMusics, setTempList } from '@/core/list'
 import playerActions from '@/store/player/action'
-import { playList, playNext } from './player'
+import { playList, playNext, appendQueueItems } from './player'
+
+export const playAllFromPage = async(key: string, tracks: LX.Music.MusicInfo[], continuous = false) => select(async(isCurrent) => {
+  if (!tracks.length) return
+  if (settingState.setting['list.playAllMode'] == 'append' && appendQueueItems(tracks)) return
+  await setTempList(key, [...tracks])
+  if (isCurrent()) await playList(LIST_IDS.TEMP, 0, continuous)
+})
+
+export const playAllFromList = async(listId: string) => select(async(isCurrent) => {
+  const tracks = await getListMusics(listId)
+  if (!isCurrent() || !tracks.length) return
+  if (settingState.setting['list.playAllMode'] == 'append' && appendQueueItems(tracks)) return
+  await playList(listId, 0)
+})
+
+export const playAllFromLoader = async(key: string, load: () => Promise<LX.Music.MusicInfo[]>) => select(async(isCurrent) => {
+  const tracks = await load()
+  if (!isCurrent() || !tracks.length) return
+  if (settingState.setting['list.playAllMode'] == 'append' && appendQueueItems(tracks)) return
+  await setTempList(key, tracks)
+  if (isCurrent()) await playList(LIST_IDS.TEMP, 0)
+})
 
 export const playSingle = async(musicInfo: LX.Music.MusicInfo, listId: string | null = LIST_IDS.PLAY_LATER) => {
   playerActions.addTempPlayList([{ listId, musicInfo, isTop: true }])
@@ -29,7 +51,7 @@ export const playFromList = async(listId: string, index: number) => select(async
   else await playList(listId, index)
 })
 
-export const playFromPage = async(key: string, list: LX.Music.MusicInfoOnline[], index: number, continuous = false) => select(async(isCurrent) => {
+export const playFromPage = async(key: string, list: LX.Music.MusicInfo[], index: number, continuous = false) => select(async(isCurrent) => {
   const musicInfo = list[index]
   if (!musicInfo) return
   let tracks = list

@@ -5,7 +5,7 @@ import { Icon } from '@/components/common/Icon'
 import { BorderWidths } from '@/theme'
 import { useTheme } from '@/store/theme/hook'
 import { useActiveListId, useListFetching, useMyList } from '@/store/list/hook'
-import { createStyle } from '@/utils/tools'
+import { createStyle, toast } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import PlaylistIdentity from '@/components/PlaylistIdentity'
 import { LIST_IDS } from '@/config/constant'
@@ -14,6 +14,8 @@ import { useSettingValue } from '@/store/setting/hook'
 import Button from '@/components/common/Button'
 import IconButton from '@/components/common/IconButton'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
+import { addListMusics, getListMusics } from '@/core/list'
+import { playAllFromList } from '@/core/player/selection'
 
 export interface ActiveListProps {
   onBack?: () => void
@@ -86,6 +88,10 @@ export default forwardRef<ActiveListType, ActiveListProps>(({ onBack, onShowSync
         {onBack ? <IconButton accessibilityLabel={global.i18n.t('library_back')} name="chevron-left" iconSize={22} style={styles.search} onPress={onBack} /> : null}
         {splitLibrary || onBack ? <View style={styles.currentListMain}>{identity}</View> : <Button accessibilityLabel={global.i18n.t('library_switch_playlist', { name: currentListName })} accessibilityState={{ expanded }} pressScale={0.985} onPress={showList} onLongPress={onScrollToTop} style={styles.currentListMain}>{identity}</Button>}
         <IconButton accessibilityLabel={global.i18n.t('list_search')} name="search-2" iconSize={18} iconColor={theme['q-text-secondary']} style={styles.search} onPress={onShowSearchBar} />
+        {currentListId != LIST_IDS.DEFAULT ? <IconButton accessibilityLabel={global.i18n.t('queue_save_audition')} name="add-music" iconSize={18} iconColor={theme['q-text-secondary']} style={styles.search} onPress={() => {
+          void getListMusics(currentListId).then(async list => addListMusics(LIST_IDS.DEFAULT, list, 'bottom')).then(() => { toast(global.i18n.t('queue_save_audition_done')) }).catch(() => { toast(global.i18n.t('load_failed')) })
+        }} /> : null}
+        <IconButton accessibilityLabel={global.i18n.t('play_all')} name="play" iconSize={20} iconColor={theme['q-accent-text']} style={styles.search} onPress={() => { void playAllFromList(currentListId).catch(() => { toast(global.i18n.t('load_failed')) }) }} />
       </View>
     </View>
   )

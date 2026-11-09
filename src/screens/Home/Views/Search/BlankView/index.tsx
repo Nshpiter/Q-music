@@ -5,6 +5,7 @@ import { createStyle } from '@/utils/tools'
 import { forwardRef, useImperativeHandle, useState } from 'react'
 import { ScrollView, View } from 'react-native'
 import DailyRecommend from './DailyRecommend'
+import PopularArtists from './PopularArtists'
 import { useDockInset } from '@/components/common/DockInset'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 
@@ -41,6 +42,7 @@ export default forwardRef<BlankViewType, BlankViewProps>((_props, ref) => {
             </View>
             <View style={styles.content}>
               <DailyRecommend />
+              <PopularArtists onSearch={_props.onSearch} />
             </View>
           </ScrollView>
         )

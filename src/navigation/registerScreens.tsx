@@ -26,6 +26,7 @@ import {
 import VersionModal from './components/VersionModal'
 import PactModal from './components/PactModal'
 import SyncModeModal from './components/SyncModeModal'
+import PlayHistory from '@/screens/PlayHistory'
 
 function WrappedComponent(Component: any) {
   return function inject(props: Record<string, any>) {
@@ -42,6 +43,7 @@ function WrappedComponent(Component: any) {
 }
 
 export default () => {
+  Navigation.registerComponent('lxm.PlayHistoryScreen', () => WrappedComponent(PlayHistory))
   Navigation.registerComponent(HOME_SCREEN, () => WrappedComponent(Home))
   Navigation.registerComponent(PLAY_DETAIL_SCREEN, () => WrappedComponent(PlayDetail))
   Navigation.registerComponent(SONGLIST_DETAIL_SCREEN, () => WrappedComponent(SonglistDetail))

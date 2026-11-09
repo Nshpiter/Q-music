@@ -78,7 +78,7 @@ export default {
 
     const requestObj_listDetail = httpFetch(this.getSongListDetailUrl(id, page), { headers: this.defaultHeaders })
     return requestObj_listDetail.promise.then(({ body }) => {
-      if (body.code !== this.successCode) return this.getListDetailList(id, page, ++tryNum)
+      if (body?.code !== this.successCode || !Array.isArray(body.data?.songList)) return this.getListDetailList(id, page, ++tryNum)
       // console.log(JSON.stringify(body))
       // console.log(body)
       return {
@@ -99,15 +99,15 @@ export default {
       headers: this.defaultHeaders,
     })
     return requestObj_listDetailInfo.promise.then(({ body }) => {
-      if (body.code !== this.successCode) return this.getListDetail(id, ++tryNum)
+      if (body?.code !== this.successCode || !body.data) return this.getListDetailInfo(id, ++tryNum)
       // console.log(JSON.stringify(body))
       // console.log(body)
       const cachedDetailInfo = this.cachedDetailInfo[id] = {
         name: body.data.title,
-        img: body.data.imgItem.img,
+        img: body.data.imgItem?.img || body.data.originalImgUrl || '',
         desc: body.data.summary,
         author: body.data.ownerName,
-        play_count: formatPlayCount(body.data.opNumItem.playNum),
+        play_count: formatPlayCount(body.data.opNumItem?.playNum ?? 0),
       }
       return cachedDetailInfo
     })
@@ -216,8 +216,10 @@ export default {
     return requestObj_list.promise.then(({ body }) => {
       // console.log(body)
       // if (body.retCode !== '000000') return this.getList(sortId, tagId, page, ++tryNum)
-      if (body.code !== '000000') return this.getList(sortId, tagId, page, ++tryNum)
-      const list = body.data.contents ? this.filterList2(body.data.contents) : this.filterList(body.data.contentItemList[1].itemList)
+      if (body?.code !== this.successCode || !body.data) return this.getList(sortId, tagId, page, ++tryNum)
+      const data = body.data
+      if (!Array.isArray(data.contents) && !Array.isArray(data.contentItemList)) throw new Error('invalid playlist response')
+      const list = Array.isArray(data.contents) ? this.filterList2(data.contents) : this.filterList(data.contentItemList.flatMap(item => item.itemList ?? []))
       return {
         list,
         total: 99999,
@@ -229,9 +231,10 @@ export default {
   },
   filterList2(listData, list = [], ids = new Set()) {
     for (const item of listData) {
-      if (item.contents) this.filterList2(item.contents, list, ids)
-      else if (item.resType == '2021' && !ids.has(item.resId)) {
-        ids.add(item.resId)
+      if (!item) continue
+      if (Array.isArray(item.contents)) this.filterList2(item.contents, list, ids)
+      else if (item.resType == '2021' && item.resId && !ids.has(String(item.resId))) {
+        ids.add(String(item.resId))
         list.push({
           id: String(item.resId),
           author: '',
@@ -249,8 +252,8 @@ export default {
   },
   filterList(rawData) {
     // console.log(rawData)
-    return rawData.map(item => ({
-      play_count: item.barList[0]?.title,
+    return rawData.filter(item => item?.logEvent?.contentId).map(item => ({
+      play_count: item.barList?.[0]?.title,
       id: String(item.logEvent.contentId),
       author: '',
       name: item.title,

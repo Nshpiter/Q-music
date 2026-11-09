@@ -6,7 +6,31 @@ import playerActions from '@/store/player/action'
 import playerState from '@/store/player/state'
 import { needsSharedFileAccess } from '@/utils/nativeModules/utils'
 import { requestStoragePermission } from '@/utils/tools'
-import { getDownloadTask } from './store'
+import { playAllFromLoader } from '@/core/player/selection'
+import { getDownloadTasks, getDownloadTask } from './store'
+
+const downloadedTrack = (task: NonNullable<ReturnType<typeof getDownloadTask>>): LX.Music.MusicInfoLocal => ({
+  id: task.filePath!,
+  source: 'local',
+  name: task.musicInfo.name,
+  singer: task.musicInfo.singer,
+  interval: task.musicInfo.interval,
+  meta: { songId: task.filePath!, filePath: task.filePath!, ext: task.fileName.split('.').pop()?.toLowerCase() ?? '', albumName: task.musicInfo.meta.albumName, picUrl: task.musicInfo.meta.picUrl },
+})
+export const playAllDownloads = async() => playAllFromLoader('download-completed', async() => {
+  const tasks = getDownloadTasks().filter(task => task.status == 'completed' && task.filePath)
+  const tracks: LX.Music.MusicInfoLocal[] = []
+  let granted = false
+  for (const task of tasks) {
+    if (!granted && await needsSharedFileAccess(task.filePath!)) {
+      if (!await requestStoragePermission()) throw new Error('storage_all_files_unconfirmed')
+      granted = true
+    }
+    if (await RNFS.exists(task.filePath!) && getDownloadTask(task.id) === task) tracks.push(downloadedTrack(task))
+  }
+  if (!tracks.length) throw new Error('download_play_missing')
+  return tracks
+})
 
 export const playDownloadTask = async(id: string) => {
   const task = getDownloadTask(id)
@@ -24,20 +48,7 @@ export const playDownloadTask = async(id: string) => {
     return
   }
   // 只传本地文件信息，避免在线歌曲的换源信息使离线播放重新请求音源。
-  const musicInfo: LX.Music.MusicInfoLocal = {
-    id: filePath,
-    source: 'local',
-    name: task.musicInfo.name,
-    singer: task.musicInfo.singer,
-    interval: task.musicInfo.interval,
-    meta: {
-      songId: filePath,
-      filePath,
-      ext: task.fileName.split('.').pop()?.toLowerCase() ?? '',
-      albumName: task.musicInfo.meta.albumName,
-      picUrl: task.musicInfo.meta.picUrl,
-    },
-  }
+  const musicInfo = downloadedTrack(task)
   playerActions.addTempPlayList([{ listId: LIST_IDS.PLAY_LATER, musicInfo, isTop: true }])
   await playNext()
 }

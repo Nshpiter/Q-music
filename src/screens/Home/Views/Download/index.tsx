@@ -12,7 +12,7 @@ import { useTheme } from '@/store/theme/hook'
 import { createStyle, toast } from '@/utils/tools'
 import { getDownloadTasks, subscribeDownloadTasks } from '@/core/download/store'
 import { deleteDownloadTask, retryDownload } from '@/core/download/worker'
-import { playDownloadTask } from '@/core/download/play'
+import { playDownloadTask, playAllDownloads } from '@/core/download/play'
 import type { DownloadTaskInfo } from '@/core/download/types'
 import { QUALITY_BADGE } from '@/config/constant'
 import { Q_UI } from '@/theme/ui'
@@ -167,6 +167,11 @@ export default () => {
     <View style={{ ...styles.container, backgroundColor: theme['c-main-background'] }}>
       <View style={styles.content}>
         <DownloadLocationEntry />
+        <Button disabled={!tasks.some(task => task.status == 'completed') || !!playingId} onPress={() => {
+          if (playPending.current) return
+          playPending.current = true; setPlayingId('all')
+          void playAllDownloads().catch(() => { toast(t('download_play_failed')) }).finally(() => { playPending.current = false; setPlayingId(null) })
+        }} style={{ minHeight: 44, borderRadius: 14, marginHorizontal: 16, paddingHorizontal: 16, justifyContent: 'center', backgroundColor: theme['q-surface-tint'] }}><Text size={13} color={theme['q-accent-text']}>{t('play_all')} · {tasks.filter(task => task.status == 'completed').length}</Text></Button>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterBar} contentContainerStyle={styles.filters}>
           {filters.map(key => (
             <Button key={key} accessibilityRole="tab" accessibilityState={{ selected: key == filter }} style={[styles.filter, { borderColor: key == filter ? theme['q-accent'] : theme['q-outline'], backgroundColor: key == filter ? theme['q-surface-tint'] : theme['q-surface-raised'] }]} onPress={() => {

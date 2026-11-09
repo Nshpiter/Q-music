@@ -293,6 +293,8 @@ test("安卓打开会话就掉登录时覆盖旧成功状态，公共歌单被�
     "./list": { setFetchingListStatus() {}, overwriteListMusics: async (...args) => {writes.push(args)} },
     "@/core/songlist": { getListDetailAll: async () => { userList.length=0; return [{id:"song"}]} },
     "@/core/leaderboard": {},
+    "@/utils/musicSdk/bi": { bilibiliClient: {} },
+    "@/utils": { toNewMusicInfo: row => row },
     "./musicAccount/playlists": { openPlaylistSession: async () => {if(failSession) throw Error("login_required"); return {owner:"123"}} },
     "./musicAccount/playlistSync": { parseAccountSourceId: id => id.startsWith("account:") ? {owner:"123",id:"7"} : null, syncAccountPlaylist: async () => {} },
   })

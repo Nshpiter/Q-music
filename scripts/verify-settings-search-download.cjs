@@ -112,7 +112,7 @@ test('设置搜索命中实际控件：目录、双语、后台、音源及多�
     }
     assert.equal(matchSettings('   ', items, t).length, 0)
     assert.equal(matchSettings('does-not-exist', items, t).length, 0)
-    assert.equal(items.some(item => /LyricDesktop/.test(item.id)), false)
+    assert.equal(items.some(item => /LyricDesktop/.test(item.id)), true)
   }
 })
 

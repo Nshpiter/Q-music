@@ -1,4 +1,5 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { AppState } from 'react-native'
 
 import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/ConfirmAlert'
 
@@ -17,6 +18,19 @@ export default forwardRef<DesktopLyricEnableType, {}>((props, ref) => {
   const [visible, setVisible] = useState(false)
   // const setIsShowDesktopLyric = useDispatch('common', 'setIsShowDesktopLyric')
   const confirmAlertRef = useRef<ConfirmAlertType>(null)
+  const pendingPermission = useRef(false)
+  const enabling = useRef(false)
+  const enableRef = useRef<(prompt: boolean) => Promise<void>>(async() => {})
+
+  // 从系统授权页回来后重新核验；没有授权时不能提前保存为已开启。
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', state => {
+      if (state != 'active' || !pendingPermission.current) return
+      pendingPermission.current = false
+      void enableRef.current(false)
+    })
+    return () => { subscription.remove() }
+  }, [])
 
   useImperativeHandle(ref, () => ({
     setEnabled(enabled) {
@@ -33,19 +47,26 @@ export default forwardRef<DesktopLyricEnableType, {}>((props, ref) => {
       })
     }
   }
-  const handleChangeEnableDesktopLyric = async(isEnable: boolean) => {
-    if (isEnable) {
-      try {
-        await checkDesktopLyricOverlayPermission()
-        await showDesktopLyric()
-      } catch (err) {
-        console.log(err)
-        handleShowModal()
-        // return false
+  const enableLyric = async(prompt: boolean) => {
+    if (enabling.current) return
+    enabling.current = true
+    try {
+      try { await checkDesktopLyricOverlayPermission() } catch {
+        if (prompt) handleShowModal()
+        return
       }
-    } else await hideDesktopLyric()
-    // return true
-    updateSetting({ 'desktopLyric.enable': isEnable })
+      await showDesktopLyric()
+      updateSetting({ 'desktopLyric.enable': true })
+    } catch { toast(t('desktop_lyric_enable_failed')) } finally { enabling.current = false }
+  }
+  enableRef.current = enableLyric
+  const handleChangeEnableDesktopLyric = async(isEnable: boolean) => {
+    pendingPermission.current = false
+    if (isEnable) await enableLyric(true)
+    else {
+      await hideDesktopLyric()
+      updateSetting({ 'desktopLyric.enable': false })
+    }
   }
 
   const handleTipsCancel = () => {
@@ -54,7 +75,8 @@ export default forwardRef<DesktopLyricEnableType, {}>((props, ref) => {
   }
   const handleTipsConfirm = () => {
     confirmAlertRef.current?.setVisible(false)
-    void openDesktopLyricOverlayPermissionActivity()
+    pendingPermission.current = true
+    void openDesktopLyricOverlayPermissionActivity().catch(() => { pendingPermission.current = false; toast(t('desktop_lyric_enable_failed')) })
   }
 
   return (

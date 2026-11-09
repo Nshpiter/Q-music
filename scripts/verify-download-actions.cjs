@@ -14,12 +14,13 @@ function fixture() {
     '@/utils/bilibili': require('./load-pure-module.cjs')('src/utils/bilibili.ts'),
     'react-native-fs': { default: { exists: async() => { controls.onExists(); return controls.exists } } },
     '@/config/constant': { LIST_IDS: { PLAY_LATER: 'playLater' } },
+    '@/core/player/selection': { playAllFromLoader: async(key, load) => { calls.push({ key, tracks: await load() }) } },
     '@/core/player/player': { playNext: async() => { calls.push('next') }, togglePlay: () => { calls.push('toggle') } },
     '@/store/player/action': { default: { addTempPlayList: list => { calls.push(list) } } },
     '@/store/player/state': { default: state },
     '@/utils/nativeModules/utils': { needsSharedFileAccess: async() => controls.needsAccess },
     '@/utils/tools': { requestStoragePermission: async() => controls.granted },
-    './store': { getDownloadTask: () => controls.removed ? undefined : task },
+    './store': { getDownloadTask: () => controls.removed ? undefined : task, getDownloadTasks: () => [task] },
   }
   const context = { exports: {}, require: id => { if (id in deps) return deps[id]; throw Error(id) } }
   const source = fs.readFileSync(path.join(__dirname, '../src/core/download/play.ts'), 'utf8')
@@ -38,6 +39,22 @@ test('下载完成后播放本地文件，不复制在线换源信息或替换�
   assert.equal(selected.musicInfo.meta.toggleMusicInfo, undefined)
   assert.equal(selected.isTop, true)
   assert.equal(f.calls[1], 'next')
+})
+
+test('下载播放全部只加入仍存在的已完成本地文件，取消权限或移除任务不误入队', async() => {
+  const f = fixture()
+  await f.playAllDownloads()
+  assert.equal(f.calls[0].tracks[0].source, 'local')
+  assert.equal(f.calls[0].tracks[0].meta.toggleMusicInfo, undefined)
+  for (const scenario of ['missing', 'unfinished', 'denied', 'removed']) {
+    const f = fixture()
+    if (scenario == 'missing') f.controls.exists = false
+    if (scenario == 'unfinished') f.task.status = 'run'
+    if (scenario == 'denied') { f.controls.needsAccess = true; f.controls.granted = false }
+    if (scenario == 'removed') f.controls.onExists = () => { f.controls.removed = true }
+    await assert.rejects(f.playAllDownloads(), scenario == 'denied' ? /storage_all_files_unconfirmed/ : /download_play_missing/)
+    assert.equal(f.calls.length, 0)
+  }
 })
 
 test('文件丢失、尚未完成或存储权限被拒绝时保持原播放队列', async() => {

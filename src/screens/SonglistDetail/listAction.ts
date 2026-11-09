@@ -6,10 +6,14 @@ import listState from '@/store/list/state'
 import syncSourceList from '@/core/syncSourceList'
 import { confirmDialog, toMD5, toast } from '@/utils/tools'
 import { type Source } from '@/store/songlist/state'
+import settingState from '@/store/setting/state'
+import { playAllFromLoader } from '@/core/player/selection'
 
 const getListId = (id: string, source: LX.OnlineSource) => `${source}__${id}`
 
-export const handlePlay = async(id: string, source: Source, list?: LX.Music.MusicInfoOnline[], index = 0) => {
+export const handlePlay = async(id: string, source: Source, list?: LX.Music.MusicInfoOnline[], index?: number) => {
+  if (index == null && settingState.setting['list.playAllMode'] == 'append') return playAllFromLoader(getListId(id, source), async() => getListDetailAll(source, id))
+  index ??= 0
   const listId = getListId(id, source)
   let isPlayingList = false
   // console.log(list)

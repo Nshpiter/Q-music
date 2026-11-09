@@ -5,6 +5,8 @@ import AddMusicLocationType from './AddMusicLocationType'
 import IsShowAlbumName from './IsShowAlbumName'
 import IsShowInterval from './IsShowInterval'
 import SinglePlayMode from './SinglePlayMode'
+import HistoryLimit from './HistoryLimit'
+import FavoriteTarget from './FavoriteTarget'
 
 import { useI18n } from '@/lang'
 
@@ -14,6 +16,8 @@ export default memo(() => {
   return (
     <Section title={t('setting_list')}>
       <SinglePlayMode />
+      <HistoryLimit />
+      <FavoriteTarget />
       <IsShowAlbumName />
       <IsShowInterval />
       <AddMusicLocationType />

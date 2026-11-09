@@ -1,4 +1,6 @@
 import { createList, setTempList } from '@/core/list'
+import settingState from '@/store/setting/state'
+import { playAllFromLoader } from '@/core/player/selection'
 import { playList } from '@/core/player/player'
 import { getListDetail, getListDetailAll } from '@/core/leaderboard'
 import { LIST_IDS } from '@/config/constant'
@@ -9,7 +11,9 @@ import { confirmDialog, toMD5, toast } from '@/utils/tools'
 
 const getListId = (id: string) => `board__${id}`
 
-export const handlePlay = async(id: string, list?: LX.Music.MusicInfoOnline[], index = 0) => {
+export const handlePlay = async(id: string, list?: LX.Music.MusicInfoOnline[], index?: number) => {
+  if (index == null && settingState.setting['list.playAllMode'] == 'append') return playAllFromLoader(getListId(id), async() => getListDetailAll(id))
+  index ??= 0
   let isPlayingList = false
   // console.log(list)
   const listId = getListId(id)

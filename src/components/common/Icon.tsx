@@ -79,6 +79,7 @@ const solidIcons: Record<string, string> = {
   prevMusic: 'play-skip-back',
   nextMusic: 'play-skip-forward',
   'add-music': 'heart-outline',
+  'heart-filled': 'heart',
   'play-outline': 'play-outline',
   translation: 'language-outline',
   'platform-playlists': 'albums-outline',

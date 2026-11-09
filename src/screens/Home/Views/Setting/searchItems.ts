@@ -41,6 +41,8 @@ import Control36 from './settings/Basic/ShareType'
 import Control37 from './settings/Search/IsShowHistorySearch'
 import Control38 from './settings/Search/IsShowHotSearch'
 import Control39 from './settings/List/SinglePlayMode'
+import HistoryLimit from './settings/List/HistoryLimit'
+import FavoriteTarget from './settings/List/FavoriteTarget'
 import Control40 from './settings/List/IsShowAlbumName'
 import Control41 from './settings/List/IsShowInterval'
 import Control42 from './settings/List/AddMusicLocationType'
@@ -57,6 +59,7 @@ import Control52 from './AccountEntry'
 import PredictiveBack from './settings/Basic/PredictiveBack'
 import LargeScreenNavigation from './settings/Basic/LargeScreenNavigation'
 import LiquidGlass from './settings/Theme/LiquidGlass'
+import LyricDesktop from './settings/LyricDesktop'
 
 interface SettingSearchItem {
   id: string
@@ -70,6 +73,7 @@ interface SettingSearchItem {
 
 // 搜索结果复用原设置控件，避免维护两套保存逻辑。
 export const SETTINGS_SEARCH_ITEMS: SettingSearchItem[] = [
+  { id: 'LyricDesktop', title: 'setting_lyric_desktop', section: 'lyrics', keywords: '悬浮歌词 桌面歌词 懸浮歌詞 桌面歌詞 overlay floating lyric', component: LyricDesktop, standalone: true },
   { id: 'Theme/LiquidGlass', title: 'setting_liquid_glass', section: 'appearance', keywords: '液态玻璃 液態玻璃 底栏 底欄 迷你 播放条 卡顿 卡頓 性能 glass blur performance', component: LiquidGlass },
   { id: 'Basic/PredictiveBack', title: 'setting_predictive_back', section: 'appearance', keywords: '预测性返回 預測性返回 手势 返回 跟手 回弹 动画 手勢 動畫 gesture predictive back', component: PredictiveBack },
   { id: 'Accounts', title: 'setting_accounts_entry', section: 'basic', keywords: 'QQ 微信 网易云 酷狗 登录 歌单 平台 賬號 登入 網易雲 賬戶 微信 account login kugou netease', component: Control52, standalone: true },
@@ -113,6 +117,8 @@ export const SETTINGS_SEARCH_ITEMS: SettingSearchItem[] = [
   { id: 'Basic/ShareType', title: 'setting_basic_share_type', section: 'basic', keywords: '分享 share', component: Control36 },
   { id: 'Search/IsShowHistorySearch', title: 'setting_search_show_history_search', section: 'search', keywords: '历史 历史记录 歷史 記錄 history', component: Control37 },
   { id: 'Search/IsShowHotSearch', title: 'setting_search_show_hot_search', section: 'search', keywords: '热搜 熱搜 hot', component: Control38 },
+  { id: 'List/HistoryLimit', title: 'play_history_limit', section: 'list', keywords: '历史 上限 清理 history limit', component: HistoryLimit },
+  { id: 'List/FavoriteTarget', title: 'favorite_default_target', section: 'list', keywords: '爱心 收藏 目录 favorite heart', component: FavoriteTarget },
   { id: 'List/SinglePlayMode', title: 'setting_single_play', section: 'list', keywords: '队列 替换 本地优先 隊列 替換 本地優先 queue local', component: Control39 },
   { id: 'List/IsShowAlbumName', title: 'setting_list_show_album_name', section: 'list', keywords: '专辑 專輯 album', component: Control40 },
   { id: 'List/IsShowInterval', title: 'setting_list_show interval', section: 'list', keywords: '时长 時長 duration', component: Control41 },

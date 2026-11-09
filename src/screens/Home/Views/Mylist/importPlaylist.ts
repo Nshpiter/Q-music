@@ -146,6 +146,7 @@ const writeMusicList = async(
       await createList({
         name: params.listName || getDefaultImportListName(params.source),
         list: musicInfos,
+        ...(params.source == 'bi' ? { source: params.source, sourceListId: params.text.trim() } : {}),
       })
       break
     case 'love':

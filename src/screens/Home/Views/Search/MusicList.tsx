@@ -1,4 +1,10 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { View } from 'react-native'
+import Button from '@/components/common/Button'
+import Text from '@/components/common/Text'
+import { useTheme } from '@/store/theme/hook'
+import { useI18n } from '@/lang'
+import { sortSearchQuality, type SearchSort } from '@/utils/searchQuality'
 import OnlineList, { type OnlineListType, type OnlineListProps } from '@/components/OnlineList'
 import { search } from '@/core/search/music'
 import searchMusicState, { type Source } from '@/store/search/music/state'
@@ -14,6 +20,17 @@ export interface MusicListType {
 }
 
 export default forwardRef<MusicListType, {}>((props, ref) => {
+  const theme = useTheme()
+  const t = useI18n()
+  const [sortMode, setSortMode] = useState<SearchSort>('relevance')
+  const [aggregate, setAggregate] = useState(false)
+  const sortRef = useRef<SearchSort>('relevance')
+  const raw = useRef<LX.Music.MusicInfoOnline[]>([])
+  const showResults = (list: LX.Music.MusicInfoOnline[], append: boolean, all: boolean) => {
+    raw.current = list
+    listRef.current?.setList(sortSearchQuality(list, searchInfoRef.current.text, all ? sortRef.current : 'relevance'), append, all)
+  }
+  const chooseSort = (mode: SearchSort) => { sortRef.current = mode; setSortMode(mode); showResults(raw.current, false, aggregate) }
   const listRef = useRef<OnlineListType>(null)
   const searchInfoRef = useRef<{ text: string, source: Source }>({ text: '', source: 'kw' })
   const isUnmountedRef = useRef(false)
@@ -22,12 +39,13 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
     async loadList(text, source) {
       const requestId = ++requestIdRef.current
       searchInfoRef.current = { text, source }
+      setAggregate(source == 'all')
       // const listDetailInfo = searchMusicState.listDetailInfo
-      listRef.current?.setList([], false, source == 'all')
+      showResults([], false, source == 'all')
       if (searchMusicState.searchText == text && searchMusicState.source == source && searchMusicState.listInfos[searchMusicState.source]!.list.length) {
         requestAnimationFrame(() => {
           if (isUnmountedRef.current || requestId != requestIdRef.current) return
-          listRef.current?.setList(searchMusicState.listInfos[searchMusicState.source]!.list, false, source == 'all')
+          showResults(searchMusicState.listInfos[searchMusicState.source]!.list, false, source == 'all')
           listRef.current?.setStatus(searchMusicState.listInfos[source]!.maxPage <= searchMusicState.listInfos[source]!.page ? 'end' : 'idle')
         })
       } else {
@@ -38,7 +56,7 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
           if (isUnmountedRef.current || requestId != requestIdRef.current) return
           requestAnimationFrame(() => {
             if (isUnmountedRef.current || requestId != requestIdRef.current) return
-            listRef.current?.setList(list, false, source == 'all')
+            showResults(list, false, source == 'all')
             listRef.current?.setStatus(searchMusicState.listInfos[source]!.maxPage <= page ? 'end' : 'idle')
           })
         }).catch(() => {
@@ -65,7 +83,7 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
     search(text, page, source).then((list) => {
       // const result = setListInfo(listDetail, searchMusicState.listDetailInfo.id, page)
       if (isUnmountedRef.current || requestId != requestIdRef.current) return
-      listRef.current?.setList(list, false, source == 'all')
+      showResults(list, false, source == 'all')
       listRef.current?.setStatus(searchMusicState.listInfos[source]!.maxPage <= page ? 'end' : 'idle')
     }).catch(() => {
       if (isUnmountedRef.current || requestId != requestIdRef.current) return
@@ -81,7 +99,7 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
     search(text, page, source).then((list) => {
       // const result = setListInfo(listDetail, searchMusicState.listDetailInfo.id, page)
       if (isUnmountedRef.current || requestId != requestIdRef.current) return
-      listRef.current?.setList(list, true, source == 'all')
+      showResults(list, true, source == 'all')
       listRef.current?.setStatus(info.maxPage <= page ? 'end' : 'idle')
     }).catch(() => {
       if (isUnmountedRef.current || requestId != requestIdRef.current) return
@@ -89,11 +107,16 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
     })
   }
 
-  return <OnlineList
+  return <View style={{ flex: 1 }}>
+    {aggregate ? <View style={{ paddingHorizontal: 16, paddingBottom: 6 }}>
+      <View style={{ flexDirection: 'row', gap: 8 }}>{(['relevance', 'quality'] as const).map(mode => <Button key={mode} accessibilityState={{ selected: sortMode == mode }} onPress={() => { chooseSort(mode) }} style={{ minHeight: 40, borderRadius: 20, paddingHorizontal: 16, justifyContent: 'center', backgroundColor: mode == sortMode ? theme['q-surface-tint'] : 'transparent' }}><Text size={12} color={mode == sortMode ? theme['q-accent-text'] : theme['q-text-secondary']}>{t(mode == 'quality' ? 'search_sort_quality' : 'search_sort_relevance')}</Text></Button>)}</View>
+      <Text size={10} color={theme['q-text-secondary']}>{t('search_sort_tip')}</Text>
+    </View> : null}
+    <OnlineList
     ref={listRef}
     onRefresh={handleRefresh}
     onLoadMore={handleLoadMore}
     checkHomePagerIdle
-  />
+  /></View>
 })
 

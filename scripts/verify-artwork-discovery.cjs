@@ -104,6 +104,14 @@ test('失败封面不会永远缓存空值，坏旧 URL 可刷新一次', async 
   assert.equal(await loader({ ...track('2'), meta: { picUrl: 'https://old' } }, true), 'https://new')
 })
 
+test('封面接口或旧缓存中的请求对象不会流入图片组件', async () => {
+ const invalid = { promise: Promise.resolve({ body: {} }), cancelHttp() {} }
+ const loader = createArtworkLoader(async () => invalid)
+ assert.equal(await loader(track('bad')), '')
+ const recovery = createArtworkLoader(async () => 'https://image/cover.jpg')
+ assert.equal(await recovery({ ...track('cached'), meta: { picUrl: invalid } }), 'https://image/cover.jpg')
+})
+
 test('三个平台的发现分类、分页与缓存相互隔离，不依赖账号登录', async () => {
   const calls = []
   const loader = createDiscoveryLoader(async (...args) => {

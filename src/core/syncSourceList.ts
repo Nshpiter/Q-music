@@ -8,12 +8,18 @@ import { openPlaylistSession } from './musicAccount/playlists'
 import { parseAccountSourceId, syncAccountPlaylist } from './musicAccount/playlistSync'
 import listState from '@/store/list/state'
 import { setPlaylistSyncState } from './musicAccount/syncState'
+import { bilibiliClient } from '@/utils/musicSdk/bi'
+import { toNewMusicInfo } from '@/utils'
 
 const fetchList = async(id: string, source: LX.OnlineSource, sourceListId: string) => {
   setFetchingListStatus(id, true)
 
   let promise
-  if (/^board__/.test(sourceListId)) {
+  if (source == 'bi') {
+    const stillLinked = () => listState.userList.some(item => item.id == id && item.source == source && item.sourceListId == sourceListId)
+    promise = bilibiliClient.importCollection(sourceListId, undefined, () => !stillLinked())
+      .then(result => result.list.map(item => toNewMusicInfo(item as unknown as LX.Music.MusicInfoOnline)))
+  } else if (/^board__/.test(sourceListId)) {
     const id = sourceListId.replace(/^board__/, '')
     promise = id ? getBoardListAll(id, true) : Promise.reject(new Error('id not defined: ' + sourceListId))
   } else {

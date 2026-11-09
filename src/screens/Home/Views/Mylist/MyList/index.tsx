@@ -49,6 +49,7 @@ export default ({ embedded = false, catalog = false, onSelect }: { embedded?: bo
         <Button pressScale={0.94} accessibilityLabel={t('list_create')} onPress={() => listNameEditRef.current?.showCreate(0)} style={actionStyle}><Icon name="add" size={21} color={theme['q-text-primary']} /></Button>
         {!embedded && !catalog ? <Button accessibilityLabel={t('close')} onPress={() => { global.app_event.changeLoveListVisible(false) }} style={actionStyle}><Icon name="close" size={20} color={theme['q-text-secondary']} /></Button> : null}
       </View>
+      {!sorting ? <Button onPress={() => importRef.current?.show(listState.activeListId, 'bi')} style={{ minHeight: 40, borderRadius: 12, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: theme['q-surface-tint'] }}><Text size={12} color={theme['q-accent-text']}>{t('bilibili_favorite_add')}</Text></Button> : null}
       {sorting ? <Text size={11} color={theme['q-text-secondary']}>{t('playlist_order_hint')}</Text> : !catalog ? <View style={{ flexDirection: 'row', gap: 8 }}>
         <Button pressScale={0.97} onPress={() => {
           global.app_event.changeLoveListVisible(false)

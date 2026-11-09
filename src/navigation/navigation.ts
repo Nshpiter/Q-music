@@ -394,6 +394,21 @@ export function pushMusicAccountScreen(componentId: string, initialProvider: 'tx
   })
 }
 
+export function pushPlayHistoryScreen(componentId: string) {
+  const theme = themeState.theme
+  void Navigation.push(componentId, {
+    component: {
+      name: 'lxm.PlayHistoryScreen',
+      options: {
+        topBar: { visible: false, height: 0 },
+        statusBar: { drawBehind: true, visible: true, style: getStatusBarStyle(theme.isDark), backgroundColor: 'transparent' },
+        navigationBar: { backgroundColor: theme['c-content-background'] },
+        layout: { componentBackgroundColor: theme['c-content-background'] },
+      },
+    },
+  })
+}
+
 // export function pushSettingScreen(componentId: string) {
 //   /*
 //     Navigation.setDefaultOptions({

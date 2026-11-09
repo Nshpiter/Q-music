@@ -44,9 +44,9 @@ const Image = memo(({ url, cache, resizeMode = 'cover', style, onError, nativeID
   }, [url])
   let uri = typeof url == 'number'
     ? FastImage.resolveAssetSource(url).uri
-    : url?.startsWith('/')
-      ? 'file://' + url
-      : url
+    : typeof url == 'string'
+      ? url.startsWith('/') ? 'file://' + url : url
+      : undefined
   const showDefault = useMemo(() => !uri || isError, [isError, uri])
   return (
     showDefault ? <EmptyPic style={style} nativeID={nativeID} />

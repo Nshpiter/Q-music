@@ -1,3 +1,4 @@
+import { getFavoriteListId } from '@/core/localFavorite'
 import { playbackSession } from './session'
 import { isInitialized, initial as playerInitial, isEmpty, setPause, setPlay, setResource, setStop, initTrackInfo } from '@/plugins/player'
 import {
@@ -5,11 +6,14 @@ import {
   setIsPlayPending,
 } from '@/core/player/playStatus'
 import { playbackRecovery } from './recovery'
+import playerActions from '@/store/player/action'
+import { savePlayInfo } from '@/utils/data'
 import playerState from '@/store/player/state'
 import settingState from '@/store/setting/state'
 import {
   getList,
   getSourceList,
+  updatePlayIndex,
   setPlayMusicInfo,
   setMusicInfo,
   setPlayListId,
@@ -31,7 +35,6 @@ import { filterList } from './utils'
 import BackgroundTimer from 'react-native-background-timer'
 import { checkIgnoringBatteryOptimization, checkNotificationPermission, debounceBackgroundTimer, requestStoragePermission } from '@/utils/tools'
 import { needsSharedFileAccess } from '@/utils/nativeModules/utils'
-import { LIST_IDS } from '@/config/constant'
 import { addListMusics, removeListMusics } from '@/core/list'
 import { addDislikeInfo } from '@/core/dislikeList'
 import { updateSetting } from '@/core/common'
@@ -783,7 +786,7 @@ export const togglePlay = () => {
  */
 export const collectMusic = () => {
   if (!playerState.playMusicInfo.musicInfo) return
-  void addListMusics(LIST_IDS.LOVE, [
+  void addListMusics(getFavoriteListId(), [
     'progress' in playerState.playMusicInfo.musicInfo
       ? playerState.playMusicInfo.musicInfo.metadata.musicInfo
       : playerState.playMusicInfo.musicInfo,
@@ -795,7 +798,7 @@ export const collectMusic = () => {
  */
 export const uncollectMusic = () => {
   if (!playerState.playMusicInfo.musicInfo) return
-  void removeListMusics(LIST_IDS.LOVE, [
+  void removeListMusics(getFavoriteListId(), [
     'progress' in playerState.playMusicInfo.musicInfo
       ? playerState.playMusicInfo.musicInfo.metadata.musicInfo.id
       : playerState.playMusicInfo.musicInfo.id,
@@ -812,6 +815,77 @@ export const dislikeMusic = async() => {
   await playNext(true)
 }
 
+
+// 只清理本次播放会话，不删除任何歌单或下载文件。
+export const appendQueueItems = (tracks: LX.Player.PlayMusic[]) => {
+  if (!playerState.playMusicInfo.musicInfo || !tracks.length) return false
+  const id = playerState.playInfo.playerListId ?? '__session_queue__'
+  playbackSession.replace(id, [...getList(id), ...tracks])
+  setPlayListId(id)
+  clearPlayedList()
+  resetRandomNextMusicInfo()
+  updatePlayIndex()
+  return true
+}
+
+export const clearPlayQueue = async() => {
+  const stopping = stop()
+  playbackSession.reset()
+  clearPlayedList()
+  clearTempPlayeList()
+  resetRandomNextMusicInfo()
+  setPlayMusicInfo(null, null)
+  await savePlayInfo({ time: 0, maxTime: 0, listId: '', index: -1 })
+  await stopping
+}
+
+export const removeQueueIndex = async(index: number) => {
+  const id = playerState.playInfo.playerListId
+  if (!id) return
+  const list = getList(id) as LX.Player.PlayMusic[]
+  const removed = list[index]
+  if (!removed || !Number.isInteger(index)) return
+  const current = playerState.playMusicInfo
+  const anchor = list[playerState.playInfo.playerPlayIndex]
+  const removingCurrent = !current.isTempPlay && index == playerState.playInfo.playerPlayIndex
+  const shouldResume = playerState.isPlay || playerState.isPlayPending
+  if (list.length == 1 && !playerState.tempPlayList.length && removingCurrent) {
+    await clearPlayQueue()
+    return
+  }
+  const stopping = removingCurrent ? stop() : undefined
+  const token = playbackRecovery.token()
+  playbackSession.remove(id, list, index)
+  const remaining = getList(id) as LX.Player.PlayMusic[]
+  if (!remaining.some(item => item.id == removed.id)) playbackSession.forget(item => item.listId == id && item.musicInfo.id == removed.id)
+  clearPlayedList()
+  resetRandomNextMusicInfo()
+  if (!removingCurrent) {
+    if (current.isTempPlay && anchor) {
+      const anchorIndex = remaining.indexOf(anchor)
+      playerActions.updatePlayIndex(playerState.playInfo.playIndex, anchorIndex)
+    }
+    updatePlayIndex()
+    return
+  }
+  await stopping
+  if (token != playbackRecovery.token()) return
+  if (playerState.tempPlayList.length) {
+    const next = playerState.tempPlayList[0]
+    removeTempPlayList(0)
+    playerActions.updatePlayIndex(playerState.playInfo.playIndex, Math.min(index - 1, remaining.length - 1))
+    setPlayMusicInfo(next.listId, next.musicInfo, true)
+    playbackSession.record(next)
+    if (shouldResume) await handlePlay()
+    return
+  }
+  const next = remaining[Math.min(index, remaining.length - 1)]
+  if (!next) return
+  const selection = { listId: id, musicInfo: next, isTempPlay: false }
+  setPlayMusicInfo(id, next)
+  playbackSession.record(selection)
+  if (shouldResume) await handlePlay()
+}
 
 export const playQueueIndex = async(index: number) => {
   const id = playerState.playInfo.playerListId

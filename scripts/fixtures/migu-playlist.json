@@ -1,0 +1,4120 @@
+{
+  "recommend": {
+    "code": "000000",
+    "info": "操作成功",
+    "data": {
+      "contents": [
+        {
+          "columnId": "49937185",
+          "contents": [
+            {
+              "columnId": "49937207",
+              "contents": [
+                {
+                  "img": "https://d.musicapp.migu.cn/data/oss/column/00/1v/i8/d9.webp",
+                  "img2": "https://d.musicapp.migu.cn/data/oss/column/00/1v/i8/d8",
+                  "logEvent": {
+                    "resourceId": "78509372",
+                    "resourceType": "2006",
+                    "trackId": "49937207"
+                  },
+                  "refreshTips": "0",
+                  "txt": "朋友请听歌",
+                  "txt4": "78509372",
+                  "view": "ZJ-Title-CustomImg",
+                  "viewId": "4006-78509372"
+                }
+              ],
+              "title": "标题",
+              "view": "ZJ-Title",
+              "viewId": "2011-49937207"
+            },
+            {
+              "columnId": "49937193",
+              "contents": [
+                {
+                  "action": "mgmusic://song-list-info?id=233247680",
+                  "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oj/471676e5ec7a41c5a8899b9cd130e1c1.jpeg",
+                  "logEvent": {
+                    "boxName": "场景歌单",
+                    "contentId": "233247680",
+                    "contentName": "元气满满！好心情循环公式",
+                    "contentType": "2021",
+                    "index": "var:index",
+                    "resourceId": "233247680",
+                    "resourceType": "2021",
+                    "subContentId": "",
+                    "subContentType": "",
+                    "trackId": "49937193"
+                  },
+                  "resId": "233247680",
+                  "resType": "2021",
+                  "style": "",
+                  "track": "#playlistCh=1",
+                  "txt": "元气满满！好心情循环公式",
+                  "txt2": "解锁好心情循环公式，每一首都是元气补给站！节奏轻快的旋律搭配治愈感满满的歌声，赶走emo和疲惫，让快乐无限循环。不管是通勤路上、工作间隙还是休闲时刻，点开即收获满格元气，让好心情常伴左右～",
+                  "view": "ZJ-SongList-Item",
+                  "viewId": "4025-233247680"
+                },
+                {
+                  "action": "mgmusic://song-list-info?id=234169703",
+                  "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/5603c1649fab4dbda2cbeec63b233dd8.jpeg",
+                  "logEvent": {
+                    "boxName": "场景歌单",
+                    "contentId": "234169703",
+                    "contentName": "假期唯一目的地：快乐星球！",
+                    "contentType": "2021",
+                    "index": "var:index",
+                    "resourceId": "234169703",
+                    "resourceType": "2021",
+                    "subContentId": "",
+                    "subContentType": "",
+                    "trackId": "49937193"
+                  },
+                  "resId": "234169703",
+                  "resType": "2021",
+                  "style": "",
+                  "track": "#playlistCh=1",
+                  "txt": "假期唯一目的地：快乐星球！",
+                  "txt2": "假期不赶路，只奔赴快乐。把烦恼清空，把音量拉满，跟着旋律一起起飞，直达专属快乐星球。这里没有焦虑和疲惫，只有轻松、治愈、上头的好歌，陪你度过一整个自在假期。",
+                  "view": "ZJ-SongList-Item",
+                  "viewId": "4025-234169703"
+                },
+                {
+                  "action": "mgmusic://song-list-info?id=233587188",
+                  "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oo/208c6f6f085f481a9c284870e82d7b3c.jpg",
+                  "logEvent": {
+                    "boxName": "场景歌单",
+                    "contentId": "233587188",
+                    "contentName": "华语爱恋 | 跨越星河来见你",
+                    "contentType": "2021",
+                    "index": "var:index",
+                    "resourceId": "233587188",
+                    "resourceType": "2021",
+                    "subContentId": "",
+                    "subContentType": "",
+                    "trackId": "49937193"
+                  },
+                  "resId": "233587188",
+                  "resType": "2021",
+                  "style": "",
+                  "track": "#playlistCh=1",
+                  "txt": "华语爱恋 | 跨越星河来见你",
+                  "txt2": "攒好一兜子甜蜜小心思，跨越银河，也要来见你。",
+                  "view": "ZJ-SongList-Item",
+                  "viewId": "4025-233587188"
+                },
+                {
+                  "action": "mgmusic://song-list-info?id=233946174",
+                  "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/ee273d8adc194ad89b116e954c3aa517.jpg",
+                  "logEvent": {
+                    "boxName": "场景歌单",
+                    "contentId": "233946174",
+                    "contentName": "甜味情歌：在日落时心动一万次",
+                    "contentType": "2021",
+                    "index": "var:index",
+                    "resourceId": "233946174",
+                    "resourceType": "2021",
+                    "subContentId": "",
+                    "subContentType": "",
+                    "trackId": "49937193"
+                  },
+                  "resId": "233946174",
+                  "resType": "2021",
+                  "style": "",
+                  "track": "#playlistCh=1",
+                  "txt": "甜味情歌：在日落时心动一万次",
+                  "txt2": "日落很浪漫，两个人看更浪漫。",
+                  "view": "ZJ-SongList-Item",
+                  "viewId": "4025-233946174"
+                },
+                {
+                  "action": "mgmusic://song-list-info?id=234595661",
+                  "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p1/71f7ba935fe541b1981aee773b02d9f2.png",
+                  "logEvent": {
+                    "boxName": "场景歌单",
+                    "contentId": "234595661",
+                    "contentName": "那些KTV必点的粤式风情",
+                    "contentType": "2021",
+                    "index": "var:index",
+                    "resourceId": "234595661",
+                    "resourceType": "2021",
+                    "subContentId": "",
+                    "subContentType": "",
+                    "trackId": "49937193"
+                  },
+                  "resId": "234595661",
+                  "resType": "2021",
+                  "style": "",
+                  "track": "#playlistCh=1",
+                  "txt": "那些KTV必点的粤式风情",
+                  "txt2": "粤语不会唱怎么办？唱的就是那个氛围！没有技巧全是情感，去ktv多练练自然就会了！",
+                  "view": "ZJ-SongList-Item",
+                  "viewId": "4025-234595661"
+                },
+                {
+                  "action": "mgmusic://song-list-info?id=235025369",
+                  "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p2/2745c706d4154d5fb4d02842e62e2724.png",
+                  "logEvent": {
+                    "boxName": "场景歌单",
+                    "contentId": "235025369",
+                    "contentName": "KTV必点宝藏情歌！氛围感满分",
+                    "contentType": "2021",
+                    "index": "var:index",
+                    "resourceId": "235025369",
+                    "resourceType": "2021",
+                    "subContentId": "",
+                    "subContentType": "",
+                    "trackId": "49937193"
+                  },
+                  "resId": "235025369",
+                  "resType": "2021",
+                  "style": "",
+                  "track": "#playlistCh=1",
+                  "txt": "KTV必点宝藏情歌！氛围感满分",
+                  "txt2": "KTV不知道点什么?这份热歌清单直接抄作业，氛围感稳稳拿捏！",
+                  "view": "ZJ-SongList-Item",
+                  "viewId": "4025-235025369"
+                }
+              ],
+              "defaultNumber": 99,
+              "title": "场景歌单",
+              "view": "ZJ-SongList-Scroll",
+              "viewId": "2011-49937193"
+            }
+          ],
+          "title": "场景歌单",
+          "view": "playlist_square_scene_zone",
+          "viewId": "2011-49936489"
+        },
+        {
+          "columnId": "91184777",
+          "contents": [
+            {
+              "logEvent": {
+                "resourceId": "91186808",
+                "resourceType": "2006",
+                "trackId": "91184777"
+              },
+              "refreshTips": "0",
+              "txt": "深度·歌手",
+              "txt4": "91186808",
+              "view": "ZJ-Title",
+              "viewId": "4006-91186808"
+            }
+          ],
+          "title": "9月深度-歌手",
+          "view": "ZJ-Title",
+          "viewId": "2011-91184777"
+        },
+        {
+          "columnId": "91184772",
+          "contents": [
+            {
+              "action": "mgmusic://song-list-info?id=220352860",
+              "carouselType": "0",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pw/cea4e7801f284e49a45043eb4b4f4ca7.png",
+              "logEvent": {
+                "boxName": "9月深度-歌手-歌单内容",
+                "contentId": "220352860",
+                "contentName": "〔深度·凤凰传奇〕最炫流行，全民合唱",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "220352860",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "91184772"
+              },
+              "resId": "220352860",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "〔深度·凤凰传奇〕最炫流行，全民合唱",
+              "txt2": "凤凰传奇是中国著名的音乐组合，以其独特的音乐风格和精湛的演唱技巧赢得了无数歌迷的喜爱。这个歌单收录了他们最具代表性的歌曲，让你感受到他们深沉的情感和独特的音乐魅力～",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-220352860"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=219459417",
+              "carouselType": "0",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/px/65a4809f2f12449bbcfef85aa7efc715.png",
+              "logEvent": {
+                "boxName": "9月深度-歌手-歌单内容",
+                "contentId": "219459417",
+                "contentName": "〔深度·梁静茹〕情歌天后，温暖如初",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "219459417",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "91184772"
+              },
+              "resId": "219459417",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "〔深度·梁静茹〕情歌天后，温暖如初",
+              "txt2": "梁静茹，华语流行乐女歌手。1997年，因参加歌唱比赛而被李宗盛发掘，并独自前往中国台湾发展。1999年，推出首张个人音乐专辑《一夜长大》，从而正式出道。2000年，凭借歌曲《勇气》获得了一定的关注度。2004年，凭借专辑《美丽人生》获得了第15届台湾金曲奖最佳国语女演唱人奖的提名。2004年，推出第6张个人音乐专辑《燕尾蝶下定爱的决心》。2005年，推出第7张个人音乐专辑《丝路》。2006年，推出第8张个人音乐专辑《亲亲》。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-219459417"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=220353367",
+              "carouselType": "0",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pw/432e6a50a81848989940baae626d8a43.png",
+              "logEvent": {
+                "boxName": "9月深度-歌手-歌单内容",
+                "contentId": "220353367",
+                "contentName": "〔深度·张学友〕见证时间与不朽经典",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "220353367",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "91184772"
+              },
+              "resId": "220353367",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "〔深度·张学友〕见证时间与不朽经典",
+              "txt2": "张学友是华语音乐界的传奇人物，以其独特的嗓音和深情的歌声赢得了无数歌迷的喜爱。这个歌单收录了他最脍炙人口的歌曲，让你感受到他独特的音乐魅力和深情的情感。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-220353367"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=220106958",
+              "carouselType": "0",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pv/475c548c7c904b0ea44c70e8ea480cf9.png",
+              "logEvent": {
+                "boxName": "9月深度-歌手-歌单内容",
+                "contentId": "220106958",
+                "contentName": "〔深度・张惠妹〕情随声起，唱尽离合",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "220106958",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "91184772"
+              },
+              "resId": "220106958",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "〔深度・张惠妹〕情随声起，唱尽离合",
+              "txt2": "她是华语乐坛殿堂级存在，她有着最独到的歌喉和声线，在高昂与细腻之间自信游走，无论是拥抱民族文化的音乐，还是大胆展现态度的流行曲，阿妹一路的成长已完成了耀目蜕变。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-220106958"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=217017307",
+              "carouselType": "0",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pw/38a576b68cf34b3fa43fe9354ae0f865.png",
+              "logEvent": {
+                "boxName": "9月深度-歌手-歌单内容",
+                "contentId": "217017307",
+                "contentName": "〔深度·陈奕迅〕漫长岁月，深情是你",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "217017307",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "91184772"
+              },
+              "resId": "217017307",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "〔深度·陈奕迅〕漫长岁月，深情是你",
+              "txt2": "有关爱情的故事他都唱过，有关温柔的歌声他都拥有。陈奕迅作为香港乐坛的实力派男歌手，数不清的奖项与成绩都足以证明他的不可多得。那就在歌里感受他的魅力吧。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-217017307"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=220338301",
+              "carouselType": "0",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pv/e3d96d7a546a47cf99f2162070077dab.png",
+              "logEvent": {
+                "boxName": "9月深度-歌手-歌单内容",
+                "contentId": "220338301",
+                "contentName": "〔深度・告五人〕爱本无名，浪漫藏锋",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "220338301",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "91184772"
+              },
+              "resId": "220338301",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "〔深度・告五人〕爱本无名，浪漫藏锋",
+              "txt2": "浪漫的音符与生活的琐碎结合的永远那么恰到好处，当喧嚣的街道变得温柔，当永恒寂静的宇宙响起躁动之声，告五人的浪漫你也会感受到了。2011年夏天成团于宜兰，当时的成员包含现任主唱潘云安、吉他手潘燕山、吉他手连震堂、贝斯手吴尚任、鼓手林正，目前团员为男主唱兼吉他手潘云安、女主唱犬青及鼓手林哲谦。2017年10月发行首张EP《迷雾之子》，举行首次巡回演出，缔造北高三场皆SOLD OUT纪录。该作更于翌年获得2018金音奖最佳新人（团）奖。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-220338301"
+            }
+          ],
+          "title": "9月深度-歌手-歌单内容",
+          "view": "ZJ-SongList-Scroll",
+          "viewId": "2011-91184772"
+        },
+        {
+          "columnId": "49936396",
+          "contents": [
+            {
+              "logEvent": {
+                "resourceId": "56028629",
+                "resourceType": "2006",
+                "trackId": "49936396"
+              },
+              "refreshTips": "0",
+              "txt": "编辑推荐",
+              "txt4": "56028629",
+              "view": "ZJ-Title",
+              "viewId": "4006-56028629"
+            }
+          ],
+          "title": "『编辑推荐』-标题",
+          "view": "ZJ-Title",
+          "viewId": "2011-49936396"
+        },
+        {
+          "columnId": "49936376",
+          "contents": [
+            {
+              "action": "mgmusic://song-list-info?id=237140547",
+              "carouselType": "1",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pv/2fcc4dc942fe47079707720f2f78455e.jpg",
+              "logEvent": {
+                "boxName": "一号轮播（放最上面）",
+                "contentId": "237140547",
+                "contentName": "古风雅韵｜一曲清歌解千愁",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237140547",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "55176986"
+              },
+              "resId": "237140547",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "古风雅韵｜一曲清歌解千愁",
+              "txt2": "漫赏古风雅韵，静听一曲清歌解千愁。婉转弦音伴着诗意唱腔，褪去俗世喧嚣。闲时独坐，任悠扬古韵漫过耳畔，消散心头烦忧。曲调清雅绵长，藏着风月与山河，于婉转乐声里寻片刻安宁，在古风意境之中，安放浮躁心绪。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237140547"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=237140556",
+              "carouselType": "1",
+              "img": "https://qpic.y.qq.com/music_cover/3sZgibm04hICGbleGFmh9SX3RMrFpJIl0KDSurlBsdUaJAib6jicl3YDg/600",
+              "logEvent": {
+                "boxName": "一号轮播（放最上面）",
+                "contentId": "237140556",
+                "contentName": "古风小曲｜听一曲放下烦恼",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237140556",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "55176986"
+              },
+              "resId": "237140556",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "古风小曲｜听一曲放下烦恼",
+              "txt2": "闲来听听这些古风小曲，伴着婉转旋律放下心头烦恼。没有沉重晦涩的词句，曲调舒缓好听。忙碌疲惫的时候戴上耳机，让温柔的古风旋律包裹自己，暂时抛开生活里的琐碎与焦虑。在悠悠歌声里偷得片刻清闲，静下心来，好好舒缓情绪。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237140556"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=237189703",
+              "carouselType": "0",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pw/db8bf03ab3464bd28a70832edfb4a084.png",
+              "logEvent": {
+                "boxName": "『编辑推荐』-歌单",
+                "contentId": "237189703",
+                "contentName": "90后典藏：一秒回到翻盖手机时代",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237189703",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "49936376"
+              },
+              "resId": "237189703",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "90后典藏：一秒回到翻盖手机时代",
+              "txt2": "熟悉的前奏响起，瞬间拉回翻盖手机的年代。这些刻在记忆里的老歌，是当年存进内存卡、反复循环的宝藏。承载着青涩的心事与简单的快乐，没有繁杂喧嚣。戴上耳机，重温年少时光，在旋律里捡拾属于 90 后独有的温柔回忆。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237189703"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=237200354",
+              "carouselType": "0",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pz/c059690c65384d278a6a226d956a3f05.png",
+              "logEvent": {
+                "boxName": "『编辑推荐』-歌单",
+                "contentId": "237200354",
+                "contentName": "致青春：唱响年少时光",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237200354",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "49936376"
+              },
+              "resId": "237200354",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "致青春：唱响年少时光",
+              "txt2": "时光流逝，岁月匆匆，跟着歌声一起回忆那段回不去的青葱岁月吧～",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237200354"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=237185356",
+              "carouselType": "0",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/px/4669260d2c4b4b0ba8ae7f8750e947d6.png",
+              "logEvent": {
+                "boxName": "『编辑推荐』-歌单",
+                "contentId": "237185356",
+                "contentName": "华语乐团精选｜一群浪漫鬼的狂欢",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237185356",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "49936376"
+              },
+              "resId": "237185356",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语乐团精选｜一群浪漫鬼的狂欢",
+              "txt2": "鼓点撞碎平庸日常，旋律藏着不被驯服的浪漫。集结一众华语乐团佳作，摇滚、 Indie 轮番登场。不必拘谨，跟着节拍放肆共鸣，在人声与器乐交织的热烈里，和同频的人赴一场自由狂欢，把心底的热爱尽情释放。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237185356"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=237187884",
+              "carouselType": "0",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/px/7c1c54a31d8a42ef81d06760f461023e.png",
+              "logEvent": {
+                "boxName": "『编辑推荐』-歌单",
+                "contentId": "237187884",
+                "contentName": "华语摇滚：唱给「不服」的人",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237187884",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "49936376"
+              },
+              "resId": "237187884",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语摇滚：唱给「不服」的人",
+              "txt2": " 通过思考来总结出自己的生活经验， 就是摇滚乐当年最刺激我的地方！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237187884"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=237187919",
+              "carouselType": "0",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pw/88524796e78b443198a6d571a1fd0443.png",
+              "logEvent": {
+                "boxName": "『编辑推荐』-歌单",
+                "contentId": "237187919",
+                "contentName": "粤语男声：秋天该很好，倘若你在场",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237187919",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "49936376"
+              },
+              "resId": "237187919",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "粤语男声：秋天该很好，倘若你在场",
+              "txt2": "秋风漫过街巷，温柔男声缓缓诉说心事。集结一众细腻粤语男声金曲，字句藏着怀念与怅然。落叶随风飘落，旋律轻缓绵长，适合在微凉的秋日独自聆听，那些没说出口的惦念，都寄于歌声里，静静回味一段旧时光。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237187919"
+            }
+          ],
+          "title": "『编辑推荐』-歌单",
+          "view": "ZJ-SongList-Scroll",
+          "viewId": "2011-49936376"
+        },
+        {
+          "columnId": "50906755",
+          "contents": [
+            {
+              "logEvent": {
+                "resourceId": "50907002",
+                "resourceType": "2006",
+                "trackId": "50906755"
+              },
+              "refreshTips": "0",
+              "txt": "歌单百宝箱",
+              "txt4": "50907002",
+              "view": "ZJ-Title",
+              "viewId": "4006-50907002"
+            }
+          ],
+          "title": "『功能歌单』-标题",
+          "view": "ZJ-Title",
+          "viewId": "2011-50906755"
+        },
+        {
+          "columnId": "50902400",
+          "contents": [
+            {
+              "action": "mgmusic://song-list-info?id=237199146",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pz/cc509bbdf0b94add9d62aefda3fd408c.png",
+              "logEvent": {
+                "boxName": "『功能歌单』-歌单内容",
+                "contentId": "237199146",
+                "contentName": "悠闲假期：跟着旋律一起chill起来～",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237199146",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "50902400"
+              },
+              "resId": "237199146",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "悠闲假期：跟着旋律一起chill起来～",
+              "txt2": "假期就要听点快乐的歌，能量磁场都拉满，快乐的人不emo！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237199146"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=237199544",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/px/83312201c1d94a01ae127398fa00811a.png",
+              "logEvent": {
+                "boxName": "『功能歌单』-歌单内容",
+                "contentId": "237199544",
+                "contentName": "散步听老歌，带上旋律快乐出发",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237199544",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "50902400"
+              },
+              "resId": "237199544",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "散步听老歌，带上旋律快乐出发",
+              "txt2": "把快乐节奏装进耳机，脚步跟着变轻快～",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237199544"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=237158175",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/px/01af1f98d40d4921a1a7440eb452dabf.png",
+              "logEvent": {
+                "boxName": "『功能歌单』-歌单内容",
+                "contentId": "237158175",
+                "contentName": "追风骑行｜伴着旋律奔赴山野",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237158175",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "50902400"
+              },
+              "resId": "237158175",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "追风骑行｜伴着旋律奔赴山野",
+              "txt2": "车轮转动，迎着晚风出发，把烦恼都丢在身后。这份专为骑行整理的歌单，节奏轻快舒展。伴着旋律穿过林荫与旷野，奔赴山野之间。风声和乐声相融，不必追赶时间，只管自在向前，在一路风景与歌声里，感受无拘无束的畅快。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237158175"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=237158196",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pv/06c7eb14746e45778d6a1882d4626bbc.png",
+              "logEvent": {
+                "boxName": "『功能歌单』-歌单内容",
+                "contentId": "237158196",
+                "contentName": "悠然漫步｜把心事交给旋律",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237158196",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "50902400"
+              },
+              "resId": "237158196",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "悠然漫步｜把心事交给旋律",
+              "txt2": "适合傍晚悠闲散步时聆听的歌单。放缓脚步，不必匆忙赶路，任由晚风拂过，将心事悄悄交给旋律。舒缓柔和的曲调，抚平内心的浮躁。边走边听，看路边灯火、天边暮色，在温柔歌声里和自己独处，卸下一天积攒的疲惫。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237158196"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=237158234",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pw/f43286cfc5344e8d89ad96741fccad11.png",
+              "logEvent": {
+                "boxName": "『功能歌单』-歌单内容",
+                "contentId": "237158234",
+                "contentName": "户外运动｜释放你的荷尔蒙",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237158234",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "50902400"
+              },
+              "resId": "237158234",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "户外运动｜释放你的荷尔蒙",
+              "txt2": "专为户外运动整理的热血曲目，强劲鼓点直击耳膜，点燃体内活力。不管是慢跑、徒步或是登山，富有冲击力的旋律跟上你的步调。跟着节奏尽情舒展身体，抛开疲惫与压力，尽情释放荷尔蒙，在汗水与律动之中，感受畅快淋漓的运动快乐。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237158234"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=237158747",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pv/df3e2bc387ca4e1bb8aa6c72d713388f.png",
+              "logEvent": {
+                "boxName": "『功能歌单』-歌单内容",
+                "contentId": "237158747",
+                "contentName": "华语动感：运动减压必备",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "237158747",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "50902400"
+              },
+              "resId": "237158747",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语动感：运动减压必备",
+              "txt2": "健身这件事，最难的不是动作，是开始。汗水要流，音乐要够劲。点开它，动起来，这一组做完再说！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-237158747"
+            }
+          ],
+          "title": "『功能歌单』-歌单内容",
+          "view": "ZJ-SongList-Scroll",
+          "viewId": "2011-50902400"
+        },
+        {
+          "columnId": "82493459",
+          "contents": [
+            {
+              "logEvent": {
+                "resourceId": "82493569",
+                "resourceType": "2006",
+                "trackId": "82493459"
+              },
+              "refreshTips": "0",
+              "txt": "甄选上新",
+              "txt4": "82493569",
+              "view": "ZJ-Title",
+              "viewId": "4006-82493569"
+            }
+          ],
+          "title": "『歌单上新』-标题",
+          "view": "ZJ-Title",
+          "viewId": "2011-82493459"
+        },
+        {
+          "columnId": "82493477",
+          "contents": [
+            {
+              "action": "mgmusic://song-list-info?id=234608615",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oz/25f9e02aa7d2469dad8da31b33e86c9e.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234608615",
+                "contentName": "通勤歌单 | 上班路上的元气加油站",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234608615",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234608615",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "通勤歌单 | 上班路上的元气加油站",
+              "txt2": "拥挤的通勤路途难免沉闷，这份旋律就是途中专属元气补给。明快轻快的节奏驱散早起的困顿，灵动的曲调扫去赶路的焦躁。穿梭车流与人流时戴上耳机，任由活力音律包裹自己，唤醒昏沉状态，积攒满满好心情，带着充沛精神奔赴一天的工作。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234608615"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234608608",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oz/66090c7480c446cc938a77a224c2d662.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234608608",
+                "contentName": "华语治愈：内心深处美好长留",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234608608",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234608608",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语治愈：内心深处美好长留",
+              "txt2": "愿你热爱生活，把世间美好一一收藏，希望它伴你好眠，做个美梦。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234608608"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234608593",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p1/43c21824c4f94488b3c73b4b678bc76f.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234608593",
+                "contentName": "欧美流行合集，不止是动听",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234608593",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234608593",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "欧美流行合集，不止是动听",
+              "txt2": "搜罗欧美流行金曲，邂逅专属于听觉的浪漫。慵懒唱腔搭配灵动旋律，曲风多元又耐听。每一段音符都氛围感十足，温柔旋律抚平心绪。抛开纷扰，沉浸在悠扬歌声里，让异域风情的音乐，陪你度过惬意悠闲的时光。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234608593"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234608552",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oz/90e53ca0b2ec4b1fb2d9726bf5ed3b60.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234608552",
+                "contentName": "漫步在雨天 | 步入一场柔软的梦",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234608552",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234608552",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "漫步在雨天 | 步入一场柔软的梦",
+              "txt2": "窗外细雨淅淅沥沥落下，氛围感旋律缓缓流淌。伴着雨滴敲打窗棂的白噪音，卸下满身奔波的疲惫。柔和曲调抚平内心躁动，仿佛独自漫步湿漉漉街巷，坠入绵软温柔的梦境。抛开俗世烦忧，静静沉浸在这份静谧浪漫里，独享雨天独有的松弛。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234608552"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234608267",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p1/bfa1b3f18a6f44ba90754964059bf618.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234608267",
+                "contentName": "欧美宝藏 | 邂逅听觉浪漫",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234608267",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234608267",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "欧美宝藏 | 邂逅听觉浪漫",
+              "txt2": "精选流行欧美好歌，解锁沉浸式听觉浪漫。动人声线交织婉转节奏，曲风温柔治愈，句句入心。避开流量喧嚣，发掘隐藏佳作，在流淌的旋律中，感受异域音乐的独特魅力，尽享片刻温柔与美好。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234608267"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234606589",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p0/1d2930b335574a76826dd437e70aee31.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234606589",
+                "contentName": "人生不仅需要RMB，还需要R&B",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234606589",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234606589",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "人生不仅需要RMB，还需要R&B",
+              "txt2": "谋生拼尽全力，也要给生活留一份浪漫。这份歌单集结优质 R&B 作品，婉转韵律、温柔声线直击心底。慵懒又迷人的节奏，抚平日常浮躁。暂别忙碌与压力，沉浸在顺滑旋律中，用音乐为平淡日子增添别样风情。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234606589"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234606336",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p0/4772ee0cd455464c8f18946f034162d0.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234606336",
+                "contentName": "神级音综Live：这些现场，刻骨铭心",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234606336",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234606336",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "神级音综Live：这些现场，刻骨铭心",
+              "txt2": "时间会模糊很多事情，但有些歌声永远清晰。那些在音综舞台上绽放的光芒，那些歌手用尽全力的演唱，那些观众发自内心的掌声和呐喊，都变成了刻在心底的印记。愿这些歌声，能再次打动你。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234606336"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234605786",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oy/353e8ba3d16443a8a9240fde9738a03c.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234605786",
+                "contentName": "K-Pop｜光听前奏就已经上头",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234605786",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234605786",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "K-Pop｜光听前奏就已经上头",
+              "txt2": "无需等待副歌，前奏一响直接上头！通勤提神、运动燃脂、摸鱼解压全适配，戴上耳机开启沉浸式律动模式✨",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234605786"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234597729",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oz/db8adb7098b349d8969557ebd05717a1.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234597729",
+                "contentName": "浪漫国风：花前月下遇良缘",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234597729",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234597729",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "浪漫国风：花前月下遇良缘",
+              "txt2": "婉转国风曲调，勾勒花前月下的唯美意境。清风伴繁花，月色映良人，一曲曲温柔旋律，道尽相逢的欣喜与相知的浪漫。甄选古韵金曲，将世间美好良缘尽数谱写，在悠扬乐声里，邂逅一场温柔缱绻的心动。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234597729"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234597125",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oz/226558a885fe4c3bbb4b86024a34acda.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234597125",
+                "contentName": "「粤语情歌」用余下时间谈论爱",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234597125",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234597125",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "「粤语情歌」用余下时间谈论爱",
+              "txt2": "经典粤语旋律缓缓流淌，余生漫漫，只想与你细细谈论爱意。这里集结各式深情港乐，歌声裹着细腻心绪，道尽爱恋里的温柔、惦念与相守。每一句唱词都真挚动人，愿在悠长时光里，让这些老歌陪伴你，共品藏在旋律里的款款情深。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234597125"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234596740",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p0/bc49ef18558240aa96697e5dc86ee42f.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234596740",
+                "contentName": "伤感预警｜海鸟跟鱼相爱只是一场意外",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234596740",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234596740",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "伤感预警｜海鸟跟鱼相爱只是一场意外",
+              "txt2": "海鸟与鱼的相爱，本就是一场注定落幕的意外。山海相隔，缘分短暂，徒留满心遗憾。甄选一众伤感曲目，用温柔又落寞的歌声，描摹爱而无果的情愫，陪你沉浸在这份无声的难过里。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234596740"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234596265",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p0/028a51c3bb5d45159c871a881445ff4a.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234596265",
+                "contentName": "元气情歌：旋律输入电量满分！",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234596265",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234596265",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "元气情歌：旋律输入电量满分！",
+              "txt2": "每一首，都是恋爱里的糖。每一句，都是想对那个人说的话。恋爱ing，音乐也ing！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234596265"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234596175",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oy/ddc76066a8bb48f98f4e2d15ec7fb379.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234596175",
+                "contentName": "有些旋律，从随身听一直到手机",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234596175",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234596175",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "有些旋律，从随身听一直到手机",
+              "txt2": "岁月更迭，设备换了一代又一代，动人旋律却始终留存。从随身听走到手机，歌声陪伴我们走过岁岁年年。曲风多样，耐听又治愈，不管何时点开，都能瞬间找回当初的心境，成为长久相伴的耳边风景。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234596175"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234596141",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p0/d32d496ba90b4ed7bae9a11b682b5405.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234596141",
+                "contentName": "青春不散场，少年向远方",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234596141",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234596141",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "青春不散场，少年向远方",
+              "txt2": "盛夏蝉鸣掀开毕业序章，旧教室与操场藏满年少回忆。旋律温柔包裹所有不舍，记录课桌旁的欢笑、并肩前行的时光。纵使即将挥手别离，少年意气永不消散。伴着歌声收拾行囊，怀揣满腔热忱奔赴前路山海，愿我们永远保有纯粹初心。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234596141"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234596137",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oz/f86167ff88aa45f0b641b1210ef1ec3d.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234596137",
+                "contentName": "欧美经典名曲：高雅人士品鉴中",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234596137",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234596137",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "欧美经典名曲：高雅人士品鉴中",
+              "txt2": "你一定听过这些经典音乐，但你不一定知道它们背后的故事。这些或欢快，或悲伤，或唯美，或忧郁的音符，一旦经过你的耳畔，定会让你刹那间忘记这个复杂的世界，回归你心灵深处所期待的那个美好的乐园。人间挚爱，总是保留在刹那间的永恒里。而这些迷人的音符，能让我们重拾爱的美好，弥补生命中那的空白。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234596137"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234596054",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oz/598f471054fb462fb2f928bf0c2d1647.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234596054",
+                "contentName": "欧美｜运动必备炸燃系列！",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234596054",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234596054",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "欧美｜运动必备炸燃系列！",
+              "txt2": "运动时候没歌听？这个歌单满足你所有需求！精选欧美炸燃歌曲，一起身随舞动运动起来吧！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234596054"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234595944",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p0/69140b715cd544d4a64a5036ada29f57.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234595944",
+                "contentName": "抖音热歌精选：循环百遍依旧喜欢",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234595944",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234595944",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "抖音热歌精选：循环百遍依旧喜欢",
+              "txt2": "精选全网刷屏的抖音热门金曲，每一首都陪伴过无数短视频瞬间。旋律动听、传唱度超高，节奏或轻快或深情，耐听度拉满。循环百遍依旧心生欢喜，闲暇时戴上耳机，沉浸在熟悉的旋律里，治愈日常琐碎，承包你的无限单曲循环。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234595944"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234595661",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p1/71f7ba935fe541b1981aee773b02d9f2.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234595661",
+                "contentName": "那些KTV必点的粤式风情",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234595661",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234595661",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "那些KTV必点的粤式风情",
+              "txt2": "粤语不会唱怎么办？唱的就是那个氛围！没有技巧全是情感，去ktv多练练自然就会了！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234595661"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234595336",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p0/73a6e0a7900b44bfbaa9c8f5eff5f6f3.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234595336",
+                "contentName": "古典图书馆 | 精神世界的避难所",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234595336",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234595336",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "古典图书馆 | 精神世界的避难所",
+              "txt2": "踏入满是书香的古典图书馆，喧嚣尽数隔绝在外。轻柔雅致的古典乐在空间缓缓流淌，成为独属于精神的庇护港湾。放下外界纷扰，沉浸沉静悠扬的曲调，思绪随音律舒展，寻得内心安稳。在此与自我对话，用纯粹乐声构筑一方远离俗世的心灵净土。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234595336"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234595329",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oz/3a6bdd32b6244d0daa60b945c68b6057.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234595329",
+                "contentName": "下午茶时光 | 在老歌里慢慢品味时光",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234595329",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234595329",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "下午茶时光 | 在老歌里慢慢品味时光",
+              "txt2": "偷一段慵懒下午茶时光，热茶配点心，耳畔流转舒缓旧旋律。褪去平日奔波的浮躁，任由温柔曲调包裹周身，细细打捞藏在旋律里的旧日碎片。不必追赶时间，就静静坐着，跟着旋律回望过往，让平缓的老歌抚平心绪，慢下来细细感受岁月独有的温柔滋味。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234595329"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234594252",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oz/3ee1520a95e44aa288f108c479afc6ef.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234594252",
+                "contentName": "通勤蓝调 | 把心事揉进音乐里",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234594252",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234594252",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "通勤蓝调 | 把心事揉进音乐里",
+              "txt2": "奔波于朝暮通勤路，城市喧嚣裹挟着琐碎心绪。就让舒缓的蓝调旋律漫入耳畔，把平日里难言的心事、疲惫与思绪，都轻轻揉进婉转乐声里。暂别生活的匆忙，在流动的音符中放空自己，让温柔曲调抚平浮躁，陪伴每一段独行的路途。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234594252"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234594222",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p0/ea0af153b7ff46efae8af26d58cb0810.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234594222",
+                "contentName": "欧美流行｜踩准节奏去兜风",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234594222",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234594222",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "欧美流行｜踩准节奏去兜风",
+              "txt2": "收拾好心情踏上公路旅程，让轻快旋律一路相伴。曲风舒展洒脱，裹挟着晚风与向往，每一段节奏都在诉说自由。抛开琐碎烦恼，伴着音乐向前驰骋，以勇敢奔赴前路，在一路歌声里，享受独属于旅途的浪漫与畅快。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234594222"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234594195",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oy/045b5a444b0a465782abe59ed35ad99c.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234594195",
+                "contentName": "公路旅行 | 带着自由与勇敢出发吧",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234594195",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234594195",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "公路旅行 | 带着自由与勇敢出发吧",
+              "txt2": "收拾好心情踏上公路旅程，让轻快旋律一路相伴。曲风舒展洒脱，裹挟着晚风与向往，每一段节奏都在诉说自由。抛开琐碎烦恼，伴着音乐向前驰骋，以勇敢奔赴前路，在一路歌声里，享受独属于旅途的浪漫与畅快。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234594195"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234594110",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oy/931f027958054ebc914f867e0c3d3d64.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234594110",
+                "contentName": "车载经典 | 神仙打架时期的华语乐坛",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234594110",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234594110",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "车载经典 | 神仙打架时期的华语乐坛",
+              "txt2": "重回华语乐坛黄金年代，这是堪称神仙打架的璀璨时光。首首皆是传世佳作，旋律一响便是满满回忆。曲风多元韵味十足，每一段旋律都承载着一代人的青春，适合驾车途中慢慢聆听，在歌声里重温旧日美好。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234594110"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234593020",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p3/e8cc0974566343a7a19c28a463fc30c0.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234593020",
+                "contentName": "KTV必点！我还要再唱三天三夜",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234593020",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234593020",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "KTV必点！我还要再唱三天三夜",
+              "txt2": "KTV热歌大赏，让你们一次性听个够，上瘾我可不管哦！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234593020"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234592280",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/p0/15a002a8d40843bdb8ea11a1c10db87a.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234592280",
+                "contentName": "心动预警中：友达以上，恋人未满",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234592280",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234592280",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "心动预警中：友达以上，恋人未满",
+              "txt2": "比朋友多一份心跳，比恋人少一个拥抱。会因为你的一句话开心一整天，会偷偷记住你喜欢的一切，会在人群中第一眼找到你的位置。这份心意，像春天刚刚冒出的嫩芽，轻轻的，嫩嫩的，藏着无限可能。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234592280"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234356920",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/cfdd2d63dda94c93bd3e6a0cdb56d1ef.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234356920",
+                "contentName": "华语经典：藏在MP3里的青春",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234356920",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234356920",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语经典：藏在MP3里的青春",
+              "txt2": "从懵懂到青涩，从青涩到成熟，这些歌陪我们走过了每一个重要的节点。这张歌单，是一次穿越过去的听觉旅行。按下播放，回到那个属于华语音乐的黄金年代。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234356920"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234360248",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/492290e72be646aea4058a1fcae77071.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234360248",
+                "contentName": "一路畅听：一键开启旅行模式！",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234360248",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234360248",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "一路畅听：一键开启旅行模式！",
+              "txt2": "旅行除了要带上好心情和增加幸福感的零食之外。一路上的美好时光，也需要音乐锦上添花。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234360248"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234346719",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/8a5b21537f2b43188b3ad6ed101a6cc9.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234346719",
+                "contentName": "有音乐作伴，没什么大不了",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234346719",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234346719",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "有音乐作伴，没什么大不了",
+              "txt2": "歌曲不评价你的选择，不追问你的过去。它只是安静地陪着你，在你需要的时候，给你一个情绪的出口。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234346719"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234333649",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/a7baacdb8d724932bd9a86a829ad37cd.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234333649",
+                "contentName": "欧美R&B：戴上耳机，深度陶醉",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234333649",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234333649",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "欧美R&B：戴上耳机，深度陶醉",
+              "txt2": "醇厚慵懒的欧美 R&B 旋律，搭配极具质感的嗓音，一入耳便让人沉醉。细腻转音与舒缓节奏完美融合，氛围感拉满。戴上耳机，瞬间沉浸在温柔又迷人的音乐世界里，放松身心、治愈情绪。每一首都耐听又高级，独享属于你的沉浸式听觉盛宴。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234333649"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234333523",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ou/8a122b8ab1ae443c84ffc586899ebb0d.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234333523",
+                "contentName": "华语励志：理想虽远，终会抵达",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234333523",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234333523",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语励志：理想虽远，终会抵达",
+              "txt2": "精选华语正能量励志金曲，歌声里藏着坚持与力量。每一段旋律都在为追梦人打气，每一句歌词都充满温暖与勇气。在迷茫疲惫时给予慰藉，在跌倒失落时重拾信心。愿你心怀热爱，奔赴山海，相信所有努力都不被辜负，理想再远，终有一天会抵达。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234333523"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234333395",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/ef7595849b714b83a5ede5314def7712.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234333395",
+                "contentName": "KTV点歌指南：拿上话筒秒变麦霸",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234333395",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234333395",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "KTV点歌指南：拿上话筒秒变麦霸",
+              "txt2": "精选全网传唱度超高的 KTV 必点金曲，曲风全覆盖、好唱又上头。无论是抒情慢歌、动感嗨歌还是经典怀旧，首首都是气氛担当。旋律一响就能开口，高音低音都好驾驭，帮你轻松 hold 住全场。拿上话筒，你就是当晚最稳的麦霸！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234333395"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234332827",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/44b5ce11103b4611bf79b59a6882a9c9.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234332827",
+                "contentName": "青春回忆 | 追忆回不去的青葱岁月",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234332827",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234332827",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "青春回忆 | 追忆回不去的青葱岁月",
+              "txt2": "在音乐中重温美好而纯真的青春时光，将岁月定格在最美好的一页。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234332827"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234332718",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/eccecdf610a04a2590dae7faff9c247a.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234332718",
+                "contentName": "华语经典 | 窝在沙发里听首老歌",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234332718",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234332718",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语经典 | 窝在沙发里听首老歌",
+              "txt2": "宅家的时候，时间好像会变慢。一本书，一杯茶，一首老歌，就是最好的安排。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234332718"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234332608",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/f5f31d9c46d247759d5357f54adb8a80.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234332608",
+                "contentName": "享受松弛时刻 | 让呼吸节奏慢下来",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234332608",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234332608",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "享受松弛时刻 | 让呼吸节奏慢下来",
+              "txt2": "被温柔的旋律包裹，钻进独属你的松弛磁场～",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234332608"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234332453",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/e5dfa1c28a4d4669be1fcf233ba43c00.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234332453",
+                "contentName": "欧美加油站：感受元气通勤路！",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234332453",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234332453",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "欧美加油站：感受元气通勤路！",
+              "txt2": "用音乐点亮忙碌的路程，让通勤路充满欢乐与活力！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234332453"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234332541",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/0d2c5521490a4a6ea8614066f4cdc4df.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234332541",
+                "contentName": "她，做自己的女王",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234332541",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234332541",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "她，做自己的女王",
+              "txt2": "她不需要被定义，不需要被比较，不需要活成别人的期待。她只需要，成为自己。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234332541"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234330863",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/9df86a6677da4fb09845fdf0fdc8e61a.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234330863",
+                "contentName": "治愈｜岁月温良，万物可爱",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234330863",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234330863",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "治愈｜岁月温良，万物可爱",
+              "txt2": "市井长巷，聚拢来是烟火，摊开来是人间。收集世间温柔旋律，献给每一个认真生活的你。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234330863"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234330651",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/8ab64536317c418897440c40bca031d9.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234330651",
+                "contentName": "影视回忆杀！用音乐唤醒那些经典瞬间",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234330651",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234330651",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "影视回忆杀！用音乐唤醒那些经典瞬间",
+              "txt2": "熟悉旋律一响，瞬间拉回追剧时光。一首首影视金曲，藏着难忘剧情与青春回忆，重温耳畔经典瞬间。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234330651"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234332512",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/566ce8e307a04c9b929b19043787094c.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234332512",
+                "contentName": "抖音热歌：心动是循环1000遍",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234332512",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234332512",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "抖音热歌：心动是循环1000遍",
+              "txt2": "精选全网刷屏抖音热歌，每一首都自带心动信号。旋律抓耳、歌词戳心，节奏轻快又上头，听一遍就忍不住单曲循环。从温柔治愈到热血动感，首首都是爆款标配，适合通勤、放松、剪辑日常。循环千遍也不腻，让每一次播放，都撞进心底最软的地方。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234332512"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234321402",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/71abab3acdce4f3fa951ae62dfc3099d.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234321402",
+                "contentName": "燃脂暴汗：按时充值多巴胺",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234321402",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234321402",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "燃脂暴汗：按时充值多巴胺",
+              "txt2": "超燃节奏一键唤醒活力，强劲鼓点带你冲破疲惫。每首歌都自带爆发力，旋律上头、节奏带感，让运动不再枯燥。在汗水与节拍中释放压力，快速充值快乐多巴胺，越动越嗨、越练越爽。无论是健身、跑步还是燃脂操，都能给你满满动力，全程高能不停歇。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234321402"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234320698",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/949d034124c94874a205105a00313c5d.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234320698",
+                "contentName": "古装OST：命运的红线早已系在腕间",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234320698",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234320698",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "古装OST：命运的红线早已系在腕间",
+              "txt2": "婉转旋律勾勒出古风画卷，声声吟唱道尽前世今生的牵绊。每一首 OST 都藏着爱恨痴缠、宿命相逢，将剧中的情深缘浅、江湖恩怨娓娓道来。旋律起时，仿佛重回那些荡气回肠的故事里，原来从初见一刻，命运的红线早已将彼此紧紧缠绕，一触即心动，一听便沦陷。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234320698"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234319100",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/ab6a7975d093431ea46a40161fc85160.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234319100",
+                "contentName": "离别是为了下一次重逢",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234319100",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234319100",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "离别是为了下一次重逢",
+              "txt2": "期待有一天你逆着人流朝我走过来，我迎着阳光对你说:\"好久不见\"",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234319100"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234319591",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/ee65e20c31044e1ebfad43fde16b8f2b.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234319591",
+                "contentName": "华语情歌：情绪最好的容器",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234319591",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234319591",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语情歌：情绪最好的容器",
+              "txt2": "送给每一个在爱情里认真过的人。无论你现在是正在爱、等待爱、还是刚刚告别爱，总有一首歌，能接住你的情绪。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234319591"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234317248",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/d6c7eea2acee42309a15b34fd7e183bf.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234317248",
+                "contentName": "劲爆粤语：跳一曲港风迪斯科",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234317248",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234317248",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "劲爆粤语：跳一曲港风迪斯科",
+              "txt2": "复古港风节奏重磅来袭，劲爆粤语金曲点燃全场。强劲鼓点搭配魔性旋律，经典粤韵碰撞动感迪斯科，一秒梦回黄金年代。每一曲都热血上头、节奏炸裂，适合派对、车载、蹦迪循环。跟着旋律尽情摇摆，在怀旧节拍里释放所有情绪，嗨翻整晚。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234317248"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234316609",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/5eb7a1c2c1bf48f1bafbfe889c7e80b3.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234316609",
+                "contentName": "夏日的风，吹响耳边的旋律",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234316609",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234316609",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "夏日的风，吹响耳边的旋律",
+              "txt2": "阳光穿过车窗，在手臂上画出流动的光影。耳机里的旋律和车轮滚动的声音交织在一起，这就是夏日旅行的完美配乐。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234316609"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234316336",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pe/cd8add3948d9441f8e032e7e8596639a.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234316336",
+                "contentName": "随心听：放轻松，日子总是慢慢过",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234316336",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234316336",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "随心听：放轻松，日子总是慢慢过",
+              "txt2": "随心收录治愈旋律，不必追赶节奏，放轻松慢慢生活。卸下日常奔波带来的焦虑，任由温柔曲调包裹心绪。不必刻意单曲循环，随机播放遇见恰到好处的音乐。静下心感受平凡日常，烟火与晚风皆值得期待。慢慢感受时光流淌，好好接纳自己，从容享受平淡细碎的美好。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234316336"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234316251",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/e281cd03585f49bb9a33be4b2e340d64.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234316251",
+                "contentName": "华语佳作：念念不忘的经典老歌",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234316251",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234316251",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语佳作：念念不忘的经典老歌",
+              "txt2": "不怕岁月的冲洗，这些歌依然经典。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234316251"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234308374",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/846400b8980e426c847971116cc65273.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234308374",
+                "contentName": "港乐女声：你似是阳光空气",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234308374",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234308374",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "港乐女声：你似是阳光空气",
+              "txt2": "经典港乐女声合集，唱尽爱而不得的心酸与执念。温柔又倔强的声线，将情路坎坷、万般不舍揉进每一段旋律里。歌词里全是痴心与祈求，歌声中藏着遗憾与心痛。在熟悉的粤韵里，听她们唱出爱情里最无奈的挣扎，句句戳心，声声动情。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234308374"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234316221",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/dbe65c9eae864667a8128e3cc7dad916.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234316221",
+                "contentName": "华语民谣：做自由的风，邂逅诗与远方",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234316221",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234316221",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语民谣：做自由的风，邂逅诗与远方",
+              "txt2": "循着华语民谣的温柔旋律，化身自在清风，褪去俗世纷扰，在浅吟低唱里奔赴山野，邂逅心底的诗意与远方。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234316221"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234301814",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/8f131c7f07854b329b24b2b9443c6b02.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234301814",
+                "contentName": "无关情爱，这首歌献给我们自己",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234301814",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234301814",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "无关情爱，这首歌献给我们自己",
+              "txt2": "这些歌里没有“你”，只有“我”。我的选择，我的困惑，我的坚持，我的自愈。戴上耳机，听自己。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234301814"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234277272",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/9192362df5ee4a0d86becde64250eae6.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234277272",
+                "contentName": "伤感粤语：要拥有必先懂失去怎接受",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234277272",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234277272",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "伤感粤语：要拥有必先懂失去怎接受",
+              "txt2": "这张粤语伤感歌单，藏着成年人说不出口的心事与遗憾。旋律里有错过的深情、放手的无奈，也有痛过之后的清醒。从纠缠到释然，从执着到接纳，每一句歌词都戳中内心最柔软的地方。在熟悉的粤语声线里，慢慢听懂：要真正拥有，必先学会接受失去，与过去和解。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234277272"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234305486",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/e2f0c165e49f4525a3b69e43025f173c.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234305486",
+                "contentName": "华语R&B：沉溺于温柔的浪漫",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234305486",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234305486",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语R&B：沉溺于温柔的浪漫",
+              "txt2": "浪漫的本质是爱，是温柔，是勇气。让这些华语R&B用温柔慵懒的旋律带你走进浪漫世界。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234305486"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234308133",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/ac97ffde2e4f4c86be97c88cc5377328.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234308133",
+                "contentName": "粤语对唱：字字句句，声入人心",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234308133",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234308133",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "粤语对唱：字字句句，声入人心",
+              "txt2": "经典港风粤语对唱，一唱一和皆是岁月深情。醇厚嗓音交织碰撞，将爱恨痴缠、遗憾与不舍尽数唱进旋律里。每一句歌词都戳中人心，每一段和声都藏满故事。在熟悉的粤韵中，重温旧时光里的心动与心碎，让深情在歌声里缓缓流淌，久久难忘。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234308133"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234276269",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/61db81aca3bd4e3ab8c9c240a670d01f.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234276269",
+                "contentName": "旅行指南 | 爱自己是终身浪漫的开始",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234276269",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234276269",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "旅行指南 | 爱自己是终身浪漫的开始",
+              "txt2": "漫游于旅途之间，享受不同风景带来的动人心弦，音乐是你路途中最好的伴侣～",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234276269"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234306541",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/70fcd91669434743b08635cee60d9b91.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234306541",
+                "contentName": "治愈关系，先治愈自己",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234306541",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234306541",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "治愈关系，先治愈自己",
+              "txt2": "雨都停了，这片天，灰什么呢？",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234306541"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234275912",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/9146cb62ffc843dbbf6f4eaf8f44913f.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234275912",
+                "contentName": "海边漫步｜为日落心动一万次",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234275912",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234275912",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "海边漫步｜为日落心动一万次",
+              "txt2": "当海浪拍打礁石，随之而去的是我对你的执念。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234275912"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234305516",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/a8094cb843854f76854aeaf71f1ad241.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234305516",
+                "contentName": "华语经典：爱让我们在回忆里相聚",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234305516",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234305516",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语经典：爱让我们在回忆里相聚",
+              "txt2": "一首首华语经典，串联起几代人的温柔岁月。旋律里藏着青涩心动、温暖陪伴与淡淡遗憾，时光会走远，歌声永留存。因为爱，那些散落在过往的故事与心意，从未真正离去。让我们在熟悉的旋律里重逢，在回忆中温柔相聚，被旧时光轻轻治愈。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234305516"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234307954",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ox/73905de591f849b4957375dc2a437e3b.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234307954",
+                "contentName": "粤语男声：一生使我动情是你",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234307954",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234307954",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "粤语男声：一生使我动情是你",
+              "txt2": "温润粤语男声缓缓浅唱，把心底深藏的柔情娓娓道来。旋律温柔缱绻，嗓音醇厚治愈，一字一句皆是岁月里的深情告白。世间人来人往，唯有你入心动情、常驻心底，循环耳畔的粤语情歌，藏尽半生偏爱与执念，温柔治愈每一个寂静时刻。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234307954"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234305817",
+              "img": "https://d.musicapp.migu.cn/prod/playlist-service/playListimg202607/797d3dc6-07de-4dcc-a417-eba0be24a84e.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234305817",
+                "contentName": "KTV必唱金曲：歌神养成之路",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234305817",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234305817",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "KTV必唱金曲：歌神养成之路",
+              "txt2": "集结传唱度拉满的经典曲目，兼顾抒情慢歌与燃向金曲。不管是独自深情独唱，还是朋友合唱氛围感曲目全都配齐。从入门练习到全场高光，循序渐进打磨唱功。拿起麦克风就能轻松驾驭，练好这一清单，聚会站上 KTV 舞台，轻松成为全场焦点。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234305817"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234276575",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/683d912f0e92413b90011a843c75f77e.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234276575",
+                "contentName": "治愈向情歌 | 温柔救赎坏情绪",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234276575",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234276575",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "治愈向情歌 | 温柔救赎坏情绪",
+              "txt2": "温柔缱绻的治愈情歌，安抚心底所有低落与烦闷。让舒缓旋律治愈坏情绪，卸下疲惫，在歌声里重拾温柔与好心情。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234276575"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234302986",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/f147464c2bac48f7a17653b20f23ce18.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234302986",
+                "contentName": "华语暖心 | 送给为生活奔波的人",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234302986",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234302986",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语暖心 | 送给为生活奔波的人",
+              "txt2": "生活总有奔波与疲惫，愿这些温柔华语旋律，抚平心底琐碎烦恼，卸下一身风尘，给忙碌的你一份安稳治愈与暖心陪伴。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234302986"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234262706",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/b39a9983b60a4b168288ed146c7ece72.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234262706",
+                "contentName": "派对时间 | get这份快乐秘籍",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234262706",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234262706",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "派对时间 | get这份快乐秘籍",
+              "txt2": "派对时刻即刻开启，解锁专属快乐秘籍。动感旋律席卷全场，轻快节奏赶走所有烦闷，跟着节拍放肆摇摆，把好心情拉满整晚。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234262706"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234262292",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/608354df6bd348bcb46b79a5b69bf10d.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234262292",
+                "contentName": "氛围R&B：耳朵借我这几分钟",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234262292",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234262292",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "氛围R&B：耳朵借我这几分钟",
+              "txt2": "暂别世间喧嚣，把心事交给慵懒丝滑的R&B旋律。温柔声线缱绻缠绕，舒缓节拍漫过耳畔，揉碎所有浮躁与疲惫。借这几分钟放空自己，沉浸在朦胧暧昧的氛围感里，让音符包裹情绪，静静享受独属于自己的温柔治愈时刻。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234262292"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234261587",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/4149e42c68f142dc8787999d4a49834a.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234261587",
+                "contentName": "欧美舞曲：跟着节奏开启无限抖腿模式！",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234261587",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234261587",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "欧美舞曲：跟着节奏开启无限抖腿模式！",
+              "txt2": "没有什么烦恼是听两首嗨歌解决不了的，如果有，就把这个歌单反复播放！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234261587"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234261439",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/09420774f53449eaab33e01c4398feb6.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234261439",
+                "contentName": "笑一笑，没什么大不了！",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234261439",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234261439",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "笑一笑，没什么大不了！",
+              "txt2": "生活偶尔有一些小插曲，但淡淡的就会顺顺的，笑一笑，没什么大不了！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234261439"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234259564",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/7a4d7e827b444f259b5dc30b4e2c499c.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234259564",
+                "contentName": "思念是一个人的兵荒马乱",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234259564",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234259564",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "思念是一个人的兵荒马乱",
+              "txt2": "思念是一个人的抒情歌，这个时候你又在思念谁呢？这张歌单，把你的思念带给你想要带给的人。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234259564"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234249106",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/76036b5d03f7447e8ead7b3e53d40027.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234249106",
+                "contentName": "通勤必备｜听歌是最治愈的放松",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234249106",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234249106",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "通勤必备｜听歌是最治愈的放松",
+              "txt2": "通勤路上放空思绪，让旋律抚平奔波疲惫。耳机隔绝外界喧嚣，沉浸温柔曲调，给忙碌日常一份治愈的松弛时光。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234249106"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234250672",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/940b7d73a63549469d61a8cc907b21eb.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234250672",
+                "contentName": "欧美流行：邂逅阳光的松弛旋律",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234250672",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234250672",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "欧美流行：邂逅阳光的松弛旋律",
+              "txt2": "轻快的欧美流行旋律，像一缕暖阳轻轻落在肩头。慵懒节奏、清爽编曲，自带松弛感与治愈氛围，没有紧绷与喧嚣，只有自在与惬意。无论是通勤、发呆、宅家还是出行，都能在这些旋律里卸下疲惫，邂逅一份轻松好心情，越听越舒服。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234250672"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234249091",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/a2798c021d3a46e2ba5b943d5026b4c5.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234249091",
+                "contentName": "甜蜜情歌：恋爱党单曲循环的旋律",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234249091",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234249091",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "甜蜜情歌：恋爱党单曲循环的旋律",
+              "txt2": "您好，您的甜蜜调味剂已到达，请查收！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234249091"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234246336",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/7d3e455b105d4cb2b0130aacdb5230a5.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234246336",
+                "contentName": "KTV麦霸养成指南！",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234246336",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234246336",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "KTV麦霸养成指南！",
+              "txt2": "还在担心去了ktv不知道唱啥干坐着吗？你需要一份麦霸必唱的精选歌单！从此制霸ktv不是梦！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234246336"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234250340",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/bf5c21f29d4144eba48b8b9676f0c5cf.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234250340",
+                "contentName": "往事清零：从此山水不相逢",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234250340",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234250340",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "往事清零：从此山水不相逢",
+              "txt2": "有些故事走到结尾，只能轻轻放下。这张歌单收录了满是遗憾与不舍的伤感旋律，唱尽爱而不得、渐行渐远的心酸。让音乐替你说出没说完的话，把过往清零，从此山水不相逢，各自安好，不再回头。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234250340"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234236830",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/ce566aa0adcb47429c1f4360067c5c27.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234236830",
+                "contentName": "华语情歌：万人宠不如一人懂",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234236830",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234236830",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语情歌：万人宠不如一人懂",
+              "txt2": "\"只有频率相同的人，才能理解你的山河万里。\"同频的两个人之间，有一种心照不宣的默契。我懂你的欲言又止，你懂我的言外之意。我们之间无需语言来过多解释，因为相似的灵魂、一致的三观、共同的精神层次不用费力，就能懂你。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234236830"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234169871",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/c9299218ae2146f8be43490b012a3044.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234169871",
+                "contentName": "放假就是要跟好朋友粗去丸！",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234169871",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234169871",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "放假就是要跟好朋友粗去丸！",
+              "txt2": "把学习工作暂时抛开，约上最懂你的人，一起出门吹风、大笑、逛吃、打卡。这张歌单装满轻松、欢快、元气满满的旋律，适合路上听、拍照听、聊天听。每一首歌都是友情的BGM，让假期的每一刻都热热闹闹、开开心心，留下满满回忆。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234169871"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234169233",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/60cb762d75904edbbb64cc9d2bf8f986.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234169233",
+                "contentName": "满格甜蜜！情歌里全是温柔爱意",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234169233",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234169233",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "满格甜蜜！情歌里全是温柔爱意",
+              "txt2": "满格甜蜜，爱意爆棚。这里收录了超多甜度拉满的情歌，每一句都藏着温柔与浪漫，每一曲都在诉说心动与欢喜。适合暧昧、热恋、独处时聆听，让甜甜的旋律包围你，把温柔与偏爱，全都唱给你听。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234169233"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234168810",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/811b5523661045e4bb6eb4e4e4718c96.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234168810",
+                "contentName": "回忆上锁，不盼相见只盼释怀",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234168810",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234168810",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "回忆上锁，不盼相见只盼释怀",
+              "txt2": "把回忆轻轻上锁，不再纠缠，不再期盼。这张歌单献给所有放不下的人，旋律治愈又戳心，唱尽遗憾与释然。不盼重逢，不盼重来，只愿在音乐里与过去告别，慢慢释怀，好好爱自己，迎接新的开始。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234168810"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234169703",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/5603c1649fab4dbda2cbeec63b233dd8.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234169703",
+                "contentName": "假期唯一目的地：快乐星球！",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234169703",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234169703",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "假期唯一目的地：快乐星球！",
+              "txt2": "假期不赶路，只奔赴快乐。把烦恼清空，把音量拉满，跟着旋律一起起飞，直达专属快乐星球。这里没有焦虑和疲惫，只有轻松、治愈、上头的好歌，陪你度过一整个自在假期。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234169703"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234168499",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/e4aafe61129344f182d4425e704078fd.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234168499",
+                "contentName": "老歌藏时光，一曲念过往",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234168499",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234168499",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "老歌藏时光，一曲念过往",
+              "txt2": "老歌藏着时光的温度，每一段旋律都牵起一段过往。那些熟悉的曲调，像一封封未拆的旧信，轻轻一唱，便翻开记忆里的温柔与感动。在歌声里与旧时光重逢，让岁月慢慢流淌，把心事轻轻安放。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234168499"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234118228",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/0c1f96980ead4acc9b3adc11f8fe51a7.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234118228",
+                "contentName": "伤感心事｜后来的我们，都在歌里怀念",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234118228",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234118228",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "伤感心事｜后来的我们，都在歌里怀念",
+              "txt2": "雨会停，天会亮，但有些遗憾会永远留在心底。那些没说出口的再见，那些回不去的时光，那些爱而不得的人，都变成了耳机里循环的旋律。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234118228"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234117918",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/0d7f1e92a0eb4d7bb74f4fdf5eedf879.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234117918",
+                "contentName": "华语流行金曲：舍不得切歌！",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234117918",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234117918",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语流行金曲：舍不得切歌！",
+              "txt2": "每一首都是刻在 DNA 里的旋律，前奏一响就舍不得按下切歌键。戴上耳机，让熟悉的歌声带你穿越回那些闪闪发光的日子，单曲循环也听不腻。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234117918"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234058185",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/1ac9d9202a604b25941d017dc1df0e7b.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234058185",
+                "contentName": "说了再见就一定能再见吗",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234058185",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234058185",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "说了再见就一定能再见吗",
+              "txt2": "很多事情，就算不说出口，歌也会替你记得。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234058185"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234040588",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/14434936654e4fb18d12a06b43f6e60d.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234040588",
+                "contentName": "被堵车偷走的时间，用华语金曲补回来",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234040588",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234040588",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "被堵车偷走的时间，用华语金曲补回来",
+              "txt2": "堵车时，时间仿佛被按下暂停键，焦躁在车厢里蔓延。这份歌单精选华语流行金曲，用熟悉的旋律填满等待的缝隙。让音乐成为时间的缓冲剂，把被堵车偷走的时光，酿成一段独属于你的治愈时刻。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234040588"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234040205",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/92714e595879424f81a6170569a4af31.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234040205",
+                "contentName": "欧美流行：一路畅嗨零切歌",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234040205",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234040205",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "欧美流行：一路畅嗨零切歌",
+              "txt2": "精选全球热门欧美流行金曲，节奏上头、旋律抓耳，全程高能不中断。从动感热单到洗脑神曲，一键播放就能点燃车厢氛围，开车路上拒绝沉闷。一路畅听零切歌，提神又解乏，让每段车程都充满节奏感，接单赶路更带劲，轻松嗨完全程！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234040205"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234028111",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/0ab2c641d648491cb39fd09ccccdc393.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234028111",
+                "contentName": "KTV速成曲目推荐",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234028111",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234028111",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "KTV速成曲目推荐",
+              "txt2": "KTV不知道唱什么？本歌单为你支招！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234028111"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234012911",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/09edccfc864b4b39950f48eda11823b8.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234012911",
+                "contentName": "华语舞曲 | 经典舞曲回忆杀",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234012911",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234012911",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语舞曲 | 经典舞曲回忆杀",
+              "txt2": "自带动感节奏的经典舞曲，满载一代人的青春回忆。强劲鼓点、抓耳旋律，藏着街头风潮、派对狂欢与旧时光里的热血氛围。熟悉律动一响，瞬间拉回热闹鲜活的岁月，重温那些风靡一时的旋律，在动感节拍里重拾久违的畅快与回忆。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234012911"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234012875",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/d85966af4bfd43b38ca4b1e32c6c7af4.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234012875",
+                "contentName": "宝岛金曲 |  神仙打架的年代",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234012875",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234012875",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "宝岛金曲 |  神仙打架的年代",
+              "txt2": "曾风靡华语乐坛的宝岛旋律，是乐坛黄金时代的珍贵回响。百花齐放、佳作频出，群星璀璨碰撞出独有的浪漫韵味。婉转唱腔与细腻词曲交织，每一段旋律都自带时代氛围感，重温这段神仙打架的岁月，邂逅藏在时光里的经典金曲。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234012875"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234012293",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/d9eb68fcfb41433ca2b523568d2e4980.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234012293",
+                "contentName": "暗恋 | 从此以后，拥抱下一个春天",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234012293",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234012293",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "暗恋 | 从此以后，拥抱下一个春天",
+              "txt2": "暗恋，是最酸涩也最甜蜜的事。怕TA知道，又怕TA不知道，更怕TA明明知道却假装不知道。于是，那些说不出口的话，都藏进了歌里。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234012293"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234011181",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/4ddea67b6deb45dc9141c8eca99dd0f0.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234011181",
+                "contentName": "拯救歌荒！那些被单曲循环无数次的歌",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234011181",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234011181",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "拯救歌荒！那些被单曲循环无数次的歌",
+              "txt2": "每首歌都是耳熟的旋律，收藏起来慢慢听！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234011181"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234008681",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/4995f0c59e374a66bbe1789dd5926fe0.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234008681",
+                "contentName": "活力百分百：KPOP春日心动旋律",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234008681",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234008681",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "活力百分百：KPOP春日心动旋律",
+              "txt2": "春日限定 KPOP 心动歌单上线！元气旋律搭配清新编曲，满是暖阳与花香的治愈氛围。轻快节奏唤醒沉睡活力，甜美元气嗓音直击心底，每一首都像春日里的浪漫邂逅。适合踏青、通勤、日常聆听，让百分百活力与春日心动伴随左右，瞬间拥有满满好心情。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234008681"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=234008542",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/3e66ff1cab7a499984180d979ac499d2.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "234008542",
+                "contentName": "冷门华语精选，拯救歌荒er",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "234008542",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "234008542",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "冷门华语精选，拯救歌荒er",
+              "txt2": "不想再天天听同样的歌？本歌单来拯救歌荒er！这些歌应该够大家听很久了吧～",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-234008542"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=233998446",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oo/82ffc50edcbb49568c8637ac8f33eeb9.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "233998446",
+                "contentName": "影视金曲｜剧终人不散，古装虐心曲",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "233998446",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "233998446",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "影视金曲｜剧终人不散，古装虐心曲",
+              "txt2": "每一首都是古装剧里的催泪名场面前，奏响起，画面瞬间浮现——爱恨别离、生死相隔、求而不得。听的不只是歌是当年追剧时，为他们流过的所有眼泪",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-233998446"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=233993119",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/1175cf14ac0f4b838a8283d363094835.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "233993119",
+                "contentName": "校园广播站：等你下课一起走好吗",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "233993119",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "233993119",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "校园广播站：等你下课一起走好吗",
+              "txt2": "放学铃声响起，晚风掠过操场，那句“等你下课一起走好吗”，藏着最青涩的心动。本歌单收录满是校园气息的温柔旋律，每一首歌都像放学后并肩走过的路，有心跳、有期待、有未说出口的喜欢。戴上耳机，重回那段纯粹时光，和少年一起，等一场温柔的相遇。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-233993119"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=233947465",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/1fdd18f787804984a81d6824a38a3d4a.jpeg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "233947465",
+                "contentName": "华语原创，自成锋芒",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "233947465",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "233947465",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语原创，自成锋芒",
+              "txt2": "这里汇聚华语乐坛最鲜活的创作力量，从走心旋律到犀利表达，每一首歌都来自真实心声，不跟风、不盲从。词曲里藏着本土故事与态度，嗓音中带着独属于华语的温度与力量，用原创发声，让好音乐自带光芒。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-233947465"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=233946174",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/ee273d8adc194ad89b116e954c3aa517.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "233946174",
+                "contentName": "甜味情歌：在日落时心动一万次",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "233946174",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "233946174",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "甜味情歌：在日落时心动一万次",
+              "txt2": "日落很浪漫，两个人看更浪漫。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-233946174"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=233946822",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/8fd7b01bb3cf479183c701d0b5b30841.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "233946822",
+                "contentName": "想唱开口却烫嘴的英文歌",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "233946822",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "233946822",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "想唱开口却烫嘴的英文歌",
+              "txt2": "有些英文歌看着简单，一张嘴就打结，连读、重音、绕口令式歌词，唱前默念三遍，一开口还是烫嘴现场。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-233946822"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=233945568",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/466ecb28d4b1483883d3805eca9a350b.jpg",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "233945568",
+                "contentName": "总是想不起歌名的网络热歌",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "233945568",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "233945568",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "总是想不起歌名的网络热歌",
+              "txt2": "旋律一响瞬间熟悉，张口就能跟唱，偏偏歌名总记不住。收录全网洗脑热歌，解锁那些只知曲调不知其名的热门单曲。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-233945568"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=233945432",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/or/cf0fa573b3b847c6b66f5c0814397964.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "233945432",
+                "contentName": "华语伤感：不要回头，请往前走",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "233945432",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "233945432",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "华语伤感：不要回头，请往前走",
+              "txt2": "如果情绪有天气，那请不要困在雨天里。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-233945432"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=233942168",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/ot/b1b174822ac24e739fc0356be95e7663.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "233942168",
+                "contentName": "90后回忆：纸短情长说不尽爱意",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "233942168",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "233942168",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "90后回忆：纸短情长说不尽爱意",
+              "txt2": "这些歌，陪我们走过放学路上，走过深夜被窝，走过失恋后的眼泪，走过无数个失眠的夜晚，是90后的深夜食堂。每一首歌，都是一段回不去的时光。",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-233942168"
+            },
+            {
+              "action": "mgmusic://song-list-info?id=233941789",
+              "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/os/ddbea8b1e319478ca5789d38854abe36.png",
+              "logEvent": {
+                "boxName": "『歌单上新』-歌单",
+                "contentId": "233941789",
+                "contentName": "KTV麦霸嗨唱指南！",
+                "contentType": "2021",
+                "index": "var:index",
+                "resourceId": "233941789",
+                "resourceType": "2021",
+                "subContentId": "",
+                "subContentType": "",
+                "trackId": "82493477"
+              },
+              "resId": "233941789",
+              "resType": "2021",
+              "style": "",
+              "track": "#playlistCh=1",
+              "txt": "KTV麦霸嗨唱指南！",
+              "txt2": "喜欢的歌当然要唱了又唱！被说麦霸又怎样，我想唱就唱！",
+              "view": "ZJ-SongList-Item",
+              "viewId": "4025-233941789"
+            }
+          ],
+          "defaultNumber": 99,
+          "desc": "curated_playlist",
+          "extField3": "98854",
+          "moduleType": "curated_playlist",
+          "title": "『歌单上新』-歌单",
+          "view": "ZJ-SongList-Scroll",
+          "viewId": "2011-82493477"
+        }
+      ],
+      "header": {
+        "dataVersion": "1794132108257",
+        "nextPageNo": 1,
+        "nextPageNo2": 1,
+        "title": "（新）歌单广场",
+        "update": false
+      }
+    }
+  },
+  "tag-list": {
+    "code": "000000",
+    "info": "操作成功",
+    "data": {
+      "nextPageUrl": "http://app.c.nf.migu.cn/MIGUM3.0/v1.0/template/musiclistplaza-listbytag?templateVersion=2&tagId=1000001672&pageNumber=2",
+      "enablePullRefresh": false,
+      "contentItemList": [
+        {
+          "template": "blank",
+          "style": {
+            "height": 10,
+            "backgroundColor": "#FFFFFF00"
+          }
+        },
+        {
+          "template": "group1",
+          "itemList": [
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "134.6万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=211267917&logId=gd211267917@90000002",
+              "title": "治愈 | 生活的答案不止是完美",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "211267917",
+                "contentName": "治愈 | 生活的答案不止是完美",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/35/fx.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "286.6万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=211189559&logId=gd211189559@90000002",
+              "title": "华语 | 愿平淡的日子也泛着光",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "211189559",
+                "contentName": "华语 | 愿平淡的日子也泛着光",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/34/t5.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "96.6万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=211156955&logId=gd211156955@90000002",
+              "title": "英文流行 | 开启舒心治愈秘籍",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "211156955",
+                "contentName": "英文流行 | 开启舒心治愈秘籍",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/34/ig.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "64.9万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=211157514&logId=gd211157514@90000002",
+              "title": "落寞情绪：将灵魂放逐在孤独里",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "211157514",
+                "contentName": "落寞情绪：将灵魂放逐在孤独里",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2c/8e/ed_m.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "224.8万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=210765949&logId=gd210765949@90000002",
+              "title": "伤感片段 | 你始终站在梦里难以触碰",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "210765949",
+                "contentName": "伤感片段 | 你始终站在梦里难以触碰",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/prod/playlist-service/playListimg/fa78e7eb-da12-43a7-928c-32a76cc7f15a.jpg"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "156.3万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=210700217&logId=gd210700217@90000002",
+              "title": "KTV女声：麦霸就是你，唱K不歌荒",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "210700217",
+                "contentName": "KTV女声：麦霸就是你，唱K不歌荒",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/30/6q.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "97.9万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=210667427&logId=gd210667427@90000002",
+              "title": "华语 | 旧故事里隐藏的诗篇",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "210667427",
+                "contentName": "华语 | 旧故事里隐藏的诗篇",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/2z/te.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "39.4万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=210062412&logId=gd210062412@90000002",
+              "title": "华语 | 温暖的人会不期而遇",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "210062412",
+                "contentName": "华语 | 温暖的人会不期而遇",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/2t/gn.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "54.0万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=209347111&logId=gd209347111@90000002",
+              "title": "一字情诗 | 字不在多，动情即可",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "209347111",
+                "contentName": "一字情诗 | 字不在多，动情即可",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/2l/e5.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "82.9万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=209274679&logId=gd209274679@90000002",
+              "title": "拯救歌荒：流行热歌，抚慰耳膜",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "209274679",
+                "contentName": "拯救歌荒：流行热歌，抚慰耳膜",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/2k/l7.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "213.9万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=209238260&logId=gd209238260@90000002",
+              "title": "男友声 | 干净音色，清新曲调",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "209238260",
+                "contentName": "男友声 | 干净音色，清新曲调",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/prod/playlist-service/playListimg/801f4d7e-0f98-4572-b194-cd849360a5c0.jpg"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "75.9万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=209238362&logId=gd209238362@90000002",
+              "title": "欧美 | 性感声线，慵懒迷人",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "209238362",
+                "contentName": "欧美 | 性感声线，慵懒迷人",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/2k/80.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "146.0万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=209302863&logId=gd209302863@90000002",
+              "title": "俘获耳朵 | 哪一首是你的意难平",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "209302863",
+                "contentName": "俘获耳朵 | 哪一首是你的意难平",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/prod/playlist-service/playListimg/ab4cb438-ab79-4bbc-897b-dbee57469226.jpg"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "95.8万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=209030777&logId=gd209030777@90000002",
+              "title": "民谣：素色流年，往昔逝梦",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "209030777",
+                "contentName": "民谣：素色流年，往昔逝梦",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/2i/2t.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "81.6万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=208965375&logId=gd208965375@90000002",
+              "title": "午夜站台 | 列车在微光里呼啸",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "208965375",
+                "contentName": "午夜站台 | 列车在微光里呼啸",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/2h/d9.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "63.5万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=208771725&logId=gd208771725@90000002",
+              "title": "电子：金属脉冲，拨动神经",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "208771725",
+                "contentName": "电子：金属脉冲，拨动神经",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/2f/u4.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "219.0万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=207661934&logId=gd207661934@90000002",
+              "title": "来电铃声：喂，还不接电话吗？",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "207661934",
+                "contentName": "来电铃声：喂，还不接电话吗？",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/1w/38.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "89.6万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=207375222&logId=gd207375222@90000002",
+              "title": "私藏快乐：吧唧一口，吃掉emo",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "207375222",
+                "contentName": "私藏快乐：吧唧一口，吃掉emo",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/1m/3w.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "49.3万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=207299366&logId=gd207299366@90000002",
+              "title": "华语：冬日寒风凛冽，你却如此温暖",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "207299366",
+                "contentName": "华语：冬日寒风凛冽，你却如此温暖",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/1l/m7_m.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "150.5万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=207067729&logId=gd207067729@90000002",
+              "title": "华语：男女对唱流行新曲",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "207067729",
+                "contentName": "华语：男女对唱流行新曲",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/0z/tc.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "70.6万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=206841526&logId=gd206841526@90000002",
+              "title": "挥手告别：分别后的孤独救赎",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "206841526",
+                "contentName": "挥手告别：分别后的孤独救赎",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/1h/vi.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "238.7万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=206628557&logId=gd206628557@90000002",
+              "title": "粤语入坑：永远有首歌把心境道破",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "206628557",
+                "contentName": "粤语入坑：永远有首歌把心境道破",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/1g/31"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "147.7万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=206568626&logId=gd206568626@90000002",
+              "title": "潮流组合：用音乐歌唱青春活力",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "206568626",
+                "contentName": "潮流组合：用音乐歌唱青春活力",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/1f/na.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "96.8万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=206397576&logId=gd206397576@90000002",
+              "title": "治愈流行：温柔的晚风吹散你的不愉快",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "206397576",
+                "contentName": "治愈流行：温柔的晚风吹散你的不愉快",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/1e/2h.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "179.4万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=206337079&logId=gd206337079@90000002",
+              "title": "耳机避风港，情绪回收站",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "206337079",
+                "contentName": "耳机避风港，情绪回收站",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/1d/pq.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "146.1万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=206278493&logId=gd206278493@90000002",
+              "title": "高音天籁：爆发瞬间震撼来袭",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "206278493",
+                "contentName": "高音天籁：爆发瞬间震撼来袭",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/1d/7j.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "3783.3万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=206140403&logId=gd206140403@90000002",
+              "title": "90后拾忆：炙热的青春有迹可循",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "206140403",
+                "contentName": "90后拾忆：炙热的青春有迹可循",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oi/1b503add21ec4ed1a00e59422480ed2f.jpeg"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "55.8万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=206113458&logId=gd206113458@90000002",
+              "title": "清空购物车：我想收到一束花，叫随便花",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "206113458",
+                "contentName": "清空购物车：我想收到一束花，叫随便花",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/1b/rn.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "339.8万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=206056292&logId=gd206056292@90000002",
+              "title": "粤语 | 岁月在发酵，经典仍依旧",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "206056292",
+                "contentName": "粤语 | 岁月在发酵，经典仍依旧",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service66/00/2b/1b/9i.webp"
+            },
+            {
+              "template": "ZJ-歌单宫格",
+              "barList": [
+                {
+                  "title": "88.0万"
+                }
+              ],
+              "cellType": 11,
+              "noBlank": true,
+              "actionUrl": "mgmusic://song-list-info?id=205882355&logId=gd205882355@90000002",
+              "title": "车厢神游｜享受一个人的世界",
+              "track": "gdgcgdtj_ddgd",
+              "logEvent": {
+                "contentId": "205882355",
+                "contentName": "车厢神游｜享受一个人的世界",
+                "contentType": "2021",
+                "index": "var:index",
+                "subContentId": "",
+                "subContentType": ""
+              },
+              "imageUrl": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/pl/ec19ee50b2394a0699ec528099ab7880.jpeg"
+            }
+          ],
+          "rowCountList": [
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ],
+          "style": {
+            "rowInterval": 16,
+            "colInterval": 10,
+            "marginX": 14
+          }
+        }
+      ]
+    }
+  },
+  "info": {
+    "code": "000000",
+    "info": "操作成功",
+    "data": {
+      "resourceType": "2021",
+      "title": "元气满满！好心情循环公式",
+      "musicListId": "233247680",
+      "publishTime": "20260918142556",
+      "summary": "解锁好心情循环公式，每一首都是元气补给站！节奏轻快的旋律搭配治愈感满满的歌声，赶走emo和疲惫，让快乐无限循环。不管是通勤路上、工作间隙还是休闲时刻，点开即收获满格元气，让好心情常伴左右～",
+      "imgItem": {
+        "img": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oj/471676e5ec7a41c5a8899b9cd130e1c1.jpeg",
+        "imgOri": "",
+        "webpImg": ""
+      },
+      "originalImgUrl": "https://d.musicapp.migu.cn/data/oss/service98/00/1w/oj/471676e5ec7a41c5a8899b9cd130e1c1.jpeg",
+      "ownerId": "4c31e3ed-ed08-4a2d-a647-f67c3196bdbc",
+      "ownerName": "南方人不懂暖气香啦",
+      "musicNum": 105,
+      "opNumItem": {
+        "playNum": 1434142,
+        "playNumDesc": "143.4万",
+        "keepNum": 26,
+        "keepNumDesc": "26",
+        "commentNum": 15,
+        "commentNumDesc": "15",
+        "shareNum": 160,
+        "shareNumDesc": "160",
+        "orderNumByWeek": 0,
+        "orderNumByWeekDesc": "0",
+        "orderNumByTotal": 0,
+        "orderNumByTotalDesc": "0",
+        "thumbNum": 0,
+        "thumbNumDesc": "0",
+        "followNum": 0,
+        "followNumDesc": "0",
+        "subscribeNum": 0,
+        "subscribeNumDesc": "0",
+        "livePlayNum": 1434142,
+        "livePlayNumDesc": "143.4万",
+        "popularNum": 0,
+        "popularNumDesc": "0",
+        "bookingNum": 0,
+        "bookingNumDesc": "0",
+        "settingNum": 0,
+        "settingNumDesc": "0",
+        "callNum": 0,
+        "callNumDesc": "0",
+        "callingPlayNum": 0,
+        "callingPlayNumDesc": "0",
+        "callingPlayDuration": 0,
+        "callingPlayDurationDesc": "0",
+        "calledPlayDuration": 0,
+        "calledPlayDurationDesc": "0",
+        "ringtoneAppPlayNum": 0,
+        "ringtoneAppPlayNumDesc": "0",
+        "ringtoneAppSettingNum": 0,
+        "ringtoneAppSettingNumDesc": "0",
+        "callingPlayDefaultNum": 0,
+        "callingPlayDefaultNumDesc": "0",
+        "playDefaultNum": 0,
+        "playDefaultDesc": "0",
+        "rewardUserNum": 0,
+        "rewardUserNumDesc": "0",
+        "rewardTotalNum": 0,
+        "rewardTotalNumDesc": "0",
+        "aiSongTotalNum": 0,
+        "aiSongTotalNumDesc": "0"
+      },
+      "havePrivatePic": "01",
+      "tags": [
+        {
+          "tagId": "1000001672",
+          "tagName": "流行"
+        },
+        {
+          "tagId": "1003450584",
+          "tagName": "减压放松"
+        },
+        {
+          "tagId": "1003450591",
+          "tagName": "开心快乐"
+        }
+      ],
+      "type": "0",
+      "ownerPic": "https://pl.nf.migu.cn/group2/M00/00/03/CrUBJGEUGm-ITA4YAAERlmxkYn4AAAG1ANuGs0AARGu83.jpeg",
+      "status": 1,
+      "userIdentityInfoItems": [],
+      "channel": "1",
+      "officialConfig": {
+        "immersive": false,
+        "topConfig": "",
+        "topConfigType": "",
+        "actionUrl": "",
+        "listTextColor": "",
+        "listBgColor": ""
+      },
+      "createTime": "2026-02-06 16:42:43",
+      "operationFlagList": [
+        "A14"
+      ]
+    }
+  },
+  "songs": {
+    "code": "000000",
+    "info": "操作成功",
+    "data": {
+      "totalCount": 105,
+      "publishTime": "2026-09-18 14:25:56",
+      "songList": [
+        {
+          "resourceType": "2",
+          "contentId": "600929000002586507",
+          "songId": "1138792022",
+          "songName": "好事要发生",
+          "mvCopyrightType": 0,
+          "ringToneId": "600929000002586505",
+          "ringCopyrightId": "6008460QBE0",
+          "haveShockRing": 1,
+          "showTags": [
+            "hq",
+            "i3d",
+            "a3d"
+          ],
+          "songPinyin": "haoshiyaofasheng",
+          "audioFormats": [
+            {
+              "resourceType": "2",
+              "formatType": "PQ",
+              "showTagsNew": [],
+              "isize": "3068031",
+              "asize": "3068031",
+              "iformat": "020007",
+              "aformat": "020007"
+            },
+            {
+              "resourceType": "2",
+              "formatType": "HQ",
+              "showTagsNew": [
+                "vip"
+              ],
+              "isize": "7669762",
+              "asize": "7669762",
+              "iformat": "020010",
+              "aformat": "020010"
+            },
+            {
+              "resourceType": "2",
+              "formatType": "Z3D",
+              "showTagsNew": [
+                "vip"
+              ],
+              "isize": "24909069",
+              "asize": "55194830",
+              "iformat": "020025",
+              "aformat": "020024"
+            }
+          ],
+          "duration": 192,
+          "playNumDesc": "0",
+          "copyrightId": "6008460QBE0",
+          "copyrightType": 1,
+          "restrictType": 0,
+          "albumId": "1138792021",
+          "album": "好事要发生",
+          "albumPinyin": "haoshiyaofasheng",
+          "img1": "/data/oss/resource/00/61/k1/255f9612009e47b8b68bdd742c410d54.webp",
+          "img2": "/data/oss/resource/00/61/k1/a090c4803fa2486886d77e009cb687b7.webp",
+          "img3": "/data/oss/resource/00/61/k1/c6f6b63f7c2c43de90d2ad2d1de13fe1.webp",
+          "singerList": [
+            {
+              "id": "482513",
+              "name": "大张伟",
+              "img": "https://d.musicapp.migu.cn/data/oss/resource/00/48/fq/c841db8c2109443298ddad273a3af95a.webp",
+              "nameSpelling": "dazhangwei"
+            }
+          ],
+          "ext": {
+            "disc": "Disc 1"
+          },
+          "foreverListenFlag": "0",
+          "foreverListen": false,
+          "shockRingId": "600929000002586506",
+          "hasAssociatedRing": false,
+          "chorusStartTime": "44011",
+          "productAuthorizeUsage": "001|002|006|011|015",
+          "audioBook": "0",
+          "subResourceType": "",
+          "ugcAuthorList": [],
+          "lrcUrl": "https://d.musicapp.migu.cn/data/oss/resource/00/38/4v/ff44e0287b3b4a70b746ec501d5c00a3",
+          "mrcUrl": "https://d.musicapp.migu.cn/data/oss/resource/00/2h/6c/rx"
+        },
+        {
+          "resourceType": "2",
+          "contentId": "600919000009427115",
+          "songId": "1140271275",
+          "songName": "晴时多云偶想你",
+          "mvCopyrightType": 0,
+          "ringToneId": "600919000009427113",
+          "ringCopyrightId": "6005861HY12",
+          "haveShockRing": 1,
+          "showTags": [
+            "hq"
+          ],
+          "songPinyin": "qingshiduoyunouxiangni",
+          "audioFormats": [
+            {
+              "resourceType": "2",
+              "formatType": "PQ",
+              "showTagsNew": [],
+              "isize": "4613226",
+              "asize": "4613226",
+              "iformat": "020007",
+              "aformat": "020007"
+            },
+            {
+              "resourceType": "2",
+              "formatType": "HQ",
+              "showTagsNew": [
+                "vip"
+              ],
+              "isize": "11532749",
+              "asize": "11532749",
+              "iformat": "020010",
+              "aformat": "020010"
+            }
+          ],
+          "duration": 288,
+          "playNumDesc": "0",
+          "copyrightId": "6005861HY12",
+          "copyrightType": 1,
+          "restrictType": 0,
+          "albumId": "1140271274",
+          "album": "晴时多云偶想你",
+          "albumPinyin": "qingshiduoyunouxiangni",
+          "img1": "/data/oss/resource/00/28/gj/qd",
+          "img2": "/data/oss/resource/00/28/gj/qc",
+          "img3": "/data/oss/resource/00/28/gj/qb",
+          "singerList": [
+            {
+              "id": "1115489231",
+              "name": "理想混蛋",
+              "img": "https://d.musicapp.migu.cn/data/oss/resource/00/2k/no/8c.webp",
+              "nameSpelling": "lixianghundan"
+            }
+          ],
+          "foreverListenFlag": "0",
+          "foreverListen": false,
+          "shockRingId": "600919000009427114",
+          "hasAssociatedRing": false,
+          "chorusStartTime": "123087",
+          "productAuthorizeUsage": "015",
+          "audioBook": "0",
+          "subResourceType": "",
+          "ugcAuthorList": [],
+          "lrcUrl": "https://d.musicapp.migu.cn/data/oss/resource/00/28/bn/ga",
+          "mrcUrl": "https://d.musicapp.migu.cn/data/oss/resource/00/28/bn/gb"
+        }
+      ]
+    }
+  }
+}

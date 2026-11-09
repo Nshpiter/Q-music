@@ -29,7 +29,7 @@ public class ElasticScrollBoundaryManager extends ReactViewManager {
     private static class Boundary extends ReactViewGroup {
         private final float density;
         private final int slop;
-        private boolean enabled = true, pulling, ignore, consuming, moved;
+        private boolean enabled = true, pulling, ignore, moved;
         private float startX, startY, lastY, distance;
         private int edgeDirection;
         private ScrollView scroll;
@@ -105,7 +105,8 @@ public class ElasticScrollBoundaryManager extends ReactViewManager {
                 recycleVelocity();
                 velocity = VelocityTracker.obtain();
                 velocity.addMovement(event);
-                pulling = consuming = moved = false;
+                endGesture(event);
+                moved = false;
                 // 再次按住时从当前位移接手，不能 reset 到零造成跳动。
                 distance = scroll == null ? 0 : ElasticScrollPhysics.distance(scroll.getTranslationY(), limit());
                 startX = event.getX(); startY = lastY = event.getY();
@@ -126,34 +127,20 @@ public class ElasticScrollBoundaryManager extends ReactViewManager {
                 if (!ignore && !pulling && vertical && (Math.abs(distance) > 0.5f || !scroll.canScrollVertically(dy > 0 ? -1 : 1))) {
                     pulling = true;
                     MotionTrace.log("elastic pull started");
-                    consuming = true;
                     edgeDirection = distance != 0 ? (distance > 0 ? 1 : -1) : (dy > 0 ? 1 : -1);
+                    // 只取消 JS 条目的点击/长按，原生 ScrollView 继续收到完整触摸序列。
                     NativeGestureUtil.notifyNativeGestureStarted(this, event);
-                    // 取消原条目的长按/点击；松手只归位，不误触开关。
-                    MotionEvent cancel = MotionEvent.obtain(event);
-                    cancel.setAction(MotionEvent.ACTION_CANCEL);
-                    super.dispatchTouchEvent(cancel);
-                    cancel.recycle();
                 }
-                if (pulling) {
-                    if (distance == 0) {
-                        if (scroll.canScrollVertically(dy > 0 ? -1 : 1)) {
-                            scroll.scrollBy(0, Math.round(-dy));
-                            return true;
-                        }
-                        edgeDirection = dy > 0 ? 1 : -1;
-                    }
-                    float next = distance + dy;
-                    if (next * edgeDirection < 0) {
-                        // 拉回边界后继续往里滑，同一根手指可以接着滚动，不把整次手势吃掉。
-                        distance = 0;
+                if (pulling && !ignore) {
+                    if (distance == 0 && scroll.canScrollVertically(dy > 0 ? -1 : 1)) {
                         scroll.setTranslationY(0);
-                        scroll.scrollBy(0, Math.round(-next));
                     } else {
-                        distance = edgeDirection * Math.min(getHeight(), Math.abs(next));
+                        if (distance == 0) edgeDirection = dy > 0 ? 1 : -1;
+                        float next = distance + dy;
+                        // 手指反向回到列表内部后交还系统滚动，不再人工 scrollBy/fling。
+                        distance = next * edgeDirection < 0 ? 0 : edgeDirection * Math.min(getHeight(), Math.abs(next));
                         scroll.setTranslationY(ElasticScrollPhysics.offset(distance, limit()));
                     }
-                    return true;
                 }
             } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
                 float speed = 0;
@@ -163,19 +150,11 @@ public class ElasticScrollBoundaryManager extends ReactViewManager {
                     speed = velocity.getYVelocity();
                 }
                 recycleVelocity();
-                if (consuming) {
-                    endGesture(event);
-                    if (scroll != null && action == MotionEvent.ACTION_UP && Math.abs(scroll.getTranslationY()) < 0.5f && !ignore) {
-                        scroll.fling(Math.round(-speed));
-                        trackFling(speed);
-                    } else animateBack(action == MotionEvent.ACTION_UP && !ignore ? ElasticScrollPhysics.impactVelocity(speed, density) : 0);
-                    consuming = false;
-                    return true;
-                }
-                if (scroll != null && Math.abs(scroll.getTranslationY()) > 0.5f) animateBack(0);
-                if (action == MotionEvent.ACTION_UP && moved && !ignore) trackFling(speed);
+                endGesture(event);
+                if (scroll != null && Math.abs(scroll.getTranslationY()) > 0.5f) animateBack(action == MotionEvent.ACTION_UP && !ignore ? ElasticScrollPhysics.impactVelocity(speed, density) : 0);
+                else if (action == MotionEvent.ACTION_UP && moved && !ignore) trackFling(speed);
+                moved = false;
             }
-            if (consuming) return true;
             return super.dispatchTouchEvent(event);
         }
         private float limit() { return Math.min(88 * density, Math.max(1, getHeight()) * 0.18f); }
@@ -216,7 +195,11 @@ public class ElasticScrollBoundaryManager extends ReactViewManager {
             stopSpring();
             recycleVelocity();
             if (scroll != null) scroll.setTranslationY(0);
-            pulling = consuming = false; distance = 0;
+            long now = SystemClock.uptimeMillis();
+            MotionEvent cancel = MotionEvent.obtain(now, now, MotionEvent.ACTION_CANCEL, 0, 0, 0);
+            endGesture(cancel);
+            cancel.recycle();
+            ignore = true; moved = false; distance = 0;
         }
         @Override protected void onWindowVisibilityChanged(int visibility) {
             super.onWindowVisibilityChanged(visibility);

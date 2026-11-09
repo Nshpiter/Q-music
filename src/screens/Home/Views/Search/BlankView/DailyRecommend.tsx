@@ -1,15 +1,13 @@
 import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
-import { LIST_IDS } from '@/config/constant'
 import { getAccountDaily, getDailyProvider, setDailyProvider, type DailyRecommendation, type DailyProvider } from '@/core/musicAccount/daily'
 
 import { useNavigationComponentDidAppear } from '@/navigation'
 import { pushMusicAccountScreen, pushPlayDetailScreen } from '@/navigation/navigation'
 import commonState from '@/store/common/state'
 import DailySettings from './DailySettings'
-import { setTempList } from '@/core/list'
-import { playList, togglePlay } from '@/core/player/player'
-import { playFromPage } from '@/core/player/selection'
+import { togglePlay } from '@/core/player/player'
+import { playFromPage, playAllFromPage } from '@/core/player/selection'
 import { useIsPlay, usePlayMusicInfo } from '@/store/player/hook'
 import PlayerBar from '@/components/player/PlayerBar'
 import { useI18n } from '@/lang'
@@ -130,8 +128,7 @@ export default () => {
     try {
       const date = new Date()
       if (index != null) { await playFromPage('daily_selection', list, index); return }
-      await setTempList(`q_daily_${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`, list)
-      await playList(LIST_IDS.TEMP, 0)
+      await playAllFromPage(`q_daily_${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`, list)
     } catch {
       toast(t('load_failed'))
     } finally {

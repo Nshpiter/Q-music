@@ -6,7 +6,7 @@ import IsS2T from './Player/IsS2T'
 import StatusBarLyric from './Player/StatusBarLyric'
 import IsShowBluetoothLyric from './Player/IsShowBluetoothLyric'
 import IsShowBluetoothFullLyric from './Player/IsShowBluetoothFullLyric'
-import LegacyOverlayLyric from './LegacyOverlayLyric'
+import LyricDesktop from './LyricDesktop'
 import { useI18n } from '@/lang'
 
 export default () => {
@@ -14,6 +14,6 @@ export default () => {
   return <>
     <Section title={t('setting_lyrics')}><LyricFontSelector /><IsShowLyricTranslation /><IsShowLyricRoma /><IsS2T /></Section>
     <Section title={t('setting_lyrics_external')}><StatusBarLyric /><IsShowBluetoothLyric /><IsShowBluetoothFullLyric /></Section>
-    <LegacyOverlayLyric />
+    <LyricDesktop />
   </>
 }

@@ -39,8 +39,7 @@ export default ({ provider }: { provider: DiscoveryProvider }) => {
     }).catch(() => { if (active) { setError(true); setHasNext(false) } }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [provider, choice, page, retry])
-  const columns = width >= 900 ? 6 : width >= 560 ? 3 : 2
-  const cardWidth = Math.max(0, (width - 12 * (columns - 1)) / columns)
+  const cardWidth = width >= 560 ? 170 : 142
   const open = (item: DiscoveryPlaylist) => {
     if (!commonState.componentIds.home || Date.now() - lastOpen.current < 800) return
     lastOpen.current = Date.now()
@@ -63,11 +62,11 @@ export default ({ provider }: { provider: DiscoveryProvider }) => {
     </View> : error || !list.length ? <View key="empty" style={styles.empty}>
       <Text size={13} color={theme['q-text-secondary']}>{t(error ? 'discovery_failed' : 'discovery_empty')}</Text>
       <Button style={[styles.retry, { backgroundColor: theme['q-surface-tint'] }]} onPress={() => { setRetry(retry + 1) }}><Text size={13} color={theme['q-accent-text']}>{t('list_retry')}</Text></Button>
-    </View> : <View key="content" style={styles.grid}>{list.slice(offset, offset + 6).map(item => <Button key={`${item.source}:${item.id}`} accessibilityLabel={`${t('discovery_playlist')} · ${item.name}`} style={[styles.card, { width: cardWidth }]} onPress={() => { open(item) }}>
+    </View> : <ScrollView key={`content:${provider}:${choice}:${page}:${offset}`} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 8 }} decelerationRate="fast" snapToInterval={cardWidth + 12}>{list.slice(offset, offset + 6).map(item => <Button key={`${item.source}:${item.id}`} accessibilityLabel={`${t('discovery_playlist')} · ${item.name}`} style={[styles.card, { width: cardWidth }]} onPress={() => { open(item) }}>
       <View><Image url={item.img} style={{ width: cardWidth, height: cardWidth, borderRadius: 14 }} /><View style={styles.chevron}><Icon name="chevron-right" rawSize={18} color="#fff" /></View></View>
       <Text numberOfLines={2} size={13} style={styles.name} color={theme['q-text-primary']}>{item.name}</Text>
       <Text numberOfLines={1} size={11} color={theme['q-text-secondary']}>{item.total ? t('discovery_track_count', { count: item.total }) : item.author || t('discovery_playlist')}</Text>
-    </Button>)}</View>}
+    </Button>)}</ScrollView>}
   </View>
 }
 
