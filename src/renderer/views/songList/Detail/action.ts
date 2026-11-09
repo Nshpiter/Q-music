@@ -6,6 +6,8 @@ import { createUserList, setTempList } from '@renderer/store/list/action'
 import { playList } from '@renderer/core/player/action'
 import { LIST_IDS } from '@common/constants'
 import { toMD5 } from '@renderer/utils'
+import { appSetting } from '@renderer/store/setting'
+import { playAllFromLoader } from '@renderer/core/player/selection'
 
 const getListId = (id: string, source: LX.OnlineSource) => `${source}__${id}`
 
@@ -38,7 +40,9 @@ export const addSongListDetail = async(id: string, source: LX.OnlineSource, name
   })
 }
 
-export const playSongListDetail = async(id: string, source: LX.OnlineSource, list?: LX.Music.MusicInfoOnline[], index: number = 0) => {
+export const playSongListDetail = async(id: string, source: LX.OnlineSource, list?: LX.Music.MusicInfoOnline[], index?: number) => {
+  if (index == null && appSetting['list.playAllMode'] == 'append') return playAllFromLoader(getListId(id, source), async() => getListDetailAll(id, source))
+  index ??= 0
   let isPlayingList = false
   // console.log(list)
   const listId = getListId(id, source)

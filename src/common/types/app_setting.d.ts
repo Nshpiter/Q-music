@@ -499,6 +499,8 @@ declare global {
        */
       'list.isClickPlayList': boolean
       'list.singlePlayMode': 'replace' | 'add'
+      'list.playAllMode': 'replace' | 'append'
+      'list.favoriteTargetId': string
       'player.preferLocal': boolean
 
       /**

@@ -33,7 +33,7 @@ function harness() {
   const isPlayPending = { get value() { return state.isPlayPending }, set value(value) { state.isPlayPending = value } }
   let status = '', resources = [], empty = true
   let request = async() => { throw Error('source unavailable') }
-  let filter = async() => ({ filteredList: tracks, playerIndex: state.playInfo.playerPlayIndex })
+  let filter = async() => ({ filteredList: playbackSession.list('test', tracks), playerIndex: state.playInfo.playerPlayIndex })
   const lx = { isPlayedStop: false, gettingUrlId: '', restorePlayInfo: null }
   const app_event = new Proxy({}, { get: (_, name) => () => { if (name === 'pause' || name === 'error') state.isPlay = false } })
   const globals = { setTimeout, clearTimeout, setImmediate: fn => setTimeout(fn),
@@ -42,14 +42,15 @@ function harness() {
   const noop = () => {}
   const setting = { 'player.togglePlayMethod': 'listLoop', 'player.autoSkipOnError': true, 'player.playQuality': '128k' }
   const info = {
-    getList: () => tracks, getSourceList: () => tracks, setPlayListId: id => { state.playInfo.playerListId = id },
-    setPlayMusicInfo: (listId, musicInfo, isTempPlay = false) => { state.playMusicInfo = { listId, musicInfo, isTempPlay }; state.musicInfo.id = musicInfo?.id; state.playInfo.playerPlayIndex = tracks.indexOf(musicInfo) },
+    getList: id => id ? playbackSession.list(id, tracks) : [], getSourceList: () => tracks, setPlayListId: id => { state.playInfo.playerListId = id },
+    setPlayMusicInfo: (listId, musicInfo, isTempPlay = false) => { state.playMusicInfo = { listId, musicInfo, isTempPlay }; state.musicInfo.id = musicInfo?.id; state.playInfo.playerPlayIndex = listId ? playbackSession.list(listId, tracks).indexOf(musicInfo) : -1; if (!musicInfo) state.playInfo.playerListId = null },
+    updatePlayIndex: () => { state.playInfo.playerPlayIndex = playbackSession.list('test', tracks).indexOf(state.playMusicInfo.musicInfo) },
     setMusicInfo: data => Object.assign(state.musicInfo, data),
   }
   // PC 用 shallowReactive 对象，保持对象身份。
   const pcPlayback = state.playMusicInfo
-  const pcInfo = { ...info, setPlayMusicInfo: (listId, musicInfo, isTempPlay = false) => { Object.assign(pcPlayback, { listId, musicInfo, isTempPlay }); state.musicInfo.id = musicInfo?.id; state.playInfo.playerPlayIndex = tracks.indexOf(musicInfo) } }
-  const plugins = { isEmpty: () => empty, setPause: () => { state.isPlay = false }, setPlay: () => { state.isPlay = true }, setStop: () => { empty = true },
+  const pcInfo = { ...info, setPlayMusicInfo: (listId, musicInfo, isTempPlay = false) => { Object.assign(pcPlayback, { listId, musicInfo, isTempPlay }); state.musicInfo.id = musicInfo?.id; state.playInfo.playerPlayIndex = listId ? playbackSession.list(listId, tracks).indexOf(musicInfo) : -1; if (!musicInfo) state.playInfo.playerListId = null } }
+  const plugins = { isEmpty: () => empty, setPause: () => { state.isPlay = false }, setPlay: () => { state.isPlay = true }, setStop: () => { empty = true; state.isPlay = false },
     setResource: (...args) => { resources.push(mobile ? args[1] : args[0]); empty = false }, isInitialized: () => true, initial: async() => {}, initTrackInfo: noop,
   }
   const music = { getMusicUrl: (...args) => request(...args), getMusicPlayUrlInfo: async(...args) => ({ url: await request(...args), quality: '128k' }),
@@ -57,12 +58,12 @@ function harness() {
   }
   const { PlaybackSession } = load(mobile ? 'src/utils/playbackSession.ts' : 'src/common/utils/playbackSession.ts')
   const playbackSession = new PlaybackSession()
-  const common = { './session': { playbackSession }, './recovery': recovery, './utils': { filterList: (...args) => filter(...args) } }
+  const common = { [mobile ? '@/core/localFavorite' : '@renderer/core/localFavorite']: { getFavoriteListId: () => 'love' }, './session': { playbackSession }, './recovery': recovery, './utils': { filterList: (...args) => filter(...args) } }
   const dep = mobile ? {
-    ...common, '@/plugins/player': plugins, '@/core/player/playStatus': { setStatusText: val => { status = val }, setIsPlayPending: val => { state.isPlayPending = val } },
+    ...common, '@/store/player/action': { updatePlayIndex: (_, index) => { state.playInfo.playerPlayIndex = index } }, '@/plugins/player': plugins, '@/core/player/playStatus': { setStatusText: val => { status = val }, setIsPlayPending: val => { state.isPlayPending = val } },
     '@/store/player/state': state, '@/store/setting/state': { setting }, '@/core/player/playInfo': info,
     '@/core/player/playedList': { clearPlayedList: noop, addPlayedList: noop, removePlayedList: noop },
-    '@/core/player/tempPlayList': { clearTempPlayeList: noop, removeTempPlayList: index => state.tempPlayList.splice(index, 1) },
+    '@/core/player/tempPlayList': { clearTempPlayeList: () => { state.tempPlayList.splice(0) }, removeTempPlayList: index => state.tempPlayList.splice(index, 1) },
     '@/core/music': music, '@/core/music/online': { findMatchedTranslation: async() => '' },
     '@/utils/message': { requestMsg: { tooManyRequests: 'rate limited', cancelRequest: 'cancelled' } }, '@/utils/common': { getRandom: () => 2 },
     'react-native-background-timer': { setTimeout, clearTimeout },
@@ -70,9 +71,9 @@ function harness() {
     '@/utils/nativeModules/utils': { needsSharedFileAccess: async() => false }, '@/config/constant': { LIST_IDS: { LOVE: 'love' } },
     '@/core/list': { addListMusics: noop, removeListMusics: noop }, '@/core/dislikeList': { addDislikeInfo: noop }, '@/core/common': { updateSetting: noop },
   } : {
-    ...common, '@renderer/plugins/player': plugins,
+    ...common, '@renderer/core/music/playbackReport': load('src/renderer/core/music/playbackReport.ts'), '@renderer/plugins/player': plugins,
     '@renderer/store/player/state': { ...state, isPlay, isPlayPending, playMusicInfo: pcPlayback, playbackSourceInfo: { value: null } },
-    '@renderer/store/player/action': { ...pcInfo, clearPlayedList: noop, clearTempPlayeList: noop, addPlayedList: noop, setAllStatus: val => { status = val }, removeTempPlayList: index => state.tempPlayList.splice(index, 1), removePlayedList: noop },
+    '@renderer/store/player/action': { ...pcInfo, clearPlayedList: noop, clearTempPlayeList: () => { state.tempPlayList.splice(0) }, addPlayedList: noop, setAllStatus: val => { status = val }, removeTempPlayList: index => state.tempPlayList.splice(index, 1), removePlayedList: noop },
     '@renderer/store/setting': { appSetting: setting }, '../music/index': music, '../music/translation': { findMatchedTranslation: async() => '' },
     '@renderer/utils/message': { requestMsg: { tooManyRequests: 'rate limited', cancelRequest: 'cancelled' } }, '@renderer/utils/index': { getRandom: () => 2 },
     '@renderer/store/list/action': { addListMusics: noop, removeListMusics: noop }, '@renderer/store/list/state': { loveList: { id: 'love' } },
@@ -239,4 +240,119 @@ test('连续选集忽略随机历史，并按顺序下一集、上一集且不�
   await h.api.playNext()
   assert.equal(h.state.playMusicInfo.musicInfo.id, 'three')
   assert.equal(h.setting['player.togglePlayMethod'], 'random')
+})
+
+test('队列移除普通曲目不动源歌单，正在播放的前一项删除后位置校正', async() => {
+  const h = harness()
+  h.request(async() => 'https://example.test/audio.mp3')
+  await h.start(1)
+  await h.api.removeQueueIndex(0)
+  assert.equal(h.tracks.length, 4)
+  assert.deepEqual(Array.from(h.playbackSession.list('test', h.tracks), item => item.id), ['two', 'three', 'four'])
+  assert.equal(h.state.playInfo.playerPlayIndex, 0)
+  await h.api.playNext()
+  await h.fire(200)
+  assert.equal(h.state.musicInfo.id, 'three')
+})
+
+test('移除当前曲续播下一项；暂停时移除不会自动开始；最后一首移除停止', async() => {
+  const h = harness()
+  h.request(async() => 'https://example.test/audio.mp3')
+  await h.start(1)
+  await h.api.removeQueueIndex(1); await h.fire(200)
+  assert.equal(h.state.musicInfo.id, 'three')
+  await h.api.pause()
+  await h.api.removeQueueIndex(1); await h.fire(200)
+  assert.equal(h.state.musicInfo.id, 'four'); assert.equal(h.state.isPlay, false)
+  h.playbackSession.replace('test', [h.tracks[3]])
+  h.state.playInfo.playerPlayIndex = 0
+  await h.api.removeQueueIndex(0); await h.fire(0)
+  assert.equal(h.state.musicInfo.id, undefined)
+  assert.equal(h.state.isPlayPending, false)
+  assert.equal(h.tracks.length, 4)
+})
+
+test('清空队列取消解析与插播，迟到结果不复活，下一首不恢复旧历史', async() => {
+  const h = harness(), pending = deferred()
+  h.request(() => pending.promise)
+  await h.start()
+  h.state.tempPlayList.push({ listId: 'test', musicInfo: h.tracks[1], isTempPlay: true })
+  await h.api.clearPlayQueue()
+  pending.resolve('https://example.test/late.mp3'); await flush()
+  await h.fire(0); await h.fire(200)
+  assert.equal(h.resources.length, 0)
+  assert.equal(h.state.tempPlayList.length, 0)
+  assert.equal(h.playbackSession.history.length, 0)
+  assert.equal(h.state.playInfo.playerListId, null)
+  await h.api.playNext(); await h.fire(0)
+  assert.equal(h.state.musicInfo.id, undefined)
+  assert.equal(h.tracks.length, 4)
+})
+
+test('移除当前曲时保留插播优先级；插播后不会跳过原队列下一项', async() => {
+  const h = harness()
+  h.request(async() => 'https://example.test/audio.mp3')
+  await h.start(1)
+  const later = { listId: 'other', musicInfo: { id: 'insert', source: 'tx', meta: {} }, isTempPlay: true }
+  h.state.tempPlayList.push(later)
+  await h.api.removeQueueIndex(1); await h.fire(200)
+  assert.equal(h.state.musicInfo.id, 'insert')
+  await h.api.playNext(); await h.fire(200)
+  assert.equal(h.state.musicInfo.id, 'three')
+})
+
+if (!mobile) test('清空覆盖尚未落盘的旧进度，重新选歌仍能保存新的恢复信息', () => {
+  const watches = [], events = {}, saved = [], timers = []
+  const globals = { setTimeout: fn => { timers.push(fn); return timers.length }, clearTimeout() {},
+    window: { app_event: { on: (name, fn) => { events[name] = fn }, off() {} } },
+  }
+  const common = load('src/common/utils/common.ts', {}, globals)
+  const playMusicInfo = { musicInfo: { id: 'old' }, listId: 'test', isTempPlay: false }
+  const progress = { nowPlayTime: 12, maxPlayTime: 100 }
+  load('src/renderer/core/useApp/usePlayer/usePlayProgress.ts', {
+    '@common/utils/vueTools': { watch: (source, callback) => { watches.push({ source, callback }) }, onBeforeUnmount() {} },
+    '@common/utils/common': common, '@common/utils': common,
+    '@renderer/utils/ipc': { savePlayInfo: info => { saved.push(info) } },
+    '@renderer/plugins/player': { onTimeupdate: () => () => {}, onVisibilityChange: () => () => {}, setCurrentTime() {} },
+    '@renderer/store/player/playProgress': { playProgress: progress },
+    '@renderer/store/player/state': { playMusicInfo, playInfo: { playIndex: 0 }, musicInfo: { id: 'old' } },
+    '@renderer/store/setting': { appSetting: {} }, '@renderer/store/list/action': {},
+  }, globals).default()
+  events.musicToggled()
+  playMusicInfo.musicInfo = null
+  playMusicInfo.listId = null
+  watches[0].callback(watches[0].source())
+  while (timers.length) timers.shift()()
+  assert.equal(saved.length, 1)
+  assert.equal(saved[0].listId, '')
+  assert.equal(saved[0].index, -1)
+  playMusicInfo.musicInfo = { id: 'fresh' }
+  playMusicInfo.listId = 'fresh-list'
+  watches[0].callback(watches[0].source())
+  events.musicToggled()
+  while (timers.length) timers.shift()()
+  assert.equal(saved.at(-1).listId, 'fresh-list')
+})
+
+
+test('整页追加保留当前曲与暂停状态，插播优先级及源歌单不被改写', async() => {
+  const h = harness()
+  const original = h.tracks.slice()
+  const current = h.state.playMusicInfo.musicInfo
+  const later = { listId: 'other', musicInfo: { id: 'later', source: 'tx', meta: {} } }
+  h.state.tempPlayList.push(later)
+  const added = { id: 'append', source: 'wy', name: 'new', meta: {} }
+  assert.equal(h.api.appendQueueItems([added]), true)
+  assert.equal(h.state.playMusicInfo.musicInfo, current)
+  assert.equal(h.state.isPlay, false)
+  assert.equal(h.state.tempPlayList[0], later)
+  assert.deepEqual(h.tracks, original)
+  assert.deepEqual(Array.from(h.playbackSession.list('test', h.tracks), item => item.id), ['one', 'two', 'three', 'four', 'append'])
+  h.state.isPlay = true
+  assert.equal(h.api.appendQueueItems([added]), true)
+  assert.equal(h.state.isPlay, true)
+  assert.equal(h.resources.length, 0)
+  assert.equal(h.api.appendQueueItems([]), false)
+  h.state.playMusicInfo.musicInfo = null
+  assert.equal(h.api.appendQueueItems([added]), false)
 })

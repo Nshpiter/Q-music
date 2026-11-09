@@ -18,8 +18,8 @@
       v-if="removable"
       type="button"
       :class="$style.remove"
-      :aria-label="$t('play_queue__remove')"
-      :title="$t('play_queue__remove')"
+      :aria-label="$t('queue_session_remove')"
+      :title="$t('queue_session_remove')"
       @click.stop="$emit('remove')"
     >
       <svg viewBox="0 0 24 24" aria-hidden="true">

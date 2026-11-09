@@ -3,6 +3,8 @@ import { dialog } from '@renderer/plugins/Dialog'
 import syncSourceList from '@renderer/store/list/syncSourceList'
 import { getListDetail, getListDetailAll } from '@renderer/store/leaderboard/action'
 import { createUserList, setTempList } from '@renderer/store/list/action'
+import { appSetting } from '@renderer/store/setting'
+import { playAllFromLoader } from '@renderer/core/player/selection'
 import { playList } from '@renderer/core/player/action'
 import { LIST_IDS } from '@common/constants'
 import { toMD5 } from '@renderer/utils'
@@ -36,7 +38,9 @@ export const addSongListDetail = async(id: string, name: string, source: LX.Onli
   })
 }
 
-export const playSongListDetail = async(id: string, list?: LX.Music.MusicInfoOnline[], index: number = 0) => {
+export const playSongListDetail = async(id: string, list?: LX.Music.MusicInfoOnline[], index?: number) => {
+  if (index == null && appSetting['list.playAllMode'] == 'append') return playAllFromLoader(getListId(id), async() => getListDetailAll(id))
+  index ??= 0
   const requestId = ++playRequestId
   let isPlayingList = false
   // console.log(list)

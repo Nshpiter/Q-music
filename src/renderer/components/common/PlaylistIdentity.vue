@@ -25,7 +25,7 @@ export default {
   setup(props) {
     const t = useI18n()
     const source = computed(() => props.list.source)
-    const sourceName = computed(() => ({ tx: 'QQ音乐', wy: '网易云音乐', kg: '酷狗音乐', kw: '酷我音乐', mg: '咪咕音乐', bd: '百度音乐' })[source.value] || source.value || t('playlist_local'))
+    const sourceName = computed(() => ({ bi: '哔哩哔哩', tx: 'QQ音乐', wy: '网易云音乐', kg: '酷狗音乐', kw: '酷我音乐', mg: '咪咕音乐', bd: '百度音乐' })[source.value] || source.value || t('playlist_local'))
     return { source, sourceName }
   },
 }

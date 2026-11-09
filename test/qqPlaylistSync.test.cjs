@@ -93,6 +93,8 @@ const harness = (options = {}) => {
     },
     '@renderer/store/songList/action': { getListDetailAll: async () => { throw Error('must not use public QQ API') } },
     '@renderer/store/leaderboard/action': {},
+    '@renderer/utils/musicSdk/bi': { bilibiliClient: {} },
+    '@renderer/utils': { toNewMusicInfo: row => row },
     '@renderer/views/List/MyList/importPlaylist': { loadAccountPlaylistMusic: importer },
   })
   return { ...api, target, lists, settings, calls, busy, saved, cached }

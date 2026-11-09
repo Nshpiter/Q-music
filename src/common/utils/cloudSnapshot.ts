@@ -20,7 +20,7 @@ const preferences = new Set([
   'player.togglePlayMethod', 'player.playQuality', 'player.playbackRate',
   'player.isSavePlayTime', 'player.isShowLyricTranslation', 'player.isShowLyricRoma', 'player.isS2t',
   'player.isAutoCleanPlayedList', 'playDetail.style.layout', 'playDetail.style.align',
-  'list.singlePlayMode', 'list.isClickPlayList', 'list.addMusicLocationType',
+  'list.singlePlayMode', 'list.playAllMode', 'list.isClickPlayList', 'list.addMusicLocationType',
   'search.isShowHotSearch', 'search.isShowHistorySearch',
   'theme.id', 'theme.lightId', 'theme.darkId', 'theme.autoByTime', 'theme.appearance', 'theme.dayStart', 'theme.nightStart',
 ])
@@ -31,6 +31,7 @@ const enums: Record<string, string[]> = {
   'playDetail.style.layout': ['classic', 'immersive'],
   'playDetail.style.align': ['left', 'center', 'right'],
   'list.singlePlayMode': ['add', 'replace'],
+  'list.playAllMode': ['replace', 'append'],
   'list.addMusicLocationType': ['top', 'bottom'],
   'theme.appearance': ['light', 'dark', 'system', 'time'],
 }

@@ -149,7 +149,8 @@ jobs:
           if (description.length < 80 || !description.includes(expectedVersion) || /^\*\*Full Changelog\*\*:/i.test(description)) {
             throw new Error('Release notes must contain a human-readable description for the current version')
           }
-          fs.writeFileSync('release-notes.md', `${description}\n\n<!-- q-music-managed-release -->`, 'utf8')
+          const downloadGuide = fs.readFileSync('publish/download-guide.md', 'utf8').trim()
+          fs.writeFileSync('release-notes.md', `${description}\n\n${downloadGuide}\n\n<!-- q-music-managed-release -->`, 'utf8')
           '@ | node
           if ($LASTEXITCODE -ne 0) {
             throw 'Release notes validation failed.'

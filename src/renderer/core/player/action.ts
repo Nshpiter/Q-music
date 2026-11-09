@@ -1,10 +1,12 @@
 import { playbackSession } from './session'
 import { isEmpty, setPause, setPlay, setResource, setStop } from '@renderer/plugins/player'
+import { originalReportIdentity } from '@renderer/core/music/playbackReport'
 import { isPlay, isPlayPending, playedList, playInfo, playMusicInfo, playbackSourceInfo, tempPlayList, musicInfo as _musicInfo } from '@renderer/store/player/state'
 import { playbackRecovery } from './recovery'
 import {
   getList,
   getSourceList,
+  updatePlayIndex,
   clearPlayedList,
   clearTempPlayeList,
   setPlayMusicInfo,
@@ -23,7 +25,7 @@ import { filterList } from './utils'
 import { requestMsg } from '@renderer/utils/message'
 import { getRandom } from '@renderer/utils/index'
 import { addListMusics, removeListMusics } from '@renderer/store/list/action'
-import { loveList } from '@renderer/store/list/state'
+import { getFavoriteListId } from '@renderer/core/localFavorite'
 import { addDislikeInfo } from '@renderer/core/dislikeList'
 import { removeMusicUrl as removeStoreMusicUrl } from '@renderer/utils/ipc'
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
@@ -270,6 +272,7 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
         : (resolvedMusicInfo ? String(resolvedMusicInfo.meta.songId ?? '') : '')),
       resolvedMediaId: resolvedMusicInfo?.source == 'tx' ? (resolvedMusicInfo.meta.strMediaMid ?? '') : '',
       officialSourceId: resolvedMusicInfo?.source == 'wy' ? String(resolvedMusicInfo.meta.albumId ?? '') : '',
+      reportIdentity: originalReportIdentity(originalMusicInfo),
       cacheProviderId: info.cacheProviderId,
     }
   }
@@ -922,7 +925,7 @@ export const togglePlay = () => {
  */
 export const collectMusic = () => {
   if (!playMusicInfo.musicInfo) return
-  void addListMusics(loveList.id, ['progress' in playMusicInfo.musicInfo ? playMusicInfo.musicInfo.metadata.musicInfo : playMusicInfo.musicInfo])
+  void addListMusics(getFavoriteListId(), ['progress' in playMusicInfo.musicInfo ? playMusicInfo.musicInfo.metadata.musicInfo : playMusicInfo.musicInfo])
 }
 
 /**
@@ -930,7 +933,7 @@ export const collectMusic = () => {
  */
 export const uncollectMusic = () => {
   if (!playMusicInfo.musicInfo) return
-  void removeListMusics({ listId: loveList.id, ids: ['progress' in playMusicInfo.musicInfo ? playMusicInfo.musicInfo.metadata.musicInfo.id : playMusicInfo.musicInfo.id] })
+  void removeListMusics({ listId: getFavoriteListId(), ids: ['progress' in playMusicInfo.musicInfo ? playMusicInfo.musicInfo.metadata.musicInfo.id : playMusicInfo.musicInfo.id] })
 }
 
 /**
@@ -941,6 +944,74 @@ export const dislikeMusic = async() => {
   const minfo = 'progress' in playMusicInfo.musicInfo ? playMusicInfo.musicInfo.metadata.musicInfo : playMusicInfo.musicInfo
   await addDislikeInfo([{ name: minfo.name, singer: minfo.singer }])
   await playNext(true)
+}
+
+// 只清理本次播放会话，不删除任何歌单或下载文件。
+export const appendQueueItems = (tracks: Array<NonNullable<LX.Player.PlayMusicInfo['musicInfo']>>) => {
+  if (!playMusicInfo.musicInfo || !tracks.length) return false
+  const id = playInfo.playerListId || '__session_queue__'
+  playbackSession.replace(id, [...getList(id), ...tracks])
+  setPlayListId(id)
+  clearPlayedList()
+  resetRandomNextMusicInfo()
+  updatePlayIndex()
+  return true
+}
+
+export const clearPlayQueue = () => {
+  stop()
+  playbackSession.reset()
+  clearPlayedList()
+  clearTempPlayeList()
+  resetRandomNextMusicInfo()
+  setPlayMusicInfo(null, null)
+}
+
+export const removeQueueIndex = (index: number) => {
+  const id = playInfo.playerListId
+  if (!id) return
+  const list = getList(id) as Array<LX.Player.PlayMusicInfo['musicInfo']>
+  const removed = list[index]
+  if (!removed || !Number.isInteger(index)) return
+  const current = playMusicInfo
+  const anchor = list[playInfo.playerPlayIndex]
+  const removingCurrent = !current.isTempPlay && index == playInfo.playerPlayIndex
+  const shouldResume = isPlay.value || isPlayPending.value
+  if (list.length == 1 && !tempPlayList.length && removingCurrent) {
+    clearPlayQueue()
+    return
+  }
+  if (removingCurrent) stop()
+  const token = playbackRecovery.token()
+  playbackSession.remove(id, list, index)
+  const remaining = getList(id) as Array<LX.Player.PlayMusicInfo['musicInfo']>
+  if (!remaining.some(item => item.id == removed.id)) playbackSession.forget(item => item.listId == id && item.musicInfo.id == removed.id)
+  clearPlayedList()
+  resetRandomNextMusicInfo()
+  if (!removingCurrent) {
+    if (current.isTempPlay && anchor) {
+      const anchorIndex = remaining.indexOf(anchor)
+      playInfo.playerPlayIndex = anchorIndex
+    }
+    updatePlayIndex()
+    return
+  }
+  if (token != playbackRecovery.token()) return
+  if (tempPlayList.length) {
+    const next = tempPlayList[0]
+    removeTempPlayList(0)
+    playInfo.playerPlayIndex = Math.min(index - 1, remaining.length - 1)
+    setPlayMusicInfo(next.listId, next.musicInfo, true)
+    playbackSession.record(next)
+    if (shouldResume) handlePlay()
+    return
+  }
+  const next = remaining[Math.min(index, remaining.length - 1)]
+  if (!next) return
+  const selection = { listId: id, musicInfo: next, isTempPlay: false }
+  setPlayMusicInfo(id, next)
+  playbackSession.record(selection)
+  if (shouldResume) handlePlay()
 }
 
 export const playQueueIndex = (index: number) => {

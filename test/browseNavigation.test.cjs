@@ -224,6 +224,8 @@ test('先后播放两个榜单，同榜单再次播放，旧完整列表均不�
   const writes = []
   const meta = { id: '' }
   const api = load('src/renderer/views/Leaderboard/action.ts', {
+    '@renderer/store/setting': { appSetting: { 'list.playAllMode': 'replace' } },
+    '@renderer/core/player/selection': {},
     '@renderer/store/list/state': { tempListMeta: meta, userLists: [] },
     '@renderer/plugins/Dialog': {}, '@renderer/store/list/syncSourceList': {},
     '@renderer/store/leaderboard/action': { getListDetailAll: () => { const task = deferred(); fullRequests.push(task); return task.promise } },

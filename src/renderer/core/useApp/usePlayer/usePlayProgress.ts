@@ -75,6 +75,13 @@ export default () => {
     }
   }
 
+  watch(() => playMusicInfo.musicInfo, current => {
+    if (current) return
+    restorePlayTime = 0
+    // 使用同一个节流器覆盖尚未写入的旧进度，重启后不能恢复已清空的队列。
+    delaySavePlayInfo({ time: 0, maxTime: 0, listId: '', index: -1 })
+  })
+
   watch(() => playProgress.nowPlayTime, (newValue, oldValue) => {
     if (Math.abs(newValue - oldValue) > 2) window.app_event.activePlayProgressTransition()
     if (appSetting['player.isSavePlayTime'] && !playMusicInfo.isTempPlay) {

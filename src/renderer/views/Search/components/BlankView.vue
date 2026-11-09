@@ -78,6 +78,7 @@
           </div>
 
           <DiscoveryPlaylists :provider="selectedDailyProvider" />
+          <PopularArtists />
 
           <section v-if="canReadAccountPlaylists(accountPlaylistsProvider)" :class="$style.playlistShelf">
             <header>
@@ -277,10 +278,9 @@ import { computed, watch, shallowRef, ref } from '@common/utils/vueTools'
 import { onDeactivated } from 'vue'
 import { getDailyRecommend } from '@renderer/core/dailyRecommend'
 import { getDailyRefreshAction } from '@common/utils/dailyRecommendPolicy'
-import { setTempList } from '@renderer/store/list/action'
-import { playList, togglePlay } from '@renderer/core/player/action'
+import { togglePlay } from '@renderer/core/player/action'
 import { isPlay, playMusicInfo } from '@renderer/store/player/state'
-import { playFromPage } from '@renderer/core/player/selection'
+import { playFromPage, playAllFromPage } from '@renderer/core/player/selection'
 import { loadTrackArtwork } from '@renderer/utils/trackArtwork'
 import { LIST_IDS } from '@common/constants'
 import { getMusicAccountDaily, getMusicAccountPlaylistDetail, getMusicAccountPlaylists, getMusicAccountStatus, getQQDailyKeyStatus, loginMusicAccount, logoutMusicAccount, openQQDailyKeyPage, saveQQDailyApiKey } from '@renderer/utils/ipc'
@@ -291,6 +291,7 @@ import ExternalImportModal from '@renderer/views/List/MyList/components/External
 import SourceIcon from '@renderer/components/common/SourceIcon.vue'
 import SongTitle from '@renderer/components/common/SongTitle.vue'
 import DiscoveryPlaylists from './DiscoveryPlaylists.vue'
+import PopularArtists from './PopularArtists.vue'
 
 const props = defineProps({
   visible: Boolean,
@@ -495,8 +496,7 @@ watch(
 const playDailyRecommend = async(index) => {
   if (!dailyRecommendList.value.length) return
   if (typeof index == 'number') { await playFromPage('daily_selection', dailyRecommendList.value, index); return }
-  await setTempList(`q_daily_${new Date().toISOString().slice(0, 10)}`, [...dailyRecommendList.value])
-  playList(LIST_IDS.TEMP, 0)
+  await playAllFromPage(`q_daily_${new Date().toISOString().slice(0, 10)}`, dailyRecommendList.value)
 }
 
 const openDailyDetail = () => {
@@ -599,8 +599,7 @@ const playDetailList = async(index) => {
   }
   const listId = detailKind.value == 'playlist' ? `q_playlist_${selectedAccountPlaylistProvider.value}_${selectedAccountPlaylist.value?.id ?? 'unknown'}` : `q_daily_${new Date().toISOString().slice(0, 10)}`
   if (typeof index == 'number') { await playFromPage(listId, list, index); return }
-  await setTempList(listId, [...list])
-  playList(LIST_IDS.TEMP, 0)
+  await playAllFromPage(listId, list)
 }
 
 const refreshAccountStatus = async() => {

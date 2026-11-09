@@ -1,3 +1,4 @@
+import { playAllFromPage } from '@renderer/core/player/selection'
 import { addTempPlayList } from '@renderer/store/player/action'
 import { pause, play, playList } from '@renderer/core/player'
 import { isPlay, playInfo, playMusicInfo } from '@renderer/store/player/state'
@@ -24,7 +25,16 @@ export default ({ selectedList, list, listAll, removeAllSelect }) => {
     }
   }
 
+  const handlePlayAll = async() => playAllFromPage('download-completed', listAll.value.filter(task => task.isComplate).map(task => ({
+    id: task.metadata.filePath,
+    source: 'local',
+    name: task.metadata.musicInfo.name,
+    singer: task.metadata.musicInfo.singer,
+    interval: task.metadata.musicInfo.interval,
+    meta: { songId: task.metadata.filePath, filePath: task.metadata.filePath, ext: task.metadata.ext, albumName: task.metadata.musicInfo.meta.albumName, picUrl: task.metadata.musicInfo.meta.picUrl },
+  })))
   return {
+    handlePlayAll,
     handlePlayMusic,
     handlePlayMusicLater,
   }

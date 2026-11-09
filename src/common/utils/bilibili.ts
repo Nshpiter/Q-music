@@ -4,9 +4,18 @@ export const BILIBILI_HEADERS = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; W
 export const isBilibiliMediaUrl = (url: string) => /^https:\/\/(?:(?:[\w-]+\.)+bilivideo\.(?:com|cn)|upos-hz-mirrorakam\.akamaized\.net)\//i.test(url)
 type Request = (url: string, headers: Record<string, string>, signal?: AbortSignal) => Promise<Record<string, any>>
 const bvidPattern = /^BV[0-9A-Za-z]{10}$/
-interface CollectionRef { kind: 'season' | 'series', mid: string, id: string }
+interface CollectionRef { kind: 'favorite' | 'season' | 'series', mid: string, id: string }
 // 兼容新旧空间合集链接；不跟随任意分享地址，避免把外部 URL 当成请求目标。
 export const parseBilibiliCollection = (input: string): CollectionRef | undefined => {
+  const text = input.trim()
+  const favorite = /^(?:ml|https?:\/\/(?:www\.)?bilibili\.com\/medialist\/(?:detail|play)\/ml)([1-9]\d*)(?:\/?(?:[?#].*)?)$/i.exec(text)
+  if (favorite) return { kind: 'favorite', mid: '', id: favorite[1] }
+  const folder = /^https?:\/\/space\.bilibili\.com\/([1-9]\d*)\/favlist\/?(?:\?([^#]*))?(?:#.*)?$/i.exec(text)
+  if (folder) {
+    const id = new URLSearchParams(folder[2] ?? '').get('fid')
+    if (id && /^[1-9]\d*$/.test(id)) return { kind: 'favorite', mid: folder[1], id }
+    return
+  }
   const match = /^https?:\/\/space\.bilibili\.com\/([1-9]\d*)\/(?:lists\/([1-9]\d*)\/?|channel\/(collectiondetail|seriesdetail)\/?)(?:\?([^#]*))?(?:#.*)?$/i.exec(input.trim())
   if (!match) return
   const query = new Map((match[4] ?? '').split('&').map(part => {
@@ -32,10 +41,10 @@ const format = (item: Record<string, any>, part?: Record<string, any>) => {
     source: 'bi',
     songmid,
     name: clean(part?.part || item.title),
-    singer: clean(item.author ?? item.owner?.name),
+    singer: clean(item.author ?? item.owner?.name ?? item.upper?.name),
     albumName: clean(item.title),
     albumId: item.bvid,
-    img: String(item.pic ?? '').replace(/^http:\/\//, 'https://').replace(/^\/\//, 'https://'),
+    img: String(item.pic ?? item.cover ?? '').replace(/^http:\/\//, 'https://').replace(/^\/\//, 'https://'),
     interval: `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`,
     types: [{ type: '192k', size: null }],
     _types: { '192k': { size: null } },
@@ -105,6 +114,14 @@ export const createBilibiliClient = (request: Request) => {
   const collection = async(input: string, page = 1, limit = 30, signal?: AbortSignal) => {
     if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) || limit < 1 || limit > 50) throw new Error('invalid_link')
     const ref = parseBilibiliCollection(input)
+    if (ref?.kind == 'favorite') {
+      const data = await call('/x/v3/fav/resource/list', { media_id: ref.id, pn: page, ps: limit, platform: 'web', type: 0 }, signal)
+      const total = Number(data.info?.media_count)
+      if (!Number.isSafeInteger(total) || total < 0 || (total > 0 && !Array.isArray(data.medias))) throw new Error('Bilibili: invalid_collection')
+      const items: Array<Record<string, any>> = data.medias ?? []
+      const list = items.filter(item => Number(item.type) == 2 && bvidPattern.test(String(item.bvid)) && !(Number(item.attr) & 9)).map(item => format(item))
+      return { list, total, limit, page, allPage: Math.ceil(total / limit), source: 'bi', info: { name: clean(data.info.title) }, incomplete: list.length != items.length }
+    }
     if (ref) {
       const data = await call(ref.kind == 'season' ? '/x/polymer/web-space/seasons_archives_list' : '/x/series/archives', ref.kind == 'season'
         ? { mid: ref.mid, season_id: ref.id, page_num: page, page_size: limit }

@@ -1,207 +1,162 @@
 <p align="center">
-  <img src="./doc/images/icon.png" width="150" alt="Q-music logo">
+  <img src="./doc/images/icon.png" width="104" alt="Q-music 图标">
 </p>
 
 <h1 align="center">Q-music</h1>
 
+<p align="center">找喜欢的歌，整理自己的歌单，享受每一次播放。</p>
+<p align="center">基于 LX Music 二次开发，支持 Windows、macOS、Arch Linux 与 Android。</p>
+
 <p align="center">
-  <a href="https://github.com/Nshpiter/Q-music/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Nshpiter/Q-music?include_prereleases&label=release"></a>
-  <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
-  <img alt="Windows" src="https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4">
-  <img alt="Android" src="https://img.shields.io/badge/Android-支持-3ddc84">
-  <img alt="Arch Linux" src="https://img.shields.io/badge/Arch%20Linux-x86__64-1793d1">
-  <img alt="macOS" src="https://img.shields.io/badge/macOS-Intel%20%2F%20Apple%20Silicon-555555">
-  <img alt="Electron" src="https://img.shields.io/badge/electron-40.9.2-47848f">
-  <img alt="Vue" src="https://img.shields.io/badge/vue-3-42b883">
+  <a href="https://github.com/Nshpiter/Q-music/releases/latest"><img alt="最新正式版" src="https://img.shields.io/github/v/release/Nshpiter/Q-music?label=Release&amp;color=2ea66f"></a>
+  <a href="./LICENSE"><img alt="Apache-2.0 许可证" src="https://img.shields.io/badge/License-Apache--2.0-blue"></a>
+  <a href="https://github.com/Nshpiter/Q-music/tree/android"><img alt="Android 源码" src="https://img.shields.io/badge/Android-源码-3ddc84"></a>
   <a href="https://linux.do/"><img alt="LINUX DO 社区" src="https://img.shields.io/badge/LINUX%20DO-社区-f0b84c"></a>
 </p>
 
-<p align="center">面向 Windows、macOS、Arch Linux 与 Android 的多端音乐播放器，提供聚合搜索、账号推荐、歌单同步与沉浸式歌词体验。</p>
-
 <p align="center">
-  <a href="https://github.com/Nshpiter/Q-music/releases/latest"><strong>下载最新版本</strong></a>
-  ·
-  <a href="./publish/changeLog.md">更新日志</a>
-  ·
-  <a href="https://github.com/Nshpiter/Q-music/issues">问题反馈</a>
+  <a href="https://github.com/Nshpiter/Q-music/releases/latest"><strong>下载最新版</strong></a> ·
+  <a href="#界面预览">界面预览</a> ·
+  <a href="#开始使用">开始使用</a> ·
+  <a href="./publish/changeLog.md">更新日志</a> ·
+  <a href="https://github.com/Nshpiter/Q-music/issues">反馈问题</a>
 </p>
+
+> 在线音乐播放与下载通常需要自行导入可用音源。登录音乐平台用于读取推荐、歌单及操作收藏，不能代替音源配置。
 
 ## 界面预览
 
-### 每日推荐与完整歌单
+**桌面首页 · 每日精选与更多歌单**
 
-![Q-music 每日推荐详情](./doc/images/app.png)
+![Q-music 桌面首页：平台推荐、每日精选和歌单发现](./doc/images/desktop-home.webp)
 
 <table>
   <tr>
-    <td width="50%" align="center"><strong>沉浸歌词与动态氛围</strong></td>
-    <td width="50%" align="center"><strong>经典歌词与播放栏</strong></td>
+    <td width="50%" align="center"><strong>经典极简 · 封面与双语歌词</strong></td>
+    <td width="50%" align="center"><strong>沉浸歌词 · 封面取色与动态氛围</strong></td>
   </tr>
   <tr>
-    <td><img src="./doc/images/player-immersive.png" alt="Q-music 沉浸歌词与动态氛围界面"></td>
-    <td><img src="./doc/images/player-classic.png" alt="Q-music 经典歌词与播放栏界面"></td>
+    <td><img src="./doc/images/desktop-classic.webp" alt="经典播放详情，封面、双语歌词及底部播放控制"></td>
+    <td><img src="./doc/images/desktop-immersive.webp" alt="沉浸播放详情，专辑取色背景与歌词"></td>
   </tr>
 </table>
 
-## 项目说明
+**Android · 经典与沉浸，两种听歌方式**
 
-Q-music 基于 [LX Music 桌面版](https://github.com/lyswhut/lx-music-desktop) 二次开发。最新版本见 [Releases](https://github.com/Nshpiter/Q-music/releases/latest)；桌面端基于 LX Music Desktop `2.12.2`，主要重做了跨端界面、首页推荐、音乐账号接入、歌单同步、播放详情页、音频可视化与发布更新流程。
+<p align="center">
+  <img src="./doc/images/mobile-classic.webp" width="300" alt="Android 经典播放页，封面、进度及收藏菜单">
+  <img src="./doc/images/mobile-player.webp" width="300" alt="Android 沉浸播放页，封面、播放控制和收藏入口">
+</p>
 
-本仓库不是 LX Music 官方仓库，也不代表原作者对本项目提供支持或背书。完整变更可查看 [更新日志](./publish/changeLog.md) 与 [二次修改说明](./MODIFICATIONS.md)。
+<details>
+<summary>展开查看平板设置与导航</summary>
 
-## 下载与平台
+![Android 平板设置：双栏分类与导航位置选择](./doc/images/tablet-settings.webp)
 
-| 平台 | 安装方式 | 状态 |
+平板与车机可选择左侧、右侧或底部导航。以上为应用实际运行截图；Android 截图来自模拟器，界面随主题、字号和设备尺寸调整。
+
+</details>
+
+## 可以做什么
+
+### 找歌与发现
+
+- **聚合搜索**：合并多个来源，支持综合 / 音质排序；也能单独选择平台。搜索历史、热门搜索和联想在搜索框展开后查看。
+- **平台账号**：支持登录 QQ 音乐、网易云音乐与酷狗音乐，在不同平台的个人歌单和推荐之间切换；可用功能取决于平台授权及接口。
+- **每日推荐**：以完整歌单呈现，另外提供精选歌单、分类发现与热门歌手。平台账号推荐与本地精选分别标明。
+- **B 站音频**：支持公开视频搜索、BV 号 / 链接、多 P 与合集 / 系列；可导入公开收藏夹并更新。多 P 播放按队列继续下一 P。
+- **听歌识曲（Android）**：点击搜索栏麦克风开始聆听，录音结束后自动识别；开始前会说明录音与短音频上传的用途。
+
+### 听歌与管理
+
+- **两套播放详情**：经典极简与沉浸歌词；支持双语、逐字歌词及封面取色动态背景，具体歌词内容取决于平台和歌词源。
+- **随手收藏**：点爱心加入或移出默认本地歌单；PC 点右下角三角，手机长按爱心或打开更多菜单，可选择其他本地歌单或已登录平台的可写歌单。B 站内容支持本地收藏。
+- **独立播放队列**：移除队列歌曲不会删除原歌单；“播放全部”可选择替换队列或追加到队尾。安卓支持队列拖动排序。
+- **播放历史**：持久保存最近播放，可删除、清空或重新播放，并能设置历史上限。PC 在左侧导航，手机在「我的」。
+- **本地音乐与下载**：导入歌曲 / 文件夹、管理下载任务与保存位置；文件移除与任务记录清理分别处理。
+- **网易云播放记录（PC）**：网易云原曲经备用源等线路播放时，仍按原始歌曲信息回传实际收听记录；需要有效账号。
+
+### 外观与设备
+
+- **主题随心调整**：支持浅色、深色、跟随系统和自定义时段切换，切换明暗时保留主题配色；还可调整背景图、透明度和播放风格。
+- **兼顾观感与流畅**：液态玻璃可单独开关，流畅模式可减少模糊与动效。安卓实时玻璃默认关闭，可按设备性能开启。
+- **Android 专属适配**：手机、平板、车机布局，设置搜索、下载位置入口、后台播放与系统媒体控制。
+- **桌面歌词**：PC 提供桌面歌词与全局快捷键；Android 可开启独立悬浮歌词，也保留词幕支持，两个通道互相独立。
+
+## 开始使用
+
+1. **[下载并安装](https://github.com/Nshpiter/Q-music/releases/latest)**：各平台选包、安装和更新方法见对应 Release 的发布说明。进入设置中的音源管理，导入自己的音源，选择主音源及备用顺序；也可以先导入本地音乐。
+2. **按需登录账号**：在音乐账号中选择 QQ 音乐、网易云或酷狗，读取自己的歌单和推荐；无需登录也能使用已有音源搜索和本地歌单。
+3. **搜索并播放**，在爱心菜单中选择收藏目标；下载可从歌曲菜单或下载入口操作。手机的下载目录在设置首页和下载设置中。
+4. **换设备时选择合适的同步方式**，见下表。需要迁移已有数据时，先备份再恢复。
+
+## 歌单同步、云端曲库与配置备份
+
+三个功能用途不同，可以按需要使用：
+
+| 你想做的事 | 使用方式 | 范围 |
 | --- | --- | --- |
-| Windows 10 / 11 x64 | 从 [GitHub Releases](https://github.com/Nshpiter/Q-music/releases/latest) 下载 `Q-music-*-x64-Setup.exe` | 稳定 |
-| Android arm64-v8a | 从 [GitHub Releases](https://github.com/Nshpiter/Q-music/releases/latest) 下载 arm64 APK；架构不确定时使用 universal APK | 测试版 |
-| Arch Linux x86_64 | 按下文命令构建 pacman 包 | 测试版 |
-| macOS Intel / Apple Silicon | 从 [GitHub Releases](https://github.com/Nshpiter/Q-music/releases/latest) 下载 `x64.dmg`（Intel）或 `arm64.dmg`（M 系列）；[安装说明](./doc/macos-build.md) | 首次提供，待更多真机验证；DMG 手动更新 |
+| 在多台设备间同步 Q-music 歌单 | 自建 [同步服务](./deploy/sync-server/README.md)，在设置中连接 | 自动同步歌单与“不喜欢”列表 |
+| 把云盘当作自己的音乐库 | 连接 S3 兼容存储（含 Cloudflare R2）或 WebDAV | 手动上传歌曲，导入云端歌曲 / 歌单 |
+| 把设置和音源迁移到另一台设备 | 同一连接内选择「设置与音源」 | 手动加密备份 / 恢复通用设置、完整音源脚本和主备顺序；可选账号状态 |
 
-Android 源码位于本仓库 [`android`](https://github.com/Nshpiter/Q-music/tree/android) 分支。Release 同时提供 SHA256 校验文件，Windows 客户端支持应用内检查更新。
+配置备份需要保存好备份密钥；账号默认不上传，过期凭证仍需重新登录。配置备份不是后台自动双向同步，也不会迁移设备权限或下载目录。云服务连接填写、备份与恢复步骤见 [配置备份指南](./doc/cloud-config-backup.md)。
 
-每个版本的发布说明维护在 [`publish/version.json`](./publish/version.json) 与
-[`publish/changeLog.md`](./publish/changeLog.md)；GitHub Release 由 Windows 发布工作流使用
-当前版本的人工说明创建，Android、Arch 与 macOS 工作流只上传对应平台资产。发布前会校验版本号、tag
-指向和各平台资产，避免出现只有自动比较链接或混合版本资产的 Release。
+## 常见问题
 
-## 功能亮点
+<details>
+<summary>为什么装好后不能直接播放或下载？</summary>
 
-- 液态玻璃界面：支持全局背景图、面板透明度与模糊程度实时调节，并提供清晰、平衡、沉浸三档外观预设。
-- 流畅模式：一键关闭实时毛玻璃采样，保留配色与层次，降低低功耗设备、远程桌面及部分 Linux 合成器的图形压力。
-- 主题化视觉：主题预览卡、磨砂菜单、胶囊标签和统一的导航选中态。
-- 聚合搜索：一个结果条目聚合多个音乐来源，可按歌曲选择可用来源，首页不堆叠来源标签。
-- 搜索排序：聚合搜索优先匹配原声/正式版本，结合平台原生名次、跨平台共识与专辑证据；明确搜索翻唱、混音等版本词时仍可精准筛选。
-- 智能播放线路：QQ 音乐与网易云音乐优先请求官方可用地址，失败后自动回退到自定义接口及跨源匹配，不改变其他音乐源行为。
-- 音乐账号：支持 QQ 音乐与网易云音乐授权状态检测、账号歌单读取及推荐来源切换。
-- 每日推荐：支持 QQ 音乐每日 30 首、私人雷达与网易云音乐推荐，并提供完整歌单详情、一键播放和换一批。
-- 歌单导入：支持账号歌单同步与外部歌单链接导入，统一管理本地收藏和跨平台歌单。
-- 本地音乐：在「我的列表 → 本地音乐」选择歌曲或文件夹，可扫描子文件夹、按文件夹分别建歌单；重新导入同一文件夹只添加新歌曲，不复制、上传或删除原文件。
-- 当前歌曲下载：播放栏和播放详情页的下载按钮可直接选择音质；首次使用可就地开启下载，支持情况取决于已配置的音源。
-- 多端云同步：可连接独立同步服务，在 Windows、Arch Linux 与 Android 间自动同步歌单及“不喜欢”列表。
-- 重做播放栏：播放控制居中、主题色进度条、拖拽圆点和分组工具按钮。
-- 播放详情页：提供经典与沉浸两种布局，支持逐行歌词、评论面板、自动沉浸控件及多种音频可视化。
-- 列表体验：播放中高亮、均衡跳动提示、磨砂悬停效果和播放队列。
-- 桌面能力：桌面歌词、全局快捷键、音效设置、数据同步与开放 API。
-- 独立更新：使用 Q-music 的版本检测、发布地址和 `qmusic://` Scheme URL，不与上游安装冲突。
+先在音源管理中导入可用音源并检查主备选择。平台登录主要提供歌单、推荐及收藏能力；可用音质、播放和下载取决于音源及对应内容。失败时请一并反馈平台、歌曲、错误提示与音源名称，不要公开密钥。
 
-## 数据存储
+</details>
 
-Windows 默认数据目录：
+<details>
+<summary>为什么歌单同步或收藏提示重新登录、需要验证？</summary>
 
-```text
-%APPDATA%/q-music
-```
+平台凭证会过期，平台也可能要求安全验证。请按提示重新授权或完成验证，再刷新歌单；只有本人有写入权限的歌单才会出现在平台收藏目标中。
 
-若程序目录中存在 `portable` 文件夹，则使用 `portable/userData` 保存数据。
+</details>
 
-Windows 发布流程同时生成安装包与 `win_x64-green.7z` 免安装包。免安装包完整解压后运行 `Q-music.exe`，内附 `portable` 文件夹，数据保存在解压目录。升级时先退出程序，将新版解压到新目录，再复制旧版 `portable` 文件夹；不要覆盖旧数据。本地歌曲仍引用原文件路径。安装版用户继续使用 `x64-Setup.exe`。
+<details>
+<summary>安卓歌词、后台播放和耗电怎么设置？</summary>
 
-Linux 默认数据目录：
+独立悬浮歌词需授予悬浮窗权限；通知和后台播放按系统提示授权。厂商系统仍可能限制后台运行。觉得模糊或动效吃性能时，先关闭液态玻璃或开启流畅模式，无需更换主题。
 
-```text
-$XDG_CONFIG_HOME/q-music
-```
+</details>
 
-未设置 `XDG_CONFIG_HOME` 时通常为 `~/.config/q-music`。
+<details>
+<summary>便携版怎么更新，数据在哪里？</summary>
 
-## 多端云同步
+完整解压便携包后运行 `Q-music.exe`，数据在 `portable/userData`。升级前退出程序，将新版解压到新目录，再复制旧版 `portable` 文件夹。安装版数据通常在 `%APPDATA%/q-music`；更多路径与 Linux 说明见 [桌面端开发与数据目录](./doc/development.md)。
 
-项目提供了 [Docker 部署配置](./deploy/sync-server/README.md)。部署同步服务并配置可信 HTTPS 后，
-在客户端“设置 → 数据同步”中选择客户端模式，填写服务地址并输入连接码即可。首次认证后，
-客户端会缓存设备密钥并自动重连。
+</details>
 
-## 本地开发
+## 开发与反馈
 
-环境要求：
+桌面源码在本仓库默认分支，Android 源码在 [`android` 分支](https://github.com/Nshpiter/Q-music/tree/android)。
 
-- Node.js >= 22
-- npm >= 8.5.2
+- [桌面端开发、构建与 Linux 说明](./doc/development.md)
+- [Android 使用与构建](https://github.com/Nshpiter/Q-music/blob/android/README.md)
+- [macOS 安装与双架构构建](./doc/macos-build.md)
+- [完整更新日志](./publish/changeLog.md)
 
-安装依赖并启动开发版：
+问题请提交至 [Issues](https://github.com/Nshpiter/Q-music/issues)，附上系统与软件版本、复现步骤、错误提示，以及必要的截图或歌曲 / 歌单链接。请勿公开账号 Cookie、Token、音源密钥或私有配置。
 
-```bash
-npm ci
-npm run dev
-```
+## 致谢与许可
 
-质量检查与生产构建：
+Q-music 基于 [LX Music Desktop](https://github.com/lyswhut/lx-music-desktop) 与 [LX Music Mobile](https://github.com/lyswhut/lx-music-mobile) 二次开发，是独立项目；不代表上游或音乐平台官方。
 
-```bash
-npm run lint
-npm run build
-```
+感谢 [WalnutBai/lx-lxwalnut-music-mobile](https://github.com/WalnutBai/lx-lxwalnut-music-mobile) 等开源项目提供的实现参考，也感谢 [LINUX DO 社区](https://linux.do/) 的交流与反馈。
 
-`npm run build` 只生成生产环境代码；构建 Windows x64 安装包请运行：
-
-```bash
-npm run pack
-```
-
-安装包默认输出到：
-
-```text
-build/Q-music-v<version>-x64-Setup.exe
-```
-
-## Arch Linux
-
-生成 x86_64 pacman 包：
-
-```bash
-npm ci
-npm run pack:arch
-```
-
-安装本地构建产物：
-
-```bash
-sudo pacman -U ./build/Q-music_0.3.21_x64.pacman
-```
-
-pacman 安装由系统包管理器负责升级；应用内会提示新版本，但不会自行覆盖系统
-软件包。Electron 在原生 Wayland 下默认使用 ANGLE/EGL（`--use-gl=angle
---use-angle=gl`）启用 GPU 合成，并尝试通过桌面环境提供的 portal 注册全局快捷
-键；X11/XWayland 仍使用桌面 OpenGL。应用会尊重显式传入的图形后端参数，若需
-排查驱动兼容性可临时改回桌面 OpenGL：
-
-```bash
-q-music --use-gl=desktop
-```
-
-原生 Wayland 会自动使用轻量合成路径：关闭大面积实时毛玻璃采样，并降低全屏
-音频可视化的绘制分辨率与刷新率，同时保留当前主题配色与面板层次。需要进一步
-降低开销时，仍可在“设置 → 基本设置”开启“流畅模式”。
-
-若桌面歌词的位置、置顶或透明效果受合成器限制，可临时回退到 XWayland：
-
-```bash
-q-music --ozone-platform=x11
-```
-
-Arch 真机建议至少回归：启动与单实例、在线/本地播放、媒体键、托盘、全局快捷
-键、桌面歌词、`qmusic://` 深链，以及与 Android 端的局域网同步。
-
-## 问题反馈与贡献
-
-Q-music 相关问题请在 [Q-music Issues](https://github.com/Nshpiter/Q-music/issues) 反馈，并尽量附上系统版本、软件版本、复现步骤和相关日志。上游通用使用问题可先参考 [LX Music 桌面版常见问题](https://lyswhut.github.io/lx-music-doc/desktop/faq)。
-
-提交 PR 时请保持改动聚焦，说明变更目的与影响范围，并避免提交构建产物、私有配置、Token 或无关格式化改动。
+项目使用 [Apache License 2.0](./LICENSE)，保留上游归属与协议；详见 [NOTICE](./NOTICE) 和 [二次修改说明](./MODIFICATIONS.md)。音乐、歌词、封面及平台商标归各自权利人所有，使用时请遵守适用的法律、平台条款与版权要求。
 
 ## Star 趋势
 
 <a href="https://star-history.com/#Nshpiter/Q-music&amp;Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Nshpiter/Q-music&amp;type=Date&amp;theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Nshpiter/Q-music&amp;type=Date" />
-    <img alt="Q-music GitHub Star 数量变化趋势" src="https://api.star-history.com/svg?repos=Nshpiter/Q-music&amp;type=Date" width="100%" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Nshpiter/Q-music&amp;type=Date&amp;theme=dark">
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Nshpiter/Q-music&amp;type=Date">
+    <img alt="Q-music GitHub Star 数量变化趋势" src="https://api.star-history.com/svg?repos=Nshpiter/Q-music&amp;type=Date" width="100%">
   </picture>
 </a>
-
-## 许可与免责声明
-
-本项目基于 [Apache License 2.0](./LICENSE) 发行，并保留 LX Music 桌面版的上游归属声明、附加协议与免责声明。上游信息与二次修改记录见 [NOTICE](./NOTICE) 和 [MODIFICATIONS.md](./MODIFICATIONS.md)。
-
-- Q-music 是 LX Music 桌面版的独立二次修改版本，并非官方版本。
-- 本项目不拥有任何音乐平台数据、音频、歌词、封面等版权数据。
-- 使用者应自行确认所在地法律法规、音乐平台条款与版权要求，并自行承担使用风险。

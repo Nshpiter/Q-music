@@ -62,7 +62,7 @@ export default {
   emits: ['update:visible'],
   setup(props) {
     const t = useI18n()
-    const lists = computed(() => userLists.filter(l => !!l.source && !!musicSdk[l.source]?.songList))
+    const lists = computed(() => userLists.filter(l => l.source == 'bi' || (!!l.source && !!musicSdk[l.source]?.songList)))
     const updateInfo = ref({})
     const refreshSettings = async() => { updateInfo.value = structuredClone(await getListUpdateInfo()) }
     watch(() => props.visible, visible => {

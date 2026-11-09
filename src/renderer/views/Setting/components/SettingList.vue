@@ -28,14 +28,17 @@ dd(:aria-label="$t('setting__basic_sourcename_title')")
       :model-value="appSetting['list.addMusicLocationType']" value="bottom" :label="$t('setting__list_add_music_location_type_bottom')"
       @update:model-value="updateSetting({'list.addMusicLocationType': $event})")
 
+QueuePreferences
 </template>
 
 <script>
 // import { ref, onBeforeUnmount } from '@common/utils/vueTools'
 import { appSetting, updateSetting } from '@renderer/store/setting'
+import QueuePreferences from './QueuePreferences.vue'
 
 export default {
   name: 'SettingList',
+  components: { QueuePreferences },
   setup() {
     return {
       appSetting,

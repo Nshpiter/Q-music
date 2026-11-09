@@ -109,7 +109,7 @@ export default ({
         menuControl.rename = true
         menuControl.remove = true
         source = userLists[index].source
-        menuControl.sync = !!source && !!musicSdk[source]?.songList
+        menuControl.sync = source == 'bi' || (!!source && !!musicSdk[source]?.songList)
         break
     }
     // menuControl.sort = !!getList(this.getTargetListInfo(index)?.id).length

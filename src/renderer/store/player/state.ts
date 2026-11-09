@@ -1,4 +1,5 @@
 import { reactive, shallowReactive, ref } from '@common/utils/vueTools'
+import type { PlaybackReportIdentity } from '@renderer/core/music/playbackReport'
 
 export interface PlayerMusicInfo {
   id: string | null
@@ -54,6 +55,7 @@ export interface PlaybackSourceInfo {
   resolvedSongId: string
   resolvedMediaId: string
   officialSourceId: string
+  reportIdentity?: PlaybackReportIdentity | null
   /** 解析音源所使用的 API/缓存提供方，便于在播放面板中说明实际线路。 */
   cacheProviderId?: string
 }

@@ -84,7 +84,8 @@ const open = (item: DiscoveryPlaylist) => {
 .paging button:disabled { opacity: .4; cursor: default; }
 .choices { margin-bottom: 16px; }
 .choices .selected { color: var(--color-primary); background: rgb(from var(--color-primary) r g b / .1); border-color: rgb(from var(--color-primary) r g b / .2); }
-.grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+.grid { display: flex; gap: 16px; overflow-x: auto; padding: 4px 4px 12px; scroll-snap-type: x proximity; }
+.grid > * { flex: 0 0 154px; scroll-snap-align: start; }
 .card { min-width: 0; color: var(--color-font); background: transparent; border: 0; padding: 0; text-align: left; cursor: pointer; border-radius: 12px; }
 .card:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 4px; }
 .cover { position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 12px; overflow: hidden; background: rgb(from var(--color-font) r g b / .05); }
@@ -98,6 +99,6 @@ const open = (item: DiscoveryPlaylist) => {
 .skeleton b { display: block; height: 10px; margin-top: 10px; border-radius: 5px; background: rgb(from var(--color-font) r g b / .05); }
 .skeleton b:last-child { width: 60%; }
 .empty { min-height: 150px; display: flex; align-items: center; justify-content: center; flex-direction: column; color: var(--color-font-label); gap: 12px; }
-@media (max-width: 980px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 980px) { .grid > * { flex-basis: 140px; } }
 @media (prefers-reduced-motion: reduce) { .cover img { transition: none; } }
 </style>

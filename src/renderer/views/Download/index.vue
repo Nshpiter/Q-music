@@ -4,7 +4,7 @@
       <base-tab v-model="activeTab" :class="$style.tab" :list="tabs" />
     </div>
     <div :class="[$style.downloadPanel, $style.listColumns, { [$style.selecting]: isSelectionMode }]">
-      <material-list-toolbar :count="list.length" :selected-count="selectedList.length" :selecting="isSelectionMode" @select="startSelection" @invert="invertSelection" @clear="removeAllSelect" @select-all="handleSelectAllData">
+      <material-list-toolbar show-play :count="list.length" :selected-count="selectedList.length" :selecting="isSelectionMode" @play="handlePlayAll" @select="startSelection" @invert="invertSelection" @clear="removeAllSelect" @select-all="handleSelectAllData">
         <template #selected-actions>
           <button type="button" :disabled="isBusy || !selectedList.length" @click="handleStartTask(-1)">{{ $t('list__start') }}</button>
           <button type="button" :disabled="isBusy || !selectedList.length" @click="handlePauseTask(-1)">{{ $t('list__pause') }}</button>
@@ -126,6 +126,7 @@ export default {
     } = useList({ listRef, list })
 
     const {
+      handlePlayAll,
       handlePlayMusic,
       handlePlayMusicLater,
     } = usePlay({ selectedList, list, listAll, removeAllSelect })
@@ -236,6 +237,7 @@ export default {
       return quality == 'flac24bit' ? 'FLAC Hires' : quality?.toUpperCase()
     }
     return {
+      handlePlayAll,
       listRef,
       list,
       downloadStatus,

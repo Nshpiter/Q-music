@@ -5,6 +5,8 @@ import { setFetchingListStatus, overwriteListMusics, getListMusics } from './act
 import { userLists } from './state'
 import { getListDetailAll } from '@renderer/store/songList/action'
 import { getListDetailAll as getBoardListAll } from '@renderer/store/leaderboard/action'
+import { bilibiliClient } from '@renderer/utils/musicSdk/bi'
+import { toNewMusicInfo } from '@renderer/utils'
 
 export const listSyncStates = reactive<Record<string, { phase: 'fetch' | 'save' | 'success' | 'error', current: number, total: number, error?: string }>>({})
 const pending = new Map<string, Promise<boolean>>()
@@ -30,7 +32,12 @@ const performSync = async(target: LX.List.UserListInfo, automatic: boolean) => {
   try {
     let list: LX.Music.MusicInfo[]
     let accountId: string | undefined
-    if (sourceListId.startsWith('board__')) {
+    if (source == 'bi') {
+      const result = await bilibiliClient.importCollection(sourceListId, (current, total) => {
+        listSyncStates[id] = { phase: 'fetch', current, total }
+      }, () => !stillLinked())
+      list = result.list.map(item => toNewMusicInfo(item as unknown as LX.Music.MusicInfoOnline))
+    } else if (sourceListId.startsWith('board__')) {
       list = await getBoardListAll(sourceListId.replace(/^board__/, ''), true)
     } else if (source == 'tx' || source == 'wy' || (source == 'kg' && /^account:\d+:\d+$/.test(sourceListId))) {
       const { loadAccountPlaylistMusic } = await import('@renderer/views/List/MyList/importPlaylist')

@@ -157,6 +157,7 @@ const writeMusicList = async(params: ExternalImportParams, list: LX.Music.MusicI
       await createUserList({
         name: params.listName || getDefaultListName(params.source),
         list: musicInfos,
+        ...(params.source == 'bi' ? { source: params.source, sourceListId: params.text.trim() } : {}),
       })
       break
     case 'love':

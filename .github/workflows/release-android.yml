@@ -197,6 +197,7 @@ jobs:
           npm run test:player-overlays
           npm run test:recognition
           npm run test:mobile-followup
+          node --test scripts/verify-bilibili-library.cjs scripts/verify-listening-features.cjs
 
       - name: Validate signing secrets
         shell: bash

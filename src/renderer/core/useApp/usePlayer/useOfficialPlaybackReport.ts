@@ -2,6 +2,7 @@ import { onBeforeUnmount } from '@common/utils/vueTools'
 import { getCurrentTime } from '@renderer/plugins/player'
 import { playbackSourceInfo, playMusicInfo } from '@renderer/store/player/state'
 import { reportMusicAccountPlayback, type MusicAccountProvider } from '@renderer/utils/ipc'
+import { playbackReportInfo } from '@renderer/core/music/playbackReport'
 
 const MIN_REPORT_DURATION = 5_000
 const MAX_PLAYBACK_RATE = 4
@@ -9,6 +10,7 @@ const MAX_REPORT_ATTEMPTS = 2
 
 interface PlaybackReportSession {
   key: string
+  musicKey: string
   provider: MusicAccountProvider
   songId: string
   mediaId?: string
@@ -23,27 +25,13 @@ interface PlaybackReportSession {
 }
 
 const getOfficialPlaybackInfo = () => {
-  const sourceInfo = playbackSourceInfo.value
   const currentMusic = playMusicInfo.musicInfo
   const currentMusicInfo = currentMusic && 'progress' in currentMusic
     ? currentMusic.metadata.musicInfo
     : currentMusic
   const currentMusicKey = currentMusicInfo ? `${currentMusicInfo.source}:${currentMusicInfo.id}` : ''
-  if (
-    sourceInfo?.mode != 'official' ||
-    !currentMusicKey ||
-    sourceInfo.musicKey != currentMusicKey ||
-    (sourceInfo.resolvedSource != 'tx' && sourceInfo.resolvedSource != 'wy') ||
-    !sourceInfo.resolvedSongId ||
-    (sourceInfo.resolvedSource == 'wy' && !/^\d+$/.test(sourceInfo.resolvedSongId))
-  ) return null
-
-  return {
-    provider: sourceInfo.resolvedSource,
-    songId: sourceInfo.resolvedSongId,
-    mediaId: sourceInfo.resolvedMediaId || undefined,
-    sourceId: sourceInfo.officialSourceId || undefined,
-  }
+  const info = playbackReportInfo(playbackSourceInfo.value, currentMusicKey)
+  return info ? { ...info, musicKey: currentMusicKey } : null
 }
 
 export default () => {
@@ -54,6 +42,12 @@ export default () => {
 
   const updatePlayedDuration = () => {
     if (session?.lastPosition == null) return
+    const current = getOfficialPlaybackInfo()
+    if (!current || current.musicKey != session.musicKey || current.provider != session.provider || current.songId != session.songId) {
+      session.lastPosition = null
+      session.lastTickAt = null
+      return
+    }
     const currentPosition = getCurrentTime()
     if (!Number.isFinite(currentPosition)) return
     const now = performance.now()
@@ -167,6 +161,8 @@ export default () => {
   const reportTimer = setInterval(() => {
     if (!session || session.reported) return
     updatePlayedDuration()
+    // 达到真实播放阈值及时上报，无需等用户暂停或切歌。
+    reportSession(session)
   }, 1_000)
 
   window.app_event.on('playerPlaying', handlePlaying)

@@ -113,6 +113,8 @@ const defaultSetting: LX.AppSetting = {
 
   'list.isClickPlayList': false,
   'list.singlePlayMode': 'replace',
+  'list.playAllMode': 'replace',
+  'list.favoriteTargetId': 'love',
   'player.preferLocal': true,
   'list.isShowSource': true,
   'list.isSaveScrollLocation': true,

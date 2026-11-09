@@ -5,7 +5,29 @@ import { appSetting } from '@renderer/store/setting'
 import { getListMusics, setTempList } from '@renderer/store/list/action'
 import { addTempPlayList } from '@renderer/store/player/action'
 import { playMusicInfo } from '@renderer/store/player/state'
-import { playList, playNext } from './action'
+import { playList, playNext, appendQueueItems } from './action'
+
+export const playAllFromPage = async(key: string, tracks: LX.Music.MusicInfo[], continuous = false) => select(async(isCurrent) => {
+  if (!tracks.length) return
+  if (appSetting['list.playAllMode'] == 'append' && appendQueueItems(tracks)) return
+  await setTempList(key, [...tracks])
+  if (isCurrent()) playList(LIST_IDS.TEMP, 0, continuous)
+})
+
+export const playAllFromList = async(listId: string) => select(async(isCurrent) => {
+  const tracks = await getListMusics(listId)
+  if (!isCurrent() || !tracks.length) return
+  if (appSetting['list.playAllMode'] == 'append' && appendQueueItems(tracks)) return
+  playList(listId, 0)
+})
+
+export const playAllFromLoader = async(key: string, load: () => Promise<LX.Music.MusicInfo[]>) => select(async(isCurrent) => {
+  const tracks = await load()
+  if (!isCurrent() || !tracks.length) return
+  if (appSetting['list.playAllMode'] == 'append' && appendQueueItems(tracks)) return
+  await setTempList(key, tracks)
+  if (isCurrent()) playList(LIST_IDS.TEMP, 0)
+})
 
 export const playSingle = (musicInfo: LX.Music.MusicInfo, listId: string | null = LIST_IDS.PLAY_LATER) => {
   const wasPlaying = !!playMusicInfo.musicInfo

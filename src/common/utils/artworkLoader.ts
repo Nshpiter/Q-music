@@ -13,7 +13,7 @@ export const createArtworkLoader = <T extends Track>(fetchArtwork: (track: T, re
     }
   }
   return async(track: T, refresh = false) => {
-    const original = track.meta.picUrl ?? ''
+    const original = typeof track.meta.picUrl == 'string' ? track.meta.picUrl : ''
     if (track.source == 'local') return original
     const key = `${track.source}:${track.id}`
     const saved = cache.get(key)
@@ -26,7 +26,10 @@ export const createArtworkLoader = <T extends Track>(fetchArtwork: (track: T, re
       queue.push(async() => {
         let url = ''
         let blocked = false
-        try { url = await fetchArtwork(track, refresh) || '' } catch (error) { blocked = error instanceof Error && error.message == 'verification_required' }
+        try {
+          const result = await fetchArtwork(track, refresh)
+          if (typeof result == 'string') url = result
+        } catch (error) { blocked = error instanceof Error && error.message == 'verification_required' }
         if (cache.size >= 256) cache.delete(cache.keys().next().value!)
         cache.set(key, { url, original, refreshed: refresh || blocked, expires: Date.now() + (url ? 30 * 60_000 : refresh || blocked ? 30_000 : 1000) })
         pending.delete(key)

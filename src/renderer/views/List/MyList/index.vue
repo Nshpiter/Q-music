@@ -28,6 +28,7 @@
         </button>
       </div>
     </div>
+    <button type="button" :class="$style.cloudLink" @click="importProvider = 'bi'; isShowExternalImportModal = true">{{ $t('bilibili_favorite_add') }}</button>
     <ul ref="dom_lists_list" class="scroll" :class="[$style.listsContent, { [$style.sortable]: isDragging }]">
       <li
         class="default-list" :class="[$style.listsItem, {[$style.active]: defaultList.id == listId}, {[$style.clicked]: rightClickItemIndex == -2}, {[$style.fetching]: fetchingListStatus[defaultList.id]}]"
@@ -83,7 +84,7 @@
     <DuplicateMusicModal v-model:visible="isShowDuplicateMusicModal" :list-info="duplicateListInfo" />
     <ListSortModal v-model:visible="isShowListSortModal" :list-info="sortListInfo" />
     <ListUpdateModal v-model:visible="isShowListUpdateModal" />
-    <ExternalImportModal v-model:visible="isShowExternalImportModal" :list-id="listId" />
+    <ExternalImportModal v-model:visible="isShowExternalImportModal" :list-id="listId" :initial-provider="importProvider" @update:visible="!$event && (importProvider = '')" />
     <LocalMusicModal v-model:visible="isShowLocalMusicModal" @open-list="handleListToggle" />
   </div>
 </template>
@@ -145,6 +146,7 @@ export default {
 
     const dom_lists_list = ref(null)
     const rightClickItemIndex = ref(-10)
+    const importProvider = ref('')
     const isShowExternalImportModal = ref(false)
     const isShowLocalMusicModal = ref(false)
 
@@ -253,6 +255,7 @@ export default {
       userLists,
       fetchingListStatus,
       dom_lists_list,
+      importProvider,
       isShowExternalImportModal,
       isShowLocalMusicModal,
       isShowListUpdateModal,

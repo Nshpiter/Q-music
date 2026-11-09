@@ -1,6 +1,6 @@
 <template>
   <div :class="['q-player-footer', $style.footer, { [$style.detailFooter]: isImmersiveDetail, [$style.commentVisible]: isImmersiveDetail && isShowPlayComment }]">
-    <div :class="$style.trackInfo">
+    <div v-if="!isImmersiveDetail" :class="$style.trackInfo">
       <button
         type="button"
         :class="$style.coverBtn"
@@ -63,6 +63,7 @@
     </div>
     <div :class="$style.toolArea">
       <control-btns :class="$style.tools" :detail="isImmersiveDetail" />
+      <player-favorite-button :dark="isImmersiveDetail" />
       <button
         type="button"
         :class="[$style.queueBtn, { [$style.active]: isShowPlayQueue }]"
@@ -92,6 +93,7 @@ import { setMusicInfo, setShowPlayerDetail, setShowPlayQueue } from '@renderer/s
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
 import { appSetting } from '@renderer/store/setting'
 
+import PlayerFavoriteButton from './PlayDetail/components/PlayerFavoriteButton.vue'
 import ControlBtns from './PlayDetail/components/ControlBtns.vue'
 import EmptyCoverMark from '@renderer/components/common/EmptyCoverMark.vue'
 

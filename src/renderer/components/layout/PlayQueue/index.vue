@@ -33,7 +33,6 @@
         </header>
 
         <div :class="$style.tabs">
-          <button type="button" :class="{ [$style.activeTab]: activeTab == 'history' }" :aria-pressed="activeTab == 'history'" @click="activeTab = 'history'">{{ $t('queue_session_history') }}<span>{{ history.length }}</span></button>
           <button
             type="button"
             :class="{ [$style.activeTab]: activeTab == 'playlist' }"
@@ -65,7 +64,7 @@
           </div>
           <div :class="$style.listMeta">
             <strong>{{ currentListName }}</strong>
-            <button type="button" :class="$style.locateBtn" :disabled="savingQueue || !currentList.length && !tempPlayList.length" @click="saveQueue">{{ $t('queue_save_audition') }}</button>
+            <button type="button" :class="$style.locateBtn" :disabled="editingQueue || !currentList.length && !tempPlayList.length && !playMusicInfo.musicInfo" @click="handleClearQueue">{{ $t('queue_clear') }}</button>
             <button v-if="currentIndex >= 0 && !isListLoading && !listError" type="button" :class="$style.locateBtn" @click="scrollToCurrent(true)">{{ $t('play_queue__locate') }}</button>
             <span v-else>{{ $t('play_queue__songs', { num: currentList.length }) }}</span>
           </div>
@@ -89,7 +88,9 @@
               :index="index"
               :active="currentIndex == index"
               :playing="isPlay && currentIndex == index"
+              removable
               draggable="true"
+              @remove="handleRemoveCurrent(index, item)"
               @dragstart="startDrag('playlist', item)"
               @dragover.prevent
               @drop.prevent="dropAt('playlist', index)"
@@ -157,22 +158,18 @@
             <p>{{ $t('play_queue__empty_later') }}</p>
           </div>
         </section>
-        <section v-show="activeTab == 'history'" :class="[$style.tabPanel, $style.history, 'scroll']">
-          <QueueItem v-for="(item, index) in history" :key="index" :music-info="item.musicInfo" :index="index" :active="index == historyCursor" :playing="isPlay && index == historyCursor" @play="playHistoryIndex(index)" />
-          <p v-if="!history.length" :class="$style.feedback">{{ $t('queue_session_history_empty') }}</p>
-        </section>
       </aside>
     </div>
   </transition>
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from '@common/utils/vueTools'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from '@common/utils/vueTools'
 import { LIST_IDS } from '@common/constants'
-import { play, pause, playQueueIndex, playHistoryIndex, playTempListByIndex, resetRandomNextMusicInfo } from '@renderer/core/player'
+import { play, pause, playQueueIndex, playTempListByIndex, resetRandomNextMusicInfo, removeQueueIndex, clearPlayQueue } from '@renderer/core/player'
 import { playbackSession } from '@renderer/core/player/session'
 import { useI18n } from '@renderer/plugins/i18n'
-import { getListMusics, addListMusics } from '@renderer/store/list/action'
+import { getListMusics } from '@renderer/store/list/action'
 import { dialog } from '@renderer/plugins/Dialog'
 import { defaultList, loveList, userLists } from '@renderer/store/list/state'
 import { downloadList } from '@renderer/store/download/state'
@@ -201,11 +198,8 @@ const SCROLL_TOP_OFFSET = -112
 
 const t = useI18n()
 const activeTab = ref('playlist')
-const history = ref([...playbackSession.history])
-const historyCursor = ref(playbackSession.cursor)
 const unsubscribeSession = playbackSession.subscribe(() => {
-  history.value = [...playbackSession.history]
-  historyCursor.value = playbackSession.cursor
+  void loadCurrentList()
 })
 let dragged = null
 const startDrag = (kind, item) => { dragged = { kind, item } }
@@ -225,20 +219,22 @@ const dropAt = (kind, to) => {
   else moveCurrent(from, to)
   dragged = null
 }
-const currentList = ref([])
-const savingQueue = ref(false)
-const saveQueue = async() => {
-  if (savingQueue.value) return
-  savingQueue.value = true
-  try {
-    const queue = [...currentList.value]
-    const next = tempPlayList.map(item => item.musicInfo)
-    if (playMusicInfo.isTempPlay && playMusicInfo.musicInfo) next.unshift(playMusicInfo.musicInfo)
-    queue.splice(Math.max(0, playInfo.playerPlayIndex + 1), 0, ...next)
-    await addListMusics(LIST_IDS.DEFAULT, queue.map(item => 'progress' in item ? item.metadata.musicInfo : item))
-    void dialog({ message: t('queue_save_audition_done') })
-  } catch { void dialog({ message: t('queue_play_failed') }) } finally { savingQueue.value = false }
+const currentList = shallowRef([])
+const editingQueue = ref(false)
+const handleRemoveCurrent = async(index, item) => {
+  const current = getList(playInfo.playerListId)[index]
+  if (editingQueue.value || current?.id != item.id || current?.source != item.source) return
+  editingQueue.value = true
+  try { removeQueueIndex(index) } catch { playError.value = t('queue_play_failed') } finally { editingQueue.value = false; void loadCurrentList() }
 }
+const handleClearQueue = async() => {
+  if (editingQueue.value) return
+  editingQueue.value = true
+  try {
+    if (await dialog.confirm({ message: t('queue_clear_confirm') })) clearPlayQueue()
+  } finally { editingQueue.value = false; void loadCurrentList() }
+}
+
 const isListLoading = ref(false)
 const listError = ref('')
 const playError = ref('')

@@ -1,6 +1,7 @@
 import { sizeFormate, formatPlayTime } from '../../index'
 import { createHttpFetch } from './utils'
 import { formatSingerName } from '../utils'
+import { getMiguArtwork } from './artwork'
 
 const createGetMusicInfosTask = (ids) => {
   let list = ids
@@ -73,7 +74,7 @@ export const filterMusicInfoList = (rawList) => {
       copyrightId: item.copyrightId,
       source: 'mg',
       interval: intervalTest ? RegExp.$1 : null,
-      img: item.albumImgs?.length ? item.albumImgs[0].img : null,
+      img: getMiguArtwork(item.albumImgs?.[0]?.img),
       lrc: null,
       lrcUrl: item.lrcUrl,
       mrcUrl: item.mrcUrl,
@@ -139,7 +140,7 @@ export const filterMusicInfoListV5 = (rawList) => {
       copyrightId: item.copyrightId,
       source: 'mg',
       interval: formatPlayTime(item.duration),
-      img: item.img3 || item.img2 || item.img1 || null,
+      img: getMiguArtwork(item.img3, item.img2, item.img1),
       lrc: null,
       lrcUrl: item.lrcUrl,
       mrcUrl: item.mrcUrl,

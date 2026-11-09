@@ -418,6 +418,7 @@ export default {
       if (!visible) return
       mode.value = 'account'
       target.value = 'new'
+      if (props.initialProvider == 'bi') { mode.value = 'link'; source.value = 'bi'; reset(); return }
       await refreshAccountStatus()
       const preferredProvider = accountProviderOptions.some(item => item.id == props.initialProvider) ? props.initialProvider
         : ['tx', 'wy', 'kg'].find(provider => accountStatus.value[provider]) ?? 'tx'

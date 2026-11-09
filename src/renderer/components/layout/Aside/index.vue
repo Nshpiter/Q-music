@@ -35,7 +35,7 @@ import NavBar from './NavBar.vue'
   display: flex;
   flex-flow: column nowrap;
   gap: 16px;
-  padding: 24px 18px 22px 20px;
+  padding: 24px 18px calc(@height-player + 8px) 20px;
   box-sizing: border-box;
 
   &.fullscreen {

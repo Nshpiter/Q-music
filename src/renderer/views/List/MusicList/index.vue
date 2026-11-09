@@ -10,10 +10,11 @@
     <material-list-toolbar
       :count="list.length" :selected-count="selectedList.length" :selecting="isSelectionMode" show-play
       :download-visible="appSetting['download.enable']" :download-enabled="canDownloadSelection"
-      @select="startSelection" @invert="invertSelection" @play="handlePlayMusic(0)" @select-all="handleSelectAllData" @clear="removeAllSelect"
+      @select="startSelection" @invert="invertSelection" @play="handlePlayAll" @select-all="handleSelectAllData" @clear="removeAllSelect"
       @add="handleShowMusicAddModal(0)" @download="handleShowDownloadModal(0)"
     >
-      <template #heading><span v-if="currentPlaylist" :class="$style.playlistHeading"><PlaylistIdentity :list="currentPlaylist" :name="['default', 'love'].includes(currentPlaylist.id) ? $t(currentPlaylist.name) : currentPlaylist.name" /></span></template>
+      <template #selected-actions><button type="button" @click="handleSaveAudition">{{ $t('queue_save_audition') }}</button></template>
+      <template #heading><span v-if="currentPlaylist" :class="$style.playlistHeading"><PlaylistIdentity :list="currentPlaylist" :name="['default', 'love'].includes(currentPlaylist.id) ? $t(currentPlaylist.name) : currentPlaylist.name" /></span><button v-if="listId != 'default' && list.length" type="button" style="border: 0; background: transparent; color: var(--color-primary); padding: 8px; border-radius: 10px; cursor: pointer;" @click="handleSaveAudition">{{ $t('queue_save_audition') }}</button></template>
     </material-list-toolbar>
     <div class="thead">
       <table>
@@ -212,6 +213,8 @@ export default {
     const canDownloadSelection = computed(() => selectedList.value.length > 0 && selectedList.value.every(item => item.source != 'local' && assertApiSupport(item.source)))
 
     const {
+      handleSaveAudition,
+      handlePlayAll,
       handlePlayMusic,
       handlePlayMusicLater,
       doubleClickPlay,
@@ -358,6 +361,8 @@ export default {
       invertSelection,
       handleSelectAllData,
       toggleSelectData,
+      handleSaveAudition,
+      handlePlayAll,
       handlePlayMusic,
       handleShowMusicAddModal,
       handleShowDownloadModal,

@@ -1,4 +1,6 @@
-import { ref } from '@common/utils/vueTools'
+import { computed, ref } from '@common/utils/vueTools'
+import { sortSearchQuality, type SearchSort } from '@common/utils/searchQuality'
+import { searchText } from '@renderer/store/search/state'
 import { playFromPage } from '@renderer/core/player/selection'
 import { addHistoryWord } from '@renderer/store/search/action'
 // import { useI18n } from '@renderer/plugins/i18n'
@@ -32,11 +34,13 @@ export default () => {
     }).catch(() => {})
   }
 
+  const sortMode = ref<SearchSort>('relevance')
+  const displayList = computed(() => sortSearchQuality(listInfo.value.list, searchText.value, sortMode.value))
   const handlePlayList = async(index: number) => {
-    let targetSong = listInfo.value.list[index]
+    let targetSong = displayList.value[index]
 
     if (!targetSong) return
-    await playFromPage(`search_${listInfo.value.key ?? ''}_${listInfo.value.page}`, listInfo.value.list, index)
+    await playFromPage(`search_${listInfo.value.key ?? ''}_${listInfo.value.page}`, displayList.value, index)
   }
 
   const getSourceOptions = (musicInfo: LX.Music.MusicInfo) => {
@@ -46,11 +50,13 @@ export default () => {
   const getSourceName = (source: LX.OnlineSource) => window.i18n.t(`source_${source}` as any)
 
   const handleSourceChange = ({ index, source }: { index: number, source: LX.OnlineSource }) => {
-    selectAggregateSource(index, source)
+    selectAggregateSource(listInfo.value.list.indexOf(displayList.value[index]), source)
   }
 
   return {
     listRef,
+    sortMode,
+    displayList,
     listInfo,
     search,
     handlePlayList,

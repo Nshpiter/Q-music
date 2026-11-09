@@ -11,7 +11,11 @@
       <li v-for="item in menus" :key="item.to" :class="$style.navItem" role="presentation">
         <router-link :class="[$style.link, {[$style.active]: $route.meta.name == item.name}]" role="tab" :aria-selected="$route.meta.name == item.name" :to="item.to" :aria-label="item.tips">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" :viewBox="item.iconSize" :height="item.size" :width="item.size" space="preserve">
-            <use :xlink:href="item.icon" />
+            <template v-if="item.name == 'History'">
+              <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+              <path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </template>
+            <use v-else :xlink:href="item.icon" />
           </svg>
           <span>{{ item.tips }}</span>
         </router-link>
@@ -72,6 +76,15 @@ export default {
           iconSize: '0 0 444.87 391.18',
           size,
           name: 'List',
+          enable: true,
+        },
+        {
+          to: '/history',
+          tips: t('play_history_title'),
+          icon: '',
+          iconSize: '0 0 24 24',
+          size,
+          name: 'History',
           enable: true,
         },
         {
@@ -143,6 +156,10 @@ export default {
 
 .menu {
   flex: auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  -webkit-app-region: no-drag;
   // &.controlBtnLeft {
   //   display: flex;
   //   flex-flow: column nowrap;
@@ -173,6 +190,7 @@ export default {
 }
 .navItem {
   position: relative;
+  flex: none;
 }
 // 选中底块独立于导航项，位置和高度跟随实际菜单项。
 .indicator {
@@ -286,5 +304,12 @@ export default {
 //     width: 32%;
 //   }
 // }
+
+// 小窗口收紧导航间距，并为底部播放栏留出空间。
+@media (max-height: 620px) {
+  .list { gap: 4px; }
+  .link { height: 44px; }
+  .link svg { width: 18px; height: 18px; padding: 6px; }
+}
 
 </style>
