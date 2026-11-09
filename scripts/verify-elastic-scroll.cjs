@@ -84,7 +84,8 @@ class ValueAnimator extends Animator{
 ${source('ElasticScrollBoundaryManager.java')}
 ${source('ElasticScrollPhysics.java')}
 `)
- const java = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin/java.exe') : 'java'
+ const javaBinary = process.platform === 'win32' ? 'java.exe' : 'java'
+ const java = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin', javaBinary) : 'java'
  const result = spawnSync(java, [file], { encoding: 'utf8', timeout: 30000 })
  assert.equal(result.status, 0, result.stderr || result.error?.message)
  assert.match(result.stdout, /PASS/)
