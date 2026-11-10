@@ -1,5 +1,5 @@
 <template>
-  <div v-if="maxPage > 1" :class="$style.pagination">
+  <div v-if="maxPage > 1" :class="$style.pagination" role="navigation" :aria-label="$t('pagination__jump')">
     <ul>
       <li v-if="page == 1" :class="$style.disabled">
         <span>
@@ -23,7 +23,7 @@
         </button>
       </li>
       <li v-for="p in pages" :key="p" :class="{[$style.active] : p == page}">
-        <span v-if="p === page" v-text="page" />
+        <span v-if="p === page" aria-current="page" v-text="page" />
         <button v-else type="button" :aria-label="$t('pagination__page', { num: p })" @click="handleClick(p)" v-text="p" />
       </li>
       <li v-if="maxPage > btnLength && maxPage - page > pageEvg" :class="$style.last">
@@ -136,8 +136,9 @@ export default {
   padding: 4px;
   border-radius: 14px;
   background: var(--q-surface);
-  box-shadow: inset 0 0 0 1px var(--q-border), 0 8px 22px rgba(35, 54, 46, .07);
-  backdrop-filter: blur(14px);
+  box-shadow: inset 0 0 0 1px var(--q-border);
+  flex-wrap: wrap;
+  justify-content: center;
 
   ul {
     display: flex;
@@ -168,10 +169,10 @@ export default {
       }
       &.active {
         span {
-          color: #fff;
+          color: var(--color-primary-dark-100);
           font-weight: 650;
-          background-color: var(--color-primary);
-          box-shadow: 0 6px 14px var(--color-primary-alpha-700);
+          background-color: var(--color-primary-alpha-900);
+          box-shadow: inset 0 0 0 1px var(--color-primary-alpha-700);
           animation: q-pagination-active .32s cubic-bezier(.34, 1.56, .64, 1);
         }
       }
@@ -210,7 +211,7 @@ export default {
   align-items: center;
   gap: 6px;
   padding: 0 4px 0 10px;
-  border-left: 1px solid rgba(54, 83, 70, .12);
+  border-left: 1px solid var(--q-border);
   color: var(--color-font-label);
   font-size: 12px;
   white-space: nowrap;
@@ -225,7 +226,7 @@ export default {
     outline: none;
     color: var(--color-font);
     background: var(--q-surface);
-    box-shadow: inset 0 0 0 1px rgba(54, 83, 70, .12);
+    box-shadow: inset 0 0 0 1px var(--q-border);
     font: inherit;
     font-size: 12px;
     text-align: center;
@@ -234,7 +235,7 @@ export default {
 
     &::placeholder { color: var(--color-font-label); opacity: .6; }
     &:focus {
-      background: #fff;
+      background: var(--q-surface-strong);
       box-shadow: inset 0 0 0 1.5px var(--color-primary);
     }
   }

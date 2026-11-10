@@ -5,8 +5,9 @@
       :class="$style.input" :disabled="disabled" :value="value" :name="name" @input="handleInput($event.target.checked)"
     >
     <label :for="id" :class="$style.content">
-      <div :class="$style.container" :role="need ? 'radio' : 'checkbox'" tabindex="0" :aria-label="ariaLabel || label" :aria-checked="checked" :aria-disabled="disabled" @keydown.enter.space.stop.prevent="handleToggle">
-        <svg version="1.1" :class="$style.icon" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" width="100%" viewBox="0 32 448 448" space="preserve">
+      <div :class="$style.container" :role="need ? 'radio' : 'checkbox'" :tabindex="disabled ? -1 : 0" :aria-label="ariaLabel || label" :aria-checked="checked" :aria-disabled="disabled" @keydown.enter.space.stop.prevent="handleToggle">
+        <span v-if="need" :class="$style.radioDot" />
+        <svg v-else version="1.1" :class="$style.icon" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" width="100%" viewBox="0 32 448 448" space="preserve">
           <use xlink:href="#icon-check-true" />
         </svg>
       </div>
@@ -103,6 +104,7 @@ export default {
     },
     handleToggle(event) {
       event.lx_handled = true
+      if (this.disabled) return
       if (this.need) {
         if (this.$refs.dom_input.checked) return
         this.$refs.dom_input.checked = true
@@ -143,7 +145,7 @@ export default {
           box-shadow: inset 0 0 0 1px var(--q-border), 0 0 0 3px var(--color-primary-alpha-900);
         }
       }
-      .icon {
+      .icon, .radioDot {
         transform: scale(1);
         opacity: 1;
       }
@@ -172,8 +174,13 @@ export default {
   height: 1.15em;
   cursor: pointer;
   display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--color-primary);
   border-radius: 7px;
+  &[role="radio"], &[role="radio"]:after {
+    border-radius: 50%;
+  }
   outline: none;
   transition: transform .14s cubic-bezier(.2, .8, .2, 1);
   &:focus-visible {
@@ -203,6 +210,18 @@ export default {
   transform: scale(0);
   opacity: 0;
   border-radius: 7px;
+}
+
+.radioDot {
+  position: relative;
+  z-index: 1;
+  width: 45%;
+  height: 45%;
+  border-radius: 50%;
+  background: currentColor;
+  transform: scale(0);
+  opacity: 0;
+  transition: transform .2s cubic-bezier(.2, .8, .2, 1), opacity .16s ease;
 }
 
 .label {

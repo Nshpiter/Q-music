@@ -12,9 +12,10 @@
       </div>
     </div>
     <teleport to="#root">
-      <ul v-if="show" ref="dom_list" class="selection-list scroll" :class="$style.list" :style="listStyles">
+      <ul v-if="show" ref="dom_list" class="selection-list scroll" :class="$style.list" :style="listStyles" role="listbox">
         <li
           v-for="(item, index) in list" :key="index" :class="[$style.listItem, (itemKey ? item[itemKey] : item) == modelValue ? $style.active : null]"
+          role="option" :aria-selected="(itemKey ? item[itemKey] : item) == modelValue"
           :aria-label="itemName ? item[itemName] : item" @click="handleClick(item)"
         >
           {{ itemName ? item[itemName] : item }}
@@ -67,7 +68,7 @@ export default {
     },
     label() {
       if (this.modelValue == null) return ''
-      if (this.itemName == null) return this.modelValue
+      if (!this.itemName) return this.modelValue
       const item = this.list[this.activeIndex]
       if (!item) return ''
       return item[this.itemName]
@@ -223,7 +224,7 @@ export default {
 }
 
 .label {
-  background: rgba(255, 255, 255, .52);
+  background: var(--q-surface);
   padding: 0 11px;
   transition: @transition-fast;
   transition-property: background-color, color, box-shadow;
@@ -233,7 +234,7 @@ export default {
   box-sizing: border-box;
   color: var(--color-button-font);
   border-radius: @form-radius;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .62), 0 8px 18px rgba(70, 88, 106, .05);
+  box-shadow: inset 0 0 0 1px var(--q-border);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -255,8 +256,8 @@ export default {
 
   &:hover {
     color: var(--color-primary-dark-300);
-    background-color: rgba(255, 255, 255, .68);
-    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800), 0 10px 22px rgba(70, 88, 106, .08);
+    background-color: var(--q-surface-strong);
+    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800);
   }
   &:active {
     background-color: var(--color-button-background-active);
@@ -284,6 +285,8 @@ export default {
   box-shadow: var(--q-menu-border), var(--q-shadow-float);
   backdrop-filter: blur(var(--q-menu-blur)) saturate(1.7);
   overflow: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
   max-height: 200px;
   z-index: var(--q-z-float);
 }
