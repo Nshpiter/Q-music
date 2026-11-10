@@ -22,11 +22,11 @@ export default ({ status, onRetry }: {
       : t('no_item')
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityLiveRegion="polite">
       <View
         style={{
           ...styles.iconFace,
-          backgroundColor: 'transparent',
+          backgroundColor: theme['q-surface-tint'],
           borderColor: theme['q-outline'],
         }}
       >
@@ -34,7 +34,7 @@ export default ({ status, onRetry }: {
           ? <ActivityIndicator color={theme['q-accent']} />
           : <Icon accessible={false} name={status == 'error' ? 'available_updates' : 'album'} color={theme['q-text-secondary']} rawSize={28} />}
       </View>
-      <Text style={styles.title} size={13} color={theme['q-text-secondary']}>{title}</Text>
+      <Text style={styles.title} size={14} color={theme['q-text-secondary']}>{title}</Text>
       {status == 'error' && onRetry
         ? (
             <Button
@@ -62,6 +62,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconFace: {
+    borderWidth: StyleSheet.hairlineWidth,
     width: 56,
     height: 56,
     borderRadius: 18,

@@ -99,7 +99,7 @@ const Checkbox = ({
       accessibilityRole={variant === 'radio' ? 'radio' : 'checkbox'}
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled, checked }}
+      accessibilityState={{ disabled, checked: indeterminate ? 'mixed' : checked }}
       accessibilityLiveRegion="polite"
       style={{
         ...styles.container,

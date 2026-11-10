@@ -1,4 +1,5 @@
 import { getQQCredentials } from './cookies'
+import { getQQWebCsrfTokens } from './qqCredentials'
 import { getQQAccountCatalog } from '@/utils/qqAccountCatalog'
 import { resolveQQPlaylistReadTarget, getQQPlaylistReadPage } from '@/utils/qqPlaylistTarget'
 import { request, qqRequest, wyRequest, fail, checkCode, openAccountSession, assertAccountSession } from './requests'
@@ -80,6 +81,40 @@ const qqPlaylist = (item: Row, kind: AccountPlaylist['kind']): AccountPlaylist =
   }
 }
 
+// 官网收藏列表按当前音乐账号读取，不依赖公开主页的加密账号标识。
+const readQQFavoriteWebPage = async(session: PlaylistSession, offset: number, signal?: AbortSignal) => {
+  const params = new URLSearchParams({
+    format: 'json',
+    ct: '20',
+    cid: '205360956',
+    userid: session.owner,
+    reqtype: '3',
+    sin: String(offset),
+    ein: String(offset + 100),
+    loginUin: session.owner,
+    ...getQQWebCsrfTokens(session.cookies),
+  })
+  const result = await request('https://c.y.qq.com/fav/fcgi-bin/fcg_get_profile_order_asset.fcg?' + params.toString(), session.cookies, {
+    headers: {
+      Referer: 'https://y.qq.com/',
+      Origin: 'https://y.qq.com',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    },
+  }, signal)
+  if (result.code == null) fail()
+  checkCode(result.code, 0)
+  const data = result.data
+  if (data?.totaldiss == null) fail()
+  const total = Number(data.totaldiss)
+  const rows: Row[] = data.cdlist ?? (total === 0 ? [] : undefined)
+  if (!Array.isArray(rows) || !Number.isSafeInteger(total) || total < 0) fail()
+  const next = offset + rows.length
+  if (next > total || (!rows.length && next < total)) fail('incomplete')
+  const hasMore = data.has_more == null ? next < total : more(data.has_more)
+  if (hasMore != (next < total)) fail('incomplete')
+  return { v_list: rows, total, hasmore: hasMore }
+}
+
 export const getAccountPlaylists = async(session: PlaylistSession, signal?: AbortSignal): Promise<AccountPlaylist[]> => {
   if (session.provider == 'kg') {
     if (!session.kugou) fail('login_required')
@@ -102,7 +137,7 @@ export const getAccountPlaylists = async(session: PlaylistSession, signal?: Abor
     const catalog = await getQQAccountCatalog(session.owner, session.encryptedUin, async(name, module, method, param) => {
       if (signal?.aborted) fail('cancelled')
       return (await qqRequest(session, { [name]: { module, method, param } }, signal))[name].data
-    })
+    }, async offset => readQQFavoriteWebPage(session, offset, signal))
     await assertPlaylistSession(session)
     session.catalogPartial = catalog.warnings.length > 0
     return unique([

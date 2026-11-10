@@ -34,6 +34,7 @@ const styles = createStyle({
   },
   btn: {
     flex: 1,
+    minWidth: 0,
     minHeight: Q_UI.touchSize,
     paddingTop: 10,
     paddingBottom: 10,
@@ -43,6 +44,10 @@ const styles = createStyle({
     justifyContent: 'center',
     borderWidth: 1,
     borderRadius: 12,
+  },
+  btnText: {
+    textAlign: 'center',
+    fontWeight: '500',
   },
 })
 
@@ -117,7 +122,7 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
           hitSlop={BUTTON_HIT_SLOP}
           onPress={handleCancel}
         >
-          <Text color={theme['q-accent-text']}>{cancelText || t('cancel')}</Text>
+          <Text style={styles.btnText} color={theme['q-text-secondary']}>{cancelText || t('cancel')}</Text>
         </Button>
         {showConfirm
           ? <Button
@@ -131,7 +136,7 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
               onPress={onConfirm}
               disabled={disabledConfirm}
             >
-              <Text color="#fff">{confirmText || t('confirm')}</Text>
+              <Text style={styles.btnText} color="#fff">{confirmText || t('confirm')}</Text>
             </Button>
           : null}
       </View>

@@ -13,12 +13,13 @@ const HEADER_HEIGHT = 48
 const styles = createStyle({
   centeredView: {
     flex: 1,
+    paddingHorizontal: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalView: {
-    width: '90%',
-    maxWidth: 380,
+    width: '100%',
+    maxWidth: 420,
     maxHeight: '78%',
     borderRadius: 22,
     borderWidth: StyleSheet.hairlineWidth,
@@ -28,15 +29,16 @@ const styles = createStyle({
     flexGrow: 0,
     flexShrink: 0,
     flexDirection: 'row',
-    height: HEADER_HEIGHT,
+    minHeight: HEADER_HEIGHT,
     alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   title: {
     flexShrink: 1,
-    paddingLeft: 16,
-    paddingRight: 56,
-    lineHeight: HEADER_HEIGHT,
+    paddingLeft: 20,
+    paddingRight: 60,
+    paddingVertical: 14,
+    lineHeight: 22,
     fontWeight: '600',
   },
   closeBtn: {
@@ -120,7 +122,7 @@ export default forwardRef<DialogType, DialogProps>(({
               borderBottomWidth: title ? StyleSheet.hairlineWidth : 0,
             }}
           >
-            <Text style={styles.title} size={15} color={theme['q-text-primary']} numberOfLines={1}>{title}</Text>
+            <Text style={styles.title} size={16} color={theme['q-text-primary']} numberOfLines={2}>{title}</Text>
             {closeBtnComponent}
           </View>
           {children}

@@ -9,6 +9,7 @@ import { Q_UI } from '@/theme/ui'
 
 const styles = createStyle({
   content: {
+    minWidth: 0,
     flexDirection: 'row',
     flexGrow: 1,
     flexShrink: 1,
@@ -20,6 +21,7 @@ const styles = createStyle({
     overflow: 'hidden',
   },
   input: {
+    minWidth: 0,
     borderRadius: 12,
     paddingTop: 0,
     paddingBottom: 0,
@@ -123,11 +125,12 @@ export default forwardRef<InputType, InputProps>(({
   // }, [scaleClearBtn])
 
   const clearText = useCallback(() => {
+    if (props.editable === false) return
     inputRef.current?.clear()
-    // hideClearBtn()
+    inputRef.current?.focus()
     onChangeText?.('')
     onClearText?.()
-  }, [onChangeText, onClearText])
+  }, [onChangeText, onClearText, props.editable])
 
   const changeText = useCallback((text: string) => {
     // if (text.length) {
@@ -171,6 +174,7 @@ export default forwardRef<InputType, InputProps>(({
         {clearBtn && props.value
           ? <View style={styles.clearBtnContent}>
               <Button
+                disabled={props.editable === false}
                 accessibilityLabel={clearButtonAccessibilityLabel ?? global.i18n.t('delete')}
                 style={styles.clearBtn}
                 onPress={clearText}

@@ -13,7 +13,7 @@ function load(file, dependencies, globals = {}) {
     dependencies['./qqCredentials'] = load('core/musicAccount/qqCredentials.ts', {})
     dependencies['./qqImportedSession'] = { getQQImportedCookies: async () => null, clearQQImportedCookies: async () => {} }
   }
-  if (['core/musicAccount/requests.ts', 'core/musicAccount/playlistSync.ts'].includes(file)) dependencies['./qqCredentials'] = load('core/musicAccount/qqCredentials.ts', {})
+  if (['core/musicAccount/requests.ts', 'core/musicAccount/playlistSync.ts', 'core/musicAccount/playlists.ts'].includes(file)) dependencies['./qqCredentials'] = load('core/musicAccount/qqCredentials.ts', {})
   if (['core/musicAccount/playlists.ts', 'core/musicAccount/daily.ts'].includes(file)) {
     dependencies['./kugou'] = {}
     dependencies['@/utils/musicSdk/kg/songList'] = {}

@@ -96,6 +96,7 @@ test('账号导入和日推使用逐曲完整性校验，合法音质合并可�
   let read
   if (mobile) {
     const playlists = load('src/core/musicAccount/playlists.ts', {
+      './qqCredentials': qq,
       '@/utils/qqAccountCatalog': load('src/utils/qqAccountCatalog.ts'),
       '@/utils/qqPlaylistTarget': load('src/utils/qqPlaylistTarget.ts'),
       './cookies': {}, './requests': { fail: (code = 'unavailable') => { throw Error(code) } }, './types': {},
