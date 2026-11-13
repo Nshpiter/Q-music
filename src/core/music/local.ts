@@ -15,6 +15,7 @@ import {
 import { getLocalFilePath } from '@/utils/music'
 import { readLyric, readPic } from '@/utils/localMediaMetadata'
 import { stat } from '@/utils/fs'
+import settingState from '@/store/setting/state'
 
 const getOtherSourceByLocal = async<T>(musicInfo: LX.Music.MusicInfoLocal, handler: (infos: LX.Music.MusicInfoOnline[]) => Promise<T>) => {
   let result: LX.Music.MusicInfoOnline[] = []
@@ -85,7 +86,7 @@ export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = tru
     })
   } catch {}
 
-  if (!allowToggleSource) throw new Error('failed')
+  if (!allowToggleSource || !settingState.setting['player.autoSourceFallback']) throw new Error('failed')
 
   onToggleSource()
   return getOtherSourceByLocal(musicInfo, async(otherSource) => {

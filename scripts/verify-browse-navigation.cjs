@@ -20,6 +20,83 @@ const deferred = () => { let resolve, reject; const promise = new Promise((a, b)
 const timeout = load('src/core/browseRequest.ts')
 const song = name => ({ list: [{ id: name }], limit: 30, total: 1, source: 'kw' })
 
+test('歌单分页去除页内与跨页重复，保留顺序及平台身份，不污染缓存', () => {
+  const state = { listInfo: { list: [] } }
+  const actions = load('src/store/songlist/action.ts', { './state': state }).default
+  const item = (id, source = 'kw') => ({ id, source })
+  const first = Object.freeze([item('a'), item('a'), item('b')])
+  actions.setList({ list: first, total: 12, limit: 4, source: 'kw' }, '', 'new', 1)
+  assert.deepEqual(Array.from(state.listInfo.list, row => row.id), ['a', 'b'])
+  const second = Object.freeze([item('b'), item('c'), item('c'), item('a', 'tx')])
+  actions.setList({ list: second, total: 12, limit: 4, source: 'kw' }, '', 'new', 2)
+  assert.deepEqual(Array.from(state.listInfo.list, row => `${row.source}:${row.id}`), ['kw:a', 'kw:b', 'kw:c', 'tx:a'])
+  assert.equal(first.length, 3)
+  assert.equal(second.length, 4)
+  assert.equal(state.listInfo.list[0], first[0])
+  assert.equal(state.listInfo.maxPage, 3)
+  actions.setList({ list: [item('a'), item('b')], total: 99999, limit: 4, source: 'kw' }, '', 'new', 3)
+  assert.equal(state.listInfo.list.length, 4)
+  assert.equal(state.listInfo.total, 4)
+  assert.equal(state.listInfo.maxPage, 3)
+  actions.setList({ list: [item('fresh')], total: 1, limit: 4, source: 'kw' }, '', 'new', 1)
+  assert.deepEqual(Array.from(state.listInfo.list, row => row.id), ['fresh'])
+  actions.setList({ list: [], total: 99999, limit: 4, source: 'kw' }, '', 'new', 2)
+  assert.equal(state.listInfo.total, 1)
+  assert.equal(state.listInfo.maxPage, 2)
+})
+
+function songlistController() {
+  let handle, rendered
+  const calls = [], statuses = []
+  const state = { listInfo: { source: 'kw', tagId: '', sortId: 'new', list: [{ id: 'a', source: 'kw' }], page: 1, maxPage: 3 } }
+  const list = { setStatus: value => statuses.push(value), setList() {} }
+  const request = (...args) => { const gate = deferred(); calls.push({ ...gate, args }); return gate.promise }
+  const actions = load('src/store/songlist/action.ts', { './state': state }).default
+  load('src/screens/Home/Views/SongList/List.tsx', {
+    react: { forwardRef: fn => fn, useRef: value => ({ current: value === null ? list : value }), useEffect: fn => fn(), useImperativeHandle: (_, fn) => { handle = fn() } },
+    'react/jsx-runtime': { jsx: (_, props) => { rendered = props; return props } },
+    './components/Songlist': {}, '@/store/songlist/state': state,
+    '@/core/songlist': { getList: request, setList: actions.setList, setListInfo: actions.setListInfo },
+  }).default({}, {})
+  return { handle, rendered, state, calls, statuses }
+}
+const settle = () => new Promise(resolve => setImmediate(resolve))
+const pageResult = (ids, total = 90) => ({ list: ids.map(id => ({ id, source: 'kw' })), total, limit: 30, source: 'kw' })
+
+test('连续触底只请求一次，失败后可重试，重复末页停止请求', async () => {
+  const { rendered, calls, state, statuses } = songlistController()
+  rendered.onLoadMore(); rendered.onLoadMore()
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].args[3], 2)
+  calls[0].reject(Error('offline')); await settle()
+  assert.equal(statuses.at(-1), 'error')
+  rendered.onLoadMore()
+  assert.equal(calls[1].args[3], 2)
+  calls[1].resolve(pageResult(['a'])); await settle()
+  assert.equal(state.listInfo.maxPage, 2)
+  assert.equal(statuses.at(-1), 'end')
+  rendered.onLoadMore()
+  assert.equal(calls.length, 2)
+})
+
+test('刷新和切换期间旧分页不能覆盖数据或解除新请求锁', async () => {
+  const { rendered, calls, state, handle } = songlistController()
+  rendered.onLoadMore()
+  rendered.onRefresh()
+  calls[0].resolve(pageResult(['stale'])); await settle()
+  rendered.onLoadMore()
+  assert.equal(calls.length, 2)
+  calls[1].resolve(pageResult(['fresh'])); await settle()
+  assert.deepEqual(Array.from(state.listInfo.list, row => row.id), ['fresh'])
+  rendered.onLoadMore()
+  const switching = handle.loadList('wy', 'hot', 'rock')
+  calls[2].resolve(pageResult(['old-page'])); await settle()
+  rendered.onLoadMore()
+  assert.equal(calls.length, 4)
+  calls[3].resolve({ ...pageResult(['new-platform']), source: 'wy' }); await switching
+  assert.deepEqual(Array.from(state.listInfo.list, row => row.id), ['new-platform'])
+})
+
 test('安卓歌单旧响应不会覆盖强制刷新缓存', async () => {
   const calls = []
   const core = load('src/core/songlist.ts', {

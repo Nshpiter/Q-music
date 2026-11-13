@@ -13,9 +13,11 @@ export default forwardRef<ListType, {}>((props, ref) => {
   const listRef = useRef<SonglistType>(null)
   const isUnmountedRef = useRef(false)
   const requestIdRef = useRef(0)
+  const pendingRequestRef = useRef(0)
   useImperativeHandle(ref, () => ({
     async loadList(source, sortId, tagId) {
       const requestId = ++requestIdRef.current
+      pendingRequestRef.current = requestId
       const listInfo = songlistState.listInfo
       listRef.current?.setList([])
       if (listInfo.tagId == tagId && listInfo.sortId == sortId && listInfo.source == source && listInfo.list.length) {
@@ -23,6 +25,7 @@ export default forwardRef<ListType, {}>((props, ref) => {
           if (isUnmountedRef.current || requestId != requestIdRef.current) return
           listRef.current?.setList(listInfo.list)
           listRef.current?.setStatus(listInfo.maxPage <= listInfo.page ? 'end' : 'idle')
+          if (pendingRequestRef.current == requestId) pendingRequestRef.current = 0
         })
       } else {
         listRef.current?.setStatus('loading')
@@ -39,6 +42,8 @@ export default forwardRef<ListType, {}>((props, ref) => {
         }).catch(() => {
           if (isUnmountedRef.current || requestId != requestIdRef.current) return
           listRef.current?.setStatus('error')
+        }).finally(() => {
+          if (pendingRequestRef.current == requestId) pendingRequestRef.current = 0
         })
       }
     },
@@ -54,6 +59,7 @@ export default forwardRef<ListType, {}>((props, ref) => {
 
   const handleRefresh: SonglistProps['onRefresh'] = () => {
     const requestId = ++requestIdRef.current
+    pendingRequestRef.current = requestId
     const page = 1
     const { source, tagId, sortId } = songlistState.listInfo
     listRef.current?.setStatus('refreshing')
@@ -65,12 +71,17 @@ export default forwardRef<ListType, {}>((props, ref) => {
     }).catch(() => {
       if (isUnmountedRef.current || requestId != requestIdRef.current) return
       listRef.current?.setStatus('error')
+    }).finally(() => {
+      if (pendingRequestRef.current == requestId) pendingRequestRef.current = 0
     })
   }
   const handleLoadMore: SonglistProps['onLoadMore'] = () => {
+    if (pendingRequestRef.current) return
+    const { source, tagId, sortId, list, page: currentPage, maxPage } = songlistState.listInfo
+    if (list.length && currentPage >= maxPage) return
     const requestId = ++requestIdRef.current
+    pendingRequestRef.current = requestId
     listRef.current?.setStatus('loading')
-    const { source, tagId, sortId, list, page: currentPage } = songlistState.listInfo
     const page = list.length ? currentPage + 1 : 1
     getList(source, tagId, sortId, page).then((info) => {
       if (isUnmountedRef.current || requestId != requestIdRef.current) return
@@ -80,6 +91,8 @@ export default forwardRef<ListType, {}>((props, ref) => {
     }).catch(() => {
       if (isUnmountedRef.current || requestId != requestIdRef.current) return
       listRef.current?.setStatus('error')
+    }).finally(() => {
+      if (pendingRequestRef.current == requestId) pendingRequestRef.current = 0
     })
   }
 

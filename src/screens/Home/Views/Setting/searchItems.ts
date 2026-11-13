@@ -15,6 +15,7 @@ import Control10 from './settings/Basic/FontSize'
 import Control11 from './settings/Basic/DisplayMode'
 import Control12 from '@/components/player/PlayerStyleSelector'
 import Control13 from './settings/Player/PlayHighQuality'
+import PlaybackFallback from './settings/Player/PlaybackFallback'
 import Control14 from './settings/Basic/IsStartupAutoPlay'
 import Control15 from './settings/Basic/IsStartupPushPlayDetailScreen'
 import Control16 from './settings/Player/IsSavePlayTime'
@@ -73,6 +74,7 @@ interface SettingSearchItem {
 
 // 搜索结果复用原设置控件，避免维护两套保存逻辑。
 export const SETTINGS_SEARCH_ITEMS: SettingSearchItem[] = [
+  { id: 'Player/PlaybackFallback', title: 'playback_fallback_title', section: 'player', keywords: '智能 换源 降级 降音质 跨平台 平台优先级 策略 順序 換源 降級 音質 fallback quality priority', component: PlaybackFallback },
   { id: 'LyricDesktop', title: 'setting_lyric_desktop', section: 'lyrics', keywords: '悬浮歌词 桌面歌词 懸浮歌詞 桌面歌詞 overlay floating lyric', component: LyricDesktop, standalone: true },
   { id: 'Theme/LiquidGlass', title: 'setting_liquid_glass', section: 'appearance', keywords: '液态玻璃 液態玻璃 底栏 底欄 迷你 播放条 卡顿 卡頓 性能 glass blur performance', component: LiquidGlass },
   { id: 'Basic/PredictiveBack', title: 'setting_predictive_back', section: 'appearance', keywords: '预测性返回 預測性返回 手势 返回 跟手 回弹 动画 手勢 動畫 gesture predictive back', component: PredictiveBack },

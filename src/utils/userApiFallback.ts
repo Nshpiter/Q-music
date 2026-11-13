@@ -22,6 +22,7 @@ interface FallbackOptions {
   providers: string[]
   source: LX.Source
   quality: LX.Quality
+  allowQualityFallback?: boolean
   signal?: AbortSignal
   isCurrent?: () => boolean
   getInfo: (id: string) => Promise<LX.UserApi.UserApiInfo>
@@ -75,7 +76,7 @@ export const resolveUserApiFallback = async(options: FallbackOptions): Promise<U
     return url
   }
   const qualityIndex = QUALITY_ORDER.indexOf(options.quality)
-  const qualitys = QUALITY_ORDER.slice(qualityIndex < 0 ? -1 : qualityIndex)
+  const qualitys = options.allowQualityFallback === false ? [options.quality] : QUALITY_ORDER.slice(qualityIndex < 0 ? -1 : qualityIndex)
   let lastError = new Error('no enabled music API supports this song')
   for (const id of [...new Set(options.providers)]) {
     assertCurrent()

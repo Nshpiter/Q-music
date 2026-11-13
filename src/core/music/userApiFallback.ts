@@ -13,7 +13,7 @@ export const excludeFailedUserApiUrl = (url: string) => {
   if (failedUrls.size > 80) failedUrls.delete(failedUrls.keys().next().value!)
 }
 
-export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, quality: LX.Quality, isRefresh: boolean, signal?: AbortSignal, providerScope: UserApiProviderScope = 'all') => {
+export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, quality: LX.Quality, isRefresh: boolean, signal?: AbortSignal, providerScope: UserApiProviderScope = 'all', allowQualityFallback = true) => {
   const controller = new AbortController()
   const cancel = () => { controller.abort() }
   const onConfigChanged = (keys: Array<keyof LX.AppSetting>) => {
@@ -29,6 +29,7 @@ export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, qualit
       providers,
       source: musicInfo.source,
       quality,
+      allowQualityFallback,
       signal: controller.signal,
       excludedUrls: new Set(failedUrls.keys()),
       isCurrent: () => providers.every(id => state.list.some(api => api.id === id)),

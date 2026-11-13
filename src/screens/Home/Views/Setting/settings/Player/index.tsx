@@ -3,6 +3,7 @@ import { memo } from 'react'
 import Section from '../../components/Section'
 import IsSavePlayTime from './IsSavePlayTime'
 import PlayHighQuality from './PlayHighQuality'
+import PlaybackFallback from './PlaybackFallback'
 import IsAutoCleanPlayedList from './IsAutoCleanPlayedList'
 import MaxCache from './MaxCache'
 import { useI18n } from '@/lang'
@@ -18,6 +19,7 @@ export default memo(() => {
     <Section title={t('setting_player')}>
       <PlayerStyleSelector />
       <PlayHighQuality />
+      <PlaybackFallback />
       <IsStartupAutoPlay />
       <IsStartupPushPlayDetailScreen />
       <IsSavePlayTime />

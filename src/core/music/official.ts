@@ -1,7 +1,16 @@
+import { neteasePlaybackQuality } from '@/utils/playbackPolicy'
 import { httpFetch } from '@/utils/request'
 import { weapi } from '@/utils/musicSdk/wy/utils/crypto'
 import { getProviderCookies, isQQLoginCookieValid, isNeteaseLoginCookieValid, buildCookieHeader } from '@/core/musicAccount/cookies'
 import { getQQRequestComm } from '@/core/musicAccount/qqCredentials'
+
+interface QQUrlResponse {
+  url?: { code?: number, data?: { sip?: string[], midurlinfo?: Array<{ filename?: string, purl?: string }> } }
+}
+interface NeteaseUrlResponse {
+  code?: number
+  data?: Array<{ code?: number, url?: string, level?: string, br?: number }>
+}
 
 const officialUrlCache = new Map<string, { url: string, quality: LX.Quality, expiresAt: number }>()
 
@@ -21,10 +30,10 @@ const qqQualityFile = {
   '128k': { prefix: 'M500', extension: '.mp3' },
 } as const
 
-const getQQMusicUrl = async(musicInfo: LX.Music.MusicInfo_tx, quality: LX.Quality) => {
+const getQQMusicUrl = async(musicInfo: LX.Music.MusicInfo_tx, quality: LX.Quality, allowQualityFallback = true) => {
   const songId = String(musicInfo.meta.songId ?? '')
   const mediaId = String(musicInfo.meta.strMediaMid || songId)
-  const candidates = getQualityFallbacks(quality)
+  const candidates = (allowQualityFallback ? getQualityFallbacks(quality) : [quality])
     .filter((item): item is keyof typeof qqQualityFile => item in qqQualityFile)
     .map(item => ({ quality: item, filename: `${qqQualityFile[item].prefix}${mediaId}${qqQualityFile[item].extension}` }))
   if (!songId || !mediaId || !candidates.length) return null
@@ -63,7 +72,7 @@ const getQQMusicUrl = async(musicInfo: LX.Music.MusicInfo_tx, quality: LX.Qualit
       },
     },
   })
-  const { body } = await request.promise
+  const { body } = await request.promise as unknown as { body: QQUrlResponse }
   if (body?.url?.code != null && body.url.code != 0) return null
   const sip = body?.url?.data?.sip?.find(Boolean) ?? ''
   const urlInfos: Array<{ filename?: string, purl?: string }> = body?.url?.data?.midurlinfo ?? []
@@ -77,16 +86,16 @@ const getQQMusicUrl = async(musicInfo: LX.Music.MusicInfo_tx, quality: LX.Qualit
   }
   // 登录态请求未取到时回落游客态再试一次
   if (credential) {
-    const fallback = await getQQMusicUrlGuest(musicInfo, quality)
+    const fallback = await getQQMusicUrlGuest(musicInfo, quality, allowQualityFallback)
     if (fallback) return fallback
   }
   return null
 }
 
-const getQQMusicUrlGuest = async(musicInfo: LX.Music.MusicInfo_tx, quality: LX.Quality) => {
+const getQQMusicUrlGuest = async(musicInfo: LX.Music.MusicInfo_tx, quality: LX.Quality, allowQualityFallback = true) => {
   const songId = String(musicInfo.meta.songId ?? '')
   const mediaId = String(musicInfo.meta.strMediaMid || songId)
-  const candidates = getQualityFallbacks(quality)
+  const candidates = (allowQualityFallback ? getQualityFallbacks(quality) : [quality])
     .filter((item): item is keyof typeof qqQualityFile => item in qqQualityFile)
     .map(item => ({ quality: item, filename: `${qqQualityFile[item].prefix}${mediaId}${qqQualityFile[item].extension}` }))
   if (!songId || !mediaId || !candidates.length) return null
@@ -113,7 +122,7 @@ const getQQMusicUrlGuest = async(musicInfo: LX.Music.MusicInfo_tx, quality: LX.Q
       },
     },
   })
-  const { body } = await request.promise
+  const { body } = await request.promise as unknown as { body: QQUrlResponse }
   if (body?.url?.code != null && body.url.code != 0) return null
   const sip = body?.url?.data?.sip?.find(Boolean) ?? ''
   const urlInfos: Array<{ filename?: string, purl?: string }> = body?.url?.data?.midurlinfo ?? []
@@ -135,10 +144,10 @@ const neteaseQualityLevel = {
   '128k': 'standard',
 } as const
 
-const getNeteaseMusicUrl = async(musicInfo: LX.Music.MusicInfo_online_common, quality: LX.Quality) => {
+const getNeteaseMusicUrl = async(musicInfo: LX.Music.MusicInfo_online_common, quality: LX.Quality, allowQualityFallback = true) => {
   const songId = String(musicInfo.meta.songId ?? '')
   if (!/^\d+$/.test(songId)) return null
-  const candidates = getQualityFallbacks(quality)
+  const candidates = (allowQualityFallback ? getQualityFallbacks(quality) : [quality])
     .filter((item): item is keyof typeof neteaseQualityLevel => item in neteaseQualityLevel)
 
   // 登录态（MUSIC_U）可解锁 VIP 曲目与高音质；读取失败按游客态处理
@@ -162,25 +171,27 @@ const getNeteaseMusicUrl = async(musicInfo: LX.Music.MusicInfo_online_common, qu
         encodeType: 'flac',
       }),
     })
-    const { body } = await request.promise
+    const { body } = await request.promise as unknown as { body: NeteaseUrlResponse }
     const item = body?.data?.[0]
     if (body?.code == 200 && item?.code == 200 && item.url) {
-      return { url: item.url as string, quality: candidate as LX.Quality }
+      const actualQuality = neteasePlaybackQuality(item.level, item.br)
+      if (!allowQualityFallback && actualQuality != quality) continue
+      return { url: item.url, quality: actualQuality ?? candidate as LX.Quality }
     }
   }
   return null
 }
 
-export const getOfficialMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, refresh = false) => {
+export const getOfficialMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, refresh = false, allowQualityFallback = true) => {
   if (musicInfo.source != 'tx' && musicInfo.source != 'wy') return null
   const cacheKey = `${musicInfo.id}:${quality}`
   const cached = officialUrlCache.get(cacheKey)
-  if (!refresh && cached && cached.expiresAt > Date.now()) return { url: cached.url, quality: cached.quality }
+  if (!refresh && cached && (allowQualityFallback || cached.quality == quality) && cached.expiresAt > Date.now()) return { url: cached.url, quality: cached.quality }
 
   try {
     const result = musicInfo.source == 'tx'
-      ? await getQQMusicUrl(musicInfo, quality)
-      : await getNeteaseMusicUrl(musicInfo, quality)
+      ? await getQQMusicUrl(musicInfo, quality, allowQualityFallback)
+      : await getNeteaseMusicUrl(musicInfo, quality, allowQualityFallback)
     if (!result) return null
     officialUrlCache.set(cacheKey, { ...result, expiresAt: Date.now() + 5 * 60_000 })
     return result

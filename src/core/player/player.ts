@@ -170,7 +170,8 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
     isRefresh,
     signal,
     allowToggleSource: false,
-  }) : Promise.reject(new Error('not found'))).catch(async() => {
+  }) : Promise.reject(new Error('not found'))).catch(async(error) => {
+    if (toggleMusicInfo && !settingState.setting['player.autoSourceFallback']) throw error
     if (!isCurrent()) throw new Error(requestMsg.cancelRequest)
     return getMusicPlayUrlInfo({
       musicInfo,

@@ -154,7 +154,7 @@ export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSou
 
   //   // return Promise.reject(new Error('该歌曲没有可播放的音频'))
   // }
-  const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
+  const targetQuality = quality ?? (!settingState.setting['player.autoQualityFallback'] || settingState.setting['player.fallbackOrder'] == 'quality' ? settingState.setting['player.playQuality'] : getPlayQuality(settingState.setting['player.playQuality'], musicInfo))
   if (!isCustomApiSource() && musicInfo.source != 'tx' && musicInfo.source != 'wy') {
     const cachedUrl = await getStoreMusicUrl(musicInfo, targetQuality)
     if (cachedUrl && !isRefresh) return cachedUrl
@@ -180,7 +180,7 @@ export const getMusicPlayUrlInfo = async({ musicInfo, quality, isRefresh, allowT
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
 }): Promise<{ url: string, quality: LX.Quality, providerId?: string }> => {
   if (musicInfo.source == 'bi') return { ...await bilibiliClient.playback(String(musicInfo.meta.songId), signal), providerId: 'bilibili:public' }
-  const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
+  const targetQuality = quality ?? (!settingState.setting['player.autoQualityFallback'] || settingState.setting['player.fallbackOrder'] == 'quality' ? settingState.setting['player.playQuality'] : getPlayQuality(settingState.setting['player.playQuality'], musicInfo))
   if (!isCustomApiSource() && musicInfo.source != 'tx' && musicInfo.source != 'wy') {
     const cachedUrl = await getStoreMusicUrl(musicInfo, targetQuality)
     if (cachedUrl && !isRefresh) return { url: cachedUrl, quality: targetQuality }

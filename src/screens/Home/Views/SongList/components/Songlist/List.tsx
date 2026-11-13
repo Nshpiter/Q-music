@@ -59,7 +59,7 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
       onPress={onOpenDetail}
     />
   )
-  const getkey: FlatListType['keyExtractor'] = item => item.id
+  const getkey: FlatListType['keyExtractor'] = item => `${item.source}:${item.id}`
   const getItemLayout: FlatListType['getItemLayout'] = (data, index) => {
     return { length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index }
   }

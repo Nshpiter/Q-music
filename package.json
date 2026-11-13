@@ -1,7 +1,7 @@
 {
   "name": "q-music-mobile",
-  "version": "0.4.35",
-  "versionCode": 63,
+  "version": "0.4.36",
+  "versionCode": 64,
   "private": true,
   "scripts": {
     "test:cloud-config": "node --test scripts/verify-cloud-snapshot.cjs scripts/verify-cloud-config-restore.cjs",
@@ -37,7 +37,7 @@
     "test:browse": "node --test scripts/verify-browse-navigation.cjs",
     "test:downloads": "node --test scripts/verify-download-actions.cjs",
     "test:playback-preferences": "node --test scripts/verify-playback-preferences.cjs scripts/verify-lyric-font.cjs",
-    "test:playback-recovery": "node --test scripts/verify-playback-recovery.cjs scripts/verify-native-playback-cancel.cjs",
+    "test:playback-recovery": "node --test scripts/verify-playback-recovery.cjs scripts/verify-native-playback-cancel.cjs scripts/verify-playback-report.cjs scripts/verify-playback-policy.cjs",
     "test:playlist-merge": "node --test scripts/verify-playlist-merge.cjs",
     "test:download-selection": "node --test scripts/verify-download-selection.cjs",
     "test:theme-appearance": "node --test scripts/verify-theme-appearance.cjs",
