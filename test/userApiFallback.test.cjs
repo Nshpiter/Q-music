@@ -30,6 +30,17 @@ const harness = (overrides = {}) => {
   return { calls, run: () => resolveUserApiFallback(options), options }
 }
 
+test('strict quality ignores lower-quality cache and never requests a lower tier', async() => {
+  const cacheReads = []
+  const h = harness({ quality: 'flac', allowQualityFallback: false,
+    getInfo: async id => info(id, ['128k']),
+    readCache: async(id, quality) => { cacheReads.push(quality); return quality === '128k' ? 'https://audio.test/low.mp3' : null },
+  })
+  await assert.rejects(h.run())
+  assert.deepEqual(cacheReads, ['flac', 'flac'])
+  assert.deepEqual(h.calls, [])
+})
+
 test('only explicitly selected existing providers are used, primary first and deduplicated', () => {
   assert.deepEqual(Array.from(getUserApiProviderIds(primary, [backup, primary, backup, 'deleted'], [{ id: primary }, { id: backup }, { id: unused }])), [primary, backup])
   assert.deepEqual(Array.from(getUserApiProviderIds('temp', [backup], [{ id: backup }])), [])

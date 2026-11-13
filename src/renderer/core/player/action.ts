@@ -288,8 +288,12 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
     const targetToggleMusicInfo = onlineMusicInfo.meta.toggleMusicInfo
     const hasExplicitToggle = !!targetToggleMusicInfo && (targetToggleMusicInfo.id != onlineMusicInfo.id || targetToggleMusicInfo.source != onlineMusicInfo.source)
     const primaryMusicInfo = hasExplicitToggle ? targetToggleMusicInfo : onlineMusicInfo
-    const exactCandidates = hasExplicitToggle ? [primaryMusicInfo, onlineMusicInfo] : [onlineMusicInfo]
+    const exactCandidates = hasExplicitToggle ? (appSetting['player.autoSourceFallback'] ? [primaryMusicInfo, onlineMusicInfo] : [primaryMusicInfo]) : [onlineMusicInfo]
     const preferCustomApi = isCustomApiSource() && !hasExplicitToggle
+    if (!hasExplicitToggle && appSetting['player.fallbackOrder'] == 'quality' && appSetting['player.autoSourceFallback']) {
+      attempts.push({ musicInfo: primaryMusicInfo, allowToggleSource: true, routeStrategy: 'all' })
+      return
+    }
     for (const candidate of exactCandidates) {
       // 自定义 API 是默认线路；手动点选平台时保留明确的平台优先意图，
       // 官方失败后仍会尝试自定义 API。

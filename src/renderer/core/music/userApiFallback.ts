@@ -5,7 +5,7 @@ import { watch } from '@common/utils/vueTools'
 import { toOldMusicInfo } from '@renderer/utils'
 import { requestMsg } from '@renderer/utils/message'
 
-export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, quality: LX.Quality, options: Pick<Parameters<typeof resolveUserApiFallback>[0], 'readCache' | 'isExcluded' | 'excludedUrls' | 'isProviderBlocked' | 'onFailure' | 'signal'> & { providerScope?: UserApiProviderScope } = {}) => {
+export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, quality: LX.Quality, options: Pick<Parameters<typeof resolveUserApiFallback>[0], 'allowQualityFallback' | 'readCache' | 'isExcluded' | 'excludedUrls' | 'isProviderBlocked' | 'onFailure' | 'signal'> & { providerScope?: UserApiProviderScope } = {}) => {
   const controller = new AbortController()
   const cancel = () => { controller.abort() }
   if (options.signal?.aborted) cancel()

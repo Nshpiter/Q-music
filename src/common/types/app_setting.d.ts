@@ -108,6 +108,10 @@ declare global {
        * 优先播放的音质
        */
       'player.playQuality': LX.Quality
+      'player.autoQualityFallback': boolean
+      'player.autoSourceFallback': boolean
+      'player.fallbackOrder': 'source' | 'quality'
+      'player.fallbackPlatforms': string
 
       /**
        * 是否显示任务栏进度条

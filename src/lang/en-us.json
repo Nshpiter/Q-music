@@ -1,4 +1,13 @@
 {
+  "playback_fallback_title": "Playback fallback",
+  "playback_fallback_quality": "Allow lower quality when unavailable",
+  "playback_fallback_source": "Try other platforms when unavailable",
+  "playback_fallback_source_first": "Prefer current platform",
+  "playback_fallback_quality_first": "Prefer audio quality",
+  "playback_fallback_platforms": "Other platforms, in priority order (original platform first)",
+  "playback_fallback_up": "Move up",
+  "playback_fallback_down": "Move down",
+  "playback_fallback_hint": "Current platform: lower quality before switching platforms. Audio quality: try other platforms at the same quality before lowering it. Applies to subsequent URL requests; available quality depends on the source.",
   "kugou_verify_action": "Kugou security verification",
   "kugou_verify_working": "Checking…",
   "kugou_verify_available": "Account playlists are accessible. You can retry your previous action.",

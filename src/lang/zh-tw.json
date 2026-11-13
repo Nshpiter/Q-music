@@ -1,4 +1,13 @@
 {
+  "playback_fallback_title": "智慧換源",
+  "playback_fallback_quality": "無法播放時允許降低音質",
+  "playback_fallback_source": "無法播放時自動嘗試其他平台",
+  "playback_fallback_source_first": "優先目前平台",
+  "playback_fallback_quality_first": "優先保持音質",
+  "playback_fallback_platforms": "其他平台嘗試順序（原曲平台始終優先）",
+  "playback_fallback_up": "提高優先順序",
+  "playback_fallback_down": "降低優先順序",
+  "playback_fallback_hint": "目前平台：先在原平台降低音質，再換平台。保持音質：先找同音質的其他平台，再降級。僅影響後續取址；實際音質取決於介面支援。",
   "kugou_verify_action": "酷狗安全驗證",
   "kugou_verify_working": "正在檢查…",
   "kugou_verify_available": "帳號歌單存取正常，可以重試剛才的操作。",

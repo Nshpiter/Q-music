@@ -41,6 +41,8 @@ dd
       name="setting_play_quality" need :model-value="appSetting['player.playQuality']" :value="item" :label="item"
       @update:model-value="updateSetting({'player.playQuality': $event})")
 
+playback-fallback-settings
+
 dd(:aria-label="$t('setting__play_mediaDevice_title')")
   h3#play_mediaDevice {{ $t('setting__play_mediaDevice') }}
   div
@@ -57,10 +59,12 @@ import { setPowerSaveBlocker } from '@renderer/core/player/utils'
 import { isPlay } from '@renderer/store/player/state'
 import { TRY_QUALITYS_LIST } from '@renderer/core/music/utils'
 import { isMac } from '@common/utils'
+import PlaybackFallbackSettings from './PlaybackFallbackSettings.vue'
 
 
 export default {
   name: 'SettingPlay',
+  components: { PlaybackFallbackSettings },
   setup() {
     const t = useI18n()
     const playQualityList = [...TRY_QUALITYS_LIST, '128k'].reverse()

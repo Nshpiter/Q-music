@@ -9,6 +9,7 @@ const root = path.join(__dirname, '..')
 const mobile = fs.existsSync(path.join(root, 'src/core/musicAccount/kugouApi.ts'))
 const base = mobile ? 'src/core/musicAccount' : 'src/common/utils'
 function load(file, dependencies = {}, extra = {}) {
+  if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/playbackPolicy'] = load('src/common/utils/playbackPolicy.ts')
   if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/cloudSnapshot'] = load('src/common/utils/cloudSnapshot.ts')
   if (file == 'src/renderer/views/List/MyList/importPlaylist.ts') dependencies['@renderer/utils/musicSdk/bi'] ??= { bilibiliClient: {} }
   if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/qqPlaylistTarget'] = load('src/common/utils/qqPlaylistTarget.ts')

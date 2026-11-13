@@ -159,7 +159,7 @@ export const getMusicAccountPlaylists = async(provider: MusicAccountProvider, ow
 export const getMusicAccountPlaylistDetail = async(provider: MusicAccountProvider, id: string) => {
   return rendererInvoke<{ provider: MusicAccountProvider, id: string }, MusicAccountPlaylistDetailResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_playlist_detail, { provider, id })
 }
-export const getMusicAccountMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, refresh = false) => {
+export const getMusicAccountMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, refresh = false, allowQualityFallback = true) => {
   if (musicInfo.source != 'tx' && musicInfo.source != 'wy') return null
   return rendererInvoke<{
     provider: MusicAccountProvider
@@ -168,6 +168,7 @@ export const getMusicAccountMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline
     reportSongId?: string
     quality: LX.Quality
     refresh?: boolean
+    allowQualityFallback?: boolean
   }, MusicAccountMusicUrlResult>(WIN_MAIN_RENDERER_EVENT_NAME.music_account_music_url, {
     provider: musicInfo.source,
     songId: String(musicInfo.meta.songId),
@@ -175,6 +176,7 @@ export const getMusicAccountMusicUrl = async(musicInfo: LX.Music.MusicInfoOnline
     reportSongId: musicInfo.source == 'tx' ? String(musicInfo.meta.id ?? '') : String(musicInfo.meta.songId),
     quality,
     refresh,
+    allowQualityFallback,
   })
 }
 export const reportMusicAccountPlayback = async(request: MusicAccountPlaybackReportRequest) => {

@@ -387,6 +387,9 @@ export default {
   // backdrop-filter: blur(4px);
   // backdrop-filter: grayscale(70%);
   display: grid;
+  // 显式允许轨道收缩，避免弹窗固定宽度把隐式 auto 轨道撑出 #view。
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   align-items: center;
   justify-items: center;
   box-sizing: border-box;
@@ -448,7 +451,8 @@ export default {
 
 .viewModal {
   .content {
-    max-height: min(var(--modal-max-height), calc(100% - @height-player - 24px));
+    // grid 的可用高度已由 padding-bottom 预留播放器，不能再扣一次。
+    max-height: min(var(--modal-max-height), calc(100% - 24px));
   }
 }
 

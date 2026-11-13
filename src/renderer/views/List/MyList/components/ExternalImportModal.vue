@@ -1,10 +1,10 @@
 <template>
-  <material-modal :show="visible" bg-close teleport="#view" width="680px" max-width="calc(100% - 32px)" @close="handleClose">
-    <div :class="$style.header">
-      <h2>{{ $t('playlist_import_modal__title') }}</h2>
-      <p>{{ $t('playlist_import_modal__subtitle') }}</p>
-    </div>
+  <material-modal :show="visible" bg-close teleport="#view" width="680px" max-width="calc(100% - 32px)" max-height="calc(100% - 24px)" @close="handleClose">
     <main class="scroll" :class="$style.main">
+      <div :class="$style.header">
+        <h2>{{ $t('playlist_import_modal__title') }}</h2>
+        <p>{{ $t('playlist_import_modal__subtitle') }}</p>
+      </div>
       <div :class="$style.modeTabs">
         <button type="button" :class="{ [$style.active]: mode == 'account' }" :disabled="isLoading" @click="mode = 'account'">
           {{ $t('playlist_import_modal__account_tab') }}
@@ -471,7 +471,7 @@ export default {
 
 .header {
   flex: none;
-  padding: 16px 20px 6px;
+  padding: 6px 0 16px;
   text-align: center;
 
   h2 {
@@ -489,11 +489,15 @@ export default {
 
 .main {
   flex: auto;
-  width: 680px;
+  // 与弹窗使用同一可用宽度，避免字号换算后固定 rem 宽度撑出弹窗。
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
   max-height: min(66vh, 570px);
-  max-width: calc(100vw - 32px);
+  max-width: 100%;
   padding: 10px 20px 0;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .modeTabs {
@@ -535,13 +539,13 @@ export default {
 
 .accountProviders {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
   gap: 10px;
 }
 
 .accountProvider {
   display: grid;
-  grid-template-columns: 38px 1fr auto;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -612,6 +616,11 @@ export default {
   gap: 16px;
   margin: 16px 2px 8px;
 
+  > div {
+    flex: 1;
+    min-width: 0;
+  }
+
   h3 {
     font-size: 13px;
     line-height: 1.6;
@@ -641,7 +650,7 @@ export default {
 
 .accountPlaylists {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 8px;
   max-height: 230px;
   padding-right: 3px;
@@ -650,7 +659,7 @@ export default {
 
 .accountPlaylist {
   display: grid;
-  grid-template-columns: 44px 1fr auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -722,13 +731,19 @@ export default {
 
 .accountState {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   min-height: 94px;
+  padding: 12px;
+  box-sizing: border-box;
   border-radius: 12px;
   background: var(--q-surface-soft);
   color: var(--color-font-label);
   font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .field {
@@ -813,10 +828,6 @@ export default {
 }
 
 @media (max-width: 620px) {
-  .accountProviders, .accountPlaylists {
-    grid-template-columns: 1fr;
-  }
-
   .sourceBtns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

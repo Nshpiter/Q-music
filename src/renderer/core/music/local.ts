@@ -3,6 +3,7 @@ import { updateListMusics } from '@renderer/store/list/action'
 import { saveLyric, saveMusicUrl } from '@renderer/utils/ipc'
 import { getLocalFilePath } from '@renderer/utils/music'
 import { requestMsg } from '@renderer/utils/message'
+import { appSetting } from '@renderer/store/setting'
 
 import {
   buildLyricInfo,
@@ -129,7 +130,7 @@ export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = tru
     initialError = err instanceof Error ? err : new Error('local source route failed')
   }
 
-  if (!allowToggleSource) throw initialError ?? new Error('failed')
+  if (!allowToggleSource || !appSetting['player.autoSourceFallback']) throw initialError ?? new Error('failed')
 
   onToggleSource()
   try {

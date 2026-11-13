@@ -1,3 +1,4 @@
+import { neteasePlaybackQuality } from '@common/utils/playbackPolicy'
 import { BrowserWindow, safeStorage, session, shell, type Session, type WebContents } from 'electron'
 import { getProxy } from '@main/utils'
 import { setWindowNavigationPolicy } from '@main/utils/navigationPolicy'
@@ -130,6 +131,7 @@ export interface MusicAccountMusicUrlRequest {
   reportSongId?: string
   quality: LX.Quality
   refresh?: boolean
+  allowQualityFallback?: boolean
 }
 
 export interface MusicAccountMusicUrlResult {
@@ -539,8 +541,8 @@ const qqQualityFile = {
   '128k': { prefix: 'M500', extension: '.mp3' },
 } as const
 
-const getQQOfficialMusicUrl = async(songId: string, mediaId: string, quality: LX.Quality) => {
-  const candidates = getQualityFallbacks(quality)
+const getQQOfficialMusicUrl = async(songId: string, mediaId: string, quality: LX.Quality, allowQualityFallback = true) => {
+  const candidates = (allowQualityFallback ? getQualityFallbacks(quality) : [quality])
     .filter((item): item is keyof typeof qqQualityFile => item in qqQualityFile)
     .map(item => ({ quality: item, filename: `${qqQualityFile[item].prefix}${mediaId}${qqQualityFile[item].extension}` }))
   if (!songId || !mediaId || !candidates.length) return null
@@ -935,21 +937,25 @@ const neteaseQualityLevel = {
   '128k': 'standard',
 } as const
 
-const getNeteaseOfficialMusicUrl = async(songId: string, quality: LX.Quality) => {
+const getNeteaseOfficialMusicUrl = async(songId: string, quality: LX.Quality, allowQualityFallback = true) => {
   if (!/^\d+$/.test(songId)) return null
-  const candidates = getQualityFallbacks(quality)
+  const candidates = (allowQualityFallback ? getQualityFallbacks(quality) : [quality])
     .filter((item): item is keyof typeof neteaseQualityLevel => item in neteaseQualityLevel)
   for (const candidate of candidates) {
     const result = await requestNeteaseWeapi<{
       code?: number
-      data?: Array<{ url?: string | null, code?: number }>
+      data?: Array<{ url?: string | null, code?: number, level?: string, br?: number }>
     }>('/weapi/song/enhance/player/url/v1', {
       ids: JSON.stringify([Number(songId)]),
       level: neteaseQualityLevel[candidate],
       encodeType: 'flac',
     })
     const item = result.data?.[0]
-    if (result.code == 200 && item?.code == 200 && item.url) return { url: item.url, quality: candidate as LX.Quality }
+    if (result.code == 200 && item?.code == 200 && item.url) {
+      const actualQuality = neteasePlaybackQuality(item.level, item.br)
+      if (!allowQualityFallback && actualQuality != quality) continue
+      return { url: item.url, quality: actualQuality ?? candidate as LX.Quality }
+    }
   }
   return null
 }
@@ -972,15 +978,15 @@ export const getMusicAccountMusicUrl = async(request: MusicAccountMusicUrlReques
 
   const cacheKey = `${request.provider}:${request.songId}:${request.mediaId ?? ''}:${request.quality}`
   const cached = officialMusicUrlCache.get(cacheKey)
-  if (!request.refresh && cached && cached.expiresAt > Date.now()) {
+  if (!request.refresh && cached && (request.allowQualityFallback !== false || cached.quality == request.quality) && cached.expiresAt > Date.now()) {
     const reportSongId = /^\d+$/.test(request.reportSongId ?? '') ? request.reportSongId : cached.reportSongId
     return { provider: request.provider, status: 'available', url: cached.url, quality: cached.quality, reportSongId }
   }
 
   try {
     const result = request.provider == 'tx'
-      ? await getQQOfficialMusicUrl(request.songId, request.mediaId ?? request.songId, request.quality)
-      : await getNeteaseOfficialMusicUrl(request.songId, request.quality)
+      ? await getQQOfficialMusicUrl(request.songId, request.mediaId ?? request.songId, request.quality, request.allowQualityFallback)
+      : await getNeteaseOfficialMusicUrl(request.songId, request.quality, request.allowQualityFallback)
     if (!result) return unavailable('unavailable')
     const reportSongId = request.provider == 'tx'
       ? (/^\d+$/.test(request.reportSongId ?? '') ? request.reportSongId : request.songId)

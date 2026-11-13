@@ -36,6 +36,7 @@ export interface MusicUrlResolvedInfo {
 }
 
 export interface MusicUrlRequestOptions {
+  allowQualityFallback?: boolean
   userApiScope?: 'primary' | 'backup'
   /** all 会遵循设置中的自定义 API 优先策略；显式值用于单次线路尝试。 */
   routeStrategy?: 'all' | 'official' | 'api'

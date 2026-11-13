@@ -1,3 +1,4 @@
+import { orderFallbackCandidates, resolveQualityFirst } from '@common/utils/playbackPolicy'
 import { apiSource, qualityList } from '@renderer/store'
 import { assertApiSupport } from '@renderer/store/utils'
 import musicSdk from '@renderer/utils/musicSdk'
@@ -503,6 +504,7 @@ const getOfficialQuality = (quality: LX.Quality) => {
 
 const resolveCustomMusicRoute = async<T extends LX.Music.MusicInfo>(musicInfo: T, quality: LX.Quality, isRefresh: boolean, requestOptions: MusicUrlRequestOptions) => {
   const result = await resolveCustomMusicUrl(musicInfo, quality, {
+    allowQualityFallback: requestOptions.allowQualityFallback ?? appSetting['player.autoQualityFallback'],
     providerScope: requestOptions.userApiScope,
     signal: requestOptions.signal,
     excludedUrls: requestOptions.excludedUrls,
@@ -552,6 +554,7 @@ const resolveOnlineMusicUrl = async({ musicInfo, quality, isRefresh, requestOpti
   isRefresh: boolean
   requestOptions?: MusicUrlRequestOptions
 }): Promise<OnlineMusicUrlResult> => {
+  const allowQualityFallback = requestOptions.allowQualityFallback ?? (appSetting['player.autoQualityFallback'] !== false)
   const routeStrategy = requestOptions.routeStrategy ?? 'all'
   let cacheProviderId = getMusicUrlCacheProviderId()
   const isUrlExcluded = (url: string) => requestOptions.excludedUrls?.has(url) ?? false
@@ -592,13 +595,14 @@ const resolveOnlineMusicUrl = async({ musicInfo, quality, isRefresh, requestOpti
   const preferCustomApi = isCustomApiSource() && routeStrategy == 'all'
   const tryOfficialRoute = async(): Promise<OnlineMusicUrlResult | null> => {
     if ((musicInfo.source != 'tx' && musicInfo.source != 'wy') || routeStrategy == 'api') return null
+    if (!allowQualityFallback && !OFFICIAL_QUALITYS.includes(quality)) return null
     const officialQuality = getOfficialQuality(quality)
     const routeKey = createMusicRouteKey('official', musicInfo, officialQuality)
     if (!isRouteExcluded(routeKey)) {
       let failedUrl = ''
       try {
         const officialResult = await withTimeout(
-          getMusicAccountMusicUrl(musicInfo, officialQuality, shouldRefreshRoute(routeKey)),
+          getMusicAccountMusicUrl(musicInfo, officialQuality, shouldRefreshRoute(routeKey), allowQualityFallback),
           10_000,
           'official music URL timeout',
           { signal: requestOptions.signal },
@@ -645,7 +649,7 @@ const resolveOnlineMusicUrl = async({ musicInfo, quality, isRefresh, requestOpti
         : requestOptions)
     }
     const initialProviderId = getMusicUrlCacheProviderId()
-    const initialQualitys = getCacheQualityCandidates(quality)
+    const initialQualitys = allowQualityFallback ? getCacheQualityCandidates(quality) : [quality]
     const initialCachedResult = await tryCachedRoutes(initialProviderId, initialQualitys)
     if (initialCachedResult) return initialCachedResult
 
@@ -672,7 +676,7 @@ const resolveOnlineMusicUrl = async({ musicInfo, quality, isRefresh, requestOpti
     }
 
     cacheProviderId = getMusicUrlCacheProviderId()
-    const targetQualitys = getPlayQualityCandidates(quality, musicInfo)
+    const targetQualitys = allowQualityFallback ? getPlayQualityCandidates(quality, musicInfo) : [quality]
     const apiProviderId = cacheProviderId
     const cachedResult = await tryCachedRoutes(apiProviderId, targetQualitys)
     if (cachedResult) return cachedResult
@@ -707,6 +711,7 @@ const resolveOnlineMusicUrl = async({ musicInfo, quality, isRefresh, requestOpti
           'music API request timeout',
           { signal: requestOptions.signal, onCancel: request.canceleFn },
         )
+        if (!allowQualityFallback && type != quality) throw new Error('requested quality unavailable')
         const url = normalizeOnlineMusicUrl(rawUrl)
         failedUrl = url
         if (isUrlExcluded(url)) throw new Error('music URL already failed')
@@ -769,51 +774,22 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
 }): Promise<OnlineMusicUrlResult> => {
   const desiredQuality = quality ?? appSetting['player.playQuality']
   let rateLimitMessage = ''
-  const strategy = requestOptions?.routeStrategy ?? 'all'
-  const preferCustomApi = isCustomApiSource()
-  const candidates = musicInfos.filter((musicInfo, index, list) => {
+  const candidates = orderFallbackCandidates(musicInfos, appSetting['player.fallbackPlatforms'] ?? '').filter((musicInfo, index, list) => {
     const key = createMusicCandidateKey(musicInfo)
     return !retryedMusic.includes(key) && list.findIndex(item => createMusicCandidateKey(item) == key) == index
   })
-
-  const tryCandidates = async(routeStrategy: 'official' | 'api', items: LX.Music.MusicInfoOnline[], userApiScope = requestOptions?.userApiScope) => {
-    for (const musicInfo of items) {
-      const candidateKey = createMusicCandidateKey(musicInfo)
-      if (routeStrategy == 'official' && !isOfficialSource(musicInfo.source)) continue
-      console.log('try toggle to: ', musicInfo.source, musicInfo.name, musicInfo.singer, musicInfo.interval, routeStrategy)
-      onToggleSource(musicInfo)
-      try {
-        return await resolveOnlineMusicUrl({
-          musicInfo,
-          quality: desiredQuality,
-          isRefresh,
-          requestOptions: { ...requestOptions, routeStrategy, userApiScope },
-        })
-      } catch (err: any) {
-        if (err.message == requestMsg.cancelRequest) throw err
-        if (err.message == requestMsg.tooManyRequests) rateLimitMessage = err.message
-        else console.warn('[music] fallback route failed', candidateKey, routeStrategy, err)
-      }
+  // 按用户的平台顺序逐个平台尝试；每个平台仍遵循主脚本 → 官方 → 备用脚本。
+  for (const musicInfo of candidates) {
+    if (requestOptions?.signal?.aborted) throw new Error(requestMsg.cancelRequest)
+    if (requestOptions?.routeStrategy == 'official' && !isOfficialSource(musicInfo.source)) continue
+    onToggleSource(musicInfo)
+    try {
+      return await resolveOnlineMusicUrl({ musicInfo, quality: desiredQuality, isRefresh, requestOptions })
+    } catch (err: any) {
+      if (err.message == requestMsg.cancelRequest) throw err
+      if (err.message == requestMsg.tooManyRequests) rateLimitMessage = err.message
+      else console.warn('[music] fallback route failed', createMusicCandidateKey(musicInfo), err)
     }
-    return null
-  }
-
-  // 跨平台候选同样先保留主源与官方兜底，最后追加备用脚本。
-  if (preferCustomApi && strategy != 'official') {
-    const result = await tryCandidates('api', candidates, strategy == 'all' ? 'primary' : requestOptions?.userApiScope)
-    if (result) return result
-  }
-  if (strategy != 'api') {
-    const result = await tryCandidates('official', candidates.filter(item => isOfficialSource(item.source)))
-    if (result) return result
-  }
-  if (preferCustomApi && strategy == 'all' && appSetting['common.apiBackupSources'].length) {
-    const result = await tryCandidates('api', candidates, 'backup')
-    if (result) return result
-  }
-  if (!preferCustomApi && strategy != 'official') {
-    const result = await tryCandidates('api', candidates)
-    if (result) return result
   }
   if (rateLimitMessage) throw new Error(rateLimitMessage)
   throw new Error(window.i18n.t('toggle_source_failed'))
@@ -831,11 +807,24 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   requestOptions?: MusicUrlRequestOptions
 }): Promise<OnlineMusicUrlResult> => {
   const targetQuality = quality ?? appSetting['player.playQuality']
+  allowToggleSource = allowToggleSource && appSetting['player.autoSourceFallback'] !== false
+  if (allowToggleSource && appSetting['player.fallbackOrder'] == 'quality' && (!requestOptions?.routeStrategy || requestOptions.routeStrategy == 'all')) {
+    const exactOptions = { ...requestOptions, allowQualityFallback: false }
+    return resolveQualityFirst({
+      quality: targetQuality,
+      downgrade: appSetting['player.autoQualityFallback'] !== false,
+      signal: requestOptions?.signal,
+      cancelledMessage: requestMsg.cancelRequest,
+      original: async target => resolveOnlineMusicUrl({ musicInfo, quality: target, isRefresh, requestOptions: exactOptions }),
+      alternatives: async() => { onToggleSource(); return getOtherSource(musicInfo, isRefresh, requestOptions?.signal) },
+      fallback: async(items, target) => getOnlineOtherSourceMusicUrl({ musicInfos: items, quality: target, isRefresh, onToggleSource, retryedMusic: [createMusicCandidateKey(musicInfo)], requestOptions: exactOptions }),
+    })
+  }
   try {
     return await resolveOnlineMusicUrl({ musicInfo, quality: targetQuality, isRefresh, requestOptions })
   } catch (err: any) {
     console.warn('[music] requested route failed', createMusicCandidateKey(musicInfo), err)
-    if (!allowToggleSource) throw err
+    if (!allowToggleSource || requestOptions?.signal?.aborted === true || err.message == requestMsg.cancelRequest) throw err
     onToggleSource()
     const otherSource = await getOtherSource(musicInfo, isRefresh, requestOptions?.signal)
     console.log('find otherSource', otherSource)

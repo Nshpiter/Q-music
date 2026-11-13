@@ -157,6 +157,7 @@ export default {
 .menu {
   flex: auto;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: thin;
   -webkit-app-region: no-drag;
@@ -174,6 +175,8 @@ export default {
   display: flex;
   flex-flow: column nowrap;
   gap: 8px;
+  // 为悬停时的右移动效留出空间，避免撑出横向滚动条。
+  margin-right: 2px;
   // margin-bottom: 15px;
   &:last-child {
     margin-bottom: 0;
