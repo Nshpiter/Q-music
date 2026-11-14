@@ -7,8 +7,9 @@ import { useTheme } from '@/store/theme/hook'
 import Image from '@/components/common/Image'
 import Badge from '@/components/common/Badge'
 import Button from '@/components/common/Button'
+import { scaleSizeH } from '@/utils/pixelRatio'
 
-export const ITEM_HEIGHT = 92
+export const ITEM_HEIGHT = Math.max(92, scaleSizeH(92))
 
 export default memo(({ item, index, showSource, onPress }: {
   item: ListInfoItem
@@ -88,8 +89,7 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
   title: {
-    lineHeight: 18,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   author: {
     marginTop: 4,

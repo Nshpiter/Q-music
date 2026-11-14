@@ -64,10 +64,10 @@ const styles = createStyle({
     gap: 18,
   },
   welcomeCard: {
-    minHeight: 82,
-    paddingVertical: 12,
+    minHeight: 78,
+    paddingVertical: 10,
     paddingHorizontal: 4,
-    marginBottom: 8,
+    marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -77,13 +77,14 @@ const styles = createStyle({
   eyebrow: {
     marginBottom: 6,
     fontWeight: '800',
-    letterSpacing: 1.4,
+    letterSpacing: 1.6,
   },
   welcomeTitle: {
     fontWeight: '700',
+    letterSpacing: -0.3,
   },
   welcomeSubtitle: {
-    marginTop: 7,
+    marginTop: 6,
     lineHeight: 20,
   },
 })

@@ -1,6 +1,7 @@
 import { addListMusics, getListMusics, removeListMusics, removeUserList, setFetchingListStatus, updateListMusics } from '@/core/list'
 import { confirmDialog, handleReadFile, handleSaveFile, showImportTip, toast } from '@/utils/tools'
 import syncSourceList from '@/core/syncSourceList'
+import { playlistSyncErrorKey } from '@/core/musicAccount/syncState'
 import { log } from '@/utils/log'
 import { filterFileName, filterMusicList, formatPlayTime2, toNewMusicInfo } from '@/utils'
 import { handleImportListPart } from '@/screens/Home/Views/Setting/settings/Backup/actions'
@@ -88,8 +89,7 @@ export const handleSync = (listInfo: LX.List.UserListInfo) => {
       toast(global.i18n.t('list_update_success', { name: listInfo.name }))
     }).catch((error: unknown) => {
       if (listInfo.sourceListId?.startsWith('account:')) {
-        const reason = error instanceof Error ? error.message : ''
-        toast(global.i18n.t(reason == 'login_required' || reason == 'account_changed' ? 'account_lists_login_expired' : reason == 'incomplete' ? 'account_lists_incomplete' : 'account_lists_failed'))
+        toast(global.i18n.t(playlistSyncErrorKey(error instanceof Error ? error.message : '')))
         return
       }
       toast(global.i18n.t('list_update_error', { name: listInfo.name }))

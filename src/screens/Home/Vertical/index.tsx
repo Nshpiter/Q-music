@@ -7,17 +7,21 @@ import { DockInsetContext } from '@/components/common/DockInset'
 import Aside from '../Horizontal/Aside'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 import FloatingNav from './FloatingNav'
+import { useKeyboard } from '@/utils/hooks'
 
 export default () => {
   const [dockHeight, setDockHeight] = useState(0)
   const { wide, navigationPosition } = useAdaptiveLayout()
+  const { keyboardShown } = useKeyboard()
+  // 窗口随键盘缩放时，贴底的播放条和导航会被顶到键盘上方遮住搜索结果。
+  const hideDock = !wide && keyboardShown
   return (
-    <DockInsetContext.Provider value={wide ? 0 : dockHeight}>
+    <DockInsetContext.Provider value={wide || hideDock ? 0 : dockHeight}>
       <View style={styles.shell}>
         {navigationPosition == 'left' ? <Aside /> : null}
         <View style={styles.main}>
           <Content />
-          <View pointerEvents="box-none" style={wide ? styles.wideDock : styles.dock} onLayout={event => { setDockHeight(event.nativeEvent.layout.height) }}>
+          <View pointerEvents={hideDock ? 'none' : 'box-none'} importantForAccessibility={hideDock ? 'no-hide-descendants' : 'auto'} style={[wide ? styles.wideDock : styles.dock, hideDock && styles.hidden]} onLayout={event => { setDockHeight(event.nativeEvent.layout.height) }}>
             <PlayerBar isHome />
             {navigationPosition == 'bottom' ? <BottomNav /> : null}
           </View>
@@ -34,4 +38,5 @@ const styles = StyleSheet.create({
   main: { flex: 1, minWidth: 0 },
   wideDock: { paddingTop: 8, flexShrink: 0 },
   dock: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 8 },
+  hidden: { opacity: 0 },
 })

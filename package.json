@@ -1,7 +1,7 @@
 {
   "name": "q-music-mobile",
-  "version": "0.4.36",
-  "versionCode": 64,
+  "version": "0.4.37",
+  "versionCode": 65,
   "private": true,
   "scripts": {
     "test:cloud-config": "node --test scripts/verify-cloud-snapshot.cjs scripts/verify-cloud-config-restore.cjs",

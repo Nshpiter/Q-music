@@ -14,6 +14,8 @@ import { getAccountPlaylists, openPlaylistSession, type AccountPlaylist, type Pl
 import { findAccountList, syncAccountPlaylist } from '@/core/musicAccount/playlistSync'
 import type { MusicAccountProvider } from '@/core/musicAccount'
 
+const isLoginError = (reason: unknown) => reason instanceof Error && ['login_required', 'account_changed'].includes(reason.message)
+
 export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
   provider: MusicAccountProvider
   onLogin: () => void
@@ -30,6 +32,8 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
   const [verifying, setVerifying] = useState(false)
   const busy = syncing || verifying
   const [error, setError] = useState('')
+  // 「重新登录」会清除当前登录态，只在确实掉登录或换号时提供。
+  const [needsLogin, setNeedsLogin] = useState(false)
   const [message, setMessage] = useState('')
   const [partial, setPartial] = useState(false)
   const [lastListId, setLastListId] = useState('')
@@ -39,11 +43,15 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
   const mounted = useRef(true)
   const errorText = useCallback((reason: unknown) => {
     const code = reason instanceof Error ? reason.message : ''
-    const message = t(code == 'verification_required' ? 'list_sync_verification_required' : code == 'login_required' || code == 'account_changed' ? 'account_lists_login_expired' : code == 'incomplete' ? 'account_lists_incomplete' : 'account_lists_failed')
+    const message = t(code == 'verification_required' ? 'list_sync_verification_required' : code == 'login_required' || code == 'account_changed' ? 'account_lists_login_expired' : code == 'incomplete' ? 'account_lists_incomplete' : code == 'network' ? 'account_lists_network' : code == 'restricted' ? 'account_lists_restricted' : 'account_lists_failed')
     return reason instanceof Error && 'platformCode' in reason && typeof reason.platformCode == 'number' && Number.isFinite(reason.platformCode)
       ? message + t('qq_favorite_error_code', { code: reason.platformCode })
       : message
   }, [t])
+  const showError = useCallback((reason: unknown) => {
+    setError(errorText(reason))
+    setNeedsLogin(isLoginError(reason))
+  }, [errorText])
 
   const load = useCallback(async() => {
     request.current?.abort()
@@ -51,6 +59,7 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
     request.current = controller
     setLoading(true)
     setError('')
+    setNeedsLogin(false)
     setMessage('')
     setPartial(false)
     setLists([])
@@ -64,11 +73,11 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
       setLists(playlists)
       setPartial(!!account.catalogPartial)
     } catch (reason) {
-      if (!controller.signal.aborted && mounted.current) setError(errorText(reason))
+      if (!controller.signal.aborted && mounted.current) showError(reason)
     } finally {
       if (!controller.signal.aborted && mounted.current) setLoading(false)
     }
-  }, [provider, errorText])
+  }, [provider, showError])
 
   useEffect(() => {
     mounted.current = true
@@ -91,9 +100,10 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
         if (!confirmed || !mounted.current) return
       }
       setError('')
+      setNeedsLogin(false)
       let success = 0
       let failed = 0
-      let failure = ''
+      let failure: unknown = null
       for (const [index, playlist] of targets.entries()) {
         if (controller.signal.aborted || !mounted.current) break
         setMessage(t('account_lists_progress', { current: index + 1, total: targets.length, name: playlist.name }))
@@ -107,17 +117,17 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
         } catch (reason) {
           if (controller.signal.aborted) break
           failed++
-          failure = errorText(reason)
+          failure = reason
           // 安全验证和掉登录不会因重试下一张歌单恢复，停止本批，保留未同步选项。
           if (reason instanceof Error && ['verification_required', 'login_required', 'account_changed'].includes(reason.message)) break
         }
       }
       if (mounted.current) {
         setMessage(t('account_lists_result', { success, failed }))
-        setError(failure)
+        if (failure) showError(failure)
       }
     } catch (reason) {
-      if (mounted.current && !controller.signal.aborted) setError(errorText(reason))
+      if (mounted.current && !controller.signal.aborted) showError(reason)
     } finally {
       running.current = false
       if (mounted.current) { setBusy(false); onBusyChange(false) }
@@ -149,7 +159,7 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
       keyExtractor={item => item.id}
       extraData={{ selected, busy, lastListId }}
       contentContainerStyle={styles.list}
-      ListEmptyComponent={<View style={styles.empty}><Icon name="album" size={36} color={theme['q-text-secondary']} /><Text size={13} style={styles.emptyText}>{error || t('account_lists_empty')}</Text></View>}
+      ListEmptyComponent={<View style={styles.empty}><Icon name="album" size={36} color={theme['q-text-secondary']} /><Text size={13} style={styles.emptyText}>{error ? t('account_lists_unavailable') : t('account_lists_empty')}</Text></View>}
       renderItem={({ item }) => {
         const checked = selected.has(item.id)
         const imported = session.current && findAccountList(session.current, item.id)
@@ -167,7 +177,7 @@ export default ({ provider, onLogin, onOpenLibrary, onBusyChange }: {
       {provider == 'kg' ? <KugouVerifyButton disabled={busy || loading} onBusy={value => { setVerifying(value); onBusyChange(value) }} onVerified={() => { void load() }} /> : null}
       {partial && !error ? <View><Text accessibilityLiveRegion="polite" size={12} color={theme['q-text-secondary']} style={styles.feedback}>{t('account_lists_partial')}</Text><Button disabled={busy || loading} onPress={() => { void load() }} style={styles.smallButton}><Text size={12} color={theme['q-accent-text']}>{t('list_retry')}</Text></Button></View> : null}
       {message ? <Text accessibilityLiveRegion="polite" size={12} style={styles.feedback}>{message}</Text> : null}
-      {error ? <View><Text accessibilityLiveRegion="polite" size={12} color={theme['q-text-secondary']} style={styles.feedback}>{error}</Text><View style={styles.actions}><Button disabled={busy} onPress={() => { void load() }} style={styles.smallButton}><Text size={12} color={theme['q-accent-text']}>{t('list_retry')}</Text></Button><Button disabled={busy} onPress={onLogin} style={styles.smallButton}><Text size={12} color={theme['q-accent-text']}>{t('account_lists_relogin')}</Text></Button></View></View> : null}
+      {error ? <View><Text accessibilityLiveRegion="polite" size={12} color={theme['q-text-secondary']} style={styles.feedback}>{error}</Text><View style={styles.actions}><Button disabled={busy} onPress={() => { void load() }} style={styles.smallButton}><Text size={12} color={theme['q-accent-text']}>{t('list_retry')}</Text></Button>{needsLogin ? <Button disabled={busy} onPress={onLogin} style={styles.smallButton}><Text size={12} color={theme['q-accent-text']}>{t('account_lists_relogin')}</Text></Button> : null}</View></View> : null}
       <View style={styles.actions}>
         {lastListId ? <Button disabled={busy} style={styles.library} onPress={() => { setActiveList(lastListId); setNavActiveId('nav_love'); onOpenLibrary() }}><Text size={13} color={theme['q-accent-text']}>{t('account_lists_view')}</Text></Button> : null}
         <Button disabled={busy || loading || !selected.size} onPress={() => { void sync() }} style={[styles.submit, { backgroundColor: theme['q-accent'] }]}>

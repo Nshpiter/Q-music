@@ -108,7 +108,7 @@ export default ({ componentId, initialProvider = 'tx' }: { componentId: string, 
         <Text size={13} color={p == provider ? theme['q-accent-text'] : theme['c-font-label']}>{t(p == 'kg' ? 'setting_music_account_kugou' : p == 'tx' ? 'setting_music_account_qq' : 'setting_music_account_netease')}</Text>
         <Text size={10} color={theme['q-text-secondary']}>{connected[p] == null ? ' ' : t(connected[p] ? 'setting_music_account_connected' : 'setting_music_account_disconnected')}</Text>
       </Button>)}
-      {connected[provider] ? <Button disabled={loggingOut || syncing} style={styles.logoutBtn} onPress={() => { void logout().catch(() => {}) }}><Text size={12} color={theme['q-accent-text']}>{t('setting_music_account_logout')}</Text></Button> : null}
+      {connected[provider] ? <Button disabled={loggingOut || syncing} style={styles.logoutBtn} onPress={() => { void logout().catch(() => { toast(t('music_account_action_failed')) }) }}><Text size={12} color={theme['q-accent-text']}>{t('setting_music_account_logout')}</Text></Button> : null}
     </View>
     <View style={styles.recommendActions}>
       <Button disabled={loggingOut || syncing} accessibilityState={{ selected: dailyProvider == provider }} style={[styles.recommendButton, { backgroundColor: theme['q-surface-tint'] }]} onPress={() => {
@@ -118,7 +118,7 @@ export default ({ componentId, initialProvider = 'tx' }: { componentId: string, 
     </View>
     <DailySettings visible={dailySettings} provider={provider} onClose={() => { setDailySettings(false) }} onChanged={checkConnections} />
     {provider == 'tx' && connected.tx ? <View style={styles.recommendActions}><Button disabled={loggingOut || syncing} style={styles.recommendButton} onPress={() => { setTransferring(true) }}><Text size={12} color={theme['q-accent-text']}>从电脑更换账号 ›</Text></Button></View> : null}
-    {connected[provider] ? <Playlists key={`${provider}-${revision}`} provider={provider} onBusyChange={setSyncing} onLogin={() => { void reconnect().catch(() => {}) }} onOpenLibrary={() => { void pop(componentId) }} /> : <>
+    {connected[provider] ? <Playlists key={`${provider}-${revision}`} provider={provider} onBusyChange={setSyncing} onLogin={() => { void reconnect().catch(() => { toast(t('music_account_action_failed')) }) }} onOpenLibrary={() => { void pop(componentId) }} /> : <>
       {provider == 'tx' ? <View style={styles.loginMethods}>
         {(['qq', 'wechat'] as const).map(method => <Button key={method} accessibilityRole="tab" accessibilityState={{ selected: qqLoginMethod == method }} onPress={() => { setQQLoginMethod(method) }} style={[styles.loginMethod, { backgroundColor: qqLoginMethod == method ? theme['q-surface-tint'] : theme['q-surface-raised'] }]}>
           <Text size={13} color={qqLoginMethod == method ? theme['q-accent-text'] : theme['c-font-label']}>{method == 'qq' ? 'QQ 登录' : '微信登录'}</Text>

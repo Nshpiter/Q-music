@@ -16,7 +16,7 @@ import { pause, play, playQueueIndex, playTempListByIndex, removeQueueIndex, cle
 import { playbackSession } from '@/core/player/session'
 import playerActions from '@/store/player/action'
 import { Icon } from '@/components/common/Icon'
-import { Q_UI } from '@/theme/ui'
+import { Q_TOUCH_HIT_SLOP, Q_UI } from '@/theme/ui'
 
 export interface PlayQueueType {
   show: () => void
@@ -150,10 +150,10 @@ const PlayQueue = forwardRef<PlayQueueType>((_, ref) => {
     </View>
     <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, minHeight: 40 }}>
       <Text size={11} style={{ flex: 1 }} color={theme['q-text-secondary']}>{t(playbackSession.continuous && sourceList.every(item => ('progress' in item ? item.metadata.musicInfo.source : item.source) == 'bi') ? 'queue_bilibili_hint' : 'queue_session_local_hint')}</Text>
-      <Button onPress={scrollToCurrent} style={{ padding: 10, borderRadius: 10 }}><Text size={12} color={theme['q-accent-text']}>{t('queue_locate')}</Text></Button>
+      <Button hitSlop={Q_TOUCH_HIT_SLOP} onPress={scrollToCurrent} style={{ minHeight: 44, paddingHorizontal: 12, borderRadius: 12, justifyContent: 'center' }}><Text size={12} color={theme['q-accent-text']}>{t('queue_locate')}</Text></Button>
     </View>
     {rows.length ? <View style={{ flexDirection: 'row', paddingHorizontal: 20, gap: 8 }}>
-      <Button disabled={!!busyKey} onPress={() => { void editQueue() }} style={{ padding: 10, borderRadius: 10 }}><Text size={12} color={theme['q-text-secondary']}>{t('queue_clear')}</Text></Button>
+      <Button disabled={!!busyKey} hitSlop={Q_TOUCH_HIT_SLOP} onPress={() => { void editQueue() }} style={{ minHeight: 44, paddingHorizontal: 12, borderRadius: 12, justifyContent: 'center' }}><Text size={12} color={theme['q-text-secondary']}>{t('queue_clear')}</Text></Button>
       </View> : null}
     <FlatList ref={listRef} style={styles.list} data={rows} removeClippedSubviews={false} extraData={`${isPlay}:${sorting}:${busyKey}`} keyExtractor={row => row.key}
       onContentSizeChange={() => { if (pendingScroll.current && rows.length) { pendingScroll.current = false; scrollToCurrent() } }}

@@ -3,6 +3,7 @@ import { Modal, SafeAreaView, View } from 'react-native'
 import WebView from 'react-native-webview'
 import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
+import ModalBackHandler from '@/components/common/ModalBackHandler'
 import { useTheme } from '@/store/theme/hook'
 import { createKugouCaptchaHtml, parseKugouCaptchaMessage } from '@/utils/kugouVerification'
 import type { KugouCaptchaAnswer, KugouCaptchaPresenter } from '@/core/musicAccount/kugouApi'
@@ -34,6 +35,7 @@ export const useKugouVerification = () => {
     })
   }, [finish])
   const dialog = html ? <Modal visible animationType="slide" onRequestClose={() => { finish() }}>
+    <ModalBackHandler onBack={() => { finish() }} />
     <SafeAreaView style={{ flex: 1, backgroundColor: theme['c-content-background'] }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, minHeight: 56 }}>
         <Text size={16} style={{ fontWeight: '600' }}>酷狗安全验证</Text>

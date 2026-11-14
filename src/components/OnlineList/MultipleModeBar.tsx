@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useMemo, forwardRef, useImperativeHandle
 import { Animated } from 'react-native'
 
 import MultiSelectControls from '@/components/common/MultiSelectControls'
+import { useDockInset } from '@/components/common/DockInset'
 import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import { BorderWidths } from '@/theme'
@@ -34,6 +35,7 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
   const [selectMode, setSelectMode] = useState<SelectMode>('single')
   const [isSelectAll, setIsSelectAll] = useState(false)
   const theme = useTheme()
+  const dockInset = useDockInset()
 
   useImperativeHandle(ref, () => ({
     show() {
@@ -102,13 +104,14 @@ export default forwardRef<MultipleModeBarType, MultipleModeBarProps>(({ onSelect
   const animaStyle = useMemo(() => ({
     ...styles.container,
     height: MULTI_SELECT_BAR_HEIGHT,
-    backgroundColor: theme['q-surface-base'],
+    bottom: dockInset,
+    backgroundColor: theme['c-content-background'],
     borderTopColor: theme['q-outline'],
     opacity: animFade, // Bind opacity to animated value
     transform: [
       { translateY: animTranslateY },
     ],
-  }), [animFade, animTranslateY, theme])
+  }), [animFade, animTranslateY, theme, dockInset])
 
   const handleSelectAll = useCallback(() => {
     const selectAll = !isSelectAll

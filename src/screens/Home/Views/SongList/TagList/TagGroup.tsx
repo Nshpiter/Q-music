@@ -39,7 +39,7 @@ export default ({ name, list, onTagChange, activeId }: TagGroupProps) => {
               key={item.id}
               onPress={() => { if (!active) onTagChange(item.name, item.id) }}
             >
-              <Text style={styles.tagButtonText} color={active ? theme['c-primary-font-active'] : theme['c-font']} >{item.name}</Text>
+              <Text size={13} style={styles.tagButtonText} color={active ? theme['c-primary-font-active'] : theme['c-font']}>{item.name}</Text>
             </Button>
           )
         })}
@@ -67,7 +67,6 @@ const styles = createStyle({
     alignItems: 'center',
   },
   tagButtonText: {
-    fontSize: 13,
     paddingLeft: 12,
     paddingRight: 12,
     paddingTop: 9,

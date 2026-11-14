@@ -56,7 +56,7 @@ const MenuItem = ({ id, icon, onPress }: {
           accessible={false}
           name={icon}
           size={18}
-          color={active ? '#fff' : theme['q-text-secondary']}
+          color={active ? theme['q-on-accent'] : theme['q-text-secondary']}
         />
       </View>
       <Text

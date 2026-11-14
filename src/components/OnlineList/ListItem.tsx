@@ -7,6 +7,7 @@ import { Icon } from '@/components/common/Icon'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
 import { usePlayMusicInfo } from '@/store/player/hook'
+import { Q_UI } from '@/theme/ui'
 import { createStyle, type RowInfo } from '@/utils/tools'
 import SourceLogo from '@/components/SourceLogo'
 import TrackArtwork from '@/components/TrackArtwork'
@@ -32,10 +33,12 @@ const useQualityTag = (musicInfo: LX.Music.MusicInfoOnline) => {
   return info
 }
 
-export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu, selectedList, rowInfo, isShowAlbumName, isShowInterval }: {
+export default memo(({ item, index, showSource, isMultiSelectMode, rowHeight, onPress, onLongPress, onShowMenu, selectedList, rowInfo, isShowAlbumName, isShowInterval }: {
   item: LX.Music.MusicInfoOnline
   index: number
   showSource?: boolean
+  isMultiSelectMode: boolean
+  rowHeight: number
   onPress: (item: LX.Music.MusicInfoOnline, index: number) => void
   onLongPress: (item: LX.Music.MusicInfoOnline, index: number) => void
   onShowMenu: (item: LX.Music.MusicInfoOnline, index: number, position: { x: number, y: number, w: number, h: number }) => void
@@ -46,7 +49,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
 }) => {
   const theme = useTheme()
   const [measuredWidth, setMeasuredWidth] = useState(0)
-  const { songRowHeight, isCar } = useAdaptiveLayout()
+  const { isCar } = useAdaptiveLayout()
   const playMusicInfo = usePlayMusicInfo()
 
   const isSelected = selectedList.includes(item)
@@ -66,7 +69,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   const singer = `${item.singer}${isShowAlbumName && item.meta.albumName && item.source != 'bi' ? ` · ${item.meta.albumName}` : ''}`
 
   return (
-    <View style={[styles.row, { width: rowInfo.rowWidth, height: songRowHeight }]} onLayout={event => { setMeasuredWidth(event.nativeEvent.layout.width) }}>
+    <View style={[styles.row, { width: rowInfo.rowWidth, height: rowHeight }]} onLayout={event => { setMeasuredWidth(event.nativeEvent.layout.width) }}>
       <View style={[
         styles.listItem,
         isPlaying
@@ -74,12 +77,12 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
               backgroundColor: theme['q-surface-tint'],
               borderColor: theme['c-primary-alpha-700'],
               borderWidth: StyleSheet.hairlineWidth,
-              borderRadius: 10,
+              borderRadius: Q_UI.radius.item,
             }
           : isSelected
             ? {
                 backgroundColor: theme['c-primary-light-300-alpha-800'],
-                borderRadius: 10,
+                borderRadius: Q_UI.radius.item,
               }
             : {
                 backgroundColor: 'transparent',
@@ -89,19 +92,26 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
       ]}>
         <Button
           accessibilityLabel={`${item.name} · ${singer}`}
-          accessibilityState={{ selected: isPlaying || isSelected }}
+          accessibilityRole={isMultiSelectMode ? 'checkbox' : 'button'}
+          accessibilityState={isMultiSelectMode ? { checked: isSelected } : { selected: isPlaying }}
           style={styles.listItemLeft}
           onPress={() => { onPress(item, index) }}
           onLongPress={() => { onLongPress(item, index) }}
         >
           {
-            isPlaying
-              ? <Icon accessible={false} style={styles.sn} name="play-outline" size={13} color={theme['q-accent-text']} />
-              : <Text style={styles.sn} size={13} color={theme['q-text-secondary']}>{index + 1}</Text>
+            isMultiSelectMode
+              ? <View style={styles.sn}>
+                  <View style={[styles.selection, { backgroundColor: isSelected ? theme['q-accent'] : 'transparent', borderColor: isSelected ? theme['q-accent'] : theme['q-outline'] }]}>
+                    {isSelected ? <Icon accessible={false} name="check" rawSize={13} color={theme['q-on-accent']} /> : null}
+                  </View>
+                </View>
+              : isPlaying
+                ? <Icon accessible={false} style={styles.sn} name="play-outline" size={13} color={theme['q-accent-text']} />
+                : <Text style={styles.sn} size={12} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} color={theme['q-text-secondary']}>{index + 1}</Text>
           }
           <TrackArtwork item={item} style={{ width: isCar ? 48 : 36, height: isCar ? 48 : 36, borderRadius: 7, marginRight: 10, flexShrink: 0 }} />
           <View style={styles.itemInfo}>
-            <Text size={isCar ? 18 : 14} style={[isPlaying ? styles.playingTitle : undefined, item.source == 'bi' ? { lineHeight: isCar ? 23 : 17 } : undefined]} color={isPlaying ? theme['q-accent-text'] : theme['c-font']} numberOfLines={item.source == 'bi' ? 2 : 1}>{item.name}</Text>
+            <Text size={isCar ? 18 : 14} style={isPlaying ? styles.playingTitle : undefined} color={isPlaying ? theme['q-accent-text'] : theme['c-font']} numberOfLines={item.source == 'bi' ? 2 : 1}>{item.name}</Text>
             <View style={styles.listItemSingle}>
               { tagInfo.type ? <Badge type={tagInfo.type}>{tagInfo.text}</Badge> : null }
               { showSource ? <SourceLogo source={item.source} size={18} style={styles.sourceLogo} /> : null }
@@ -114,8 +124,8 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
             ) : null
           }
         </Button>
-        {item.source == 'bi' ? <BilibiliPartsButton music={item} /> : null}
-        {measuredWidth >= 480 ? <SongDownloadButton music={item} /> : null}
+        {!isMultiSelectMode && item.source == 'bi' ? <BilibiliPartsButton music={item} /> : null}
+        {!isMultiSelectMode && measuredWidth >= 480 ? <SongDownloadButton music={item} /> : null}
         <Button accessibilityLabel={`${item.name} · ${global.i18n.t('more_actions')}`} onPress={handleShowMenu} ref={moreButtonRef} style={[styles.moreButton, isCar && { width: 56, height: 64 }]}>
           <Icon accessible={false} name="dots-vertical" style={{ color: theme['q-text-secondary'] }} size={14} />
         </Button>
@@ -125,6 +135,10 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
 }, (prevProps, nextProps) => {
   return !!(prevProps.item === nextProps.item &&
     prevProps.index === nextProps.index &&
+    prevProps.showSource === nextProps.showSource &&
+    prevProps.isMultiSelectMode === nextProps.isMultiSelectMode &&
+    prevProps.rowHeight === nextProps.rowHeight &&
+    prevProps.rowInfo.rowWidth === nextProps.rowInfo.rowWidth &&
     prevProps.isShowAlbumName === nextProps.isShowAlbumName &&
     prevProps.isShowInterval === nextProps.isShowInterval &&
     nextProps.selectedList.includes(nextProps.item) == prevProps.selectedList.includes(nextProps.item)
@@ -141,6 +155,7 @@ const styles = createStyle({
     flexWrap: 'nowrap',
     alignItems: 'center',
     overflow: 'hidden',
+    borderRadius: Q_UI.radius.item,
   },
   listItemLeft: {
     flex: 1,
@@ -149,17 +164,20 @@ const styles = createStyle({
     flexDirection: 'row',
     alignItems: 'center',
     height: '100%',
+    paddingLeft: 2,
   },
   sn: {
-    width: 24,
+    width: 26,
     flexShrink: 0,
-    // fontSize: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
     textAlign: 'center',
-    // backgroundColor: 'rgba(0,0,0,0.2)',
-    paddingLeft: 3,
-    paddingRight: 3,
+    paddingLeft: 1,
+    paddingRight: 1,
+    fontVariant: ['tabular-nums'],
   },
   itemInfo: {
+    minWidth: 0,
     flexGrow: 1,
     flexShrink: 1,
     paddingRight: 2,
@@ -207,6 +225,7 @@ const styles = createStyle({
   },
   moreButton: {
     width: 48,
+    flexShrink: 0,
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
@@ -214,5 +233,6 @@ const styles = createStyle({
   playingTitle: {
     fontWeight: '700',
   },
+  selection: { width: 20, height: 20, borderRadius: 7, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
 })
 

@@ -136,7 +136,7 @@ export default forwardRef<ConfirmAlertType, ConfirmAlertProps>(({
               onPress={onConfirm}
               disabled={disabledConfirm}
             >
-              <Text style={styles.btnText} color="#fff">{confirmText || t('confirm')}</Text>
+              <Text style={styles.btnText} color={theme['q-on-accent']}>{confirmText || t('confirm')}</Text>
             </Button>
           : null}
       </View>

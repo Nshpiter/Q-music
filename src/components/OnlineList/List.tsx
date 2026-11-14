@@ -10,13 +10,13 @@ import type { SelectMode } from './MultipleModeBar'
 import { useTheme } from '@/store/theme/hook'
 import settingState from '@/store/setting/state'
 import { MULTI_SELECT_BAR_HEIGHT } from './MultipleModeBar'
-import { useI18n } from '@/lang'
-import Text from '@/components/common/Text'
 import { handlePlay } from './listAction'
 import { useSettingValue } from '@/store/setting/hook'
+import Footer, { type FooterLabel } from '@/components/common/ListFooter'
 import ContentState from '@/components/common/ContentState'
 import ListSkeleton from '@/components/common/ListSkeleton'
 import { useDockInset } from '@/components/common/DockInset'
+import { scaleSizeH } from '@/utils/pixelRatio'
 
 type FlatListType = FlatListProps<LX.Music.MusicInfoOnline>
 
@@ -66,8 +66,12 @@ const List = forwardRef<ListType, ListProps>(({
   const theme = useTheme()
   const flatListRef = useRef<FlatList>(null)
   const dockInset = useDockInset()
-  const { songRowHeight } = useAdaptiveLayout()
+  const { songRowHeight: baseRowHeight } = useAdaptiveLayout()
   const [currentList, setList] = useState<LX.Music.MusicInfoOnline[]>([])
+  const songRowHeight = baseRowHeight + (currentList.some(item => item.source == 'bi') ? Math.max(10, scaleSizeH(10)) : 0)
+  // 列表行做了 memo，旧行持有的点击回调必须通过 ref 读到加载更多后的完整列表。
+  const currentListRef = useRef(currentList)
+  currentListRef.current = currentList
   const [showSource, setShowSource] = useState(false)
   const isMultiSelectModeRef = useRef(false)
   const selectModeRef = useRef<SelectMode>('single')
@@ -122,12 +126,14 @@ const List = forwardRef<ListType, ListProps>(({
 
 
   const handleUpdateSelectedList = (newList: LX.Music.MusicInfoOnline[]) => {
+    const currentList = currentListRef.current
     if (selectedListRef.current.length && newList.length == currentList.length) onSelectAll(true)
     else if (selectedListRef.current.length == currentList.length) onSelectAll(false)
     selectedListRef.current = newList
     setSelectedList(newList)
   }
   const handleSelect = (item: LX.Music.MusicInfoOnline, pressIndex: number) => {
+    const currentList = currentListRef.current
     let newList: LX.Music.MusicInfoOnline[]
     if (selectModeRef.current == 'single') {
       prevSelectIndexRef.current = pressIndex
@@ -168,7 +174,7 @@ const List = forwardRef<ListType, ListProps>(({
         if (settingState.setting['list.singlePlayMode'] != 'add' && onPlayList != null) {
           onPlayList(index)
         } else {
-          // console.log(currentList[index])
+          const currentList = currentListRef.current
           handlePlay(currentList[index], currentList)
         }
       }
@@ -193,6 +199,8 @@ const List = forwardRef<ListType, ListProps>(({
       item={item}
       index={index}
       showSource={showSource}
+      isMultiSelectMode={visibleMultiSelect}
+      rowHeight={songRowHeight}
       onPress={handlePress}
       onLongPress={handleLongPress}
       onShowMenu={onShowMenu}
@@ -284,28 +292,6 @@ const List = forwardRef<ListType, ListProps>(({
   )
 })
 
-type FooterLabel = 'list_loading' | 'list_end' | 'list_error' | null
-const Footer = ({ label, onLoadMore }: {
-  label: FooterLabel
-  onLoadMore: () => void
-}) => {
-  const theme = useTheme()
-  const t = useI18n()
-  const handlePress = () => {
-    if (label != 'list_error') return
-    onLoadMore()
-  }
-  return (
-    label
-      ? (
-          <View>
-            <Text onPress={handlePress} style={styles.footer} color={theme['c-font-label']}>{t(label)}</Text>
-          </View>
-        )
-      : null
-  )
-}
-
 const styles = createStyle({
   container: {
     flex: 1,
@@ -314,10 +300,7 @@ const styles = createStyle({
     flexGrow: 1,
     flexShrink: 1,
   },
-  footer: {
-    textAlign: 'center',
-    padding: 10,
-  },
+
 })
 
 export default List

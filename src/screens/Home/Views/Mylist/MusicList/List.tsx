@@ -1,4 +1,5 @@
 import EmptyList from './EmptyList'
+import ListSkeleton from '@/components/common/ListSkeleton'
 import { playFromList } from '@/core/player/selection'
 import { useMemo, useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
@@ -53,6 +54,9 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   const [loaded, setLoaded] = useState(false)
   const flatListRef = useRef<FlatList>(null)
   const [currentList, setList] = useState<LX.List.ListMusics>([])
+  // 列表行做了 memo，旧行的点击回调需通过 ref 读取最新列表。
+  const currentListRef = useRef(currentList)
+  currentListRef.current = currentList
   const listFirstScrollRef = useRef(false)
   const isMultiSelectModeRef = useRef(false)
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false)
@@ -198,11 +202,13 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
   }
 
   const handleUpdateSelectedList = (newList: LX.List.ListMusics) => {
+    const currentList = currentListRef.current
     onSelectAll(currentList.length > 0 && newList.length == currentList.length)
     selectedListRef.current = newList
     setSelectedList(newList)
   }
   const handleSelect = (item: LX.Music.MusicInfo, pressIndex: number) => {
+    const currentList = currentListRef.current
     let newList: LX.List.ListMusics
     if (selectModeRef.current == 'single') {
       prevSelectIndexRef.current = pressIndex
@@ -291,7 +297,7 @@ const List = forwardRef<ListType, ListProps>(({ onShowMenu, onMuiltSelectMode, o
       style={styles.list}
       contentContainerStyle={{ paddingBottom: dockInset }}
       data={currentList}
-      ListEmptyComponent={loaded ? <EmptyList /> : null}
+      ListEmptyComponent={loaded ? <EmptyList /> : <ListSkeleton variant="song" itemHeight={songRowHeight} />}
       maxToRenderPerBatch={4}
       numColumns={rowInfo.current.rowNum}
       horizontal={false}

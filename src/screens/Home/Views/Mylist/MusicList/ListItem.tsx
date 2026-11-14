@@ -86,7 +86,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
                 </View>
               : active
                 ? <Icon accessible={false} style={styles.sn} name="play-outline" size={13} color={theme['q-accent-text']} />
-                : <Text style={styles.sn} size={13} color={theme['q-text-secondary']}>{index + 1}</Text>
+                : <Text style={styles.sn} size={13} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} color={theme['q-text-secondary']}>{index + 1}</Text>
           }
           <TrackArtwork item={item} style={{ width: isCar ? 48 : 36, height: isCar ? 48 : 36, borderRadius: 7, marginRight: 10, flexShrink: 0 }} />
           <View style={styles.itemInfo}>
@@ -114,6 +114,7 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
 }, (prevProps, nextProps) => {
   return !!(prevProps.item === nextProps.item &&
     prevProps.index === nextProps.index &&
+    prevProps.rowInfo.rowWidth === nextProps.rowInfo.rowWidth &&
     prevProps.isShowAlbumName === nextProps.isShowAlbumName &&
     prevProps.isShowInterval === nextProps.isShowInterval &&
     prevProps.isMultiSelectMode === nextProps.isMultiSelectMode &&
@@ -134,6 +135,7 @@ const styles = createStyle({
     flexWrap: 'nowrap',
     alignItems: 'center',
     overflow: 'hidden',
+    borderRadius: 10,
   },
   listItemLeft: {
     flex: 1,
@@ -152,8 +154,8 @@ const styles = createStyle({
     // fontSize: 12,
     textAlign: 'center',
     // backgroundColor: 'rgba(0,0,0,0.2)',
-    paddingLeft: 3,
-    paddingRight: 3,
+    paddingLeft: 1,
+    paddingRight: 1,
   },
   itemInfo: {
     minWidth: 0,

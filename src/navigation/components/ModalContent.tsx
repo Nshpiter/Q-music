@@ -21,7 +21,8 @@ export default ({ children }: Props) => {
         style={{
           ...styles.modalView,
           ...qFloatingShadow,
-          backgroundColor: theme['q-surface-raised'],
+          // 协议、更新日志等长文本弹窗需要实色底，避免底层页面透出影响阅读。
+          backgroundColor: theme['c-content-background'],
           borderColor: lightEdge,
         }}
       >

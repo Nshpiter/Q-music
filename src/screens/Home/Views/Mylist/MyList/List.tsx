@@ -77,7 +77,7 @@ const ListItem = memo(({ catalog, item, index, activeId, onPress, onShowMenu, so
         {index < 2 ? <Text size={11} color={theme['q-text-secondary']} style={{ width: 88, textAlign: 'center' }}>{t('playlist_order_fixed')}</Text> : ([{ direction: -1, enabled: canMoveUp, icon: 'chevron-up', label: 'playlist_order_up' },
           { direction: 1, enabled: canMoveDown, icon: 'chevron-down', label: 'playlist_order_down' }] as const).map(control => (
           <Button key={control.direction} accessibilityLabel={`${t(control.label)} ${getPlaylistLabel(item)}`} disabled={!control.enabled || moving}
-            onPress={() => { onMove(item.id, control.direction) }} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', opacity: control.enabled && !moving ? 1 : 0.25 }}>
+            onPress={() => { onMove(item.id, control.direction) }} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name={control.icon} size={19} color={theme['q-accent-text']} />
           </Button>
         ))}

@@ -15,9 +15,10 @@ import { useTheme } from '@/store/theme/hook'
 import { Q_TOUCH_HIT_SLOP, Q_UI } from '@/theme/ui'
 import { createStyle, toast } from '@/utils/tools'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AppState, FlatList, InteractionManager, Modal, SafeAreaView, ScrollView, View } from 'react-native'
+import { AppState, FlatList, InteractionManager, Modal, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native'
 import { Icon } from '@/components/common/Icon'
 import DailyArtwork from './DailyArtwork'
+import ModalBackHandler from '@/components/common/ModalBackHandler'
 import DiscoveryPlaylists from './DiscoveryPlaylists'
 import Skeleton from '@/components/common/Skeleton'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
@@ -164,7 +165,7 @@ export default () => {
       <Button accessibilityLabel={t('search_daily_open')} style={[styles.feature, wide && styles.wideSummary]} onPress={() => { setDetailVisible(true) }}>
         <View style={styles.mosaic}>
           {[0, 1, 2, 3].map(index => <View key={index} style={styles.tile}>{renderCover(list[index])}</View>)}
-          <View style={{ ...styles.dateBadge, backgroundColor: theme['q-surface-raised'] }}>
+          <View style={{ ...styles.dateBadge, backgroundColor: theme['c-content-background'], borderColor: theme['q-outline'] }}>
             <Text size={24} style={styles.title} color={theme['q-accent-text']}>{new Date().getDate().toString().padStart(2, '0')}</Text>
           </View>
         </View>
@@ -193,6 +194,7 @@ export default () => {
           : <Text size={12} style={styles.collectionHint} color={theme['q-text-secondary']}>{list.length ? t('discovery_daily_hint', { count: list.length }) : t('search_daily_recommend_empty')}</Text>}
       <DailySettings visible={settingsVisible} provider={provider} onClose={() => { setSettingsVisible(false) }} onChanged={refresh} onLogin={openAccount} />
       <Modal visible={detailVisible} animationType="slide" onRequestClose={() => { setDetailVisible(false) }}>
+        <ModalBackHandler onBack={() => { setDetailVisible(false) }} />
         <SafeAreaView style={{ flex: 1, backgroundColor: theme['c-content-background'] }}>
           <View style={styles.detailHeader}>
             <Button accessibilityLabel={t('back')} style={styles.closeButton} onPress={() => { setDetailVisible(false) }}>
@@ -262,25 +264,25 @@ const styles = createStyle({
   providerBar: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 14 },
   providers: { flex: 1, minWidth: 0 },
   providerTabs: { alignItems: 'center', gap: 4 },
-  providerChip: { minHeight: 40, paddingHorizontal: 10, borderRadius: 20, justifyContent: 'center' },
-  settingsButton: { marginLeft: 'auto', width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  providerChip: { minHeight: 40, paddingHorizontal: 12, borderRadius: 20, justifyContent: 'center' },
+  settingsButton: { marginLeft: 'auto', width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14 },
   sourceNotice: { paddingTop: 12, paddingBottom: 4, minHeight: 36, justifyContent: 'center' },
   container: {
-    paddingTop: 18,
-    paddingBottom: 14,
+    paddingTop: 16,
+    paddingBottom: 16,
     paddingLeft: 16,
     paddingRight: 16,
-    borderWidth: 1,
-    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 22,
   },
   feature: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   wideFeature: { flexDirection: 'row', alignItems: 'center', gap: 24 },
   wideSummary: { flex: 1, minWidth: 0 },
   wideActions: { width: '40%', maxWidth: 400 },
-  mosaic: { width: 112, height: 112, flexDirection: 'row', flexWrap: 'wrap', borderRadius: 18, overflow: 'hidden' },
+  mosaic: { width: 112, height: 112, flexDirection: 'row', flexWrap: 'wrap', borderRadius: Q_UI.radius.cover + 4, overflow: 'hidden' },
   tile: { width: '50%', height: '50%', padding: 1 },
-  dateBadge: { position: 'absolute', bottom: 6, right: 6, borderRadius: 10, paddingHorizontal: 9, paddingVertical: 2 },
-  eyebrow: { letterSpacing: 2, fontWeight: '700', marginBottom: 6 },
+  dateBadge: { position: 'absolute', bottom: 6, right: 6, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 9, paddingVertical: 2 },
+  eyebrow: { letterSpacing: 1.6, fontWeight: '800', marginBottom: 6 },
   openHint: { marginTop: 10, fontWeight: '600' },
   collectionHint: { marginTop: 12, lineHeight: 19 },
   skeletonLine: { marginTop: 8 },

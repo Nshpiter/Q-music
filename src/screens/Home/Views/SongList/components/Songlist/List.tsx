@@ -5,9 +5,8 @@ import ListItem, { ITEM_HEIGHT } from './ListItem'
 // import { navigations } from '@/navigation'
 import { type ListInfoItem } from '@/store/songlist/state'
 import { useTheme } from '@/store/theme/hook'
-import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
-import Text from '@/components/common/Text'
+import Footer, { type FooterLabel } from '@/components/common/ListFooter'
 import ContentState from '@/components/common/ContentState'
 import ListSkeleton from '@/components/common/ListSkeleton'
 import { useDockInset } from '@/components/common/DockInset'
@@ -132,29 +131,6 @@ export default forwardRef<ListType, ListProps>(({ onRefresh, onLoadMore, onOpenD
   )
 })
 
-type FooterLabel = 'list_loading' | 'list_end' | 'list_error' | null
-const Footer = ({ label, onLoadMore }: {
-  label: FooterLabel
-  onLoadMore: () => void
-}) => {
-  const theme = useTheme()
-  const t = useI18n()
-  const handlePress = () => {
-    if (label != 'list_error') return
-    onLoadMore()
-  }
-  return (
-    label
-      ? (
-          <View>
-            <Text onPress={handlePress} style={styles.footer} color={theme['c-font-label']}>{t(label)}</Text>
-          </View>
-        )
-      : null
-  )
-}
-
-
 const styles = createStyle({
   container: {
     flex: 1,
@@ -167,8 +143,5 @@ const styles = createStyle({
     paddingTop: 6,
     paddingBottom: 8,
   },
-  footer: {
-    textAlign: 'center',
-    padding: 10,
-  },
+
 })

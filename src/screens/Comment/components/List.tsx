@@ -1,13 +1,12 @@
 import { useMemo, useRef, useState, forwardRef, useImperativeHandle } from 'react'
-import { FlatList, type FlatListProps, RefreshControl, View } from 'react-native'
+import { FlatList, type FlatListProps, RefreshControl } from 'react-native'
 
 // import { useMusicList } from '@/store/list/hook'
 import CommentFloor from './CommentFloor'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import { type Comment } from '../utils'
-import { useI18n } from '@/lang'
-import Text from '@/components/common/Text'
+import Footer, { type FooterLabel } from '@/components/common/ListFooter'
 import ContentState from '@/components/common/ContentState'
 
 type FlatListType = FlatListProps<Comment>
@@ -121,28 +120,6 @@ const List = forwardRef<ListType, ListProps>(({
   )
 })
 
-type FooterLabel = 'list_loading' | 'list_end' | 'list_error' | null
-const Footer = ({ label, onLoadMore }: {
-  label: FooterLabel
-  onLoadMore: () => void
-}) => {
-  const theme = useTheme()
-  const t = useI18n()
-  const handlePress = () => {
-    if (label != 'list_error') return
-    onLoadMore()
-  }
-  return (
-    label
-      ? (
-          <View>
-            <Text onPress={handlePress} style={styles.footer} color={theme['c-font-label']}>{t(label)}</Text>
-          </View>
-        )
-      : null
-  )
-}
-
 const styles = createStyle({
   container: {
     flex: 1,
@@ -153,10 +130,7 @@ const styles = createStyle({
     paddingLeft: 15,
     paddingRight: 15,
   },
-  footer: {
-    textAlign: 'center',
-    padding: 10,
-  },
+
 })
 
 export default List
