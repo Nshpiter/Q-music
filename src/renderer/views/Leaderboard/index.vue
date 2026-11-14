@@ -162,7 +162,7 @@ export default {
   border-radius: 20px;
   background: rgb(from var(--color-main-background) r g b / .52);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .66), 0 16px 38px rgba(72, 91, 112, .08);
-  backdrop-filter: blur(16px) saturate(1.1);
+  backdrop-filter: blur(calc(var(--q-glass-blur, 20px) * .8)) saturate(1.1);
 }
 .listsHeader {
   position: relative;
@@ -232,7 +232,7 @@ export default {
   border-radius: 20px;
   background: rgb(from var(--color-main-background) r g b / .54);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .68), 0 16px 38px rgba(72, 91, 112, .08);
-  backdrop-filter: blur(16px) saturate(1.1);
+  backdrop-filter: blur(calc(var(--q-glass-blur, 20px) * .8)) saturate(1.1);
   // .noItem {
 
   // }

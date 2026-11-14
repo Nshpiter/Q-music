@@ -49,7 +49,7 @@ test('B站刷新走公开收藏夹完整性校验，保留手工歌曲；请求�
     './musicAccount/playlistSync': { parseAccountSourceId: () => null }, '@/store/list/state': { userList: lists }, './musicAccount/syncState': { setPlaylistSyncState() {} },
     '@/utils/musicSdk/bi': { bilibiliClient: client }, '@/utils': { toNewMusicInfo: row => row },
   } : {
-    '@common/utils/vueTools': { reactive: value => value }, '@renderer/utils/data': data, '@common/utils/playlistMerge': merge,
+    '@common/utils/vueTools': { reactive: value => value }, '@renderer/utils/data': data, '@common/utils/playlistMerge': merge, '@common/utils/accountFailure': load('src/common/utils/accountFailure.ts'),
     './action': listApi, './state': { userLists: lists }, '@renderer/store/songList/action': {}, '@renderer/store/leaderboard/action': {},
     '@renderer/utils/musicSdk/bi': { bilibiliClient: client }, '@renderer/utils': { toNewMusicInfo: row => row },
   }

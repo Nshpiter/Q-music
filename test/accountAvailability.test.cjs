@@ -8,6 +8,7 @@ const crypto = require('node:crypto')
 function load(file, dependencies, extra = {}) {
   if (file === 'main/modules/winMain/musicAccount.ts') {
     dependencies['@common/utils/playbackPolicy'] = load('common/utils/playbackPolicy.ts', {})
+    dependencies['@common/utils/accountFailure'] = load('common/utils/accountFailure.ts', {})
     dependencies['@common/utils/qqPlaylistTarget'] = load('common/utils/qqPlaylistTarget.ts', {})
     dependencies['@common/utils/qqAccountCatalog'] = load('common/utils/qqAccountCatalog.ts', {})
     dependencies['@common/utils/cloudSnapshot'] = load('common/utils/cloudSnapshot.ts', {})

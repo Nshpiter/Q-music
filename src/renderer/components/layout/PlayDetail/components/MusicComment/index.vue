@@ -3,13 +3,13 @@ div.comment(ref="dom_container" :class="$style.comment")
   div(:class="$style.commentHeader")
     h3 {{ $t('comment__title', { name: currentMusicInfo.name }) }}
     div(:class="$style.commentHeaderBtns")
-      div(:class="$style.commentHeaderBtn" :aria-label="$t('comment__refresh')" @click="handleShowComment")
+      button(type="button" :class="$style.commentHeaderBtn" :aria-label="$t('comment__refresh')" :title="$t('comment__refresh')" @click="handleShowComment")
         svg(viewBox="0 0 24 24" aria-hidden="true")
           path(d="M20 12a8 8 0 0 1-13.6 5.7")
           path(d="M4 12A8 8 0 0 1 17.6 6.3")
           path(d="M17 3v4h4")
           path(d="M7 21v-4H3")
-      div(:class="$style.commentHeaderBtn" @click="$emit('close')")
+      button(type="button" :class="$style.commentHeaderBtn" :aria-label="$t('btn_close')" :title="$t('btn_close')" @click="$emit('close')")
         svg(viewBox="0 0 24 24" aria-hidden="true")
           path(d="M6 6l12 12")
           path(d="M18 6L6 18")
@@ -22,7 +22,7 @@ div.comment(ref="dom_container" :class="$style.comment")
       main(ref="dom_tabMain" :class="$style.tab_main")
         div(:class="$style.tab_content")
           div.scroll(ref="dom_commentHot" :class="$style.tab_content_scroll")
-            p(v-if="hotComment.isLoadError" :class="$style.commentLabel" style="cursor: pointer;" @click="handleGetHotComment(currentMusicInfo, hotComment.nextPage, hotComment.limit)") {{ $t('comment__hot_load_error') }}
+            p(v-if="hotComment.isLoadError" :class="$style.commentLabel" style="cursor: pointer;" role="button" tabindex="0" @click="handleGetHotComment(currentMusicInfo, hotComment.nextPage, hotComment.limit)" @keydown.enter.space.prevent="handleGetHotComment(currentMusicInfo, hotComment.nextPage, hotComment.limit)") {{ $t('comment__hot_load_error') }}
             p(v-else-if="hotComment.isLoading && !hotComment.list.length" :class="$style.commentLabel") {{ $t('comment__hot_loading') }}
             comment-floor(v-if="!hotComment.isLoadError && hotComment.list.length" :class="[$style.commentFloor, hotComment.isLoading ? $style.loading : null]" :comments="hotComment.list")
             p(v-else-if="!hotComment.isLoadError && !hotComment.isLoading" :class="$style.commentLabel") {{ $t('comment__no_content') }}
@@ -30,7 +30,7 @@ div.comment(ref="dom_container" :class="$style.comment")
               material-pagination(:count="hotComment.total" :btn-length="5" :limit="hotComment.limit" :page="hotComment.page" @btn-click="handleToggleHotCommentPage")
         div(:class="$style.tab_content")
           div.scroll(ref="dom_commentNew" :class="$style.tab_content_scroll")
-            p(v-if="newComment.isLoadError" :class="$style.commentLabel" style="cursor: pointer;" @click="handleGetNewComment(currentMusicInfo, newComment.nextPage, newComment.limit)") {{ $t('comment__new_load_error') }}
+            p(v-if="newComment.isLoadError" :class="$style.commentLabel" style="cursor: pointer;" role="button" tabindex="0" @click="handleGetNewComment(currentMusicInfo, newComment.nextPage, newComment.limit)" @keydown.enter.space.prevent="handleGetNewComment(currentMusicInfo, newComment.nextPage, newComment.limit)") {{ $t('comment__new_load_error') }}
             p(v-else-if="newComment.isLoading && !newComment.list.length" :class="$style.commentLabel") {{ $t('comment__new_loading') }}
             comment-floor(v-if="!newComment.isLoadError && newComment.list.length" :class="[$style.commentFloor, newComment.isLoading ? $style.loading : null]" :comments="newComment.list")
             p(v-else-if="!newComment.isLoadError && !newComment.isLoading" :class="$style.commentLabel") {{ $t('comment__no_content') }}
@@ -295,13 +295,16 @@ export default {
   align-items: center;
   // border-bottom: 1px solid #eee;
   h3 {
+    flex: 1 1 auto;
+    min-width: 0;
     font-size: 15px;
     .mixin-ellipsis-1();
     line-height: 1.2;
   }
 }
 .commentHeaderBtns {
-  flex: 1 0 auto;
+  flex: none;
+  margin-left: 8px;
   display: flex;
   flex-flow: row nowrap;
   justify-content: flex-end;
@@ -310,6 +313,11 @@ export default {
 .commentHeaderBtn {
   height: 22px;
   width: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
   cursor: pointer;
   transition: opacity @transition-normal;
   display: flex;
@@ -333,10 +341,14 @@ export default {
   &:hover {
     opacity: .7;
   }
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
 }
 .commentMain {
   flex: 1 1 0;
-  background-color: rgba(255, 255, 255, .54);
+  background-color: var(--q-surface);
   border-radius: 22px;
   box-shadow: none;
   backdrop-filter: blur(16px);

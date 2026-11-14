@@ -110,6 +110,7 @@ export default {
     const syncStatus = id => {
       const state = listSyncStates[id]
       if (state.phase == 'fetch' && !state.total) return t('list_sync_working')
+      if (state.phase == 'success' && !state.total) return t('list_sync_empty')
       return t(state.phase == 'error' ? state.error : `list_sync_${state.phase}`, { current: state.current, total: state.total })
     }
     return {

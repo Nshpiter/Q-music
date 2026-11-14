@@ -75,7 +75,7 @@ export default {
 .main {
   // padding: 15px;
   // max-width: 400px;
-  min-width: 460px;
+  min-width: min(460px, 100%);
   min-height: 200px;
   display: flex;
   flex-flow: column nowrap;

@@ -40,7 +40,7 @@
             <section
               :class="$style.dailyCard" role="button" tabindex="0"
               :aria-label="$t('search__daily_open')" @click="openDailyDetail"
-              @keydown.enter="openDailyDetail" @keydown.space.prevent="openDailyDetail"
+              @keydown.enter.self="openDailyDetail" @keydown.space.self.prevent="openDailyDetail"
             >
               <div :class="$style.dailyCover" aria-hidden="true">
                 <div v-for="index in 4" :key="index" :class="$style.coverTile">
@@ -108,7 +108,7 @@
             </div>
             <div v-else-if="accountPlaylistsError" :class="$style.playlistEmpty" role="status">
               <KugouVerifyButton v-if="accountPlaylistsProvider == 'kg' && accountPlaylistsError == 'verification_required'" @verified="loadAccountPlaylists(true, 'kg')" />
-              <p>{{ $t(accountPlaylistsError == 'login_required' ? 'search__account_expired' : accountPlaylistsError == 'verification_required' ? 'kugou__verification_required' : 'playlist_import_modal__account_unavailable') }}</p>
+              <p>{{ $t(accountPlaylistsError == 'login_required' ? 'search__account_expired' : accountPlaylistsError == 'verification_required' ? 'kugou__verification_required' : accountPlaylistsError == 'network' ? 'playlist_import_modal__account_network' : accountPlaylistsError == 'restricted' ? 'playlist_import_modal__account_restricted' : 'playlist_import_modal__account_unavailable') }}</p>
               <base-btn min @click="accountPlaylistsError == 'login_required' ? openAccountModal() : loadAccountPlaylists(true, accountPlaylistsProvider)">{{ $t(accountPlaylistsError == 'login_required' ? 'search__account_manage' : 'search__retry') }}</base-btn>
             </div>
             <p v-else :class="$style.playlistEmpty">{{ $t('search__account_playlists_empty') }}</p>

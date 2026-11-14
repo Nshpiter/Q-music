@@ -64,9 +64,9 @@
             </button>
           </div>
           <div v-else-if="accountLoadError" :class="$style.accountState" role="status">
-            {{ $t(accountLoadError == 'login_required' ? 'search__account_expired' : accountLoadError == 'verification_required' ? 'kugou__verification_required' : 'playlist_import_modal__account_unavailable') }}
+            {{ $t(accountLoadError == 'login_required' ? 'search__account_expired' : accountLoadError == 'verification_required' ? 'kugou__verification_required' : accountLoadError == 'network' ? 'playlist_import_modal__account_network' : accountLoadError == 'restricted' ? 'playlist_import_modal__account_restricted' : 'playlist_import_modal__account_unavailable') }}
             <base-btn min @click="loadAccountPlaylists(accountProvider)">{{ $t('search__retry') }}</base-btn>
-            <base-btn min @click="handleAccountProvider(accountProvider, true)">{{ $t('playlist_import_modal__account_login') }}</base-btn>
+            <base-btn v-if="accountLoadError != 'network' && accountLoadError != 'restricted'" min @click="handleAccountProvider(accountProvider, true)">{{ $t('playlist_import_modal__account_login') }}</base-btn>
           </div>
           <div v-else :class="$style.accountState">
             {{ accountStatus[accountProvider] ? $t('playlist_import_modal__account_empty') : $t('playlist_import_modal__account_login_tip') }}
@@ -150,6 +150,7 @@ import { defaultList, loveList, userLists } from '@renderer/store/list/state'
 import { dialog } from '@renderer/plugins/Dialog'
 import { getMusicAccountPlaylists, getMusicAccountStatus, loginMusicAccount } from '@renderer/utils/ipc'
 import { ExternalImportError, importAccountPlaylist, importExternalPlaylist } from '../importPlaylist'
+import { accountFailureKind } from '@common/utils/accountFailure'
 import SourceIcon from '@renderer/components/common/SourceIcon.vue'
 import KugouVerifyButton from '@renderer/components/common/KugouVerifyButton.vue'
 
@@ -218,6 +219,8 @@ export default {
       playlist_incomplete: 'list_sync_incomplete',
       verification_required: 'kugou__verification_required',
       account_changed: 'list_sync_account_changed',
+      network: 'list_sync_network',
+      restricted: 'list_sync_restricted',
     }
 
     const currentListName = computed(() => {
@@ -356,7 +359,10 @@ export default {
       if (error instanceof ExternalImportError && errorMessageKeys[error.code]) {
         return t(errorMessageKeys[error.code])
       }
-      return error.message || String(error)
+      const failure = accountFailureKind(error)
+      if (failure) return t(errorMessageKeys[failure])
+      console.warn('[playlistImport] import failed', error)
+      return t('list_sync_failed')
     }
 
     const handleSubmit = async() => {

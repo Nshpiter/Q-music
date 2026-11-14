@@ -203,8 +203,9 @@ export default {
   width: 100%;
   border-radius: 14px;
   pointer-events: none;
-  background: rgba(38, 40, 39, .1);
-  box-shadow: inset 0 0 0 1px rgba(38, 40, 39, .16), 0 8px 20px rgba(35, 38, 36, .07);
+  // 跟随文字色，深色主题下选中底块同样可见。
+  background: rgb(from var(--color-font) r g b / .1);
+  box-shadow: inset 0 0 0 1px rgb(from var(--color-font) r g b / .16), 0 8px 20px rgba(35, 38, 36, .07);
 }
 .indicatorReady {
   transition: transform .42s cubic-bezier(.22, 1, .36, 1);
@@ -272,14 +273,19 @@ export default {
     background: transparent;
 
     svg {
-      color: #fff;
-      background: linear-gradient(145deg, #555957, #242625);
+      color: var(--color-content-background);
+      background: linear-gradient(145deg, rgb(from var(--color-font) r g b / .78), var(--color-font));
       box-shadow: 0 7px 16px rgba(22, 24, 23, .24), inset 0 1px 0 var(--q-border);
     }
 
     &:hover {
-      background: rgba(38, 40, 39, .04);
+      background: rgb(from var(--color-font) r g b / .04);
     }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
   }
 
 

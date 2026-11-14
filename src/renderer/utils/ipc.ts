@@ -108,7 +108,7 @@ export interface MusicAccountPlaylistsResult {
   partial?: boolean
   provider: MusicAccountProvider
   playlists: MusicAccountPlaylist[]
-  status: 'available' | 'login_required' | 'unavailable' | 'verification_required'
+  status: 'available' | 'login_required' | 'unavailable' | 'verification_required' | 'network' | 'restricted'
 }
 export interface MusicAccountPlaylistDetailResult {
   accountId?: string
@@ -117,7 +117,7 @@ export interface MusicAccountPlaylistDetailResult {
   provider: MusicAccountProvider
   id: string
   ids: string[]
-  status: 'available' | 'login_required' | 'unavailable' | 'verification_required' | 'account_changed' | 'playlist_incomplete'
+  status: 'available' | 'login_required' | 'unavailable' | 'verification_required' | 'account_changed' | 'playlist_incomplete' | 'network' | 'restricted'
 }
 export interface MusicAccountMusicUrlResult {
   provider: MusicAccountProvider
@@ -133,6 +133,7 @@ export interface MusicAccountPlaybackReportRequest {
   sourceId?: string
   playedSeconds: number
   startedAt: number
+  phase?: 'start' | 'finish'
 }
 export interface MusicAccountPlaybackReportResult {
   provider: MusicAccountProvider

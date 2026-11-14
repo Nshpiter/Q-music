@@ -36,19 +36,37 @@ function harness() {
  return { calls, state, emit: (name, ...args) => events.get(name)(...args), unmount: () => unmount(),
  tick: (seconds = 1, wall = 1000) => { position += seconds; time += wall; interval() }, seek: p => { events.get("setProgress")(p); position = p } }
 }
-test("实际播放五秒即上报一次，暂停与拖动不累计虚假时长", async () => {
+const settle = () => new Promise(resolve => setImmediate(resolve))
+test("满五秒登记开始播放，结束时按实际秒数回传；暂停与拖动不累计虚假时长", async () => {
  const h = harness(); h.emit("playerPlaying"); h.tick(4, 4000); assert.equal(h.calls.length, 0)
- h.seek(100); h.tick(); assert.equal(h.calls.length, 1); assert.equal(h.calls[0].playedSeconds, 5)
- h.tick(); h.emit("playerPause"); await Promise.resolve(); h.emit("playerEnded"); assert.equal(h.calls.length, 1)
+ h.seek(100); h.tick(); assert.equal(h.calls.length, 1); assert.equal(h.calls[0].phase, "start"); assert.equal(h.calls[0].playedSeconds, 5)
+ await settle(); h.tick(); h.tick(); h.emit("playerPause"); await settle(); assert.equal(h.calls.length, 1)
+ h.emit("playerEnded"); await settle()
+ assert.equal(h.calls.length, 2); assert.equal(h.calls[1].phase, "finish"); assert.equal(h.calls[1].playedSeconds, 7)
+ h.emit("playerEnded"); await settle(); assert.equal(h.calls.length, 2)
  h.unmount()
  const paused = harness(); paused.emit("playerPlaying"); paused.tick(2, 2000); paused.emit("playerPause"); paused.tick(20, 20000)
  assert.equal(paused.calls.length, 0); paused.emit("playerPlaying"); paused.tick(3, 3000); assert.equal(paused.calls.length, 1); paused.unmount()
+})
+test("不足五秒切歌不回传；结束前开始记录未发出时先补开始再回传时长", async () => {
+ const short = harness(); short.emit("playerPlaying"); short.tick(4, 4000); short.emit("musicToggled"); await settle()
+ assert.equal(short.calls.length, 0); short.unmount()
+ const h = harness(); h.emit("playerPlaying"); h.tick(4, 4000); h.tick(2, 2000)
+ h.emit("musicToggled"); await settle()
+ assert.deepEqual(h.calls.map(call => call.phase), ["start", "finish"]); assert.equal(h.calls[1].playedSeconds, 6)
+ h.unmount()
+})
+test("QQ 官方线路保持满五秒单次上报，不发送结束阶段", async () => {
+ const h = harness(); h.state.playbackSourceInfo.value = route({ mode: "official", requestedSource: "tx", reportIdentity: null })
+ h.emit("playerPlaying"); h.tick(6, 6000); h.emit("playerEnded"); await settle()
+ assert.equal(h.calls.length, 1); assert.equal(h.calls[0].provider, "tx"); assert.equal(h.calls[0].phase, "start")
+ h.unmount()
 })
 test("切歌后旧解析身份不能给新歌上报", () => {
  const h = harness(); h.emit("playerPlaying"); h.tick(3, 3000); h.emit("musicToggled")
  h.state.playMusicInfo.musicInfo = { ...track(), id: "b" }; h.emit("playerPlaying"); h.tick(8, 8000); assert.equal(h.calls.length, 0)
  h.state.playbackSourceInfo.value = route({ musicKey: "wy:b", reportIdentity: identities.originalReportIdentity(track("wy", "456", "78")) })
- h.emit("playerPlaying"); h.tick(5, 5000); assert.equal(h.calls.length, 1); assert.equal(h.calls[0].songId, "456")
+ h.emit("playerPlaying"); h.tick(5, 5000); assert.equal(h.calls.length, 1); assert.equal(h.calls[0].songId, "456"); assert.equal(h.calls[0].phase, "start")
  h.unmount()
 })
 

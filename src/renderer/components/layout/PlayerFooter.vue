@@ -151,26 +151,16 @@ const handleImgError = () => {
   -webkit-app-region: no-drag;
   border-radius: 24px;
   color: var(--color-font);
-  background:
-    linear-gradient(180deg, var(--q-surface-strong), var(--q-surface)),
-    var(--q-surface);
-  border: 1px solid rgba(54, 83, 70, .17);
+  background: var(--q-surface-strong);
+  border: 1px solid var(--q-outline);
   box-shadow:
     inset 0 1px 0 var(--q-border),
-    inset 0 -1px 0 rgba(54, 83, 70, .12),
-    inset 0 0 0 1px var(--q-border),
-    0 18px 42px rgba(54, 83, 70, .14);
-  backdrop-filter: blur(26px) saturate(1.22);
+    0 8px 24px rgba(22, 28, 26, .08);
+  backdrop-filter: blur(calc(var(--q-glass-blur, 20px) * 1.3)) saturate(1.22);
 
-  &:before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    box-shadow:
-      inset 0 0 0 1px rgba(54, 83, 70, .08),
-      inset -1px 0 0 rgba(54, 83, 70, .08);
+  button:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
   }
 }
 
@@ -202,10 +192,8 @@ const handleImgError = () => {
   pointer-events: auto;
   -webkit-app-region: no-drag;
   background: var(--q-surface-strong);
-  border: 1px solid rgba(54, 83, 70, .14);
-  box-shadow:
-    inset 0 1px 0 var(--q-border),
-    0 8px 18px rgba(50, 63, 82, .1);
+  border: 1px solid var(--q-outline);
+  box-shadow: 0 3px 10px rgba(22, 28, 26, .06);
   transition: transform @transition-fast, box-shadow @transition-fast, opacity @transition-fast;
 
   img {
@@ -219,8 +207,8 @@ const handleImgError = () => {
   }
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 28px rgba(50, 63, 82, .18);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(22, 28, 26, .12);
 
     .coverHint {
       opacity: 1;
@@ -515,10 +503,10 @@ const handleImgError = () => {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  border: 2px solid rgba(248, 253, 250, .96);
+  border: 2px solid var(--color-content-background);
   border-radius: 8px;
-  color: #fff;
-  background-color: #45a77f;
+  color: var(--color-content-background);
+  background-color: var(--color-font);
   font-size: 9px;
   line-height: 11px;
   font-weight: 700;

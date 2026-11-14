@@ -10,6 +10,7 @@ const root = path.join(__dirname, '..')
 const load = (file, dependencies = {}) => {
   if (file == 'src/main/modules/winMain/musicAccount.ts') {
     dependencies['@common/utils/playbackPolicy'] = load('src/common/utils/playbackPolicy.ts')
+    dependencies['@common/utils/accountFailure'] = load('src/common/utils/accountFailure.ts')
     for (const name of ['qqAccountCatalog', 'qqPlaylistTarget', 'neteaseFavorite', 'cloudSnapshot']) {
       dependencies[`@common/utils/${name}`] = load(`src/common/utils/${name}.ts`)
     }

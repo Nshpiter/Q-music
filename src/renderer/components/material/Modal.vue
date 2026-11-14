@@ -428,9 +428,8 @@ export default {
   display: flex;
   flex-flow: column nowrap;
   z-index: 100;
-  // 弹窗承载文字和操作，使用主题实色避免底层列表文字穿透。
+  // 弹窗承载文字和操作，使用主题实色避免底层列表文字穿透；实色下不再叠加模糊。
   background: var(--color-content-background);
-  backdrop-filter: blur(18px);
 }
 
 // 播放辅助面板靠右展开，并为底部播放控件保留空间。
@@ -528,7 +527,6 @@ export default {
   border: 1px solid rgba(255, 255, 255, .12);
   background: #222528;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 28px 70px rgba(0, 0, 0, .42);
-  backdrop-filter: blur(28px) saturate(1.12);
 }
 
 :global(body:has(#container.show-player-detail)) .header {

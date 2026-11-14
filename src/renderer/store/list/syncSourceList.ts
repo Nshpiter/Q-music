@@ -1,6 +1,7 @@
 import { reactive } from '@common/utils/vueTools'
 import { getListUpdateInfo, setListSourceAccount, setListSourceSnapshot, setListUpdateTime } from '@renderer/utils/data'
 import { createSourceSnapshot, mergeSourcePlaylist } from '@common/utils/playlistMerge'
+import { accountFailureKind } from '@common/utils/accountFailure'
 import { setFetchingListStatus, overwriteListMusics, getListMusics } from './action'
 import { userLists } from './state'
 import { getListDetailAll } from '@renderer/store/songList/action'
@@ -16,6 +17,8 @@ export const syncErrorKey = (error: unknown) => {
   const code = error instanceof Error ? error.message : ''
   if (code == 'verification_required') return 'kugou__verification_required'
   if (code == 'playlist_incomplete' || code == 'incomplete') return 'list_sync_incomplete'
+  const failure = accountFailureKind(error)
+  if (failure) return failure == 'network' ? 'list_sync_network' : 'list_sync_restricted'
   return code == 'account_changed' ? 'list_sync_account_changed' : code == 'login_required' ? 'list_sync_login_required' : 'list_sync_failed'
 }
 

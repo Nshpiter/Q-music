@@ -15,10 +15,10 @@
             </div>
             <div :class="$style.label">{{ item.interval }}</div>
             <div :class="$style.btns">
-              <button type="button" :class="$style.btn" @click="openDetail(item)">
+              <button type="button" :class="$style.btn" :aria-label="$t('list__source_detail')" :title="$t('list__source_detail')" @click="openDetail(item)">
                 <svg-icon name="share" />
               </button>
-              <button type="button" :class="$style.btn" @click="handlePlay(item)">
+              <button type="button" :class="$style.btn" :aria-label="$t('list__play')" :title="$t('list__play')" @click="handlePlay(item)">
                 <svg v-once version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="50%" viewBox="0 0 287.386 287.386" space="preserve">
                   <use xlink:href="#icon-testPlay" />
                 </svg>
@@ -189,7 +189,7 @@ export default {
 .list {
   flex: auto;
   min-height: 100px;
-  min-width: 460px;
+  min-width: min(460px, 100%);
   // background-color: @color-search-form-background;
   font-size: 13px;
   transition-property: height;

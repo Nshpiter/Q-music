@@ -208,15 +208,23 @@ const needsMembershipHint = computed(() => {
 })
 const close = () => { emit('update:modelValue', false) }
 const handleOutside = event => { if (props.modelValue && !menuRef.value?.contains(event.target)) close() }
+const handleKeydown = event => {
+  if (!props.modelValue || event.key != 'Escape') return
+  event.preventDefault()
+  event.stopPropagation()
+  close()
+}
 const handleResize = () => {
   viewport.value = { width: window.innerWidth, height: window.innerHeight }
 }
 onMounted(() => {
   document.addEventListener('click', handleOutside)
+  document.addEventListener('keydown', handleKeydown, true)
   window.addEventListener('resize', handleResize)
 })
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleOutside)
+  document.removeEventListener('keydown', handleKeydown, true)
   window.removeEventListener('resize', handleResize)
 })
 const selectQuality = value => { emit('select', value); close() }
@@ -231,13 +239,13 @@ const selectSource = item => {
 .dark { color: rgba(255,255,255,.94); border-color: rgba(255,255,255,.12); background: rgba(24,29,32,.92); box-shadow: 0 22px 54px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08); }
 .header { padding: 1px 2px 10px; border-bottom: 1px solid rgb(from currentColor r g b / .09); }
 .title { font-size: 14px; font-weight: 720; }
-.song { margin-top: 3px; overflow: hidden; font-size: 10px; opacity: .46; text-overflow: ellipsis; white-space: nowrap; }
-.route { margin-top: 9px; min-height: 29px; display: flex; align-items: center; gap: 8px; span { min-width: 0; display: flex; flex-direction: column; } b { overflow: hidden; font-size: 11px; font-weight: 680; text-overflow: ellipsis; white-space: nowrap; } small { margin-top: 1px; font-size: 9px; opacity: .52; } .requestedRoute { color: var(--color-primary); opacity: .72; } }
+.song { margin-top: 3px; overflow: hidden; font-size: 11px; opacity: .62; text-overflow: ellipsis; white-space: nowrap; }
+.route { margin-top: 9px; min-height: 29px; display: flex; align-items: center; gap: 8px; span { min-width: 0; display: flex; flex-direction: column; } b { overflow: hidden; font-size: 11px; font-weight: 680; text-overflow: ellipsis; white-space: nowrap; } small { margin-top: 1px; font-size: 10px; opacity: .66; } .requestedRoute { color: var(--color-primary); opacity: .72; } }
 .sourceSwitch { padding: 9px 0 7px; border-bottom: 1px solid rgb(from currentColor r g b / .09); }
-.sectionTitle { padding: 0 2px 7px; display: flex; align-items: center; justify-content: space-between; span { font-size: 10px; font-weight: 680; opacity: .62; } small { font-size: 9px; opacity: .42; } }
+.sectionTitle { padding: 0 2px 7px; display: flex; align-items: center; justify-content: space-between; span { font-size: 10px; font-weight: 680; opacity: .62; } small { font-size: 10px; opacity: .58; } }
 .sourceOptions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; max-height: min(154px, max(72px, calc(100vh - 270px))); overflow-x: hidden; overflow-y: auto; padding: 1px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: transparent transparent; transition: scrollbar-color .16s ease; &:hover { scrollbar-color: rgb(from currentColor r g b / .16) transparent; } &::-webkit-scrollbar { width: 4px; } &::-webkit-scrollbar-track { background: transparent; } &::-webkit-scrollbar-thumb { border-radius: 99px; background: transparent; transition: background-color .16s ease; } &:hover::-webkit-scrollbar-thumb { background: rgb(from currentColor r g b / .16); } }
 .sourceOption { position: relative; min-width: 0; min-height: 45px; padding: 5px 4px 4px; display: flex; flex-flow: column nowrap; align-items: center; justify-content: center; gap: 3px; color: currentColor; border: 1px solid transparent; border-radius: 10px; background: rgb(from currentColor r g b / .045); cursor: pointer; opacity: .7; transition: color .14s ease, background-color .14s ease, border-color .14s ease, transform .14s ease; &:hover { color: var(--color-primary); border-color: var(--color-primary-alpha-500); background: var(--color-primary-alpha-900); opacity: 1; } &:active { transform: scale(.97); } &:focus-visible { outline: 2px solid var(--color-primary-alpha-500); outline-offset: 1px; } }
-.sourceLabel { width: 100%; min-width: 0; overflow: hidden; font-size: 9px; line-height: 1.1; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.sourceLabel { width: 100%; min-width: 0; overflow: hidden; font-size: 10px; line-height: 1.1; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .sourceOptionsCompact { grid-template-columns: repeat(auto-fit, minmax(44px, 1fr)); gap: 4px; }
 .sourceOptionsCompact .sourceOption { min-height: 38px; padding: 4px; }
 .sourceOptionsCompact .sourceLabel { display: none; }
@@ -246,8 +254,8 @@ const selectSource = item => {
 .dark .sourceActive { color: #fff; border-color: rgba(255,255,255,.22); background: rgba(255,255,255,.14); }
 .dark .sourceOption:hover { color: #fff; border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.12); }
 .options { display: grid; gap: 4px; padding-top: 7px; }
-.option { min-height: 43px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: currentColor; border: 1px solid transparent; border-radius: 11px; background: transparent; cursor: pointer; text-align: left; transition: background-color .14s ease, border-color .14s ease; &:hover { background: rgb(from currentColor r g b / .075); } > span { min-width: 0; display: flex; flex-direction: column; gap: 2px; } b { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; } small { overflow: hidden; font-size: 9px; opacity: .5; text-overflow: ellipsis; white-space: nowrap; } > svg { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; } }
-.hint { margin: 8px 4px 0; font-size: 9px; line-height: 1.45; opacity: .48; }
+.option { min-height: 43px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: currentColor; border: 1px solid transparent; border-radius: 11px; background: transparent; cursor: pointer; text-align: left; transition: background-color .14s ease, border-color .14s ease; &:hover { background: rgb(from currentColor r g b / .075); } > span { min-width: 0; display: flex; flex-direction: column; gap: 2px; } b { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; } small { overflow: hidden; font-size: 10px; opacity: .64; text-overflow: ellipsis; white-space: nowrap; } > svg { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; } }
+.hint { margin: 8px 4px 0; font-size: 10px; line-height: 1.45; opacity: .62; }
 .active { color: var(--color-primary); border-color: var(--color-primary-alpha-600); background: var(--color-primary-alpha-800); }
 .dark .active { color: #fff; border-color: rgba(255,255,255,.22); background: rgba(255,255,255,.14); }
 @keyframes popIn { from { opacity: 0; transform: translateY(7px) scale(.97); } to { opacity: 1; transform: none; } }

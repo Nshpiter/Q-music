@@ -11,6 +11,7 @@ const base = mobile ? 'src/core/musicAccount' : 'src/common/utils'
 function load(file, dependencies = {}, extra = {}) {
   if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/playbackPolicy'] = load('src/common/utils/playbackPolicy.ts')
   if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/cloudSnapshot'] = load('src/common/utils/cloudSnapshot.ts')
+  if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/accountFailure'] = load('src/common/utils/accountFailure.ts')
   if (file == 'src/renderer/views/List/MyList/importPlaylist.ts') dependencies['@renderer/utils/musicSdk/bi'] ??= { bilibiliClient: {} }
   if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/qqPlaylistTarget'] = load('src/common/utils/qqPlaylistTarget.ts')
   if (file == 'src/main/modules/winMain/musicAccount.ts') dependencies['@common/utils/qqAccountCatalog'] = load('src/common/utils/qqAccountCatalog.ts')

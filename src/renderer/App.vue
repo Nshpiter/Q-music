@@ -120,11 +120,11 @@ body {
   animation: none !important;
 }
 
-// 流畅模式保留半透明配色和阴影层次，仅关闭昂贵的实时背景采样。
+// 流畅模式保留半透明配色和阴影层次，仅关闭昂贵的实时背景采样；提示气泡等挂在 body 上的浮层同样生效。
 .performanceMode {
-  #root *,
-  #root *::before,
-  #root *::after {
+  *,
+  *::before,
+  *::after {
     backdrop-filter: none !important;
   }
 }

@@ -6,7 +6,9 @@ const vm = require('node:vm')
 const ts = require('typescript')
 function load(file, dependencies = {}, extra = {}) {
   if (file == 'src/renderer/views/List/MyList/importPlaylist.ts') dependencies['@renderer/utils/musicSdk/bi'] ??= { bilibiliClient: {} }
-  if (file != 'src/common/utils/playlistMerge.ts') dependencies['@common/utils/playlistMerge'] = load('src/common/utils/playlistMerge.ts')
+  const leaf = file == 'src/common/utils/playlistMerge.ts' || file == 'src/common/utils/accountFailure.ts'
+  if (!leaf) dependencies['@common/utils/playlistMerge'] = load('src/common/utils/playlistMerge.ts')
+  if (!leaf) dependencies['@common/utils/accountFailure'] ??= load('src/common/utils/accountFailure.ts')
   const context = { exports: {}, Error, console, ...extra, require: id => {
     if (!(id in dependencies)) throw Error(id)
     return dependencies[id]
@@ -261,7 +263,7 @@ test('账号歌单元数据齐全时不逐曲请求匿名接口，掉登录和�
   await h.run()
   assert.deepEqual(h.fetched, [])
   assert.equal(h.saved[0].list.length, 2)
-  for (const status of ['login_required', 'playlist_incomplete', 'verification_required']) {
+  for (const status of ['login_required', 'playlist_incomplete', 'verification_required', 'network', 'restricted']) {
     const failed = importHarness({ existing: true, status })
     await assert.rejects(failed.run(), error => error.code == status)
     assert.equal(failed.saved.length, 0)
@@ -269,6 +271,21 @@ test('账号歌单元数据齐全时不逐曲请求匿名接口，掉登录和�
   }
   assert.equal(harness().syncErrorKey(Error('login_required')), 'list_sync_login_required')
   assert.equal(harness().syncErrorKey(Error('incomplete')), 'list_sync_incomplete')
+  assert.equal(harness().syncErrorKey(Error('network')), 'list_sync_network')
+  assert.equal(harness().syncErrorKey(Error('restricted')), 'list_sync_restricted')
+  assert.equal(harness().syncErrorKey(Error('net::ERR_INTERNET_DISCONNECTED')), 'list_sync_network')
+  assert.equal(harness().syncErrorKey(Object.assign(Error('The operation was aborted due to timeout'), { name: 'TimeoutError' })), 'list_sync_network')
+  assert.equal(harness().syncErrorKey(Error('NetEase account request unavailable')), 'list_sync_failed')
+})
+
+test('账号错误分类：网络与平台限制分开，其余不误判', () => {
+  const { accountFailureKind, neteaseRestrictedCodes } = load('src/common/utils/accountFailure.ts')
+  assert.equal(accountFailureKind(Error('fetch failed', { cause: Object.assign(Error('getaddrinfo ENOTFOUND music.163.com'), { code: 'ENOTFOUND' }) })), 'network')
+  assert.equal(accountFailureKind(Error('restricted')), 'restricted')
+  for (const message of ['login_required', 'playlist_incomplete', 'verification_required', 'account_changed']) assert.equal(accountFailureKind(Error(message)), null)
+  assert.equal(accountFailureKind('network'), null)
+  for (const code of [-460, -462, 405]) assert.ok(neteaseRestrictedCodes.has(code))
+  assert.ok(!neteaseRestrictedCodes.has(301))
 })
 
 test('自动更新只注册一次，回前台按间隔节流，未关联旧歌单不自动覆盖', async () => {

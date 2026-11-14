@@ -8,6 +8,14 @@ const MIN_REPORT_DURATION = 5_000
 const MAX_PLAYBACK_RATE = 4
 const MAX_REPORT_ATTEMPTS = 2
 
+type ReportPhase = 'start' | 'finish'
+
+interface ReportState {
+  done: boolean
+  inFlight: Promise<void> | null
+  attempts: number
+}
+
 interface PlaybackReportSession {
   key: string
   musicKey: string
@@ -19,10 +27,11 @@ interface PlaybackReportSession {
   playedDuration: number
   lastPosition: number | null
   lastTickAt: number | null
-  reported: boolean
-  reportInFlight: boolean
-  reportAttempts: number
+  start: ReportState
+  finish: ReportState
 }
+
+const createReportState = (): ReportState => ({ done: false, inFlight: null, attempts: 0 })
 
 const getOfficialPlaybackInfo = () => {
   const currentMusic = playMusicInfo.musicInfo
@@ -65,56 +74,62 @@ export default () => {
     if (session) {
       session.lastPosition = null
       session.lastTickAt = null
-      // 用户暂停/等待时也要及时同步有效播放时长，避免只有切歌或
-      // 播放结束才写入官方平台记录。
-      reportSession(session)
+      void reportPhase(session, 'start')
     }
   }
 
-  const scheduleReportRetry = (target: PlaybackReportSession) => {
-    if (isUnmounted || target.reportAttempts >= MAX_REPORT_ATTEMPTS) return
+  const scheduleReportRetry = (target: PlaybackReportSession, phase: ReportPhase) => {
+    if (isUnmounted || target[phase].attempts >= MAX_REPORT_ATTEMPTS) return
     const retryTimer = setTimeout(() => {
       retryTimers.delete(retryTimer)
-      reportSession(target)
+      void reportPhase(target, phase)
     }, 2_000)
     retryTimers.add(retryTimer)
   }
 
-  const reportSession = (target: PlaybackReportSession) => {
+  const reportPhase = async(target: PlaybackReportSession, phase: ReportPhase): Promise<void> => {
+    const state = target[phase]
+    if (state.inFlight) return state.inFlight
     if (
-      target.reported ||
-      target.reportInFlight ||
-      target.reportAttempts >= MAX_REPORT_ATTEMPTS ||
+      state.done ||
+      state.attempts >= MAX_REPORT_ATTEMPTS ||
       target.playedDuration < MIN_REPORT_DURATION
     ) return
-    target.reportInFlight = true
-    target.reportAttempts++
-    void reportMusicAccountPlayback({
+    state.attempts++
+    const request = reportMusicAccountPlayback({
       provider: target.provider,
       songId: target.songId,
       mediaId: target.mediaId,
       sourceId: target.sourceId,
       playedSeconds: target.playedDuration / 1_000,
       startedAt: target.startedAt,
+      phase,
     }).then(result => {
-      target.reportInFlight = false
+      state.inFlight = null
       if (result.status == 'reported') {
-        target.reported = true
+        state.done = true
         return
       }
-      if (result.status == 'login_required') target.reportAttempts = MAX_REPORT_ATTEMPTS
-      else scheduleReportRetry(target)
+      if (result.status == 'login_required') {
+        target.start.attempts = MAX_REPORT_ATTEMPTS
+        target.finish.attempts = MAX_REPORT_ATTEMPTS
+      } else scheduleReportRetry(target, phase)
     }).catch(error => {
-      target.reportInFlight = false
+      state.inFlight = null
       console.warn('[officialPlaybackReport] playback report unavailable', error)
-      scheduleReportRetry(target)
+      scheduleReportRetry(target, phase)
     })
+    state.inFlight = request
+    return request
   }
 
   const finishSession = () => {
     pauseSession()
-    if (session) reportSession(session)
+    const target = session
     session = null
+    if (!target || target.provider != 'wy' || target.playedDuration < MIN_REPORT_DURATION) return
+    // 网易云在播放结束时按实际收听秒数计入听歌排行，满 5 秒就发送会把每首都记成 5 秒的完整播放。
+    void reportPhase(target, 'start').then(async() => reportPhase(target, 'finish'))
   }
 
   const handlePlaying = () => {
@@ -134,9 +149,8 @@ export default () => {
         playedDuration: 0,
         lastPosition: getCurrentTime(),
         lastTickAt: performance.now(),
-        reported: false,
-        reportInFlight: false,
-        reportAttempts: 0,
+        start: createReportState(),
+        finish: createReportState(),
       }
       return
     }
@@ -159,10 +173,9 @@ export default () => {
   }
 
   const reportTimer = setInterval(() => {
-    if (!session || session.reported) return
+    if (!session) return
     updatePlayedDuration()
-    // 达到真实播放阈值及时上报，无需等用户暂停或切歌。
-    reportSession(session)
+    void reportPhase(session, 'start')
   }, 1_000)
 
   window.app_event.on('playerPlaying', handlePlaying)

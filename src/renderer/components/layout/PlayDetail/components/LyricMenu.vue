@@ -1,6 +1,6 @@
 <template>
   <teleport to="#root">
-    <div ref="dom_menu" :class="[$style.container, { [$style.immersive]: appSetting['playDetail.style.layout'] == 'immersive' }]" :style="menuStyles" :aria-hidden="!modelValue">
+    <div ref="dom_menu" :class="[$style.container, { [$style.immersive]: appSetting['playDetail.style.layout'] == 'immersive' }]" :style="menuStyles" :aria-hidden="!modelValue" :inert="!modelValue || undefined" tabindex="-1" @keydown.esc.stop.prevent="onHide">
       <LyricFontSetting compact />
       <!-- <div :class="$style.group">
       <div :class="$style.title">{{ $t('lyric_menu__align') }}</div>
@@ -46,7 +46,9 @@
 </template>
 
 <script>
-import { computed, ref, watch } from '@common/utils/vueTools'
+import { computed, nextTick, ref, watch } from '@common/utils/vueTools'
+import { useRoute } from '@common/utils/vueRouter'
+import { isShowPlayerDetail } from '@renderer/store/player/state'
 import useMenuLocation from '@renderer/utils/compositions/useMenuLocation'
 import { debounce } from '@common/utils/common'
 import { saveLyricEdited, removeLyricEdited } from '@renderer/utils/ipc'
@@ -99,10 +101,15 @@ export default {
 
     const visible = computed(() => props.modelValue)
     const location = computed(() => props.xy)
+    const route = useRoute()
+    let previousFocus = null
 
     const onHide = () => {
       emit('update:modelValue', false)
     }
+    watch([() => route.fullPath, isShowPlayerDetail], () => {
+      if (visible.value) onHide()
+    })
 
     const setFontAlign = val => {
       if (appSetting['playDetail.style.align'] == val) return
@@ -187,8 +194,15 @@ export default {
       parseLrcOffset()
     })
     watch(visible, val => {
-      if (!val) return
+      if (!val) {
+        if (dom_menu.value?.contains(document.activeElement) && previousFocus?.isConnected) previousFocus.focus({ preventScroll: true })
+        return
+      }
+      previousFocus = document.activeElement
       parseLrcOffset()
+      void nextTick(() => {
+        if (visible.value) dom_menu.value?.querySelector('button:not(:disabled)')?.focus({ preventScroll: true })
+      })
     })
 
     return {
@@ -204,6 +218,7 @@ export default {
       offsetReset,
       setFontAlign,
       offsetDisabled,
+      onHide,
     }
   },
 }
@@ -220,7 +235,9 @@ export default {
   transform-origin: 0 0 0;
   transition: .14s ease;
   transition-property: transform, opacity;
-  border-radius: @radius-border;
+  padding: 8px;
+  border: 1px solid var(--q-outline);
+  border-radius: 16px;
   background-color: var(--color-content-background);
   box-shadow: 0 1px 8px 0 rgba(0,0,0,.2);
   z-index: 10;
@@ -243,6 +260,9 @@ export default {
 .group {
   display: flex;
   flex-direction: column;
+  padding-top: 6px;
+  margin-top: 6px;
+  border-top: 1px solid var(--q-outline);
 }
 .title {
   flex: auto;
@@ -255,6 +275,7 @@ export default {
 .subGroup {
   display: flex;
   flex-flow: row nowrap;
+  gap: 4px;
 }
 
 .btn {
@@ -275,6 +296,12 @@ export default {
   .mixin-ellipsis-1();
   background-color: var(--color-content-background);
   border: none;
+  border-radius: 8px;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+  }
 
   &:hover {
     background-color: var(--color-primary-background-hover);
@@ -299,7 +326,7 @@ export default {
 }
 .titleBtn {
   flex: none;
-  padding: 0 10;
+  padding: 0 10px;
   min-width: 40px;
   opacity: .7;
 

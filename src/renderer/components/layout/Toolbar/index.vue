@@ -50,7 +50,7 @@ watch(() => route.fullPath, () => {
     inset 0 -1px 0 rgba(54, 83, 70, .055),
     0 1px 0 var(--q-border),
     0 12px 28px rgba(54, 83, 70, .055);
-  backdrop-filter: blur(20px) saturate(1.18);
+  backdrop-filter: blur(var(--q-glass-blur, 20px)) saturate(1.18);
 
   .dragArea {
     position: absolute;

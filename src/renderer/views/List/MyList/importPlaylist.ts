@@ -15,7 +15,7 @@ import { bilibiliClient } from '@renderer/utils/musicSdk/bi'
 export type ExternalImportSource = 'tx' | 'wy' | 'kg' | 'bi'
 export type ExternalImportTarget = 'new' | 'current' | 'love'
 
-export type ExternalImportErrorCode = 'invalid_link' | 'no_match' | 'account_unavailable' | 'account_changed' | 'cancelled' | 'verification_required' | 'login_required' | 'playlist_incomplete'
+export type ExternalImportErrorCode = 'invalid_link' | 'no_match' | 'account_unavailable' | 'account_changed' | 'cancelled' | 'verification_required' | 'login_required' | 'playlist_incomplete' | 'network' | 'restricted'
 
 export class ExternalImportError extends Error {
   code: ExternalImportErrorCode

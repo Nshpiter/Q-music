@@ -1,4 +1,5 @@
 import { neteasePlaybackQuality } from '@common/utils/playbackPolicy'
+import { accountFailureKind, neteaseRestrictedCodes, type AccountFailureKind } from '@common/utils/accountFailure'
 import { BrowserWindow, safeStorage, session, shell, type Session, type WebContents } from 'electron'
 import { getProxy } from '@main/utils'
 import { setWindowNavigationPolicy } from '@main/utils/navigationPolicy'
@@ -111,7 +112,7 @@ export interface MusicAccountPlaylistsResult {
   partial?: boolean
   provider: MusicAccountProvider
   playlists: MusicAccountPlaylist[]
-  status: 'available' | 'login_required' | 'unavailable' | 'verification_required'
+  status: 'available' | 'login_required' | 'unavailable' | 'verification_required' | AccountFailureKind
 }
 
 export interface MusicAccountPlaylistDetailResult {
@@ -121,7 +122,7 @@ export interface MusicAccountPlaylistDetailResult {
   provider: MusicAccountProvider
   id: string
   ids: string[]
-  status: 'available' | 'login_required' | 'unavailable' | 'verification_required' | 'account_changed' | 'playlist_incomplete'
+  status: 'available' | 'login_required' | 'unavailable' | 'verification_required' | 'account_changed' | 'playlist_incomplete' | AccountFailureKind
 }
 
 export interface MusicAccountMusicUrlRequest {
@@ -149,6 +150,8 @@ export interface MusicAccountPlaybackReportRequest {
   sourceId?: string
   playedSeconds: number
   startedAt: number
+  // start：达到有效时长时登记「最近播放」；finish：本次播放结束时按实际秒数计入听歌排行。
+  phase?: 'start' | 'finish'
 }
 
 export interface MusicAccountPlaybackReportResult {
@@ -920,12 +923,14 @@ const requestNeteaseWeapi = async<T>(path: string, data: Record<string, unknown>
     signal: AbortSignal.timeout(12_000),
   })
   if (response.status == 401) throw new Error('login_required')
+  if (response.status == 429) throw new Error('restricted')
   if (!response.ok) throw new Error(`NetEase request failed (${path}): ${response.status}`)
   const result = await response.json() as T & { code?: number }
   if ([301, 401].includes(Number(result.code))) {
     accountValidationCache.delete('wy')
     throw new Error('login_required')
   }
+  if (neteaseRestrictedCodes.has(Number(result.code))) throw new Error('restricted')
   if (Number(result.code) != 200) throw new Error('NetEase account request unavailable')
   return result
 }
@@ -1134,17 +1139,19 @@ const reportNeteasePlayback = async(request: MusicAccountPlaybackReportRequest) 
   const songId = Number(request.songId)
   const requestedSourceId = request.sourceId ?? ''
   const sourceId = /^\d+$/.test(requestedSourceId) ? requestedSourceId : '0'
-  const startStatus = await requestNeteasePlaybackLog(accountSession, context, {
-    action: 'startplay',
-    json: {
-      id: songId,
-      type: 'song',
-      mainsite: '1',
-      mainsiteWeb: '1',
-      content: `id=${sourceId}`,
-    },
-  })
-  if (startStatus != 'reported') return startStatus
+  const phase = request.phase ?? 'start'
+  if (phase == 'start') {
+    return requestNeteasePlaybackLog(accountSession, context, {
+      action: 'startplay',
+      json: {
+        id: songId,
+        type: 'song',
+        mainsite: '1',
+        mainsiteWeb: '1',
+        content: `id=${sourceId}`,
+      },
+    })
+  }
 
   return requestNeteasePlaybackLog(accountSession, context, {
     action: 'play',
@@ -1170,6 +1177,8 @@ export const reportMusicAccountPlayback = async(request: MusicAccountPlaybackRep
     status,
   })
   if (request.provider == 'kg') return unavailable('unavailable')
+  // QQ 的网页上报只有一条记录，在 start 阶段发送。
+  if (request.provider == 'tx' && request.phase == 'finish') return unavailable('unavailable')
   try {
     if (
       (request.provider == 'wy' ? !/^\d+$/.test(request.songId) : !request.songId.trim()) ||
@@ -1376,7 +1385,7 @@ export const getMusicAccountPlaylists = async(provider: MusicAccountProvider, ow
   } catch (error) {
     console.warn(`[musicAccount] ${provider} playlists unavailable`, error)
     if (provider == 'kg' && error instanceof Error && error.message == 'verification_required') return { provider, playlists: [], status: 'verification_required' }
-    return { provider, playlists: [], status: (isQQMusicLoginRequiredError(error) || (error instanceof Error && error.message == 'login_required')) ? 'login_required' : 'unavailable' }
+    return { provider, playlists: [], status: (isQQMusicLoginRequiredError(error) || (error instanceof Error && error.message == 'login_required')) ? 'login_required' : accountFailureKind(error) ?? 'unavailable' }
   }
 }
 
@@ -1446,7 +1455,7 @@ export const getMusicAccountPlaylistDetail = async(
   } catch (error) {
     console.warn(`[musicAccount] ${provider} playlist detail unavailable`, error)
     const code = error instanceof Error ? error.message : ''
-    const status = code == 'verification_required' || code == 'account_changed' || code == 'playlist_incomplete' ? code : code == 'incomplete' ? 'playlist_incomplete' : isQQMusicLoginRequiredError(error) || code == 'login_required' ? 'login_required' : 'unavailable'
+    const status = code == 'verification_required' || code == 'account_changed' || code == 'playlist_incomplete' ? code : code == 'incomplete' ? 'playlist_incomplete' : isQQMusicLoginRequiredError(error) || code == 'login_required' ? 'login_required' : accountFailureKind(error) ?? 'unavailable'
     return { provider, id, ids: [], status }
   }
 }
