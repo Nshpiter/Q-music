@@ -86,6 +86,8 @@ declare namespace LX {
     type MusicInfo = MusicInfoOnline | MusicInfoLocal
 
     interface LyricInfo {
+      /** 已获取 QQ 音乐播放页歌词 */
+      qqPlayLyric?: boolean
       // 歌曲歌词
       lyric: string
       // 翻译歌词

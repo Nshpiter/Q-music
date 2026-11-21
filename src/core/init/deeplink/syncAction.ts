@@ -3,14 +3,10 @@ import { connectServer } from '@/plugins/sync'
 import { addSyncHostHistory, setSyncHost } from '@/utils/data'
 import { toast } from '@/utils/tools'
 
-interface SyncConnectData {
-  host?: unknown
-  authCode?: unknown
-}
-
-const connectSyncHost = async(data: SyncConnectData | undefined) => {
-  const host = typeof data?.host == 'string' ? data.host.trim().replace(/\/$/, '') : ''
-  const authCode = typeof data?.authCode == 'string' ? data.authCode.trim() : ''
+const connectSyncHost = async(data: unknown) => {
+  if (!data || typeof data !== 'object') throw new Error(global.i18n.t('sync_qr_invalid'))
+  const host = 'host' in data && typeof data.host == 'string' ? data.host.trim().replace(/\/$/, '') : ''
+  const authCode = 'authCode' in data && typeof data.authCode == 'string' ? data.authCode.trim() : ''
 
   if (!/^https?:\/\/\S+$/i.test(host) || !authCode || authCode.length > 64) {
     throw new Error(global.i18n.t('sync_qr_invalid'))
@@ -25,6 +21,6 @@ const connectSyncHost = async(data: SyncConnectData | undefined) => {
   toast(global.i18n.t('sync_qr_connecting'))
 }
 
-export const handleSyncAction = async(action: string, params: { data?: SyncConnectData }) => {
+export const handleSyncAction = async(action: string, params: { data?: unknown }) => {
   if (action == 'connect') await connectSyncHost(params.data)
 }

@@ -113,6 +113,7 @@ export const buildLyricInfo = async(lyricInfo: MakeOptional<LX.Player.LyricInfo,
         lxlyric,
       }
       return {
+        qqPlayLyric: lyricInfo.qqPlayLyric,
         lyric,
         tlyric,
         rlyric,

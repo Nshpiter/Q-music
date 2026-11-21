@@ -28,7 +28,6 @@ const handleLinkAction = async(link: string) => {
     if (params.data) params.data = JSON.parse(decodeURIComponent(params.data))
   }
   params.paths = paths.map(p => decodeURIComponent(p))
-  console.log(params)
   switch (type) {
     case 'music':
       await handleMusicAction(action, params)

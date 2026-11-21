@@ -75,26 +75,23 @@ export const findMatchedTranslation = async(musicInfo: LX.Music.MusicInfoOnline,
           const alternate = await (musicSdk[candidate.source].getLyric(toOldMusicInfo(candidate))).promise as LX.Music.LyricInfo
           if (!alternate.lyric || !alternate.tlyric) continue
           const otherOriginals = lyricRows(alternate.lyric)
-          const otherTranslations = lyricRows(alternate.tlyric)
+          const translationsByTime = new Map(lyricRows(alternate.tlyric).map(row => [row.time, row.value]))
           const assigned = new Set<number>()
           const matches = originals.flatMap(row => {
             const options = otherOriginals.filter(other => row.text.length >= 4 && other.text.length >= 4 &&
               lyricSimilarity(other.text, row.text) >= 0.78 && Math.abs(other.time - row.time) <= 12,
             ).sort((a, b) => Math.abs(a.time - row.time) - Math.abs(b.time - row.time))
-            const original = options.find(other => !assigned.has(other.time)) ?? options[0]
+            const original = options.find(other => !assigned.has(other.time))
             if (original) assigned.add(original.time)
             return original ? [{ row, original }] : []
           })
           const covered = matches.reduce((total, match) => total + match.row.text.length, 0)
           const total = originals.reduce((sum, row) => sum + row.text.length, 0)
           if (matches.length < 4 || covered / total < 0.45) continue
-          const used = new Set<number>()
           const aligned = matches.flatMap(({ row, original }) => {
-            if (used.has(original.time)) return []
-            const translation = otherTranslations.find(other => Math.abs(other.time - original.time) <= 2.5)
-            if (!translation) return []
-            used.add(original.time)
-            return [`${row.stamp}${translation.value}`]
+            // 先用同一来源的时间戳配对，再换成当前版本的时间戳。
+            const translation = translationsByTime.get(original.time)
+            return translation ? [`${row.stamp}${translation}`] : []
           })
           if (aligned.length < 4) continue
           const tlyric = aligned.join('\n')
@@ -221,7 +218,20 @@ export const getLyricInfo = async({ musicInfo, isRefresh, allowToggleSource = tr
   if (musicInfo.source == 'bi') return buildLyricInfo({ lyric: '' })
   if (!isRefresh) {
     const lyricInfo = await getCachedLyricInfo(musicInfo)
-    if (lyricInfo) return buildLyricInfo(lyricInfo)
+    if (lyricInfo) {
+      // 旧版补译会把原始歌词和另外匹配的译文一起缓存。
+      if (musicInfo.source == 'tx' && !lyricInfo.qqPlayLyric && !lyricInfo.rawlrcInfo?.qqPlayLyric &&
+        (!lyricInfo.tlyric || (lyricInfo.rawlrcInfo && !lyricInfo.rawlrcInfo.tlyric))) {
+        try {
+          const fresh: LX.Music.LyricInfo = await musicSdk.tx.getLyric(toOldMusicInfo(musicInfo)).promise
+          if (fresh.qqPlayLyric) {
+            await saveLyric(musicInfo, fresh)
+            return buildLyricInfo(fresh)
+          }
+        } catch {}
+      }
+      return buildLyricInfo(lyricInfo)
+    }
   }
 
   // lrcRequest = music[musicInfo.source].getLyric(musicInfo)
