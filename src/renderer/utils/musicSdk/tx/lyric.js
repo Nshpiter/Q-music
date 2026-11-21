@@ -76,7 +76,7 @@ const parseTools = {
   parseRlyric(lrc) {
     lrc = lrc.trim()
     lrc = lrc.replace(/\r/g, '')
-    if (!lrc) return { lyric: '', lxlyric: '' }
+    if (!lrc) return ''
     const lines = lrc.split('\n')
 
     const lrcLines = []
@@ -99,77 +99,28 @@ const parseTools = {
   removeTag(str) {
     return str.replace(/^[\S\s]*?LyricContent="/, '').replace(/"\/>[\S\s]*?$/, '')
   },
-  getIntv(interval) {
-    if (!interval) return 0
-    if (!interval.includes('.')) interval += '.0'
-    let arr = interval.split(/:|\./)
-    while (arr.length < 3) arr.unshift('0')
-    const [m, s, ms] = arr
-    return parseInt(m) * 3600000 + parseInt(s) * 1000 + parseInt(ms)
-  },
-  fixRlrcTimeTag(rlrc, lrc) {
-    // console.log(lrc)
-    // console.log(rlrc)
-    const rlrcLines = rlrc.split('\n')
-    let lrcLines = lrc.split('\n')
-    // let temp = []
-    let newLrc = []
-    rlrcLines.forEach((line) => {
-      const result = this.rxps.lineTime2.exec(line)
-      if (!result) return
-      const words = line.replace(this.rxps.lineTime2, '')
-      if (!words.trim()) return
-      const t1 = this.getIntv(result[1])
-
-      while (lrcLines.length) {
-        const lrcLine = lrcLines.shift()
-        const lrcLineResult = this.rxps.lineTime2.exec(lrcLine)
-        if (!lrcLineResult) continue
-        const t2 = this.getIntv(lrcLineResult[1])
-        if (Math.abs(t1 - t2) < 100) {
-          newLrc.push(line.replace(this.rxps.lineTime2, lrcLineResult[0]))
-          break
-        }
-        // temp.push(line)
-      }
-      // lrcLines = [...temp, ...lrcLines]
-      // temp = []
+  alignTimedLines(extra, lyric) {
+    const timedRows = value => value.split(/\r?\n/).flatMap(line => {
+      const match = /^\[(\d+):(\d+)(?:\.(\d{1,3}))?\](.+)$/.exec(line.trim())
+      if (!match || !match[4].trim()) return []
+      const time = Number(match[1]) * 60000 + Number(match[2]) * 1000 + Number((match[3] ?? '').padEnd(3, '0'))
+      return [{ time, tag: line.trim().slice(0, match[0].length - match[4].length), text: match[4] }]
     })
-    return newLrc.join('\n')
-  },
-  fixTlrcTimeTag(tlrc, lrc) {
-    // console.log(lrc)
-    // console.log(tlrc)
-    const tlrcLines = tlrc.split('\n')
-    let lrcLines = lrc.split('\n')
-    // let temp = []
-    let newLrc = []
-    tlrcLines.forEach((line) => {
-      const result = this.rxps.lineTime2.exec(line)
-      if (!result) return
-      const words = line.replace(this.rxps.lineTime2, '')
-      if (!words.trim()) return
-      let time = result[1]
-      if (time.includes('.')) {
-        time += ''.padStart(3 - time.split('.')[1].length, '0')
+    const originals = timedRows(lyric)
+    const byTime = new Map(originals.map(row => [row.time, row]))
+    const matches = new Map()
+    for (const row of timedRows(extra)) {
+      let target = byTime.get(row.time)
+      if (!target) {
+        const near = originals.filter(original => Math.abs(original.time - row.time) < 100)
+        if (near.length !== 1) continue
+        target = near[0]
       }
-      const t1 = this.getIntv(time)
-
-      while (lrcLines.length) {
-        const lrcLine = lrcLines.shift()
-        const lrcLineResult = this.rxps.lineTime2.exec(lrcLine)
-        if (!lrcLineResult) continue
-        const t2 = this.getIntv(lrcLineResult[1])
-        if (Math.abs(t1 - t2) < 100) {
-          newLrc.push(line.replace(this.rxps.lineTime2, lrcLineResult[0]))
-          break
-        }
-        // temp.push(line)
-      }
-      // lrcLines = [...temp, ...lrcLines]
-      // temp = []
-    })
-    return newLrc.join('\n')
+      const distance = Math.abs(target.time - row.time)
+      const previous = matches.get(target.time)
+      if (!previous || distance < previous.distance) matches.set(target.time, { distance, line: target.tag + row.text })
+    }
+    return Array.from(matches.values(), match => match.line).join('\n')
   },
   parse(lrc, tlrc, rlrc) {
     const info = {
@@ -185,8 +136,8 @@ const parseTools = {
       // console.log(lyric)
       // console.log(lxlyric)
     }
-    if (rlrc) info.rlyric = this.fixRlrcTimeTag(this.parseRlyric(this.removeTag(rlrc)), info.lyric)
-    if (tlrc) info.tlyric = this.fixTlrcTimeTag(tlrc, info.lyric)
+    if (rlrc) info.rlyric = this.alignTimedLines(this.parseRlyric(this.removeTag(rlrc)), info.lyric)
+    if (tlrc) info.tlyric = this.alignTimedLines(tlrc, info.lyric)
     // console.log(info.lyric)
     // console.log(info.tlyric)
     // console.log(info.rlyric)
@@ -203,11 +154,14 @@ export default {
     if (songIdMap.has(songmid)) return songIdMap.get(songmid)
     if (promises.has(songmid)) return (await promises.get(songmid)).songId
     const promise = getMusicInfo(songmid)
-    promises.set(promise)
-    const info = await promise
-    songIdMap.set(songmid, info.songId)
-    promises.delete(songmid)
-    return info.songId
+    promises.set(songmid, promise)
+    try {
+      const info = await promise
+      songIdMap.set(songmid, info.songId)
+      return info.songId
+    } finally {
+      promises.delete(songmid)
+    }
   },
   async parseLyric(lrc, tlrc, rlrc) {
     const { lyric, tlyric, rlyric } = await decodeLyric(lrc, tlrc, rlrc)
@@ -220,8 +174,6 @@ export default {
     return parseTools.parse(lyric, tlyric, rlyric)
   },
   getLyric(mInfo, retryNum = 0) {
-    if (retryNum > 3) return Promise.reject(new Error('Get lyric failed'))
-
     return {
       cancelHttp() {
 
@@ -263,7 +215,10 @@ export default {
         })
         return requestObj.promise.then(({ body }) => {
           // console.log(body)
-          if (body.code != this.successCode || body.req.code != this.successCode) return this.getLyric(songId, ++retryNum)
+          if (body?.code != this.successCode || body.req?.code != this.successCode) {
+            if (retryNum >= 3) throw new Error('Get lyric failed')
+            return this.getLyric({ songId }, retryNum + 1).promise
+          }
           const data = body.req.data
           return this.parseLyric(data.lyric, data.trans, data.roma)
         })

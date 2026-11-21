@@ -6,6 +6,12 @@ const lines = (text: string, shift = 0) => Array.from({ length: 5 }, (_, index) 
   `[00:${String(index * 5 + shift).padStart(2, '0')}.00]${text}`,
 ).join('\n')
 
+test('副歌紧邻时缺译的重复句留空，后面的译文仍对应本句', () => {
+  const original = ['[00:01.10]Sing along', '[00:02.20]Sing along', '[00:03.40]Turn around', '[00:05.00]Come home', '[00:07.30]See you again'].join('\n')
+  const translated = ['[00:01.10]一起唱', '[00:03.40]转过身', '[00:05.00]回家吧', '[00:07.30]再见'].join('\n')
+  assert.equal(matchTranslation(original, original, translated), translated)
+})
+
 test('跨平台译文只接受标题、时长和原文吻合的同一首歌', () => {
   assert.equal(sameTitle('SAKURA (樱花)', 'SAKURA'), true)
   assert.equal(sameTitle('SAKURA', 'Different Song'), false)

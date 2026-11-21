@@ -47,7 +47,7 @@ export const matchTranslation = (lyric: string, otherLyric: string, translation:
     const options = candidates.filter(other => row.text.length >= 4 && other.text.length >= 4 &&
       similarity(other.text, row.text) >= 0.78 && Math.abs(other.time - row.time) <= 12,
     ).sort((a, b) => Math.abs(a.time - row.time) - Math.abs(b.time - row.time))
-    const original = options.find(other => !assigned.has(other.time)) ?? options[0]
+    const original = options.find(other => !assigned.has(other.time))
     if (original) assigned.add(original.time)
     return original ? [{ row, original }] : []
   })
@@ -55,13 +55,10 @@ export const matchTranslation = (lyric: string, otherLyric: string, translation:
   const total = originals.reduce((sum, row) => sum + row.text.length, 0)
   if (matches.length < 4 || covered / total < 0.6) return ''
 
-  const used = new Set<number>()
+  const translationsByTime = new Map(translated.map(row => [row.time, row.value]))
   const aligned = matches.flatMap(({ row, original }) => {
-    if (used.has(original.time)) return []
-    const translatedRow = translated.find(other => Math.abs(other.time - original.time) <= 2.5)
-    if (!translatedRow) return []
-    used.add(original.time)
-    return [`${row.stamp}${translatedRow.value}`]
+    const translation = translationsByTime.get(original.time)
+    return translation ? [`${row.stamp}${translation}`] : []
   })
   return aligned.length >= 4 ? aligned.join('\n') : ''
 }
