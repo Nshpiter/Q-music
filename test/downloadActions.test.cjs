@@ -5,6 +5,31 @@ const path = require('node:path')
 const vm = require('node:vm')
 const ts = require('typescript')
 
+test('下载分类数量随任务流转，等待任务和下载中任务共用一个筛选', () => {
+  const vue = require('vue')
+  const context = { exports: {}, window: { i18n: { t: key => key } }, require: id => {
+    if (id == '@common/utils/vueTools') return vue
+    if (id == '@renderer/store/download/state') return { downloadStatus: { RUN: 'run', WAITING: 'waiting', PAUSE: 'pause', ERROR: 'error', COMPLETED: 'completed' } }
+    throw Error(id)
+  } }
+  const source = fs.readFileSync(path.join(__dirname, '../src/renderer/views/Download/useTab.js'), 'utf8')
+  vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, context)
+  const tasks = vue.ref([{ status: 'waiting' }, { status: 'run' }, { status: 'pause' }])
+  const { tabs, activeTab, list } = context.exports.default(tasks)
+  const label = id => tabs.value.find(tab => tab.id == id).label
+  activeTab.value = 'running'
+  assert.equal(list.value.length, 2)
+  assert.equal(label('running'), 'download__running (2)')
+  tasks.value[1].status = 'completed'
+  assert.equal(list.value.length, 1)
+  assert.equal(label('finished'), 'download__finished (1)')
+  activeTab.value = 'finished'
+  assert.equal(list.value[0], tasks.value[1])
+  tasks.value.splice(1, 1)
+  assert.equal(list.value.length, 0)
+  assert.equal(label('all'), 'download__all (2)')
+})
+
 function fixture(createDownloadTasks, list = [{ id: 'online', source: 'tx' }, { id: 'local', source: 'local' }]) {
   const source = require('@vue/compiler-sfc').parse(fs.readFileSync(path.join(__dirname, '../src/renderer/components/common/DownloadMultipleModal.vue'), 'utf8')).descriptor.script.content
   const context = { exports: {}, require: id => {

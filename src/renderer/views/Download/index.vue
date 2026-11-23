@@ -49,7 +49,13 @@
             <div class="list-item-cell auto name">
               <span class="select name" :aria-label="getName(item)">{{ getName(item) }}</span>
             </div>
-            <div class="list-item-cell" style="flex: 0 0 20%;">{{ item.progress }}%<span v-if="item.status == downloadStatus.RUN && item.speed"> - {{ item.speed }}/s</span></div>
+            <div class="list-item-cell" :class="$style.progress">
+              <div :class="$style.progressInfo">
+                <span>{{ item.progress }}%</span>
+                <span v-if="item.status == downloadStatus.RUN && item.speed" :class="$style.speed">{{ item.speed }}/s</span>
+              </div>
+              <progress v-if="item.status != downloadStatus.COMPLETED" :value="item.progress" max="100" :aria-label="$t('download__progress')" />
+            </div>
             <div class="list-item-cell" style="flex: 0 0 22%;" :aria-label="item.statusText">{{ item.statusText }}</div>
             <div class="list-item-cell" :class="$style.qualityColumn" style="flex: 0 0 10%;">{{ getTypeName(item.metadata.quality) }}</div>
             <div class="list-item-cell" :class="$style.actionColumn" style="padding-left: 0; padding-right: 0;">
@@ -103,14 +109,12 @@ export default {
   name: 'Download',
   setup() {
     const listRef = ref()
-    const { tabs, activeTab } = useTab()
-
     const {
       dom_listContent,
       listAll,
-      list,
       playTaskId,
-    } = useListInfo(activeTab)
+    } = useListInfo()
+    const { tabs, activeTab, list } = useTab(listAll)
 
     const {
       selectedList,
@@ -306,6 +310,18 @@ export default {
   flex: none;
   width: min(1240px, calc(100% - 44px));
   margin: 10px auto 8px;
+}
+.tab { gap: clamp(10px, 2vw, 25px); font-variant-numeric: tabular-nums; }
+.progress {
+  flex: 0 0 20%;
+  font-variant-numeric: tabular-nums;
+  .progressInfo { display: flex; align-items: baseline; gap: 6px; }
+  .speed { overflow: hidden; text-overflow: ellipsis; font-size: 11px; color: var(--color-font-label); }
+  progress {
+    display: block; width: 100%; max-width: 140px; height: 3px; margin-top: 3px; appearance: none;
+    &::-webkit-progress-bar { background: var(--q-outline); border-radius: 3px; }
+    &::-webkit-progress-value { background: var(--color-primary); border-radius: 3px; }
+  }
 }
 .downloadPanel {
   min-height: 0;

@@ -12,6 +12,8 @@ const defaultSetting: LX.AppSetting = {
   'common.startInFullscreen': false,
   'common.langId': null,
   'common.apiSource': 'temp',
+  'common.apiPreferQuality': false,
+  'playDetail.lyricEdgeFade': 22,
   'common.apiBackupSources': [] as string[],
   'common.sourceNameType': 'real',
   'common.font': '',

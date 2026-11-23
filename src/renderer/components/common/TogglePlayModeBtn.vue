@@ -1,36 +1,18 @@
 <template>
   <material-popup-btn ref="btn_ref" :class="$style.btnContent">
-    <button :class="$style.btn" :aria-label="nextTogglePlayName">
-      <svg v-if="appSetting['player.togglePlayMethod'] == 'listLoop'" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M17 3l4 4-4 4" />
-        <path d="M3 7h18" />
-        <path d="M7 21l-4-4 4-4" />
-        <path d="M21 17H3" />
+    <button class="q-player-tool" :class="$style.btn" :aria-label="nextTogglePlayName">
+      <svg v-if="['listLoop', 'singleLoop'].includes(appSetting['player.togglePlayMethod'])" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 12v-2a3 3 0 0 1 3-3h12m-3-3 3 3-3 3m4 2v2a3 3 0 0 1-3 3H5m3-3-3 3 3 3" />
+        <path v-if="appSetting['player.togglePlayMethod'] == 'singleLoop'" d="m10.8 11.1 1.8-1.1v4" />
       </svg>
       <svg v-else-if="appSetting['player.togglePlayMethod'] == 'random'" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 7h3l10 10h3" />
-        <path d="M17 13l3 4-3 4" />
-        <path d="M4 17h3l3-3" />
-        <path d="M17 3l3 4-3 4" />
-        <path d="M14 7h6" />
+        <path d="M4 7h2c4.5 0 7.5 10 12 10h2m-3-3 3 3-3 3M4 17h2c1.6 0 3-1.2 4.3-3m3.4-4C15 8.3 16.5 7 18 7h2m-3-3 3 3-3 3" />
       </svg>
       <svg v-else-if="appSetting['player.togglePlayMethod'] == 'list'" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M6 7h12" />
-        <path d="M6 12h12" />
-        <path d="M6 17h8" />
-      </svg>
-      <svg v-else-if="appSetting['player.togglePlayMethod'] == 'singleLoop'" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M17 3l4 4-4 4" />
-        <path d="M3 7h18" />
-        <path d="M7 21l-4-4 4-4" />
-        <path d="M21 17H3" />
-        <path d="M12 10v5" />
-        <path d="M10.5 11.5L12 10l1.5 1.5" />
+        <path d="M4 6.5h10M4 12h8m-8 5.5h6M18 5.5v13m-3-3 3 3 3-3" />
       </svg>
       <svg v-else viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M8 6h8" />
-        <path d="M8 12h8" />
-        <path d="M8 18h8" />
+        <path d="m5.5 5.5 10 6.5-10 6.5zM19 5.5v13" />
       </svg>
     </button>
     <template #content>

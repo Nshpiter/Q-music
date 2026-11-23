@@ -22,6 +22,7 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
   let timeout = null
   let cancelScrollFn
   let dom_lines
+  let currentLineElement = null
   let isSetedLines = false
   let point = {
     x: null,
@@ -170,9 +171,10 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     const maxScrollTop = Math.max(0, dom.scrollHeight - dom.clientHeight)
     const lineIndex = getCurrentLineIndex()
     const dom_p = dom_lines[lineIndex]
-    const focusRatio = isShowPlayComment?.value ? 0.1 : 0.38
-    const rawTarget = dom_p
-      ? dom.scrollTop + dom_p.getBoundingClientRect().top - dom.getBoundingClientRect().top - dom.clientHeight * focusRatio
+    const focusRatio = isShowPlayComment?.value ? 0.1 : 0.5
+    const lineRect = dom_p?.getBoundingClientRect()
+    const rawTarget = lineRect
+      ? dom.scrollTop + lineRect.top - dom.getBoundingClientRect().top + (isShowPlayComment?.value ? 0 : lineRect.height / 2) - dom.clientHeight * focusRatio
       : 0
     if (!Number.isFinite(rawTarget)) return 0
     return Math.min(Math.max(rawTarget, 0), maxScrollTop)
@@ -198,7 +200,7 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     } else if (isStopScroll.value) {
       return
     }
-    if (duration <= 0) {
+    if (duration <= 0 || appSetting['common.performanceMode'] || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       dom_lyric.value.scrollTop = target
       return
     }
@@ -213,7 +215,7 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
   }
   const startLyricScrollTimeout = () => {
     clearLyricScrollTimeout()
-    if (isSkipMouseEnter) return
+    if (isSkipMouseEnter || isMsDown.value) return
     timeout = setTimeout(() => {
       timeout = null
       isStopScroll.value = false
@@ -224,10 +226,8 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
   }
   const handleLyricDown = (y) => {
     // console.log(event)
-    if (delayScrollTimeout) {
-      clearTimeout(delayScrollTimeout)
-      delayScrollTimeout = null
-    }
+    stopScrollAnimation()
+    isStopScroll.value = true
     isMsDown.value = true
     msDownY = y
     msDownScrollY = dom_lyric.value.scrollTop
@@ -242,7 +242,9 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     }
   }
   const handleMouseMsUp = event => {
+    if (!isMsDown.value) return
     isMsDown.value = false
+    startLyricScrollTimeout()
   }
   const updateLinePlay = target => {
     if (!isStopScroll.value || isMsDown.value || !dom_lyric.value) return hideLinePlay()
@@ -315,9 +317,11 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
 
   const updateCurrentLine = line => {
     if (!dom_lines) return
-    dom_lines.forEach((element, index) => {
-      element.classList.toggle('q-current-line', index === line)
-    })
+    const next = dom_lines[line] ?? null
+    if (next === currentLineElement) return
+    currentLineElement?.classList.remove('q-current-line')
+    next?.classList.add('q-current-line')
+    currentLineElement = next
   }
 
   const initLrc = (lines, oLines) => {
@@ -336,7 +340,6 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     }
   }
 
-  let delayScrollTimeout
   const scrollLine = (line, oldLine) => {
     updateCurrentLine(line)
     if (line < 0) return
@@ -344,15 +347,7 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     isSetedLines &&= false
     if (oldLine == null || line - oldLine != 1) return handleScrollLrc()
 
-    if (appSetting['playDetail.isDelayScroll']) {
-      if (delayScrollTimeout) clearTimeout(delayScrollTimeout)
-      delayScrollTimeout = setTimeout(() => {
-        delayScrollTimeout = null
-        handleScrollLrc(600)
-      }, 600)
-    } else {
-      handleScrollLrc()
-    }
+    handleScrollLrc(appSetting['playDetail.isDelayScroll'] ? 460 : 290)
   }
 
   watch(() => lyric.lines, initLrc)
@@ -372,6 +367,8 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
   onBeforeUnmount(() => {
     window.removeEventListener('resize', hideLinePlay)
     clearLinePlayRetry()
+    stopScrollAnimation()
+    clearLyricScrollTimeout()
     document.removeEventListener('mousemove', handleMouseMsMove)
     document.removeEventListener('mouseup', handleMouseMsUp)
     document.removeEventListener('touchmove', handleTouchMove)

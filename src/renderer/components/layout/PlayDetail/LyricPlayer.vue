@@ -220,6 +220,7 @@ export default {
 
     const lrcStyles = computed(() => {
       return {
+        '--lyric-edge-fade': `${Math.min(36, Math.max(0, appSetting['playDetail.lyricEdgeFade']))}%`,
         textAlign: appSetting['playDetail.style.align'],
         fontFamily: appSetting['playDetail.style.font'] || undefined,
       }
@@ -378,7 +379,7 @@ export default {
   height: auto;
   overflow: hidden;
   font-size: var(--playDetail-lrc-font-size, 16px);
-  -webkit-mask-image: linear-gradient(transparent 0%, #fff 13%, #fff 82%, transparent 100%);
+  -webkit-mask-image: linear-gradient(transparent, #fff var(--lyric-edge-fade), #fff calc(100% - var(--lyric-edge-fade)), transparent);
   cursor: grab;
   transition: opacity .28s ease, transform .5s cubic-bezier(.22, 1, .36, 1), -webkit-mask-image .5s ease;
   &.draging {
@@ -425,7 +426,7 @@ export default {
         filter: drop-shadow(0 10px 28px rgba(0, 0, 0, .26));
       }
 
-      &.q-current-line ~ .line-content {
+      &:has(+ .q-current-line), &.q-current-line + .line-content {
         opacity: .42;
       }
 
@@ -469,19 +470,8 @@ export default {
   //   font-size: 1.2em;
   // }
 }
-.lrcActiveZoom {
-  :global {
-    .line-content {
-      &.active {
-        .extended {
-          font-size: .94em;
-        }
-        .line {
-          font-size: 1.1em;
-        }
-      }
-    }
-  }
+.lrcActiveZoom :global(.line-content.q-current-line) {
+  transform: scale(1.09);
 }
 .commentMode {
   .trackHeader {
@@ -492,7 +482,7 @@ export default {
   }
 
   .lyric {
-    -webkit-mask-image: linear-gradient(transparent 0%, #fff 10%, #fff 76%, transparent 100%);
+    -webkit-mask-image: linear-gradient(transparent, #fff min(8%, var(--lyric-edge-fade)), #fff calc(100% - var(--lyric-edge-fade)), transparent);
     transform: translateY(-2px);
   }
 }
@@ -526,7 +516,7 @@ export default {
 
 .skip {
   position: absolute;
-  top: calc(38% + var(--playDetail-lrc-font-size, 16px) + 4px);
+  top: 50%;
   left: 0;
   // height: 6px;
   width: 100%;
@@ -721,7 +711,9 @@ export default {
 
       .line-content {
         font-weight: 400;
-        opacity: .72;
+        opacity: .52;
+        &:has(+ .q-current-line), &.q-current-line + .line-content { opacity: .72; }
+        &.q-current-line { opacity: 1; }
       }
 
       .line-content.line-mode.active .font-lrc,

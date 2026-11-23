@@ -2,7 +2,9 @@
 material-modal(:show="modelValue" bg-close teleport="#root" width="min(620px, calc(100vw - 32px))" max-width="calc(100vw - 32px)" height="min(660px, calc(100vh - 48px))" max-height="calc(100vh - 48px)" @close="handleClose")
   main(:class="$style.main")
     h2 {{ $t('user_api__title') }}
-    p(:class="$style.backupHint") {{ $t('user_api_backup_hint') }}
+    div(v-if="apiList.length" :class="$style.modeOptions")
+      base-checkbox(v-for="mode in ['play', 'quality']" :id="`user-api-mode-${mode}`" :key="mode" name="user-api-mode" need :value="mode" :model-value="appSetting['common.apiPreferQuality'] ? 'quality' : 'play'" :label="$t(`user_api_${mode}_first`)" @update:model-value="setMode")
+    p(:class="$style.backupHint") {{ $t(appSetting['common.apiPreferQuality'] ? 'user_api_quality_hint' : 'user_api_backup_hint') }}
     ul.scroll(v-if="apiList.length" :class="$style.content")
       li(v-for="(api, index) in apiList" :key="api.id" :class="[$style.listItem, {[$style.active]: appSetting['common.apiSource'] == api.id}]")
         div(:class="$style.listLeft")
@@ -81,6 +83,9 @@ export default {
     },
   },
   methods: {
+    setMode(mode) {
+      updateSetting({ 'common.apiPreferQuality': mode == 'quality' })
+    },
     handleBackup(id, enabled) {
       updateSetting({ 'common.apiBackupSources': enabled ? [...new Set([...this.backupIds, id])] : this.backupIds.filter(value => value != id) })
     },
@@ -172,6 +177,7 @@ export default {
 .name {
   color: var(--color-primary);
 }
+.modeOptions { display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 7px 0; }
 .backupHint {
   flex-shrink: 0;
   padding: 10px 7px 0;

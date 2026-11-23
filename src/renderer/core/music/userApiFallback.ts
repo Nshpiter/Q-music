@@ -10,11 +10,12 @@ export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, qualit
   const cancel = () => { controller.abort() }
   if (options.signal?.aborted) cancel()
   options.signal?.addEventListener('abort', cancel, { once: true })
-  const stop = watch(() => [appSetting['common.apiSource'], ...appSetting['common.apiBackupSources']], cancel, { flush: 'sync' })
+  const stop = watch(() => [appSetting['common.apiSource'], appSetting['common.apiPreferQuality'], ...appSetting['common.apiBackupSources']], cancel, { flush: 'sync' })
   try {
     const list = await getUserApiList()
     return await resolveUserApiFallback({
       ...options,
+      preferQuality: appSetting['common.apiPreferQuality'],
       providers: getUserApiProviderIds(appSetting['common.apiSource'], appSetting['common.apiBackupSources'], list, options.providerScope),
       source: musicInfo.source,
       quality,

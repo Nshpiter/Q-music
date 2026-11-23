@@ -3,6 +3,10 @@ dt#play_detail {{ $t('setting__play_detail') }}
 dd
   lyric-font-setting
 dd
+  label(for="lyric_edge_fade") {{ $t('lyric_edge_fade') }} · {{ appSetting['playDetail.lyricEdgeFade'] }}%
+  div
+    input#lyric_edge_fade(type="range" min="0" max="36" step="1" :value="appSetting['playDetail.lyricEdgeFade']" @input="updateSetting({ 'playDetail.lyricEdgeFade': Number($event.target.value) })")
+dd
   .gap-top
     base-checkbox(id="setting_play_detail_font_zoom_enable" :model-value="appSetting['playDetail.isZoomActiveLrc']" :label="$t('setting__play_detail_font_zoom')" @update:model-value="updateSetting({'playDetail.isZoomActiveLrc': $event})")
   .gap-top

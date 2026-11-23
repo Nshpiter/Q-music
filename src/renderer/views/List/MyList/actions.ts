@@ -9,7 +9,7 @@ const listExists = (id: string) => [defaultList, loveList, ...userLists].some(li
 
 export const importLocalMusicFiles = async(filePaths: string[], options: {
   listId?: string
-  byFolder?: boolean
+  folderFiles?: ReadonlySet<string>
   onProgress?: (current: number, total: number) => void
 }) => {
   const paths = [...new Set(filePaths)]
@@ -20,7 +20,7 @@ export const importLocalMusicFiles = async(filePaths: string[], options: {
   }
   const groups = new Map<string, { name: string, music: LX.Music.MusicInfoLocal[] }>()
   for (const song of music) {
-    const folder = options.byFolder ? localFolderPlaylist(song.meta.filePath) : { id: options.listId ?? 'local_music', name: window.i18n.t('local_import_title') }
+    const folder = options.folderFiles?.has(song.meta.filePath) ? localFolderPlaylist(song.meta.filePath) : { id: options.listId ?? 'local_music', name: window.i18n.t('local_import_title') }
     let group = groups.get(folder.id)
     if (!group) groups.set(folder.id, group = { name: folder.name, music: [] })
     group.music.push(song)
@@ -29,7 +29,7 @@ export const importLocalMusicFiles = async(filePaths: string[], options: {
   let duplicates = 0
   for (const [id, group] of groups) {
     if (!listExists(id)) {
-      if (!options.byFolder && options.listId) throw new Error('local_import_target_missing')
+      if (id == options.listId) throw new Error('local_import_target_missing')
       await createUserList({ id, name: group.name })
     }
     const existing = new Set((await getListMusics(id)).map(song => song.id))

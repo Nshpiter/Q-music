@@ -1,10 +1,8 @@
 <template>
   <material-popup-btn :class="$style.btnContent">
-    <button :class="[$style.btn, { [$style.active]: playbackRate != 1 }]" :aria-label="`${$t('player__playback_rate')}${playbackRate}x`">
+    <button class="q-player-tool" :class="[$style.btn, { [$style.active]: playbackRate != 1 }]" :aria-label="`${$t('player__playback_rate')}${playbackRate}x`">
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M5 17a8 8 0 1 1 14 0" />
-        <path d="M12 13l4-4" />
-        <path d="M8 17h8" />
+        <path d="M5.5 18.5a8.5 8.5 0 1 1 13 0zm6.5-5 4-4" />
       </svg>
     </button>
     <template #content>

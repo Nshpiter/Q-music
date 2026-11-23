@@ -1,39 +1,27 @@
 import { computed, ref } from '@common/utils/vueTools'
+import { downloadStatus } from '@renderer/store/download/state'
 
-export default () => {
-  const tabs = computed(() => {
-    return [
-      {
-        label: window.i18n.t('download__all'),
-        id: 'all',
-      },
-      {
-        label: window.i18n.t('download__running'),
-        id: 'runing',
-      },
-      {
-        label: window.i18n.t('download__paused'),
-        id: 'paused',
-      },
-      {
-        label: window.i18n.t('download__error'),
-        id: 'error',
-      },
-      {
-        label: window.i18n.t('download__finished'),
-        id: 'finished',
-      },
-    ]
-  })
+const statusTabs = {
+  [downloadStatus.RUN]: 'running',
+  [downloadStatus.WAITING]: 'running',
+  [downloadStatus.PAUSE]: 'paused',
+  [downloadStatus.ERROR]: 'error',
+  [downloadStatus.COMPLETED]: 'finished',
+}
+
+export default (listAll) => {
   const activeTab = ref('all')
-
-  // const setActiveTab = (tab) => {
-  //   activeTab.value = tab
-  // }
-
-  return {
-    tabs,
-    activeTab,
-    // setActiveTab,
-  }
+  const groups = computed(() => {
+    const result = { all: listAll.value, running: [], paused: [], error: [], finished: [] }
+    for (const task of listAll.value) {
+      if (task && statusTabs[task.status]) result[statusTabs[task.status]].push(task)
+    }
+    return result
+  })
+  const tabs = computed(() => Object.entries(groups.value).map(([id, tasks]) => ({
+    id,
+    label: `${window.i18n.t('download__' + id)} (${tasks.length})`,
+  })))
+  const list = computed(() => groups.value[activeTab.value])
+  return { tabs, activeTab, list }
 }

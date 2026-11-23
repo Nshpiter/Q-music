@@ -32,6 +32,8 @@ declare global {
        * api id
        */
       'common.apiSource': string
+      'common.apiPreferQuality': boolean
+      'playDetail.lyricEdgeFade': number
       'common.apiBackupSources': string[]
 
       /**

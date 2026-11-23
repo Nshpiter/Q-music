@@ -1,51 +1,34 @@
 <template lang="pug">
 div(:class="[$style.footerLeftControlBtns, { [$style.detail]: detail }]")
-  button(v-if="isShowPlayerDetail && musicInfo.tlrc" :class="[$style.footerLeftControlBtn, { [$style.active]: appSetting['player.isShowLyricTranslation'] }]" :aria-label="$t('setting__play_lyric_transition')" :aria-pressed="appSetting['player.isShowLyricTranslation']" :title="$t('setting__play_lyric_transition')" @click="toggleTranslation")
-    svg(:class="$style.translationIcon" viewBox="0 0 512 512" aria-hidden="true")
-      line(x1="48" y1="112" x2="336" y2="112")
-      line(x1="192" y1="64" x2="192" y2="112")
-      polyline(points="272 448 368 224 464 448")
-      line(x1="301.5" y1="384" x2="434.5" y2="384")
-      path(d="M281.3,112S257,206,199,277,80,384,80,384")
-      path(d="M256,336s-35-27-72-75-56-85-56-85")
-  button(:class="[$style.footerLeftControlBtn, $style.lrcBtn, { [$style.active]: appSetting['desktopLyric.enable'] }]" :aria-label="toggleDesktopLyricBtnTitle" @click="toggleDesktopLyric" @contextmenu="toggleLockDesktopLyric")
+  button.q-player-tool(v-if="isShowPlayerDetail && musicInfo.tlrc" :aria-label="$t('setting__play_lyric_transition')" :aria-pressed="appSetting['player.isShowLyricTranslation']" :title="$t('setting__play_lyric_transition')" @click="toggleTranslation")
     svg(viewBox="0 0 24 24" aria-hidden="true")
-      path(d="M5 6h14")
-      path(d="M5 11h9")
-      path(d="M5 16h6")
-      path(d="M16 15.5c1.9 0 3 1 3 2.3s-1.1 2.2-3 2.2-3-1-3-2.2 1.1-2.3 3-2.3z")
-      path(d="M19 8v9.6")
-  button(:class="[$style.footerLeftControlBtn, $style.appearanceBtn, { [$style.active]: appearanceMenuVisible }]" :aria-label="$t('play_detail_appearance_menu')" @click.stop="showAppearanceMenu")
+      path(d="M3.5 7h11M9 4v3m3.5 0c-1.1 4.1-3.7 7.2-8 9.5M6 10c1.2 2.4 3 4.4 5.3 5.9m1.4 3.7L17 9l4.3 10.6m-7.1-3.4h5.6")
+  button.q-player-tool(:aria-label="toggleDesktopLyricBtnTitle" :aria-pressed="appSetting['desktopLyric.enable']" @click="toggleDesktopLyric" @contextmenu="toggleLockDesktopLyric")
     svg(viewBox="0 0 24 24" aria-hidden="true")
-      path(d="M4 13v-2")
-      path(d="M8 16V8")
-      path(d="M12 19V5")
-      path(d="M16 16V8")
-      path(d="M20 13v-2")
-    span(:class="$style.menuIndicator" aria-hidden="true")
-  button(:class="[$style.footerLeftControlBtn, $style.qualityBtn, { [$style.active]: qualityMenuVisible }]" :aria-label="$t('player__quality_title')" @click.stop="showQualityMenu")
+      path(d="M4 5.5h16M4 11h9m-9 5.5h5m10.5-.2V9")
+      ellipse(cx="16.7" cy="17.4" rx="2.8" ry="2.1")
+  button.q-player-tool(:aria-label="$t('play_detail_appearance_menu')" :aria-expanded="appearanceMenuVisible" @click.stop="showAppearanceMenu")
+    svg(viewBox="0 0 24 24" aria-hidden="true")
+      path(d="M4 10.5v3m4-6v9m4-12v15m4-12v9m4-6v3")
+  button.q-player-tool(:class="$style.qualityBtn" :aria-label="$t('player__quality_title')" :aria-expanded="qualityMenuVisible" @click.stop="showQualityMenu")
     span(:class="$style.qualityLabel") {{ currentQualityBadge }}
-    span(:class="$style.menuIndicator" aria-hidden="true")
-  button(:class="[$style.footerLeftControlBtn, { [$style.active]: isShowLrcSelectContent }]" :aria-label="$t('lyric__select')" @click="toggleVisibleLrc")
+  button.q-player-tool(:aria-label="$t('lyric__select')" :aria-pressed="isShowLrcSelectContent" @click="toggleVisibleLrc")
     svg(viewBox="0 0 24 24" aria-hidden="true")
-      path(d="M6 7h12")
-      path(d="M6 12h12")
-      path(d="M6 17h8")
-  button(:class="[$style.footerLeftControlBtn, {[$style.active]: isShowPlayComment}]" :aria-label="$t('comment__show')" @click="toggleVisibleComment")
+      rect(x="3.5" y="5.5" width="17" height="13" rx="2.5")
+      path(d="M7 10h10M7 14h6")
+  button.q-player-tool(:aria-label="$t('comment__show')" :aria-pressed="isShowPlayComment" @click="toggleVisibleComment")
     svg(viewBox="0 0 24 24" aria-hidden="true")
-      path(d="M6.5 6.5h11a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2h-6l-4.2 3v-3h-.8a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2z")
-      path(d="M8 10h8")
-      path(d="M8 13h5")
-  //- 面板开关 | 播放设置 | 动作 三组之间的细分隔
-  span(:class="$style.toolDivider" aria-hidden="true")
+      path(d="M6.5 4.8h11a3 3 0 0 1 3 3v6.5a3 3 0 0 1-3 3h-6.2l-4.8 3v-3a3 3 0 0 1-3-3V7.8a3 3 0 0 1 3-3Z")
+      path(d="M8 10.8h8")
+  span(:class="[$style.toolDivider, $style.panelDivider]" aria-hidden="true")
   common-sound-effect-btn
   common-playback-rate-btn
   common-volume-btn
   common-toggle-play-mode-btn
   span(:class="$style.toolDivider" aria-hidden="true")
-  button(:class="$style.footerLeftControlBtn" :aria-label="downloadTitle" :title="downloadTitle" :disabled="isDownloadDisabled || downloadOpening" @click.stop="showCurrentDownload")
+  button.q-player-tool(:aria-label="downloadTitle" :title="downloadTitle" :disabled="isDownloadDisabled || downloadOpening" @click.stop="showCurrentDownload")
     svg(viewBox="0 0 24 24" aria-hidden="true")
-      path(d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4")
+      path(d="M12 4v10.5m-4-4 4 4 4-4M4.5 16v3.5h15V16")
   common-download-modal(v-if="downloadMusicInfo" v-model:show="downloadVisible" :music-info="downloadMusicInfo")
   PlayerAppearanceMenu(
     v-model="appearanceMenuVisible"
@@ -304,220 +287,48 @@ export default {
 @import '@renderer/assets/styles/layout.less';
 
 .footerLeftControlBtns {
-  --q-footer-tool-size: 30px;
-  width: 100%;
   display: flex;
-  flex-flow: row nowrap;
-  justify-content: flex-end;
+  flex: none;
   align-items: center;
-  gap: 3px;
-  height: 64px;
-  padding: 4px 0;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-
-  button {
-    flex: none;
-    width: var(--q-footer-tool-size);
-    height: var(--q-footer-tool-size);
-    color: var(--color-font);
-    border-radius: 50%;
-    opacity: .74;
-    transition: opacity @transition-normal, color @transition-fast, background-color @transition-fast, transform @transition-fast;
-
-    &:hover {
-      opacity: 1;
-      color: var(--color-primary-font);
-      background-color: var(--q-icon-btn-hover-bg) !important;
-    }
-
-    &:active {
-      transform: scale(.94);
-    }
-
-    &:disabled {
-      cursor: default;
-      opacity: .45;
-      transform: none;
-    }
-
-    svg {
-      width: 22px;
-      height: 22px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      filter: none;
-      opacity: 1;
-    }
-  }
-
-  .footerLeftControlBtn {
-    // width: 18px;
-    // height: 18px;
-    opacity: .8;
-    cursor: pointer;
-    transition: opacity @transition-normal, color @transition-fast, background-color @transition-fast, transform @transition-fast;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: transparent;
-    border: none;
-    padding: 0;
-    border-radius: 50%;
-
-    &:hover {
-      opacity: 1;
-      color: var(--color-primary-font);
-      background-color: var(--q-icon-btn-hover-bg);
-    }
-
-    &.active {
-      color: var(--color-primary);
-      opacity: 1;
-      background-color: var(--color-primary-alpha-800);
-      box-shadow: 0 8px 18px var(--color-primary-alpha-800);
-    }
-  }
-
-  .translationIcon {
-    stroke-width: 32px;
-  }
-
-  .toolDivider {
-    flex: none;
-    width: 1px;
-    height: 14px;
-    margin: 0 4px;
-    border-radius: 1px;
-    background: rgb(from var(--color-font) r g b / .16);
-  }
-
-  .lrcBtn {
-    width: var(--q-footer-tool-size);
-  }
-
-  .appearanceBtn {
-    position: relative;
-  }
-
-  .qualityBtn {
-    position: relative;
-  }
-
-  .qualityLabel {
-    font-size: 8px;
-    font-weight: 800;
-    letter-spacing: -.02em;
-    white-space: nowrap;
-  }
-
-  .menuIndicator {
-    position: absolute;
-    right: 1px;
-    bottom: 2px;
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: currentColor;
-    opacity: .72;
-  }
-
-  :global {
-    .material-popup-btn,
-    .popup-btn {
-      height: var(--q-footer-tool-size);
-    }
-  }
+  gap: var(--q-footer-tool-gap);
 }
 
-.detail {
-  height: 46px;
-  padding: 0;
-  gap: 2px;
-
-  button {
-    width: 32px;
-    height: 32px;
-    color: rgba(255, 255, 255, .82);
-
-    &:hover {
-      color: #fff;
-      background-color: rgba(255, 255, 255, .2) !important;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, .18);
-    }
-  }
-
-  .footerLeftControlBtn.active {
-    color: rgba(20, 24, 27, .96);
-    background-color: rgba(255, 255, 255, .94);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, .24), inset 0 1px 0 #fff;
-
-    &:hover {
-      color: rgba(10, 14, 17, 1);
-      background-color: #fff !important;
-    }
-  }
-
-  .toolDivider {
-    background: rgba(255, 255, 255, .18);
-  }
+.qualityBtn {
+  // 按最长的 Hi-Res 预留点击区域，边框由内部标签随文字撑开。
+  font-size: 9px;
+  min-width: 4.1em;
+}
+.qualityLabel {
+  display: grid;
+  place-items: center;
+  height: 15px;
+  padding: 0 2px;
+  box-sizing: border-box;
+  border: 1.4px solid currentColor;
+  border-radius: 4px;
+  font-family: Arial, sans-serif;
+  font-size: inherit;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-@media (max-width: 1280px) {
-  .footerLeftControlBtns {
-    --q-footer-tool-size: 28px;
-    gap: 2px;
-    height: 64px;
-    padding: 4px 0;
-
-    button {
-      width: var(--q-footer-tool-size);
-      height: var(--q-footer-tool-size);
-    }
-
-    .lrcBtn {
-      width: var(--q-footer-tool-size);
-    }
-
-    :global {
-      .material-popup-btn,
-      .popup-btn {
-        height: var(--q-footer-tool-size);
-      }
-    }
-  }
+.toolDivider {
+  flex: none;
+  width: 1px;
+  height: 14px;
+  margin: 0 3px;
+  background: currentColor;
+  opacity: .18;
 }
 
 @media (max-width: 1100px) {
   .footerLeftControlBtns:not(.detail) .toolDivider { display: none; }
-}
-
-@media (max-width: 980px) {
-  .footerLeftControlBtns {
-    --q-footer-tool-size: 24px;
-    gap: 1px;
-    height: 64px;
-    padding: 4px 0;
-
-    button {
-      width: var(--q-footer-tool-size);
-      height: var(--q-footer-tool-size);
-    }
-
-    .lrcBtn {
-      width: var(--q-footer-tool-size);
-    }
-
-    :global {
-      .material-popup-btn,
-      .popup-btn {
-        height: var(--q-footer-tool-size);
-      }
-    }
+  .footerLeftControlBtns:not(.detail) .panelDivider {
+    display: block;
+    flex-basis: 100%;
+    height: 0;
+    margin: 0;
   }
 }
 

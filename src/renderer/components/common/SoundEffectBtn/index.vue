@@ -1,15 +1,9 @@
 <template>
-  <button :class="$style.btn" :aria-label="$t('player__sound_effect')" @click="visible = true">
+  <button class="q-player-tool" :class="$style.btn" :aria-label="$t('player__sound_effect')" @click="visible = true">
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M5 7h8" />
-      <path d="M17 7h2" />
-      <path d="M15 5v4" />
-      <path d="M5 12h2" />
-      <path d="M11 12h8" />
-      <path d="M9 10v4" />
-      <path d="M5 17h10" />
-      <path d="M19 17h0" />
-      <path d="M17 15v4" />
+      <path d="M4 7.5h9m4 0h3M4 16.5h3m4 0h9" />
+      <circle cx="15" cy="7.5" r="2.2" />
+      <circle cx="9" cy="16.5" r="2.2" />
     </svg>
   </button>
   <material-modal :show="visible" bg-close="bg-close" :teleport="teleport" @close="visible = false">

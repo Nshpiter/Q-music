@@ -66,18 +66,15 @@
       <player-favorite-button :dark="isImmersiveDetail" />
       <button
         type="button"
-        :class="[$style.queueBtn, { [$style.active]: isShowPlayQueue }]"
+        class="q-player-tool"
+        :class="$style.queueBtn"
         :aria-label="$t('play_queue__title')"
         :aria-expanded="isShowPlayQueue"
         :title="$t('play_queue__title')"
         @click.stop="togglePlayQueue"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 6h12" />
-          <path d="M4 11h12" />
-          <path d="M4 16h8" />
-          <path d="M17 14v6" />
-          <path d="M17 14l4 2.5-4 2.5" />
+          <path d="M3.5 5.5h16m-16 6h10m-10 6h7M16 13l5 3.5-5 3.5z" />
         </svg>
         <span v-if="tempPlayList.length" :class="$style.queueBadge">{{ queueBadgeText }}</span>
       </button>
@@ -435,6 +432,12 @@ const handleImgError = () => {
 }
 
 .toolArea {
+  --q-footer-tool-size: 30px;
+  --q-footer-tool-icon: 21px;
+  --q-footer-tool-gap: 3px;
+  --q-footer-tool-ink: color-mix(in srgb, var(--color-font) 82%, transparent);
+  --q-footer-tool-accent: var(--color-primary-font);
+  --q-footer-tool-hover: var(--q-icon-btn-hover-bg);
   width: 100%;
   justify-self: end;
   align-self: center;
@@ -442,9 +445,47 @@ const handleImgError = () => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 3px;
+  gap: var(--q-footer-tool-gap);
   padding-bottom: 0;
   -webkit-app-region: no-drag;
+
+  :global(.q-player-tool) {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: var(--q-footer-tool-size);
+    height: var(--q-footer-tool-size);
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    color: var(--q-footer-tool-ink);
+    background: transparent;
+    cursor: pointer;
+    transition: color @transition-fast, background-color @transition-fast, transform @transition-fast;
+
+    > svg {
+      display: block;
+      flex: none;
+      width: var(--q-footer-tool-icon);
+      height: var(--q-footer-tool-icon);
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 1;
+    }
+    &:enabled:hover,
+    &[aria-pressed='true'],
+    &[aria-expanded='true'] {
+      color: var(--q-footer-tool-accent);
+      background: var(--q-footer-tool-hover);
+    }
+    &:enabled:active { transform: scale(.94); }
+    &:disabled { opacity: .4; cursor: default; }
+  }
 }
 
 .tools {
@@ -455,41 +496,6 @@ const handleImgError = () => {
 
 .queueBtn {
   position: relative;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 50%;
-  color: var(--color-font);
-  background-color: transparent;
-  cursor: pointer;
-  opacity: .76;
-  transition: opacity @transition-normal, color @transition-fast, background-color @transition-fast, transform @transition-fast;
-
-  &:hover,
-  &.active {
-    opacity: 1;
-    color: var(--color-primary);
-    background-color: var(--q-icon-btn-hover-bg);
-  }
-
-  &:active {
-    transform: scale(.94);
-  }
-
-  svg {
-    width: 22px;
-    height: 22px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
 }
 
 .queueBadge {
@@ -629,6 +635,9 @@ const handleImgError = () => {
   }
 
   .toolArea {
+    --q-footer-tool-ink: rgba(255, 255, 255, .86);
+    --q-footer-tool-accent: #fff;
+    --q-footer-tool-hover: rgba(255, 255, 255, .16);
     position: fixed;
     right: clamp(34px, 4.4vw, 68px);
     bottom: 34px;
@@ -637,7 +646,6 @@ const handleImgError = () => {
     height: 48px;
     padding: 0 9px;
     box-sizing: border-box;
-    gap: 1px;
     overflow: hidden;
     isolation: isolate;
     border: none;
@@ -669,16 +677,6 @@ const handleImgError = () => {
 
   .tools {
     flex: none;
-  }
-
-  .queueBtn {
-    color: rgba(255, 255, 255, .86);
-
-    &:hover,
-    &.active {
-      color: #fff;
-      background: rgba(255, 255, 255, .12);
-    }
   }
 
   .queueBadge {
@@ -756,12 +754,8 @@ const handleImgError = () => {
   }
 
   .toolArea {
-    gap: 2px;
-  }
-
-  .queueBtn {
-    width: 28px;
-    height: 28px;
+    --q-footer-tool-size: 28px;
+    --q-footer-tool-gap: 2px;
   }
 }
 
@@ -771,16 +765,12 @@ const handleImgError = () => {
   }
 
   .footer:not(.detailFooter) .toolArea {
-    justify-content: flex-end;
+    flex-wrap: wrap;
+    align-content: center;
   }
 
   .footer:not(.detailFooter) .tools {
-    flex: 1;
-    width: 0;
-    flex-wrap: wrap;
-    align-content: center;
-    justify-content: flex-end;
-    row-gap: 2px;
+    display: contents;
   }
 }
 
@@ -801,17 +791,9 @@ const handleImgError = () => {
   }
 
   .toolArea {
-    gap: 1px;
-  }
-
-  .queueBtn {
-    width: 24px;
-    height: 24px;
-
-    svg {
-      width: 20px;
-      height: 20px;
-    }
+    --q-footer-tool-size: 24px;
+    --q-footer-tool-icon: 20px;
+    --q-footer-tool-gap: 1px;
   }
 }
 </style>

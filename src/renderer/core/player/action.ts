@@ -298,11 +298,11 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
       // 自定义 API 是默认线路；手动点选平台时保留明确的平台优先意图，
       // 官方失败后仍会尝试自定义 API。
       if (preferCustomApi) {
-        attempts.push({ musicInfo: candidate, allowToggleSource: false, routeStrategy: 'api', userApiScope: 'primary' })
+        attempts.push({ musicInfo: candidate, allowToggleSource: false, routeStrategy: 'api', userApiScope: appSetting['common.apiPreferQuality'] ? 'all' : 'primary' })
         if (candidate.source == 'tx' || candidate.source == 'wy') {
           attempts.push({ musicInfo: candidate, allowToggleSource: false, routeStrategy: 'official' })
         }
-        if (appSetting['common.apiBackupSources']?.length) {
+        if (!appSetting['common.apiPreferQuality'] && appSetting['common.apiBackupSources']?.length) {
           attempts.push({ musicInfo: candidate, allowToggleSource: false, routeStrategy: 'api', userApiScope: 'backup' })
         }
       } else {

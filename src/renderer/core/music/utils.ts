@@ -645,7 +645,7 @@ const resolveOnlineMusicUrl = async({ musicInfo, quality, isRefresh, requestOpti
     if (isCustomApiSource()) {
       // 新增备用不能抢在原本可用的官方兜底前；显式 API 线路由播放器安排顺序。
       return await resolveCustomMusicRoute(musicInfo, quality, isRefresh, preferCustomApi
-        ? { ...requestOptions, userApiScope: 'primary' }
+        ? { ...requestOptions, userApiScope: appSetting['common.apiPreferQuality'] ? 'all' : 'primary' }
         : requestOptions)
     }
     const initialProviderId = getMusicUrlCacheProviderId()
@@ -753,7 +753,7 @@ const resolveOnlineMusicUrl = async({ musicInfo, quality, isRefresh, requestOpti
     if (preferCustomApi && error.message != requestMsg.cancelRequest) {
       const officialResult = await tryOfficialRoute()
       if (officialResult) return officialResult
-      if (appSetting['common.apiBackupSources'].length) {
+      if (!appSetting['common.apiPreferQuality'] && appSetting['common.apiBackupSources'].length) {
         return resolveCustomMusicRoute(musicInfo, quality, isRefresh, { ...requestOptions, userApiScope: 'backup' })
       }
     }

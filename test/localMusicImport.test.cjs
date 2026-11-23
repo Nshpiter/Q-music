@@ -61,12 +61,13 @@ function fixture() {
 test('同名不同目录分别建歌单，重复导入只新增，坏文件不创建空歌单', async() => {
   const f = fixture()
   const files = ['a/album/1.mp3', 'b/album/2.mp3', 'broken/bad.mp3'].map(p => path.resolve(p))
-  const first = await f.importLocalMusicFiles(files, { byFolder: true })
+  const first = await f.importLocalMusicFiles(files, { folderFiles: new Set(files) })
   assert.equal(first.added, 2)
   assert.equal(first.skipped, 1)
   assert.equal(f.lists.length, 2)
   assert.equal(f.lists[0].name, f.lists[1].name)
-  const second = await f.importLocalMusicFiles([...files, path.resolve('a/album/3.mp3')], { byFolder: true })
+  const nextFiles = [...files, path.resolve('a/album/3.mp3')]
+  const second = await f.importLocalMusicFiles(nextFiles, { folderFiles: new Set(nextFiles) })
   assert.equal(second.added, 1)
   assert.equal(second.duplicates, 2)
   assert.equal(f.lists.length, 2)
@@ -79,6 +80,16 @@ test('选择单曲使用独立本地歌单，既不覆盖平台歌单也不重�
   assert.equal(result.added, 1)
   assert.equal(result.firstListId, 'local_music')
   assert.equal((await f.importLocalMusicFiles([file], {})).duplicates, 1)
+})
+
+test('文件与文件夹一起导入时按来源归类，重叠路径只导入一次', async() => {
+  const f = fixture()
+  const single = path.resolve('loose.wav')
+  const track = path.resolve('album/track.wav')
+  const result = await f.importLocalMusicFiles([single, track, track], { folderFiles: new Set([track]) })
+  assert.equal(result.added, 2)
+  assert.deepEqual(Array.from(f.tracks.get('local_music'), song => song.id), [single])
+  assert.deepEqual(Array.from(f.tracks.get(folderUtils.localFolderPlaylist(track).id), song => song.id), [track])
 })
 
 test('解析过程中目标列表被删除时不重建或写入该列表', async() => {

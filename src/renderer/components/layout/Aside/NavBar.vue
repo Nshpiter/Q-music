@@ -1,5 +1,5 @@
 <template>
-  <div ref="dom_menu" :class="$style.menu">
+  <div :class="$style.menu">
     <ul ref="dom_list" :class="$style.list" role="toolbar">
       <li
         v-show="indicator.height > 0"
@@ -10,13 +10,7 @@
       />
       <li v-for="item in menus" :key="item.to" :class="$style.navItem" role="presentation">
         <router-link :class="[$style.link, {[$style.active]: $route.meta.name == item.name}]" role="tab" :aria-selected="$route.meta.name == item.name" :to="item.to" :aria-label="item.tips">
-          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" :viewBox="item.iconSize" :height="item.size" :width="item.size" space="preserve">
-            <template v-if="item.name == 'History'">
-              <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8" />
-              <path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-            </template>
-            <use v-else :xlink:href="item.icon" />
-          </svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use :href="item.icon" /></svg>
           <span>{{ item.tips }}</span>
         </router-link>
       </li>
@@ -29,25 +23,19 @@ import { appSetting } from '@renderer/store/setting'
 import { useI18n } from '@root/lang'
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from '@common/utils/vueTools'
 import { useRoute } from '@common/utils/vueRouter'
-import { useIconSize } from '@renderer/utils/compositions/useIconSize'
 
 export default {
   name: 'NavBar',
   setup() {
     const t = useI18n()
-    const dom_menu = ref<HTMLElement>()
     const dom_list = ref<HTMLElement>()
-    const iconSize = useIconSize(dom_menu, 0.32)
 
     const menus = computed(() => {
-      const size = iconSize.value
       return [
         {
           to: '/search',
           tips: t('nav_home'),
           icon: '#icon-home',
-          iconSize: '0 0 24 24',
-          size,
           name: 'Search',
           enable: true,
         },
@@ -55,8 +43,6 @@ export default {
           to: '/songList/list',
           tips: t('song_list'),
           icon: '#icon-album',
-          iconSize: '0 0 425.2 425.2',
-          size,
           name: 'SongList',
           enable: true,
         },
@@ -64,26 +50,20 @@ export default {
           to: '/leaderboard',
           tips: t('leaderboard'),
           icon: '#icon-leaderboard',
-          iconSize: '0 0 425.22 425.2',
-          size,
           name: 'Leaderboard',
           enable: true,
         },
         {
           to: '/list',
           tips: t('my_list'),
-          icon: '#icon-love',
-          iconSize: '0 0 444.87 391.18',
-          size,
+          icon: '#icon-library',
           name: 'List',
           enable: true,
         },
         {
           to: '/history',
           tips: t('play_history_title'),
-          icon: '',
-          iconSize: '0 0 24 24',
-          size,
+          icon: '#icon-history',
           name: 'History',
           enable: true,
         },
@@ -91,8 +71,6 @@ export default {
           to: '/download',
           tips: t('download'),
           icon: '#icon-download-2',
-          iconSize: '0 0 425.2 425.2',
-          size,
           enable: appSetting['download.enable'],
           name: 'Download',
         },
@@ -100,8 +78,6 @@ export default {
           to: '/setting',
           tips: t('setting'),
           icon: '#icon-setting',
-          iconSize: '0 0 493.23 436.47',
-          size,
           enable: true,
           name: 'Setting',
         },
@@ -142,7 +118,6 @@ export default {
     return {
       appSetting,
       menus,
-      dom_menu,
       dom_list,
       indicator,
       indicatorReady,
@@ -157,168 +132,47 @@ export default {
 .menu {
   flex: auto;
   min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden auto;
   scrollbar-width: thin;
   -webkit-app-region: no-drag;
-  // &.controlBtnLeft {
-  //   display: flex;
-  //   flex-flow: column nowrap;
-  //   justify-content: center;
-  //   padding-bottom: @control-btn-height;
-  // }
-  // padding: 5px;
 }
-.list {
-  position: relative;
-  -webkit-app-region: no-drag;
-  display: flex;
-  flex-flow: column nowrap;
-  gap: 8px;
-  // 为悬停时的右移动效留出空间，避免撑出横向滚动条。
-  margin-right: 2px;
-  // margin-bottom: 15px;
-  &:last-child {
-    margin-bottom: 0;
-  }
-  // background-color: pink;
-  // dt {
-  //   padding-left: 5px;
-  //   font-size: 11px;
-  //   transition: @transition-normal;
-  //   transition-property: color;
-  //   color: @color-theme-font-label;
-  //   .mixin-ellipsis-1();
-  // }
-}
-.navItem {
-  position: relative;
-  flex: none;
-}
-// 选中底块独立于导航项，位置和高度跟随实际菜单项。
+.list { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.navItem { position: relative; flex: none; }
 .indicator {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  border-radius: 14px;
+  inset: 0 0 auto;
   pointer-events: none;
-  // 跟随文字色，深色主题下选中底块同样可见。
-  background: rgb(from var(--color-font) r g b / .1);
-  box-shadow: inset 0 0 0 1px rgb(from var(--color-font) r g b / .16), 0 8px 20px rgba(35, 38, 36, .07);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
-.indicatorReady {
-  transition: transform .42s cubic-bezier(.22, 1, .36, 1);
-}
+.indicatorReady { transition: transform .28s cubic-bezier(.2, .8, .2, 1); }
 .link {
-  position: relative;
-  left: auto;
-  top: auto;
-  width: 100%;
-  height: 50px;
-  // left: 15%;
-  // top: 15%;
-  // width: 70%;
-  // height: 70%;
-  // display: block;
   box-sizing: border-box;
-  text-decoration: none;
-  // text-decoration: none;
-  // border-radius: 20%;
-
-  // padding: 18px 3px;
-  // margin: 5px 0;
-  // border-left: 5px solid transparent;
-  padding: 0 13px;
-  gap: 13px;
-  border-radius: 14px;
-  transition: @transition-fast;
-  transition-property: background-color, color, opacity, box-shadow, transform;
-  color: var(--color-nav-font);
-  cursor: pointer;
-  // font-size: 11.5px;
-  text-align: center;
-  outline: none;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  gap: 14px;
+  height: 46px;
+  padding: 0 16px;
+  border-radius: 12px;
+  color: color-mix(in srgb, var(--color-font) 82%, transparent);
+  text-decoration: none;
+  transition: background-color @transition-fast, color @transition-fast;
 
-  // border-radius: @radius-border;
-  .mixin-ellipsis-1();
-
-  svg {
-    flex: none;
-    width: 20px;
-    height: 20px;
-    padding: 7px;
-    border-radius: 12px;
-    color: var(--color-nav-font);
-    background: var(--q-surface-soft);
-    box-shadow: inset 0 0 0 1px var(--q-border);
-    transition: @transition-fast;
-    transition-property: background, color, box-shadow, transform;
-  }
-
-  span {
-    min-width: 0;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    .mixin-ellipsis-1();
-  }
-
-  // 选中态：主色实心图标胶囊 + 柔和玻璃底，取代原来的左侧竖线
+  svg { flex: none; width: 21px; height: 21px; }
+  span { min-width: 0; font-size: 14px; font-weight: 500; .mixin-ellipsis-1(); }
+  &:hover:not(.active) { color: var(--color-font); background: rgb(from var(--color-font) r g b / .06); }
+  &:active:not(.active) { background: rgb(from var(--color-font) r g b / .1); }
   &.active {
-    color: var(--color-font);
-    background: transparent;
-
-    svg {
-      color: var(--color-content-background);
-      background: linear-gradient(145deg, rgb(from var(--color-font) r g b / .78), var(--color-font));
-      box-shadow: 0 7px 16px rgba(22, 24, 23, .24), inset 0 1px 0 var(--q-border);
-    }
-
-    &:hover {
-      background: rgb(from var(--color-font) r g b / .04);
-    }
+    color: color-mix(in srgb, var(--color-primary) 45%, var(--color-font));
+    span { font-weight: 650; }
   }
-
-  &:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: -2px;
-  }
-
-
-  &:hover {
-    color: var(--color-nav-font);
-
-    &:not(.active) {
-      opacity: 1;
-      background-color: var(--q-surface);
-      transform: translateX(2px);
-      svg {
-        background: var(--q-surface);
-      }
-    }
-  }
-  &:active:not(.active) {
-    opacity: .72;
-    background-color: var(--color-primary-light-600-alpha-400);
-  }
+  &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
 }
-
-// .icon {
-//   // margin-bottom: 5px;
-//   &> svg {
-//     width: 32%;
-//   }
-// }
-
-// 小窗口收紧导航间距，并为底部播放栏留出空间。
 @media (max-height: 620px) {
-  .list { gap: 4px; }
-  .link { height: 44px; }
-  .link svg { width: 18px; height: 18px; padding: 6px; }
+  .list { gap: 2px; }
+  .link { height: 40px; }
 }
-
+@media (prefers-reduced-motion: reduce) {
+  .indicatorReady, .link { transition: none; }
+}
 </style>

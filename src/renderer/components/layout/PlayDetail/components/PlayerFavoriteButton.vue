@@ -1,9 +1,9 @@
 <template>
-  <div ref="control" :class="[$style.control, { [$style.dark]: dark }]">
-    <button type="button" :class="[$style.button, $style.heart, { [$style.loved]: loved }]" :aria-label="$t('favorite_button_hint')" :aria-pressed="loved" :aria-busy="busy" :disabled="!currentMusicInfo || busy" @click.stop="toggle" @contextmenu.stop.prevent="showMenu" @keydown.shift.f10.stop.prevent="showMenu" @keydown.context-menu.stop.prevent="showMenu">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-8-4.8-8-10a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.2-8 10-8 10z" /></svg>
+  <div ref="control" :class="$style.control">
+    <button type="button" class="q-player-tool" :class="{ [$style.loved]: loved }" :aria-label="$t('favorite_button_hint')" :aria-pressed="loved" :aria-busy="busy" :disabled="!currentMusicInfo || busy" @click.stop="toggle" @contextmenu.stop.prevent="showMenu" @keydown.shift.f10.stop.prevent="showMenu" @keydown.context-menu.stop.prevent="showMenu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19.5s-8.5-5.1-8.5-10.1A4.8 4.8 0 0 1 12 6.5a4.8 4.8 0 0 1 8.5 2.9c0 5-8.5 10.1-8.5 10.1Z" /></svg>
     </button>
-    <button type="button" :class="[$style.button, $style.menuButton, { [$style.active]: menuVisible }]" :aria-label="$t('favorite_choose_playlist')" :aria-expanded="menuVisible" aria-haspopup="dialog" :disabled="!currentMusicInfo" @click.stop="showMenu" @keydown.down.stop.prevent="showMenu">
+    <button type="button" :class="$style.menuButton" :aria-label="$t('favorite_choose_playlist')" :aria-expanded="menuVisible" aria-haspopup="dialog" :disabled="!currentMusicInfo" @click.stop="showMenu" @keydown.down.stop.prevent="showMenu">
       <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1h8L5 5z" /></svg>
     </button>
   </div>
@@ -75,20 +75,27 @@ onBeforeUnmount(() => { ++checkId; window.app_event.off('myListUpdate', handleLi
 </script>
 
 <style module lang="less">
-.control { position: relative; flex: none; width: 34px; height: 32px; color: var(--color-font-label); }
-.button { display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; transition: color .18s ease, background-color .18s ease, transform .18s ease; }
-.heart { width: 32px; height: 32px; }
-.heart svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: fill .18s ease; }
-.menuButton { position: absolute; right: 0; bottom: 0; width: 12px; height: 14px; }
+.control { position: relative; flex: none; width: var(--q-footer-tool-size); height: var(--q-footer-tool-size); }
+.loved { --q-footer-tool-accent: #e35278; }
+.loved svg path { fill: currentColor; }
+.menuButton {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  color: var(--q-footer-tool-ink);
+  background: transparent;
+  cursor: pointer;
+}
 .menuButton svg { width: 6px; height: 4px; fill: currentColor; transition: transform .18s ease; }
-.menuButton.active svg { transform: rotate(180deg); }
-.button:hover, .active { color: var(--color-font); background: var(--q-icon-btn-hover-bg); }
-.button:active { transform: scale(.9); }
-.button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-.button:disabled { opacity: .35; cursor: default; transform: none; }
-.dark { color: rgba(255,255,255,.72); }
-.dark .button:hover, .dark .active { color: #fff; background: rgba(255,255,255,.12); }
-.loved, .loved:hover { color: #f65b84; }
-.heart.loved svg { fill: currentColor; }
-@media (prefers-reduced-motion: reduce) { .button, .button svg { transition: none; } }
+.menuButton[aria-expanded='true'] svg { transform: rotate(180deg); }
+.menuButton:enabled:hover, .menuButton[aria-expanded='true'] { color: var(--q-footer-tool-accent); background: var(--q-footer-tool-hover); }
+.menuButton:disabled { opacity: .4; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .menuButton svg { transition: none; } }
 </style>

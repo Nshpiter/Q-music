@@ -1,14 +1,12 @@
 <template>
   <material-popup-btn :class="$style.btnContent">
-    <button :class="$style.btn" :aria-label="isMute ? $t('player__volume_muted') : `${$t('player__volume')}${parseInt(volume * 100)}%`" @wheel="handleWheel">
+    <button class="q-player-tool" :class="$style.btn" :aria-label="isMute ? $t('player__volume_muted') : `${$t('player__volume')}${parseInt(volume * 100)}%`" @wheel="handleWheel">
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 10v4h3l4 3V7l-4 3H4z" />
-        <path v-if="isMute || volume == 0" d="M16 9l4 6" />
-        <path v-if="isMute || volume == 0" d="M20 9l-4 6" />
-        <path v-else-if="volume < 0.45" d="M16 10.5a3 3 0 0 1 0 3" />
+        <path d="M3.5 9h4L13 4.8v14.4L7.5 15h-4z" />
+        <path v-if="isMute || volume == 0" d="m16.5 9.5 4.5 5m0-5-4.5 5" />
         <template v-else>
-          <path d="M16 10.5a3 3 0 0 1 0 3" />
-          <path d="M18.5 8a6 6 0 0 1 0 8" />
+          <path d="M16.4 8.8a5.5 5.5 0 0 1 0 6.4" />
+          <path v-if="volume >= 0.45" d="M19.2 6.2a9 9 0 0 1 0 11.6" />
         </template>
       </svg>
     </button>

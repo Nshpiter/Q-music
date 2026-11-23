@@ -22,6 +22,7 @@ interface FallbackOptions {
   providers: string[]
   source: LX.Source
   quality: LX.Quality
+  preferQuality?: boolean
   allowQualityFallback?: boolean
   signal?: AbortSignal
   isCurrent?: () => boolean
@@ -78,12 +79,19 @@ export const resolveUserApiFallback = async(options: FallbackOptions): Promise<U
   const qualityIndex = QUALITY_ORDER.indexOf(options.quality)
   const qualitys = options.allowQualityFallback === false ? [options.quality] : QUALITY_ORDER.slice(qualityIndex < 0 ? -1 : qualityIndex)
   let lastError = new Error('no enabled music API supports this song')
-  for (const id of [...new Set(options.providers)]) {
+  const providers = [...new Set(options.providers)]
+  const byQuality = options.preferQuality && options.source !== 'local'
+  const attempts = byQuality
+    ? qualitys.flatMap(quality => providers.map(id => ({ id, tiers: [quality] })))
+    : providers.map(id => ({ id, tiers: qualitys }))
+  const infos = new Map<string, LX.UserApi.UserApiInfo>()
+  const unavailable = new Set<string>()
+  for (const { id, tiers } of attempts) {
     assertCurrent()
     if (Date.now() >= deadline) break
-    if (options.isProviderBlocked?.(id)) continue
+    if (unavailable.has(id) || options.isProviderBlocked?.(id)) continue
     if (options.readCache) {
-      for (const quality of qualitys) {
+      for (const quality of tiers) {
         if (options.isExcluded?.(id, quality, true)) continue
         try {
           const cached = await wait({ promise: options.readCache(id, quality) })
@@ -98,18 +106,20 @@ export const resolveUserApiFallback = async(options: FallbackOptions): Promise<U
     }
     let info: LX.UserApi.UserApiInfo
     try {
-      info = await wait({ promise: options.getInfo(id) })
+      info = infos.get(id) ?? await wait({ promise: options.getInfo(id) })
+      infos.set(id, info)
       assertCurrent()
     } catch (error) {
       assertCurrent()
       lastError = error as Error
       if (lastError.message === USER_API_CANCELLED) throw error
+      unavailable.add(id)
       options.onFailure?.(id, null, lastError)
       continue
     }
     const source = info.sources?.[options.source]
     if (source?.type !== 'music' || !source.actions.includes('musicUrl')) continue
-    for (const quality of (options.source === 'local' ? [options.quality] : qualitys.filter(quality => source.qualitys.includes(quality)))) {
+    for (const quality of (options.source === 'local' ? [options.quality] : tiers.filter(quality => source.qualitys.includes(quality)))) {
       assertCurrent()
       if (Date.now() >= deadline) break
       if (options.isExcluded?.(id, quality, false)) continue
@@ -124,7 +134,10 @@ export const resolveUserApiFallback = async(options: FallbackOptions): Promise<U
         if (lastError.message === USER_API_CANCELLED) throw error
         options.onFailure?.(id, quality, lastError, url)
         // 连接失败/超时不逐档重复等待，直接尝试下一个脚本。
-        if (/timeout|timed?\s*out|network|ECONN|ETIMEDOUT|too many requests|429|超时|无法连接|服务器繁忙/i.test(lastError.message)) break
+        if (/timeout|timed?\s*out|network|ECONN|ETIMEDOUT|too many requests|429|超时|无法连接|服务器繁忙/i.test(lastError.message)) {
+          unavailable.add(id)
+          break
+        }
       }
     }
   }
