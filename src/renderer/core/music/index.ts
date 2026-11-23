@@ -21,6 +21,7 @@ import {
 import { findLocalPlayback } from './preferLocal'
 import { appSetting } from '@renderer/store/setting'
 import { requestMsg } from '@renderer/utils/message'
+import type { UserApiProviderScope } from '@common/utils/userApiFallback'
 export { isCustomApiSource } from './utils'
 
 export interface MusicUrlResolvedInfo {
@@ -37,7 +38,7 @@ export interface MusicUrlResolvedInfo {
 
 export interface MusicUrlRequestOptions {
   allowQualityFallback?: boolean
-  userApiScope?: import('@common/utils/userApiFallback').UserApiProviderScope
+  userApiScope?: UserApiProviderScope
   /** all 会遵循设置中的自定义 API 优先策略；显式值用于单次线路尝试。 */
   routeStrategy?: 'all' | 'official' | 'api'
   excludedUrls?: ReadonlySet<string>
