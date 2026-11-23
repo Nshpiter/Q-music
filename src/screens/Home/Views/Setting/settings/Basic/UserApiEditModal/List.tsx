@@ -112,6 +112,7 @@ export default () => {
   const theme = useTheme()
   const t = useI18n()
 
+  const preferQuality = useSettingValue('common.apiPreferQuality')
   const handleRemove = useCallback(async(id: string, name: string) => {
     const confirm = await confirmDialog({
       message: global.i18n.t('user_api_remove_tip', { name }),
@@ -135,7 +136,14 @@ export default () => {
 
   return (
     <ScrollView style={styles.scrollView} keyboardShouldPersistTaps={'always'}>
-      <Text size={12} color={theme['c-font-label']} style={{ padding: 10, lineHeight: 19 }}>{t('user_api_backup_hint')}</Text>
+      {userApiList.length > 0 && <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', paddingHorizontal: 8 }}>
+        {[false, true].map(quality => <Button key={String(quality)} accessibilityRole="radio" accessibilityState={{ checked: preferQuality === quality }}
+          onPress={() => { updateSetting({ 'common.apiPreferQuality': quality }) }}
+          style={{ paddingHorizontal: 14, minHeight: 44, justifyContent: 'center', borderRadius: 12, backgroundColor: quality === preferQuality ? theme['q-surface-tint'] : theme['q-surface-raised'] }}>
+          <Text size={13} color={quality === preferQuality ? theme['q-accent-text'] : theme['q-text-secondary']}>{t(quality ? 'user_api_quality_first' : 'user_api_play_first')}</Text>
+        </Button>)}
+      </View>}
+      <Text size={12} color={theme['c-font-label']} style={{ padding: 10, lineHeight: 19 }}>{t(preferQuality ? 'user_api_quality_hint' : 'user_api_backup_hint')}</Text>
       <View>
         {
           userApiList.length

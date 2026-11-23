@@ -1,5 +1,5 @@
-import { memo, useMemo, useEffect, useRef, useCallback } from 'react'
-import { View, FlatList, type FlatListProps, type NativeSyntheticEvent, type NativeScrollEvent, type LayoutChangeEvent } from 'react-native'
+import { memo, useMemo, useEffect, useRef, useCallback, useState } from 'react'
+import { View, PixelRatio, FlatList, type FlatListProps, type NativeSyntheticEvent, type NativeScrollEvent, type LayoutChangeEvent } from 'react-native'
 // import { useLayout } from '@/utils/hooks'
 import { type Line, useLrcPlay, useLrcSet } from '@/plugins/lyric'
 import { createStyle } from '@/utils/tools'
@@ -9,7 +9,7 @@ import { useSettingValue } from '@/store/setting/hook'
 import Text, { AnimatedColorText } from '@/components/common/Text'
 import { setSpText } from '@/utils/pixelRatio'
 import playerState from '@/store/player/state'
-import { scrollTo } from '@/utils/scroll'
+import { useMotion } from '@/utils/useMotion'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
 import { getLyricFontFamily } from '@/core/lyricFont'
 import LyricCopy from '../components/LyricCopy'
@@ -80,9 +80,11 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
     prevProps.activeLine != nextProps.lineNum &&
     nextProps.activeLine != nextProps.lineNum
 })
-const wait = async() => new Promise(resolve => setTimeout(resolve, 100))
 
 export default () => {
+  const [height, setHeight] = useState(0)
+  const motion = useMotion()
+  const edgeFade = useSettingValue('playDetail.lyricEdgeFade')
   const rawLines = useLrcSet()
   const music = usePlayerMusicInfo()
   const theme = useTheme()
@@ -93,61 +95,20 @@ export default () => {
   const { line } = useLrcPlay()
   const flatListRef = useRef<FlatList>(null)
   const playLineRef = useRef<PlayLineType>(null)
-  const isPauseScrollRef = useRef(true)
+  const isPauseScrollRef = useRef(false)
   const scrollTimoutRef = useRef<NodeJS.Timeout | null>(null)
   const delayScrollTimeout = useRef<NodeJS.Timeout | null>(null)
-  const lineRef = useRef({ line: 0, prevLine: 0 })
-  const isFirstSetLrc = useRef(true)
-  const scrollInfoRef = useRef<NativeSyntheticEvent<NativeScrollEvent>['nativeEvent'] | null>(null)
+  const lineRef = useRef(line)
+  lineRef.current = line
+  const retryCount = useRef(0)
   const listLayoutInfoRef = useRef<{ spaceHeight: number, lineHeights: number[] }>({ spaceHeight: 0, lineHeights: [] })
-  const scrollCancelRef = useRef<(() => void) | null>(null)
   const isShowLyricProgressSetting = useSettingValue('playDetail.isShowLyricProgressSetting')
-  // useLock()
-  // const [imgUrl, setImgUrl] = useState(null)
-  // const theme = useGetter('common', 'theme')
-  // const { onLayout, ...layout } = useLayout()
-
-  // useEffect(() => {
-  //   const url = playMusicInfo ? playMusicInfo.musicInfo.img : null
-  //   if (imgUrl == url) return
-  //   setImgUrl(url)
-  // // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [playMusicInfo])
-
-  // const imgWidth = useMemo(() => layout.width * 0.75, [layout.width])
-  const handleScrollToActive = (index = lineRef.current.line) => {
-    if (index < 0) return
-    if (flatListRef.current) {
-      // console.log('handleScrollToActive', index)
-      if (scrollInfoRef.current && lineRef.current.line - lineRef.current.prevLine == 1) {
-        let offset = listLayoutInfoRef.current.spaceHeight
-        for (let line = 0; line < index; line++) {
-          offset += listLayoutInfoRef.current.lineHeights[line]
-        }
-        offset += (listLayoutInfoRef.current.lineHeights[line] ?? 0) / 2
-        try {
-          scrollCancelRef.current = scrollTo(flatListRef.current, scrollInfoRef.current, offset - scrollInfoRef.current.layoutMeasurement.height * 0.42, 600, () => {
-            scrollCancelRef.current = null
-          })
-        } catch {}
-      } else {
-        if (scrollCancelRef.current) {
-          scrollCancelRef.current()
-          scrollCancelRef.current = null
-        }
-        try {
-          flatListRef.current.scrollToIndex({
-            index,
-            animated: true,
-            viewPosition: 0.42,
-          })
-        } catch {}
-      }
-    }
-  }
+  const handleScrollToActive = useCallback((index = lineRef.current, animated = motion) => {
+    if (isPauseScrollRef.current || index < 0 || index >= lyricLines.length) return
+    flatListRef.current?.scrollToIndex({ index, animated, viewPosition: 0.5 })
+  }, [lyricLines.length, motion])
 
   const handleScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollInfoRef.current = nativeEvent
     if (isPauseScrollRef.current) {
       playLineRef.current?.updateScrollInfo(nativeEvent)
     }
@@ -162,10 +123,6 @@ export default () => {
     if (scrollTimoutRef.current) {
       clearTimeout(scrollTimoutRef.current)
       scrollTimoutRef.current = null
-    }
-    if (scrollCancelRef.current) {
-      scrollCancelRef.current()
-      scrollCancelRef.current = null
     }
   }
 
@@ -196,64 +153,32 @@ export default () => {
   }, [])
 
   useEffect(() => {
-    // linesRef.current = lyricLines
     listLayoutInfoRef.current.lineHeights = []
-    lineRef.current.prevLine = 0
-    lineRef.current.line = 0
-    if (!flatListRef.current) return
-    flatListRef.current.scrollToOffset({
-      offset: 0,
-      animated: false,
-    })
-    if (!lyricLines.length) return
+    isPauseScrollRef.current = false
+    if (scrollTimoutRef.current) clearTimeout(scrollTimoutRef.current)
+    playLineRef.current?.setVisible(false)
     playLineRef.current?.updateLyricLines(lyricLines)
-    requestAnimationFrame(() => {
-      if (isFirstSetLrc.current) {
-        isFirstSetLrc.current = false
-        setTimeout(() => {
-          isPauseScrollRef.current = false
-          handleScrollToActive()
-        }, 100)
-      } else {
-        if (delayScrollTimeout.current) clearTimeout(delayScrollTimeout.current)
-        delayScrollTimeout.current = setTimeout(() => {
-          handleScrollToActive(0)
-        }, 100)
-      }
-    })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lyricLines, fontFamily])
 
   useEffect(() => {
-    if (line < 0) return
-    lineRef.current.prevLine = lineRef.current.line
-    lineRef.current.line = line
-    if (!flatListRef.current || isPauseScrollRef.current) return
-
-    if (line - lineRef.current.prevLine != 1) {
-      handleScrollToActive()
-      return
+    retryCount.current = 0
+    handleScrollToActive()
+    return () => {
+      if (delayScrollTimeout.current) clearTimeout(delayScrollTimeout.current)
     }
-
-    delayScrollTimeout.current = setTimeout(() => {
-      delayScrollTimeout.current = null
-      handleScrollToActive()
-    }, 600)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [line])
+  }, [line, height, lyricLines, fontFamily, handleScrollToActive])
 
   useEffect(() => {
-    requestAnimationFrame(() => {
-      playLineRef.current?.updateLayoutInfo(listLayoutInfoRef.current)
-      playLineRef.current?.updateLyricLines(lyricLines)
-    })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isShowLyricProgressSetting])
+    playLineRef.current?.updateLayoutInfo(listLayoutInfoRef.current)
+    playLineRef.current?.updateLyricLines(lyricLines)
+  }, [isShowLyricProgressSetting, lyricLines])
 
-  const handleScrollToIndexFailed: FlatListType['onScrollToIndexFailed'] = (info) => {
-    void wait().then(() => {
-      handleScrollToActive(info.index)
-    })
+  const handleScrollToIndexFailed: FlatListType['onScrollToIndexFailed'] = info => {
+    if (isPauseScrollRef.current || info.index !== lineRef.current || retryCount.current >= 2) return
+    retryCount.current++
+    flatListRef.current?.scrollToOffset({ offset: Math.max(0, info.averageItemLength * info.index), animated: false })
+    if (delayScrollTimeout.current) clearTimeout(delayScrollTimeout.current)
+    delayScrollTimeout.current = setTimeout(() => { handleScrollToActive(info.index, false) }, 120)
   }
 
   const handleLineLayout = useCallback<LineProps['onLayout']>((lineNum, height) => {
@@ -279,8 +204,8 @@ export default () => {
   const getkey: FlatListType['keyExtractor'] = (item, index) => `${index}${item.text}`
 
   const spaceComponent = useMemo(() => (
-    <View style={styles.space} onLayout={handleSpaceLayout}></View>
-  ), [handleSpaceLayout])
+    <View style={{ height: height / 2 }} onLayout={handleSpaceLayout} />
+  ), [handleSpaceLayout, height])
 
   return (
     <>
@@ -297,8 +222,9 @@ export default () => {
         ListFooterComponent={spaceComponent}
         onScrollBeginDrag={handleScrollBeginDrag}
         onScrollEndDrag={onScrollEndDrag}
-        fadingEdgeLength={100}
-        initialNumToRender={Math.max(line + 10, 10)}
+        onLayout={({ nativeEvent }) => { setHeight(nativeEvent.layout.height) }}
+        fadingEdgeLength={PixelRatio.getPixelSizeForLayoutSize(height * edgeFade / 100)}
+        initialNumToRender={12}
         onScrollToIndexFailed={handleScrollToIndexFailed}
         onScroll={handleScroll}
       /> : <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}><Text size={14} color={theme['q-text-secondary']}>{t(instrumental ? 'mobile_instrumental' : 'mobile_no_lyrics')}</Text></View>}
@@ -313,9 +239,6 @@ const styles = createStyle({
     paddingLeft: 20,
     paddingRight: 20,
     // backgroundColor: 'rgba(0,0,0,0.1)',
-  },
-  space: {
-    paddingTop: '100%',
   },
   line: {
     paddingTop: 10,

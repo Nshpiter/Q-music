@@ -15,7 +15,7 @@ const groups = [
   { title: 'setting_group_personal', items: [['appearance', 'palette'], ['sources', 'slider'], ['basic', 'setting']] },
   { title: 'setting_group_listening', items: [['player', 'play-outline'], ['lyrics', 'lyric-on'], ['background', 'shield']] },
   { title: 'setting_group_library', items: [['search', 'search-2'], ['list', 'album'], ['cloud', 'cloud-library'], ['sync', 'available_updates'], ['backup', 'save']] },
-  { title: 'setting_group_app', items: [['other', 'tool'], ['version', 'available_updates'], ['about', 'help']] },
+  { title: 'setting_group_app', items: [['other', 'tool'], ['version', 'version-info'], ['about', 'help']] },
 ] as const
 
 export default () => {

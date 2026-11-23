@@ -208,3 +208,14 @@ test('backup selection survives setting updates and reloads, invalid data is rej
     assert.deepEqual(Array.from(ctx.exports.mergeSetting(defaults, { 'common.apiBackupSources': bad }).setting['common.apiBackupSources']), [])
   }
 })
+
+test('quality first checks higher-tier backups before using a cached primary downgrade', async() => {
+  const h = harness({ quality: 'flac', preferQuality: true,
+    getInfo: async id => info(id, id === primary ? ['128k'] : ['flac']),
+    readCache: async(id, quality) => id === primary && quality === '128k' ? 'https://audio.test/low' : null,
+  })
+  const result = await h.run()
+  assert.equal(result.quality, 'flac')
+  assert.equal(result.providerId, backup)
+  assert.equal(result.isFromCache, false)
+})

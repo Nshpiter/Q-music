@@ -11,7 +11,7 @@ import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 import { Q_UI } from '@/theme/ui'
 
 export const MOBILE_NAV = [
-  { id: 'nav_search', icon: 'search-2', label: 'mobile_discover' },
+  { id: 'nav_search', icon: 'discover', label: 'mobile_discover' },
   { id: 'nav_songlist', icon: 'album', label: 'nav_songlist' },
   { id: 'nav_top', icon: 'leaderboard', label: 'nav_top' },
   { id: 'nav_love', icon: 'user', label: 'mobile_library' },
@@ -60,12 +60,13 @@ const NavItem = ({ id, icon, label }: typeof MOBILE_NAV[number]) => {
           <Icon
             accessible={false}
             name={icon}
+            selected={active}
             rawSize={isCar ? 25 : 20}
             color={active ? colors.active : colors.secondary}
           />
         </View>
         <Text
-          style={styles.label}
+          style={[styles.label, active && styles.activeLabel]}
           size={isCar ? 14 : 10}
           color={active ? colors.active : colors.secondary}
           numberOfLines={1}
@@ -165,6 +166,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  activeLabel: { fontWeight: '700' },
   label: {
     width: '100%',
     marginTop: 2,

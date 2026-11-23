@@ -55,19 +55,8 @@ export default memo(({
         left: targetPadding,
       }
     : 0)
-  const hasSurface = variant !== 'plain' || selected
-  const backgroundColor = selected
-    ? theme['q-surface-tint']
-    : variant === 'tonal'
-      ? theme['q-surface-tint']
-      : variant === 'outlined'
-        ? theme['q-surface-base']
-        : 'transparent'
-  const borderColor = selected
-    ? theme['q-accent']
-    : variant === 'outlined'
-      ? theme['q-outline']
-      : 'transparent'
+  const tonal = selected || variant === 'tonal'
+  const backgroundColor = tonal ? theme['q-surface-tint'] : variant === 'outlined' ? theme['q-surface-base'] : 'transparent'
   const resolvedAccessibilityState = selected
     ? { ...accessibilityState, selected: true }
     : accessibilityState
@@ -87,9 +76,9 @@ export default memo(({
           minWidth: targetSize,
           minHeight: targetSize,
           borderRadius: radius,
-          backgroundColor: hasSurface ? backgroundColor : 'transparent',
-          borderColor,
-          borderWidth: variant === 'outlined' || selected ? StyleSheet.hairlineWidth : 0,
+          backgroundColor,
+          borderColor: theme['q-outline'],
+          borderWidth: variant === 'outlined' ? StyleSheet.hairlineWidth : 0,
         },
         style,
       ]}
@@ -97,8 +86,9 @@ export default memo(({
       <Icon
         accessible={false}
         name={name}
+        selected={selected}
         rawSize={iconSize}
-        color={iconColor ?? (selected ? theme['q-accent-text'] : theme['q-text-primary'])}
+        color={iconColor ?? (tonal ? theme['q-accent-text'] : theme['q-text-primary'])}
         style={styles.icon}
       />
     </Button>

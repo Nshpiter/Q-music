@@ -130,7 +130,7 @@ export default ({ bottomInset }: { bottomInset: number }) => {
             <View style={{ width: 18, height: 3, borderRadius: 2, backgroundColor: theme['q-text-secondary'], opacity: 0.5 }} />
             <View pointerEvents="none" style={styles.handleIcon}>
               <Animated.View style={[StyleSheet.absoluteFill, { opacity: reveal.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ scale: reveal.interpolate({ inputRange: [0, 1], outputRange: [1, 0.85] }) }] }]}>
-                <Icon name={active.icon} rawSize={20} color={theme['q-accent-text']} />
+                <Icon accessible={false} selected name={active.icon} rawSize={20} color={theme['q-accent-text']} />
               </Animated.View>
               <Animated.View style={[StyleSheet.absoluteFill, { opacity: reveal, transform: [{ rotate: reveal.interpolate({ inputRange: [0, 1], outputRange: ['90deg', '0deg'] }) }] }]}>
                 <Icon name="chevron-up" rawSize={20} color={theme['q-accent-text']} />
@@ -143,7 +143,7 @@ export default ({ bottomInset }: { bottomInset: number }) => {
           <ScrollView bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 4, paddingBottom: 8 }}>
           {MOBILE_NAV.map(item => <Button key={item.id} accessibilityRole="tab" accessibilityLabel={t(item.label)} accessibilityState={{ selected: active.id == item.id }} onPress={() => { setNavActiveId(item.id); restartCollapseTimer() }}
             style={{ height: isCar ? 72 : 56, borderRadius: 17, alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: active.id == item.id ? theme['q-surface-tint'] : 'transparent' }}>
-            <Icon name={item.icon} rawSize={isCar ? 25 : 20} color={active.id == item.id ? theme['q-accent-text'] : theme['q-text-secondary']} />
+            <Icon accessible={false} selected={active.id == item.id} name={item.icon} rawSize={isCar ? 25 : 20} color={active.id == item.id ? theme['q-accent-text'] : theme['q-text-secondary']} />
             <Text size={isCar ? 13 : 10} numberOfLines={1} color={active.id == item.id ? theme['q-accent-text'] : theme['q-text-secondary']}>{t(item.label)}</Text>
           </Button>)}
           </ScrollView>

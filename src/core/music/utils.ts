@@ -234,6 +234,7 @@ export const getPlayQualityCandidates = (highQuality: LX.Quality, musicInfo: LX.
   const metadataQualitys = musicInfo.meta?._qualitys ?? {}
   const isUserApi = isCustomApiSource()
 
+  if (isUserApi && settingState.setting['common.apiPreferQuality'] && settingState.setting['common.apiBackupSources']?.length) return fallbacks
   if (!supportedQualitys?.length) {
     if (isUserApi) return fallbacks
     const candidates = fallbacks.filter(quality => quality == '128k' || !!metadataQualitys[quality])
@@ -331,7 +332,7 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
     }
 
     try {
-      const result = await getApiMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh, signal, preferCustomApi ? 'primary' : 'all', allowQualityFallback)
+      const result = await getApiMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh, signal, preferCustomApi && !settingState.setting['common.apiPreferQuality'] ? 'primary' : 'all', allowQualityFallback)
       return { musicInfo, ...result }
     } catch (error: any) {
       if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
@@ -343,7 +344,7 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
     if (preferCustomApi) {
       const officialResult = await getOfficialMusicUrlWithSignal(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh, signal, allowQualityFallback)
       if (officialResult) return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
-      if (settingState.setting['common.apiBackupSources'].length) {
+      if (!settingState.setting['common.apiPreferQuality'] && settingState.setting['common.apiBackupSources'].length) {
         try {
           const result = await getApiMusicUrl(musicInfo, quality ?? settingState.setting['player.playQuality'], isRefresh, signal, 'backup', allowQualityFallback)
           return { musicInfo, ...result }
@@ -404,7 +405,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   }
 
   try {
-    const result = await getApiMusicUrl(musicInfo, targetQuality, isRefresh, signal, preferCustomApi ? 'primary' : 'all', allowQualityFallback)
+    const result = await getApiMusicUrl(musicInfo, targetQuality, isRefresh, signal, preferCustomApi && !settingState.setting['common.apiPreferQuality'] ? 'primary' : 'all', allowQualityFallback)
     return { musicInfo, ...result }
   } catch (err: any) {
     if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
@@ -417,7 +418,7 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
     const officialResult = await getOfficialMusicUrlWithSignal(musicInfo, targetQuality, isRefresh, signal, allowQualityFallback)
     if (officialResult) return { musicInfo, ...officialResult, isFromCache: false, isOfficial: true }
     // 与不开备用时保持相同的主源/官方顺序，二者都不可用才追加备用。
-    if (settingState.setting['common.apiBackupSources'].length) {
+    if (!settingState.setting['common.apiPreferQuality'] && settingState.setting['common.apiBackupSources'].length) {
       try {
         const result = await getApiMusicUrl(musicInfo, targetQuality, isRefresh, signal, 'backup', allowQualityFallback)
         return { musicInfo, ...result }

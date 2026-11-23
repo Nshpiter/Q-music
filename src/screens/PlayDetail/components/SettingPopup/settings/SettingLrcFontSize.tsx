@@ -18,6 +18,8 @@ const LrcFontSize = ({ direction }: {
   const lrcFontSize = useSettingValue(settingKey)
   const [sliderSize, setSliderSize] = useState(lrcFontSize)
   const [isSliding, setSliding] = useState(false)
+  const edgeFade = useSettingValue('playDetail.lyricEdgeFade')
+  const [dragFade, setDragFade] = useState<number | null>(null)
   const t = useI18n()
 
   const handleSlidingStart: SliderProps['onSlidingStart'] = value => {
@@ -46,6 +48,12 @@ const LrcFontSize = ({ direction }: {
           step={2}
           value={lrcFontSize}
         />
+      </View>
+      <Text>{t('lyric_edge_fade')}</Text>
+      <View style={styles.content}>
+        <Text style={styles.label} color={theme['c-font-label']}>{dragFade ?? edgeFade}%</Text>
+        <Slider accessibilityLabel={t('lyric_edge_fade')} minimumValue={0} maximumValue={36} step={1} value={edgeFade} onValueChange={setDragFade}
+          onSlidingComplete={value => { updateSetting({ 'playDetail.lyricEdgeFade': value }); setDragFade(null) }} />
       </View>
     </View>
   )

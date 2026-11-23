@@ -45,22 +45,17 @@ const MenuItem = ({ id, icon, onPress }: {
   const active = activeId == id
   const content = (
     <>
-      <View
-        style={{
-          ...styles.iconContent,
-          backgroundColor: active ? theme['c-primary-dark-100'] : theme['q-surface-base'],
-          borderColor: active ? theme['c-primary-dark-100'] : theme['q-outline'],
-        }}
-      >
+      <View style={styles.iconContent}>
         <Icon
           accessible={false}
           name={icon}
+          selected={active}
           size={18}
-          color={active ? theme['q-on-accent'] : theme['q-text-secondary']}
+          color={active ? theme['q-accent-text'] : theme['q-text-secondary']}
         />
       </View>
       <Text
-        style={styles.text}
+        style={[styles.text, active && styles.activeText]}
         size={13}
         color={active ? theme['q-accent-text'] : theme['q-text-primary']}
         numberOfLines={1}
@@ -76,13 +71,7 @@ const MenuItem = ({ id, icon, onPress }: {
       accessibilityState={{ selected: active }}
       style={[
         styles.menuItem,
-        active
-          ? {
-              backgroundColor: theme['q-surface-tint'],
-              borderColor: theme['c-primary-alpha-700'],
-              borderWidth: StyleSheet.hairlineWidth,
-            }
-          : null,
+        active && { backgroundColor: theme['q-surface-tint'] },
       ]}
       onPress={() => { onPress(id) }}
     >
@@ -188,13 +177,13 @@ const styles = createStyle({
     height: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 11,
-    borderWidth: StyleSheet.hairlineWidth,
+
   },
+  activeText: { fontWeight: '700' },
   text: {
     flex: 1,
     paddingLeft: 12,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   footer: {
     paddingBottom: 8,

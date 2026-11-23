@@ -7,22 +7,6 @@ import { StyleSheet, type StyleProp, type TextStyle } from 'react-native'
 import Feather from 'react-native-vector-icons/Feather'
 import Ionicons from 'react-native-vector-icons/Ionicons'
 
-// import IconAntDesign from 'react-native-vector-icons/AntDesign'
-// import IconEntypo from 'react-native-vector-icons/Entypo'
-// import IconEvilIcons from 'react-native-vector-icons/EvilIcons'
-// import IconFeather from 'react-native-vector-icons/Feather'
-// import IconFontAwesome from 'react-native-vector-icons/FontAwesome'
-// import IconFontAwesome5 from 'react-native-vector-icons/FontAwesome5'
-// import IconFontisto from 'react-native-vector-icons/Fontisto'
-// import IconFoundation from 'react-native-vector-icons/Foundation'
-// import IconIonicons from 'react-native-vector-icons/Ionicons'
-// import IconMaterialIcons from 'react-native-vector-icons/MaterialIcons'
-// import IconMaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
-// import IconOcticons from 'react-native-vector-icons/Octicons'
-// import IconZocial from 'react-native-vector-icons/Zocial'
-// import IconSimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons'
-
-
 const IcoMoon = createIconSetFromIcoMoon(icoMoonConfig)
 
 // 常用操作统一为细线图标，播放控制使用同一套实心字形。
@@ -31,19 +15,13 @@ const outlineIcons: Record<string, string> = {
   'dots-horizontal': 'more-horizontal',
   disc: 'disc',
   radio: 'radio',
-  palette: 'droplet',
   shield: 'shield',
   save: 'save',
   tool: 'tool',
-  user: 'user',
   copy: 'copy',
   'search-2': 'search',
-  setting: 'settings',
   slider: 'sliders',
   love: 'heart',
-  album: 'music',
-  leaderboard: 'bar-chart-2',
-  'download-2': 'download',
   'cloud-library': 'cloud',
   eye: 'eye',
   'eye-off': 'eye-off',
@@ -65,15 +43,31 @@ const outlineIcons: Record<string, string> = {
   'list-loop': 'repeat',
   'list-random': 'shuffle',
   'list-order': 'list',
-  'lyric-on': 'align-left',
-  'lyric-off': 'align-left',
   music_time: 'clock',
   add_folder: 'folder-plus',
   folder: 'folder',
   add: 'plus',
   'thumbs-up': 'thumbs-up',
 }
-const solidIcons: Record<string, string> = {
+// 导航的两种状态用同一家族的轮廓与实心版本，形状在切换时保持稳定。
+const stateIcons: Record<string, string> = {
+  discover: 'compass',
+  album: 'albums',
+  leaderboard: 'podium',
+  user: 'person',
+  setting: 'settings',
+  'download-2': 'download',
+}
+const ionIcons: Record<string, string> = {
+  palette: 'color-palette-outline',
+  home: 'home-outline',
+  'playback-rate': 'speedometer-outline',
+  'volume-off': 'volume-off-outline',
+  'volume-mute': 'volume-mute-outline',
+  'volume-low': 'volume-low-outline',
+  'volume-medium': 'volume-medium-outline',
+  'volume-higt': 'volume-high-outline',
+  'version-info': 'information-circle-outline',
   play: 'play',
   pause: 'pause',
   prevMusic: 'play-skip-back',
@@ -93,12 +87,14 @@ type IconType = ReturnType<typeof createIconSetFromIcoMoon>
 interface IconProps extends Omit<ComponentProps<IconType>, 'style'> {
   style?: StyleProp<TextStyle>
   rawSize?: number
+  selected?: boolean
 }
 
-export const Icon = memo(({ size = 15, rawSize, color, style, name, ...props }: IconProps) => {
+export const Icon = memo(({ size = 15, rawSize, color, style, name, selected = false, ...props }: IconProps) => {
   const theme = useTheme()
   const textShadow = useTextShadow()
-  const mapped = outlineIcons[name] ?? solidIcons[name]
+  const stateIcon = stateIcons[name]
+  const mapped = stateIcon ? (selected ? stateIcon : `${stateIcon}-outline`) : outlineIcons[name] ?? ionIcons[name]
   if (mapped) {
     const Glyph = outlineIcons[name] ? Feather : Ionicons
     // 图标库仍引用旧版 RN TextStyle，在边界统一适配样式类型。
@@ -121,21 +117,3 @@ export const Icon = memo(({ size = 15, rawSize, color, style, name, ...props }: 
     />
   )
 })
-
-
-export {
-  // IconAntDesign,
-  // IconEntypo,
-  // IconEvilIcons,
-  // IconFeather,
-  // IconFontAwesome,
-  // IconFontAwesome5,
-  // IconFontisto,
-  // IconFoundation,
-  // IconIonicons,
-  // IconMaterialIcons,
-  // IconMaterialCommunityIcons,
-  // IconOcticons,
-  // IconZocial,
-  // IconSimpleLineIcons,
-}

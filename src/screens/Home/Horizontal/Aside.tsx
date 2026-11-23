@@ -43,6 +43,7 @@ const MenuItem = ({ id, icon, onPress }: {
       <Icon
         accessible={false}
         name={icon}
+        selected={active}
         size={isCar ? 25 : 22}
         color={active ? theme['q-accent-text'] : theme['q-text-secondary']}
       />
@@ -60,12 +61,7 @@ const MenuItem = ({ id, icon, onPress }: {
         style={[
           styles.activeItem,
           { width: isCar ? 84 : 72, height: isCar ? 66 : 62 },
-          active
-            ? {
-                backgroundColor: theme['q-surface-tint'],
-                borderColor: theme['q-outline'],
-              }
-            : { borderColor: 'transparent' },
+          active && { backgroundColor: theme['q-surface-tint'] },
         ]}
       >
         {iconContent}
@@ -156,7 +152,6 @@ const styles = createStyle({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
     gap: 4,
   },
   footer: {

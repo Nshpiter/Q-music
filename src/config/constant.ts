@@ -99,7 +99,7 @@ export const APP_PROVIDER_NAME = 'io.github.nshpiter.qmusic.mobile.provider'
 
 
 export const NAV_MENUS = [
-  { id: 'nav_search', icon: 'search-2' },
+  { id: 'nav_search', icon: 'discover' },
   { id: 'nav_songlist', icon: 'album' },
   { id: 'nav_top', icon: 'leaderboard' },
   { id: 'nav_love', icon: 'user' },

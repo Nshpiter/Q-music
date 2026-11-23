@@ -1,6 +1,6 @@
 import { isInstrumental } from '@/utils/lyricStatus'
 import { memo, useMemo, useEffect, useRef, useCallback, useState } from 'react'
-import { Animated, View, FlatList, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
+import { Animated, View, PixelRatio, FlatList, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
 import { type Line, useLrcPlay, useLrcSet } from '@/plugins/lyric'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
@@ -69,6 +69,7 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
   const lyricLines = useMemo(() => instrumental ? [] : rawLines, [instrumental, rawLines])
   const { line } = useLrcPlay(active)
   const fontSize = useSettingValue('playDetail.vertical.style.lrcFontSize')
+  const edgeFade = useSettingValue('playDetail.lyricEdgeFade')
   const showProgress = useSettingValue('playDetail.isShowLyricProgressSetting')
   const fontFamily = getLyricFontFamily(useSettingValue('playDetail.style.font'))
   const showTranslation = useSettingValue('player.isShowLyricTranslation')
@@ -83,7 +84,7 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
   currentLine.current = line
   const layout = useRef<{ spaceHeight: number, lineHeights: number[] }>({ spaceHeight: 0, lineHeights: [] })
   const measured = useRef(new Set<number>())
-  const spaceHeight = height * 0.4
+  const spaceHeight = height * 0.5
   const estimatedHeight = setSpText(getLyricSize(fontSize, immersive)) * (immersive ? 1.24 : 1.4) + (immersive ? 36 : 28)
 
   const clearTimers = useCallback(() => {
@@ -103,8 +104,8 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
       if (!measured.current.has(i)) complete = false
       offset += heights[i] ?? estimatedHeight
     }
-    if (complete) flatListRef.current?.scrollToOffset({ offset: Math.max(0, offset + heights[index] / 2 - height * 0.4), animated })
-    else flatListRef.current?.scrollToIndex({ index, animated, viewPosition: 0.4 })
+    if (complete) flatListRef.current?.scrollToOffset({ offset: Math.max(0, offset + heights[index] / 2 - height * 0.5), animated })
+    else flatListRef.current?.scrollToIndex({ index, animated, viewPosition: 0.5 })
   }, [active, estimatedHeight, height, lyricLines.length, motion])
 
   useEffect(() => {
@@ -144,7 +145,7 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
     }
     if (paused.current) return
     retryCount.current = 0
-    retryTimer.current = setTimeout(() => { scrollToLine() }, 80)
+    scrollToLine()
     return () => {
       if (retryTimer.current) clearTimeout(retryTimer.current)
     }
@@ -157,9 +158,9 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
   }, [])
 
   const handleScrollToIndexFailed: FlatListType['onScrollToIndexFailed'] = info => {
-    if (!active || paused.current || retryCount.current >= 2) return
+    if (!active || paused.current || info.index !== currentLine.current || retryCount.current >= 2) return
     retryCount.current++
-    flatListRef.current?.scrollToOffset({ offset: Math.max(0, layout.current.spaceHeight + info.averageItemLength * info.index - height * 0.4), animated: false })
+    flatListRef.current?.scrollToOffset({ offset: Math.max(0, layout.current.spaceHeight + info.averageItemLength * info.index - height * 0.5), animated: false })
     if (retryTimer.current) clearTimeout(retryTimer.current)
     retryTimer.current = setTimeout(() => { scrollToLine(info.index, false) }, 120)
   }
@@ -227,12 +228,12 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
         style={[styles.container, immersive && { paddingHorizontal: wide ? 0 : 30 }]}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={spacer}
-        ListFooterComponent={<View style={{ height: height * 0.6 }} />}
+        ListFooterComponent={<View style={{ height: height * 0.5 }} />}
         onScrollBeginDrag={handleScrollBeginDrag}
         onScrollEndDrag={resumeFollow}
         onMomentumScrollBegin={() => { if (followTimer.current) clearTimeout(followTimer.current) }}
         onMomentumScrollEnd={resumeFollow}
-        fadingEdgeLength={48}
+        fadingEdgeLength={PixelRatio.getPixelSizeForLayoutSize(height * edgeFade / 100)}
         initialNumToRender={12}
         onScrollToIndexFailed={handleScrollToIndexFailed}
         onScroll={handleScroll}

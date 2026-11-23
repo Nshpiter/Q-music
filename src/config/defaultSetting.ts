@@ -3,6 +3,8 @@ const defaultSetting: LX.AppSetting = {
   'common.isAutoTheme': false,
   'common.langId': null,
   'common.apiSource': '',
+  'common.apiPreferQuality': false,
+  'playDetail.lyricEdgeFade': 22,
   'common.apiBackupSources': [] as string[],
   'common.sourceNameType': 'real',
   'common.shareType': 'system',

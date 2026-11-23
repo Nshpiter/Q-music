@@ -17,7 +17,7 @@ export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, qualit
   const controller = new AbortController()
   const cancel = () => { controller.abort() }
   const onConfigChanged = (keys: Array<keyof LX.AppSetting>) => {
-    if (keys.includes('common.apiSource') || keys.includes('common.apiBackupSources')) cancel()
+    if (keys.includes('common.apiSource') || keys.includes('common.apiBackupSources') || keys.includes('common.apiPreferQuality')) cancel()
   }
   if (signal?.aborted) cancel()
   signal?.addEventListener('abort', cancel, { once: true })
@@ -30,6 +30,7 @@ export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, qualit
       source: musicInfo.source,
       quality,
       allowQualityFallback,
+      preferQuality: settingState.setting['common.apiPreferQuality'],
       signal: controller.signal,
       excludedUrls: new Set(failedUrls.keys()),
       isCurrent: () => providers.every(id => state.list.some(api => api.id === id)),

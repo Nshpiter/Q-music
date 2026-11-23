@@ -69,7 +69,7 @@ export default forwardRef<PlayLineType, PlayLineProps>(({ onPlayLine }, ref) => 
   }
 
   if (!scrollInfo || !visible) return null
-  const offset = scrollInfo.contentOffset.y + scrollInfo.layoutMeasurement.height * 0.4
+  const offset = scrollInfo.contentOffset.y + scrollInfo.layoutMeasurement.height * 0.5
   let lineOffset = listLayoutInfo.spaceHeight
   let targetLineNum = -1
   for (let line = 0; line < listLayoutInfo.lineHeights.length; line++) {
@@ -103,7 +103,7 @@ const styles = createStyle({
   playLine: {
     position: 'absolute',
     width: '100%',
-    top: '40%',
+    top: '50%',
     left: 0,
     height: 2,
     // paddingTop: 5,

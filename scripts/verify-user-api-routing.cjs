@@ -25,7 +25,7 @@ function harness({ primaryFails = true, officialAvailable = true, backups = ['us
     const scope = mobile ? mobileScope : options.providerScope
     const providers = scope === 'primary' ? ['user_api_primary'] : scope === 'backup' ? backups : ['user_api_primary', ...backups]
     return fallback.resolveUserApiFallback({
-      ...(mobile ? { allowQualityFallback } : options), providers, source: info.source, quality, signal: mobile ? mobileSignal : options.signal,
+      ...(mobile ? { allowQualityFallback } : options), preferQuality: setting['common.apiPreferQuality'], providers, source: info.source, quality, signal: mobile ? mobileSignal : options.signal,
       getInfo: async id => ({ id, name: id, sources: { [info.source]: { type: 'music', actions: ['musicUrl'], qualitys: ['flac', '320k', '128k'] } } }),
       request: (id, type) => {
         calls.push(id)
@@ -166,4 +166,16 @@ test('优先音质把精确档位参数传入官方接口', async() => {
   })
   await assert.rejects(h.run())
   assert.deepEqual(requested, [{ quality: '320k', downgrade: false }])
+})
+
+test('启用音源音质优先后，先尝试同平台备用的无损档，再考虑主源降档', async() => {
+  const h = harness({ quality: 'flac', settings: { 'common.apiPreferQuality': true },
+    requestUrl: async(source, quality, id) => {
+      if (id === 'user_api_primary' && quality === 'flac') throw Error('quality unavailable')
+      return 'https://audio.test/song'
+    },
+  })
+  const result = await h.run()
+  assert.equal(result.quality, 'flac')
+  assert.deepEqual(h.routes, ['tx:user_api_primary:flac', 'tx:user_api_backup:flac'])
 })
