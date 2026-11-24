@@ -9,6 +9,7 @@ import { useTheme } from '@/store/theme/hook'
 import { Q_BLUR_PRESETS } from '@/theme/ui'
 import { scaleSizeAbsHR } from '@/utils/pixelRatio'
 import { useMotion } from '@/utils/useMotion'
+import { refreshGestureBarColor } from '@/utils/nativeModules/utils'
 
 const BG_OPACITY = 0.88
 const MIN_BLUR_RADIUS = 10
@@ -23,6 +24,8 @@ export default memo(({ lyricActive }: { lyricActive: boolean }) => {
   const musicInfo = usePlayerMusicInfo()
   const pic = musicInfo.pic ?? null
   const performanceMode = useSettingValue('theme.performanceMode')
+  const dimming = useSettingValue('playDetail.lyricDimming')
+  useEffect(refreshGestureBarColor, [lyricActive, dimming, performanceMode, theme])
   const blurLevel = useSettingValue('theme.blurLevel')
   const isPlay = useIsPlay()
   const motion = useMotion()
@@ -79,6 +82,7 @@ export default memo(({ lyricActive }: { lyricActive: boolean }) => {
             style={styles.pic}
             imageStyle={styles.coverPic}
             source={{ uri: pic, headers: defaultHeaders }}
+            onLoadEnd={refreshGestureBarColor}
             resizeMode="cover"
             blurRadius={blurRadius}
           />
@@ -93,7 +97,8 @@ export default memo(({ lyricActive }: { lyricActive: boolean }) => {
         </Animated.View>
       </Animated.View> : null}
       <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: theme.isDark ? 'rgba(22,26,29,0.60)' : 'rgba(251,252,247,0.68)' }} />
-      <Animated.View style={{ ...StyleSheet.absoluteFillObject, opacity: detailShade, backgroundColor: theme.isDark ? 'rgba(22,26,29,0.65)' : 'rgba(251,252,247,0.69)' }} />
+      <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: theme.isDark ? 'rgba(22,26,29,0.65)' : 'rgba(251,252,247,0.69)' }} />
+      {dimming > 0 && <Animated.View style={{ ...StyleSheet.absoluteFillObject, opacity: lyricOpacity, backgroundColor: `rgba(0,0,0,${dimming / 100})` }} />}
     </View>
   )
 })

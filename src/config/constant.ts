@@ -1,3 +1,5 @@
+import type { SearchType } from '@/store/search/state'
+
 export const HEADER_HEIGHT = 42
 export const LIST_ITEM_HEIGHT = 54
 export const LIST_SCROLL_POSITION_KEY = '__LIST_SCROLL_POSITION_KEY__'
@@ -155,7 +157,7 @@ export const DEFAULT_SETTING = {
   search: {
     temp_source: 'kw' as LX.OnlineSource,
     source: 'all' as LX.OnlineSource | 'all',
-    type: 'music' as 'music' | 'songlist',
+    type: 'music' as SearchType,
   },
 
   viewPrevState: {

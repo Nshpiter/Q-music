@@ -10,6 +10,7 @@ import SizeView from './SizeView'
 import { useBgPic } from '@/store/common/hook'
 import { useSettingValue } from '@/store/setting/hook'
 import { Q_BLUR_PRESETS } from '@/theme/ui'
+import { refreshGestureBarColor } from '@/utils/nativeModules/utils'
 
 interface Props {
   children: React.ReactNode
@@ -56,10 +57,11 @@ export default ({ children }: Props) => {
     : theme['c-main-background']
 
   const themeComponent = useMemo(() => (
-    <View style={{ flex: 1, overflow: 'hidden', backgroundColor: theme['c-content-background'] }}>
+    <View onLayout={refreshGestureBarColor} style={{ flex: 1, overflow: 'hidden', backgroundColor: theme['c-content-background'] }}>
       <ImageBackground
         style={{ position: 'absolute', left: 0, top: 0, height: windowSize.height, width: windowSize.width, backgroundColor: theme['c-app-background'] }}
         source={theme['bg-image']}
+        onLoadEnd={refreshGestureBarColor}
         resizeMode={resizeMode}
       >
       </ImageBackground>
@@ -72,10 +74,11 @@ export default ({ children }: Props) => {
   ), [children, resizeMode, theme, themeOverlayColor, windowSize.height, windowSize.width])
   const picComponent = useMemo(() => {
     return (
-      <View style={{ flex: 1, overflow: 'hidden', backgroundColor: theme['c-content-background'] }}>
+      <View onLayout={refreshGestureBarColor} style={{ flex: 1, overflow: 'hidden', backgroundColor: theme['c-content-background'] }}>
         <ImageBackground
           style={{ position: 'absolute', left: 0, top: 0, height: windowSize.height, width: windowSize.width, backgroundColor: theme['c-app-background'] }}
           source={{ uri: pic!, headers: defaultHeaders }}
+          onLoadEnd={refreshGestureBarColor}
           resizeMode="cover"
           blurRadius={blurRadius}
         >

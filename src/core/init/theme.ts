@@ -7,7 +7,8 @@ import commonState from '@/store/common/state'
 import StatusBar from '@/components/common/StatusBar'
 import { Navigation, type Options } from 'react-native-navigation'
 import { getStatusBarStyle } from '@/navigation/utils'
-import { AppState } from 'react-native'
+import { AppState, Keyboard } from 'react-native'
+import { refreshGestureBarColor } from '@/utils/nativeModules/utils'
 import { isNightTime } from '@/theme/schedule'
 import { getThemeAppearance } from '@/theme/appearance'
 // import { Dimensions, PixelRatio } from 'react-native'
@@ -49,6 +50,9 @@ export default async(setting: LX.AppSetting) => {
   }
 
   await refreshTheme()
+  Navigation.events().registerComponentDidAppearListener(refreshGestureBarColor)
+  Navigation.events().registerComponentDidDisappearListener(refreshGestureBarColor)
+  Keyboard.addListener('keyboardDidHide', refreshGestureBarColor)
   let lastTimePeriod = ''
   const refreshByTime = () => {
     if (getThemeAppearance(settingState.setting) != 'time') { lastTimePeriod = ''; return }
@@ -60,6 +64,7 @@ export default async(setting: LX.AppSetting) => {
   setInterval(refreshByTime, 60_000)
   AppState.addEventListener('change', state => {
     if (state != 'active') return
+    refreshGestureBarColor()
     setShouldUseDarkColors(getAppearance() == 'dark')
     if (getThemeAppearance(settingState.setting) == 'system') void refreshTheme()
     else refreshByTime()
@@ -74,6 +79,7 @@ export default async(setting: LX.AppSetting) => {
   global.state_event.on('themeUpdated', (theme) => {
     StatusBar.setBarStyle(theme.isDark ? 'light-content' : 'dark-content')
     syncNavigationTheme(theme)
+    refreshGestureBarColor()
   })
   // onDimensionChange(({ window }) => {
   //   let screenW = window.width

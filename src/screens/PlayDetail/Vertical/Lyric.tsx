@@ -10,7 +10,7 @@ import Text from '@/components/common/Text'
 import Image from '@/components/common/Image'
 import { Icon } from '@/components/common/Icon'
 import { setSpText } from '@/utils/pixelRatio'
-import { useMotion } from '@/utils/useMotion'
+import { useInteractionMotion } from '@/utils/useMotion'
 import { useI18n } from '@/lang'
 import { updateSetting } from '@/core/common'
 import { toggleTranslation } from '@/core/lyric'
@@ -63,7 +63,7 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
   const t = useI18n()
   const { isCar } = useAdaptiveLayout()
   const musicInfo = usePlayerMusicInfo()
-  const motion = useMotion()
+  const motion = useInteractionMotion()
   const rawLines = useLrcSet()
   const instrumental = isInstrumental({ title: musicInfo.name, lyric: musicInfo.lrc })
   const lyricLines = useMemo(() => instrumental ? [] : rawLines, [instrumental, rawLines])

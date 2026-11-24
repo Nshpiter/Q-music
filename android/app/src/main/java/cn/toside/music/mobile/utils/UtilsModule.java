@@ -73,6 +73,14 @@ public class UtilsModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
+  public void refreshGestureBarColor() {
+    reactContext.runOnUiQueueThread(() -> {
+      Activity activity = getCurrentActivity();
+      if (activity != null) GestureBarColor.refresh(activity);
+    });
+  }
+
+  @ReactMethod
   public void isExternalStorageManager(Promise promise) {
     promise.resolve(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager());
   }

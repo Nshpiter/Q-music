@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { View } from 'react-native'
 import OnlineList, { type OnlineListType } from '@/components/OnlineList'
-import { createSongBrowseTask, SongBrowseError } from '@/core/music/songBrowse'
+import { createBrowseTask, createSongBrowseTask, SongBrowseError } from '@/core/music/songBrowse'
+import type { Album } from '@/core/search/albums'
 import type { SearchNavigationRequest } from '@/core/search/navigation'
 import Text from '@/components/common/Text'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
 
 // 专辑复用搜索页的标准歌曲行、菜单、多选及下载，不在播放器弹窗里再维护一份列表。
-export default ({ info }: { info: NonNullable<SearchNavigationRequest['related']> }) => {
+export default ({ info }: { info: NonNullable<SearchNavigationRequest['related']> | Album }) => {
   const t = useI18n()
   const theme = useTheme()
   const [error, setError] = useState('')
@@ -26,7 +27,9 @@ export default ({ info }: { info: NonNullable<SearchNavigationRequest['related']
       list.current?.setList([], false, true)
     }
     list.current?.setStatus('loading')
-    const next = createSongBrowseTask(info.song, info.kind, '', page.current + 1)
+    const next = 'song' in info
+      ? createSongBrowseTask(info.song, info.kind, '', page.current + 1)
+      : createBrowseTask({ kind: 'album', source: info.source, id: info.id }, page.current + 1)
     task.current = next
     void next.promise.then(result => {
       if (task.current != next) return

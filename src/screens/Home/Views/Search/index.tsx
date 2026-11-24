@@ -25,6 +25,7 @@ import HistorySearch, { type HistorySearchType } from './BlankView/HistorySearch
 import { useSettingValue } from '@/store/setting/hook'
 import { onSearchRequest, takeSearchRequest, type SearchNavigationRequest } from '@/core/search/navigation'
 import RelatedList from './RelatedList'
+import { albumSources, type Album } from '@/core/search/albums'
 import Text from '@/components/common/Text'
 import Button from '@/components/common/Button'
 import { useI18n } from '@/lang'
@@ -34,10 +35,14 @@ import { useDockInset } from '@/components/common/DockInset'
 interface SearchInfo {
   temp_source: LX.OnlineSource
   source: LX.OnlineSource | 'all'
-  searchType: 'music' | 'songlist'
+  searchType: SearchType
 }
 
-const getAvailableSources = (type: SearchType) => type == 'music' ? searchMusicState.sources : searchSonglistState.sources
+const albumSearchSources = ['all', ...albumSources] as const
+const getAvailableSources = (type: SearchType) => {
+  if (type == 'album') return albumSearchSources
+  return type == 'music' ? searchMusicState.sources : searchSonglistState.sources
+}
 const normalizeSource = (type: SearchType, source: SearchInfo['source']) => {
   const sources = getAvailableSources(type)
   if ((sources as readonly string[]).includes(source)) return source
@@ -48,7 +53,8 @@ export default () => {
   const theme = useTheme()
   const dockInset = useDockInset()
   const t = useI18n()
-  const [related, setRelated] = useState<SearchNavigationRequest['related']>()
+  const [related, setRelated] = useState<SearchNavigationRequest['related'] | Album>()
+  const selectedAlbum = related && 'id' in related ? related : undefined
   const [searchType, setSearchType] = useState<SearchType>('music')
   const [selectedSource, setSelectedSource] = useState<SearchInfo['source']>('kw')
   const [hasQuery, setHasQuery] = useState(!!searchState.searchText.trim())
@@ -81,14 +87,7 @@ export default () => {
       setSelectedSource(searchInfo.current.source)
       searchInfo.current.searchType = info.type
       setSearchType(info.type)
-      switch (info.type) {
-        case 'music':
-          headerBarRef.current?.setSourceList(searchMusicState.sources, searchInfo.current.source)
-          break
-        case 'songlist':
-          headerBarRef.current?.setSourceList(searchSonglistState.sources, searchInfo.current.source)
-          break
-      }
+      headerBarRef.current?.setSourceList(getAvailableSources(info.type), searchInfo.current.source)
       headerBarRef.current?.setText(searchState.searchText)
       listRef.current?.loadList(searchState.searchText, searchInfo.current.source, searchInfo.current.searchType)
     })
@@ -219,19 +218,21 @@ export default () => {
       Keyboard.dismiss()
       return true
     }
+    if (selectedAlbum) { setRelated(undefined); return true }
     if (!hasQuery && !hasDraft) return false
     handleSearch('')
     return true
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasQuery, hasDraft, historyVisible]))
+  }, [hasQuery, hasDraft, historyVisible, selectedAlbum]))
 
-  const handleBackHome = () => { handleSearch('') }
+  const handleBackHome = () => { if (selectedAlbum) setRelated(undefined); else handleSearch('') }
 
   return (
     <View style={styles.container}>
       <HeaderBar
         ref={headerBarRef}
         showBack={hasQuery || hasDraft}
+        backLabel={selectedAlbum ? t('album_back') : undefined}
         onBack={handleBackHome}
         onSourceChange={handleSourceChange}
         onTipSearch={handleTipSearch}
@@ -242,13 +243,16 @@ export default () => {
       <View style={{ ...styles.typeTabs, display: hasQuery ? 'flex' : 'none', borderBottomColor: theme['q-outline'] }}>
         <SearchTypeSelector selectedType={searchType} musicOnly={selectedSource == 'bi'} />
       </View>
-      {related ? <View style={styles.relatedHeading}>
+      {selectedAlbum ? <View style={styles.albumHeading}>
+        <Text size={18} numberOfLines={2} style={{ fontWeight: '600' }}>{selectedAlbum.name}</Text>
+        <Text size={12} numberOfLines={1} color={theme['q-text-secondary']}>{[selectedAlbum.singer, t(`source_real_${selectedAlbum.source}`)].filter(Boolean).join(' · ')}</Text>
+      </View> : related ? <View style={styles.relatedHeading}>
         <Text size={12} color={theme['q-text-secondary']} style={{ flex: 1 }}>{t('song_browse_album_hint')}</Text>
         <Button accessibilityLabel={t('song_browse_search_keyword')} style={styles.keywordSearch} onPress={() => { handleSearch(searchState.searchText) }}><Text size={12} color={theme['q-accent-text']}>{t('song_browse_search_keyword')}</Text></Button>
       </View> : null}
       <View style={styles.content} onLayout={handleLayout}>
         <TipList ref={searchTipListRef} source={selectedSource} onSearch={handleSearch} />
-        <View style={{ flex: 1, display: related ? 'none' : 'flex' }}><List ref={listRef} onSearch={handleSearch} /></View>
+        <View style={{ flex: 1, display: related ? 'none' : 'flex' }}><List ref={listRef} onSearch={handleSearch} onOpenAlbum={setRelated} /></View>
         {related ? <RelatedList info={related} /> : null}
         {historyVisible && showSuggestions ? <View style={[styles.historyOverlay, { bottom: dockInset }]}>
           <Pressable style={StyleSheet.absoluteFill} accessible={false} onPress={() => { handleHideTipList(); headerBarRef.current?.blur(); Keyboard.dismiss() }} />
@@ -263,6 +267,7 @@ export default () => {
 }
 
 const styles = createStyle({
+  albumHeading: { paddingHorizontal: 18, paddingVertical: 10, gap: 3 },
   relatedHeading: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 16, paddingRight: 6 },
   keywordSearch: { minHeight: 44, paddingHorizontal: 10, justifyContent: 'center', borderRadius: 12 },
   container: {

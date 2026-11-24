@@ -32,6 +32,15 @@ export const fromNeteaseSong = (song: any): LX.Music.MusicInfoOnline => {
 }
 
 export const createSongBrowseTask = (song: LX.Music.MusicInfo, kind: SongBrowseKind, artist = song.singer, page = 1) => {
+  const id = song.source == 'local' ? undefined : song.source == 'tx' && song.meta.albumMid ? song.meta.albumMid : song.meta.albumId
+  return createBrowseTask(kind == 'album' ? { kind, source: song.source, id } : { kind, source: song.source, artist }, page)
+}
+
+type BrowseTarget =
+  | { kind: 'album', source: LX.Music.MusicInfo['source'], id?: string | number | null }
+  | { kind: 'artist', source: LX.Music.MusicInfo['source'], artist: string }
+
+export const createBrowseTask = (target: BrowseTarget, page: number) => {
   let cancelled = false
   const cancels = new Set<() => void>()
   const check = () => { if (cancelled) throw new SongBrowseError('cancelled') }
@@ -53,21 +62,21 @@ export const createSongBrowseTask = (song: LX.Music.MusicInfo, kind: SongBrowseK
   const convert = (rows: any[]) => rows.map(row => toNewMusicInfo(row) as LX.Music.MusicInfoOnline)
   const load = async(): Promise<SongBrowseResult> => {
     if (!Number.isInteger(page) || page < 1 || page > 50) throw new SongBrowseError('failed')
-    if (kind == 'artist') {
+    if (target.kind == 'artist') {
+      const { artist } = target
       if (!artist.trim()) throw new SongBrowseError('unavailable')
-      const source = song.source == 'local' ? 'wy' : song.source
+      const source = target.source == 'local' ? 'wy' : target.source
       const result = await wait(musicSdk[source].musicSearch.search(artist, page, 30) as Promise<{ list: any[], total: number }>)
       return { songs: convert(result.list), hasMore: page * 30 < result.total && result.list.length > 0 }
     }
-    if (song.source == 'local') throw new SongBrowseError('unavailable')
-    const id = song.source == 'tx' && song.meta.albumMid ? song.meta.albumMid : song.meta.albumId
+    const { source, id } = target
     if (!id || !/^[a-z\d]+$/i.test(String(id))) throw new SongBrowseError('unavailable')
-    if (song.source == 'wy') {
+    if (source == 'wy') {
       const { body } = await request(eapiRequest(`/api/v1/album/${id}`, { id }))
       if (body?.code != 200 || !Array.isArray(body.songs)) throw new SongBrowseError('failed')
       return { songs: body.songs.filter((row: any) => row.id && row.name).map(fromNeteaseSong), hasMore: false }
     }
-    if (song.source == 'tx') {
+    if (source == 'tx') {
       const { body: rawBody } = await wait(signRequest({
         comm: { ct: 24, cv: 0, uin: 0, format: 'json' },
         req: {
@@ -79,15 +88,21 @@ export const createSongBrowseTask = (song: LX.Music.MusicInfo, kind: SongBrowseK
       const body = rawBody as any
       const data = body?.req?.data
       if (body?.code != 0 || body.req?.code != 0 || !Array.isArray(data?.songList) || !Number.isFinite(Number(data.totalNum))) throw new SongBrowseError('failed')
-      const songs = convert(musicSdk.tx.musicSearch.handleResult(data.songList.map((row: any) => row.songInfo)))
+      const tracks = data.songList.map((row: any) => row.songInfo)
+      tracks.sort((a: any, b: any) => (a.index_cd - b.index_cd) || (a.index_album - b.index_album))
+      const songs = convert(musicSdk.tx.musicSearch.handleResult(tracks))
       if (songs.length != data.songList.length || (!songs.length && page * 100 < data.totalNum)) throw new SongBrowseError('failed')
       return { songs, hasMore: page * 100 < data.totalNum }
     }
-    if (song.source == 'kg') {
+    if (source == 'kg') {
       const { body } = await request(httpFetch(`https://mobiles.kugou.com/api/v3/album/song?version=9108&albumid=${id}&plat=0&pagesize=100&area_code=0&page=${page}&with_res_tag=0`))
       if (body?.errcode != 0 || !Array.isArray(body.data?.info) || !Number.isFinite(Number(body.data.total))) throw new SongBrowseError('failed')
-      const songs = await wait(getMusicInfosByList(body.data.info))
-      return { songs: convert(songs), hasMore: page * 100 < body.data.total }
+      const entries: Array<{ hash: string }> = body.data.info
+      const songs = await wait(getMusicInfosByList(entries))
+      const byHash = new Map(songs.map(song => [song.hash.toLowerCase(), song]))
+      const ordered = entries.map(entry => byHash.get(entry.hash.toLowerCase()))
+      if (ordered.includes(undefined) || (!entries.length && (page - 1) * 100 < body.data.total)) throw new SongBrowseError('failed')
+      return { songs: convert(ordered), hasMore: page * 100 < body.data.total }
     }
     throw new SongBrowseError('unavailable')
   }

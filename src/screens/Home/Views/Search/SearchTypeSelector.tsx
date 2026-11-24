@@ -11,6 +11,7 @@ import Button from '@/components/common/Button'
 
 const SEARCH_TYPE_LIST = [
   'music',
+  'album',
   'songlist',
 ] as const
 

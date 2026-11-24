@@ -5,6 +5,7 @@ const defaultSetting: LX.AppSetting = {
   'common.apiSource': '',
   'common.apiPreferQuality': false,
   'playDetail.lyricEdgeFade': 22,
+  'playDetail.lyricDimming': 0,
   'common.apiBackupSources': [] as string[],
   'common.sourceNameType': 'real',
   'common.shareType': 'system',

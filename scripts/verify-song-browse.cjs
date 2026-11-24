@@ -48,11 +48,27 @@ test('QQ 专辑数字 ID 和 MID 分开传递，第二页偏移正确', async() 
 test('酷狗专辑分页和元数据转换，网易云专辑直接读取曲目顺序', async() => {
   const api = fixture({
     '@/utils/request': { httpFetch: () => ({ promise: Promise.resolve({ body: { errcode: 0, data: { info: [{ hash: 'h1' }], total: 1 } } }), cancelHttp() {} }) },
-    '@/utils/musicSdk/kg/musicInfo': { getMusicInfosByList: async rows => rows.map(row => ({ source: 'kg', songmid: row.hash, name: 'one' })) },
+    '@/utils/musicSdk/kg/musicInfo': { getMusicInfosByList: async rows => rows.map(row => ({ source: 'kg', songmid: row.hash, hash: row.hash, name: 'one' })) },
     '@/utils/musicSdk/wy/utils': { eapiRequest: () => ({ promise: Promise.resolve({ body: { code: 200, songs: [{ id: 9, name: 'first' }, { id: 3, name: 'second' }] } }), cancelHttp() {} }) },
   })
   const kg = await api.createSongBrowseTask({ ...sample, source: 'kg' }, 'album').promise
   assert.equal(kg.songs[0].id, 'kg_h1'); assert.equal(kg.hasMore, false)
   const wy = await api.createSongBrowseTask({ ...sample, source: 'wy' }, 'album').promise
   assert.equal(wy.songs.map(row => row.name).join(','), 'first,second')
+})
+
+test('从搜索结果打开酷狗专辑按选中的 ID 请求，曲目详情乱序时保留专辑顺序', async() => {
+  let incomplete = false
+  const api = fixture({
+    '@/utils/request': { httpFetch: url => {
+      assert.equal(new URL(url).searchParams.get('albumid'), '456')
+      return { promise: Promise.resolve({ body: { errcode: 0, data: { total: 2, info: [{ hash: 'A' }, { hash: 'B' }] } } }), cancelHttp() {} }
+    } },
+    '@/utils/musicSdk/kg/musicInfo': { getMusicInfosByList: async() => (incomplete ? ['b'] : ['b', 'a']).map(hash => ({ hash, source: 'kg', songmid: hash })) },
+  })
+  const target = { kind: 'album', source: 'kg', id: '456' }
+  const { songs } = await api.createBrowseTask(target, 1).promise
+  assert.deepEqual(Array.from(songs, item => item.id), ['kg_a', 'kg_b'])
+  incomplete = true
+  await assert.rejects(api.createBrowseTask(target, 1).promise, error => error.reason == 'failed')
 })

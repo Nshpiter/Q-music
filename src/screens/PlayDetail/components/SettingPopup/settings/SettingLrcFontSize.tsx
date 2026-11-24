@@ -20,6 +20,8 @@ const LrcFontSize = ({ direction }: {
   const [isSliding, setSliding] = useState(false)
   const edgeFade = useSettingValue('playDetail.lyricEdgeFade')
   const [dragFade, setDragFade] = useState<number | null>(null)
+  const dimming = useSettingValue('playDetail.lyricDimming')
+  const [dragDimming, setDragDimming] = useState<number | null>(null)
   const t = useI18n()
 
   const handleSlidingStart: SliderProps['onSlidingStart'] = value => {
@@ -54,6 +56,12 @@ const LrcFontSize = ({ direction }: {
         <Text style={styles.label} color={theme['c-font-label']}>{dragFade ?? edgeFade}%</Text>
         <Slider accessibilityLabel={t('lyric_edge_fade')} minimumValue={0} maximumValue={36} step={1} value={edgeFade} onValueChange={setDragFade}
           onSlidingComplete={value => { updateSetting({ 'playDetail.lyricEdgeFade': value }); setDragFade(null) }} />
+      </View>
+      <Text>{t('lyric_background_dimming')}</Text>
+      <View style={styles.content}>
+        <Text style={styles.label} color={theme['c-font-label']}>{dragDimming ?? dimming}%</Text>
+        <Slider accessibilityLabel={t('lyric_background_dimming')} minimumValue={0} maximumValue={60} step={5} value={dimming} onValueChange={setDragDimming}
+          onSlidingComplete={value => { updateSetting({ 'playDetail.lyricDimming': value }); setDragDimming(null) }} />
       </View>
     </View>
   )

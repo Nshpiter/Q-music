@@ -22,6 +22,7 @@ type SourceSelectorType = _SourceSelectorType<Sources>
 
 export interface HeaderBarProps {
   showBack: boolean
+  backLabel?: string
   onBack: () => void
   onSourceChange: SourceSelectorProps['onSourceChange']
   onTipSearch: SearchInputProps['onChangeText']
@@ -38,7 +39,7 @@ export interface HeaderBarType {
 }
 
 
-export default forwardRef<HeaderBarType, HeaderBarProps>(({ showBack, onBack, onSourceChange, onTipSearch, onSearch, onHideTipList, onShowTipList }, ref) => {
+export default forwardRef<HeaderBarType, HeaderBarProps>(({ showBack, backLabel, onBack, onSourceChange, onTipSearch, onSearch, onHideTipList, onShowTipList }, ref) => {
   const sourceSelectorRef = useRef<SourceSelectorType>(null)
   const searchInputRef = useRef<SearchInputType>(null)
   const theme = useTheme()
@@ -62,7 +63,7 @@ export default forwardRef<HeaderBarType, HeaderBarProps>(({ showBack, onBack, on
 
   return (
     <View style={{ ...styles.searchBar, borderBottomColor: theme['q-outline'] }}>
-      {showBack ? <Button accessibilityLabel={t('search_back_home')} style={styles.back} onPress={onBack}>
+      {showBack ? <Button accessibilityLabel={backLabel ?? t('search_back_home')} style={styles.back} onPress={onBack}>
         <Icon name="chevron-left" rawSize={22} color={theme['q-text-primary']} />
       </Button> : null}
       <View

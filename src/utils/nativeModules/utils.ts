@@ -5,6 +5,13 @@ const { UtilsModule } = NativeModules
 
 export const exitApp = UtilsModule.exitApp
 
+let gestureBarTimer: ReturnType<typeof setTimeout> | undefined
+export const refreshGestureBarColor = () => {
+  clearTimeout(gestureBarTimer)
+  // 等待导航和封面淡入结束，合并同一帧内的多次更新。
+  gestureBarTimer = setTimeout(() => { UtilsModule.refreshGestureBarColor() }, 450)
+}
+
 export const getSupportedAbis = UtilsModule.getSupportedAbis
 
 export const installApk = (filePath: string, fileProviderAuthority: string) => UtilsModule.installApk(filePath, fileProviderAuthority)

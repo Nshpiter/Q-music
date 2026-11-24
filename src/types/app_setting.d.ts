@@ -22,6 +22,7 @@ declare global {
       'common.apiSource': string
       'common.apiPreferQuality': boolean
       'playDetail.lyricEdgeFade': number
+      'playDetail.lyricDimming': number
       'common.apiBackupSources': string[]
 
       /**

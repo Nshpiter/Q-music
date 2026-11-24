@@ -11,6 +11,37 @@ function load(file, modules = {}) {
 }
 const song = { id: 'tx_1', name: '歌曲', singer: '歌手甲、歌手乙', source: 'tx', meta: { albumName: '专辑', albumId: '123' } }
 
+test('聚合专辑按平台及发行 ID 区分同名结果，失败的平台从原页重试', async() => {
+  let wyOffline = true
+  const calls = []
+  const api = load('albums.ts', {
+    '@/core/browseRequest': { withBrowseTimeout: pending => pending },
+    '@/utils/musicSdk/tx/musicSearch': { default: { musicSearch: async(text, page, limit, retry, type) => {
+      calls.push(['tx', page])
+      assert.equal(type, 2)
+      return { meta: { sum: 21 }, body: { item_album: Array.from({ length: page == 1 ? limit : 1 }, (_, i) => ({ albummid: String((page - 1) * limit + i + 1), name: '同名专辑' })) } }
+    } } },
+    '@/utils/musicSdk/wy/utils': { eapiRequest: (url, params) => {
+      calls.push(['wy', params.offset])
+      assert.equal(params.type, 10)
+      return { promise: wyOffline ? Promise.reject(Error('offline')) : Promise.resolve({ body: { code: 200, result: { albumCount: 1, albums: [{ id: 1, name: '同名专辑', artists: [{ name: '歌手' }] }] } } }) }
+    } },
+    '@/utils/request': { httpFetch: url => {
+      assert.equal(new URL(url).searchParams.get('keyword'), '同名 & live')
+      return { promise: Promise.resolve({ body: { status: 1, data: { total: 1, info: [{ albumid: 1, albumname: '同名专辑' }] } } }) }
+    } },
+  })
+  assert.equal(api.firstAlbumPages('bi').length, 0)
+  const first = await api.searchAlbumPages('同名 & live', api.firstAlbumPages('all'))
+  assert.deepEqual(Array.from(first.list.slice(0, 2), item => [item.source, item.id]), [['tx', '1'], ['kg', '1']])
+  assert.deepEqual(Array.from(first.failed), ['wy'])
+  wyOffline = false
+  const second = await api.searchAlbumPages('同名 & live', first.next)
+  assert.deepEqual(Array.from(second.list, item => [item.source, item.id]), [['tx', '21'], ['wy', '1']])
+  assert.equal(second.next.length, 0)
+  assert.deepEqual(calls, [['tx', 1], ['wy', 0], ['tx', 2], ['wy', 0]])
+})
+
 test('未挂载时保留最后一次搜索，已挂载时即时消费，卸载后不再接收', () => {
   const nav = load('navigation.ts')
   nav.requestSearch(nav.buildSongSearchRequest(song, 'song'))

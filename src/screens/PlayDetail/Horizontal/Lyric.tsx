@@ -9,7 +9,7 @@ import { useSettingValue } from '@/store/setting/hook'
 import Text, { AnimatedColorText } from '@/components/common/Text'
 import { setSpText } from '@/utils/pixelRatio'
 import playerState from '@/store/player/state'
-import { useMotion } from '@/utils/useMotion'
+import { useInteractionMotion } from '@/utils/useMotion'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
 import { getLyricFontFamily } from '@/core/lyricFont'
 import LyricCopy from '../components/LyricCopy'
@@ -83,7 +83,7 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
 
 export default () => {
   const [height, setHeight] = useState(0)
-  const motion = useMotion()
+  const motion = useInteractionMotion()
   const edgeFade = useSettingValue('playDetail.lyricEdgeFade')
   const rawLines = useLrcSet()
   const music = usePlayerMusicInfo()
