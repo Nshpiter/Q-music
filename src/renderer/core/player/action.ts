@@ -1,5 +1,5 @@
 import { playbackSession } from './session'
-import { isEmpty, setPause, setPlay, setResource, setStop } from '@renderer/plugins/player'
+import { beginCrossfade, isEmpty, setPause, setPlay, setResource, setStop } from '@renderer/plugins/player'
 import { originalReportIdentity } from '@renderer/core/music/playbackReport'
 import { isPlay, isPlayPending, playedList, playInfo, playMusicInfo, playbackSourceInfo, tempPlayList, musicInfo as _musicInfo } from '@renderer/store/player/state'
 import { playbackRecovery } from './recovery'
@@ -434,7 +434,7 @@ const handleRestorePlay = async(restorePlayInfo: LX.Player.SavedPlayInfo) => {
 
 
 // 处理音乐播放
-const handlePlay = () => {
+const handlePlay = (overlapping = false) => {
   cancelPendingPlayback()
   playbackRecovery.begin()
   window.lx.isPlayedStop &&= false
@@ -449,7 +449,7 @@ const handlePlay = () => {
 
   if (!musicInfo) return
 
-  setStop()
+  if (!overlapping) setStop()
   window.app_event.pause()
 
   clearDelayNextTimeout()
@@ -624,7 +624,7 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
 
 const getCurrentPlayMusicInfo = () => playMusicInfo
 
-const handlePlayNext = (playMusicInfo: LX.Player.PlayMusicInfo, replay = false) => {
+const handlePlayNext = (playMusicInfo: LX.Player.PlayMusicInfo, replay = false, crossfade = false) => {
   if (!replay) {
     const current = getCurrentPlayMusicInfo()
     if (!playbackSession.history.length && current.musicInfo) {
@@ -633,21 +633,21 @@ const handlePlayNext = (playMusicInfo: LX.Player.PlayMusicInfo, replay = false) 
     }
     playbackSession.record(playMusicInfo)
   }
-  // pause()
+  const overlapping = crossfade && beginCrossfade()
   setPlayMusicInfo(playMusicInfo.listId, playMusicInfo.musicInfo, playMusicInfo.isTempPlay)
-  handlePlay()
+  handlePlay(overlapping)
 }
 
 /**
  * 播放“稍后播放”列表内的指定歌曲
  * @param index 歌曲位置
  */
-export const playTempListByIndex = (index: number, isAutoToggle = false) => {
+export const playTempListByIndex = (index: number, isAutoToggle = false, crossfade = false) => {
   if (!isAutoToggle) playbackRecovery.resetFailures()
   const targetMusicInfo = tempPlayList[index]
   if (!targetMusicInfo) return
   removeTempPlayList(index)
-  handlePlayNext(targetMusicInfo)
+  handlePlayNext(targetMusicInfo, false, crossfade)
 }
 
 /**
@@ -655,7 +655,7 @@ export const playTempListByIndex = (index: number, isAutoToggle = false) => {
  * @param isAutoToggle 是否自动切换
  * @returns
  */
-export const playNext = async(isAutoToggle = false): Promise<void> => {
+export const playNext = async(isAutoToggle = false, crossfade = false): Promise<void> => {
   if (isAutoToggle && (playbackRecovery.isCancelled() || window.lx.isPlayedStop)) return
   if (!isAutoToggle) playbackRecovery.resetFailures()
   cancelPendingPlayback()
@@ -663,9 +663,9 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
   isPlayPending.value = true
   console.log('skip next', isAutoToggle)
   const forward = playbackSession.forward()
-  if (forward) { handlePlayNext(forward, true); return }
+  if (forward) { handlePlayNext(forward, true, crossfade); return }
   if (tempPlayList.length) { // 如果稍后播放列表存在歌曲则直接播放改列表的歌曲
-    playTempListByIndex(0, isAutoToggle)
+    playTempListByIndex(0, isAutoToggle, crossfade)
     console.log('play temp list')
     return
   }
@@ -706,13 +706,13 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
     }
 
     if (index < playedList.length) {
-      handlePlayNext(playedList[index])
+      handlePlayNext(playedList[index], false, crossfade)
       console.log('play played list')
       return
     }
   }
   if (randomNextMusicInfo.info) {
-    handlePlayNext(randomNextMusicInfo.info)
+    handlePlayNext(randomNextMusicInfo.info, false, crossfade)
     return
   }
   // const isCheckFile = findNum > 2 // 针对下载列表，如果超过两次都碰到无效歌曲，则过滤整个列表内的无效歌曲
@@ -772,7 +772,7 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
     musicInfo: filteredList[nextIndex],
     listId: currentListId,
     isTempPlay: false,
-  })
+  }, false, crossfade)
 }
 
 /**

@@ -128,7 +128,7 @@ export default {
       // }
 
       &.font-mode > .line > .font-lrc {
-        > span {
+        > span, > ruby > span {
           transition: @transition-slow;
           transition-property: font-size;
           font-size: 1em;

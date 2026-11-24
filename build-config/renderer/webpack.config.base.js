@@ -3,6 +3,7 @@ const { VueLoaderPlugin } = require('vue-loader')
 const HTMLPlugin = require('html-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const ESLintPlugin = require('eslint-webpack-plugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
 
 const vueLoaderConfig = require('../vue-loader.config')
 const { mergeCSSLoader } = require('../utils')
@@ -131,6 +132,18 @@ module.exports = {
     ],
   },
   plugins: [
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: path.resolve(path.dirname(require.resolve('fflate')), '../umd/index.js'), to: 'dictionary/zip.js', info: { minimized: true } },
+        { from: path.resolve(path.dirname(require.resolve('fflate')), '../LICENSE'), to: 'dictionary/LICENSE' },
+        { from: path.join(__dirname, '../../src/renderer/utils/dictionary.worker.js'), to: 'dictionary/worker.js' },
+        { from: require.resolve('kuromoji/build/kuromoji.js'), to: 'furigana/kuromoji.js', info: { minimized: true } },
+        { from: path.dirname(require.resolve('kuromoji/dict/base.dat.gz')), to: 'furigana/dict' },
+        { from: require.resolve('kuromoji/LICENSE-2.0.txt'), to: 'furigana/LICENSE-2.0.txt' },
+        { from: require.resolve('kuromoji/NOTICE.md'), to: 'furigana/NOTICE.md' },
+        { from: path.join(__dirname, '../../src/renderer/utils/furigana.worker.js'), to: 'furigana/worker.js' },
+      ],
+    }),
     new HTMLPlugin({
       filename: 'index.html',
       template: path.join(__dirname, '../../src/renderer/index.html'),

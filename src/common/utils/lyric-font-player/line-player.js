@@ -185,12 +185,12 @@ export default class LinePlayer {
   }
 
   play(curTime = 0) {
-    if (!this.lines.length) return
+    if (!this.lines?.length) return
     this.pause()
     this.isPlay = true
 
-    this._performanceTime = getNow() - parseInt(this.tags.offset + this.offset)
-    this._startTime = curTime
+    this._performanceTime = getNow()
+    this._startTime = curTime + this.tags.offset + this.offset
 
     this.curLineNum = this._findCurLineNum(this._currentTime()) - 1
 
@@ -211,10 +211,13 @@ export default class LinePlayer {
   }
 
   setPlaybackRate(rate) {
+    if (!this.isPlay) {
+      this._rate = rate
+      return
+    }
+    const time = this._currentTime() - this.tags.offset - this.offset
     this._rate = rate
-    if (!this.lines.length) return
-    if (!this.isPlay) return
-    this.play(this._currentTime())
+    this.play(time)
   }
 
   setLyric(lyric, extendedLyrics) {

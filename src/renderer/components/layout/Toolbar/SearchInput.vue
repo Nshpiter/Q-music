@@ -70,6 +70,7 @@
 import music from '@renderer/utils/musicSdk'
 import { debounce } from '@common/utils'
 import { DEFAULT_SETTING } from '@common/constants'
+import { neteaseSongId } from '@common/utils/neteaseSongLink'
 import {
   computed,
   onBeforeUnmount,
@@ -263,6 +264,15 @@ export default {
           searchSlotRef.value?.querySelectorAll('[data-search-suggestion]')[data]?.scrollIntoView({ block: 'nearest' })
       }
     }
+    const pasteSongLink = event => {
+      const editable = event.target.closest?.('input, textarea, [contenteditable], [role="textbox"]')
+      if (editable && !searchSlotRef.value?.contains(editable)) return
+      const id = neteaseSongId(event.clipboardData?.getData('text/plain') || '')
+      if (!id) return
+      event.preventDefault()
+      closePanel()
+      void router.push({ path: '/search', query: { source: 'wy', type: 'music', text: 'https://music.163.com/song?id=' + id } }).catch(() => {})
+    }
 
     const toggleSourceMenu = () => {
       sourceMenuVisible.value = !sourceMenuVisible.value
@@ -298,10 +308,12 @@ export default {
       if (value != sourceChangePath) closePanel()
     })
     onMounted(() => {
+      document.addEventListener('paste', pasteSongLink)
       document.addEventListener('pointerdown', handleOutside, true)
       window.addEventListener('blur', closePanel)
     })
     onBeforeUnmount(() => {
+      document.removeEventListener('paste', pasteSongLink)
       hotSearchRequestId++
       tipSearchGeneration++
       document.removeEventListener('pointerdown', handleOutside, true)

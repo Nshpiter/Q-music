@@ -1,5 +1,7 @@
 import { markRaw } from '@common/utils/vueTools'
 import music from '@renderer/utils/musicSdk'
+import neteaseDetail from '@renderer/utils/musicSdk/wy/musicDetail'
+import { neteaseSongId } from '@common/utils/neteaseSongLink'
 import { toNewMusicInfo } from '@renderer/utils'
 import { assertApiSupport } from '@renderer/store/utils'
 
@@ -214,7 +216,11 @@ export const search = async(text: string, page: number, sourceId: LX.OnlineSourc
   } else {
     listInfo!.noItemLabel = window.i18n.t('list__loading')
     listInfo!.key = key
-    return music[sourceId].musicSearch.search(text, page, listInfo!.limit).then((data: SearchResult) => {
+    const id = sourceId === 'wy' && neteaseSongId(text)
+    const result = id
+      ? neteaseDetail.getList([id]).then(({ list }: { list: LX.Music.MusicInfo[] }) => ({ list, total: list.length, allPage: 1, limit: listInfo!.limit, source: sourceId }))
+      : music[sourceId].musicSearch.search(text, page, listInfo!.limit)
+    return result.then((data: SearchResult) => {
       if (activeSearches.get(sourceId) !== request) return []
       return setList(data, page, text)
     }).catch((error: any) => {

@@ -71,6 +71,7 @@ export const initGlobalData = () => {
       duration: 0,
       playbackRate: 1,
       lyricLineText: '',
+      lyricLineWords: [],
       lyricLineAllText: '',
       lyric: '',
       tlyric: '',

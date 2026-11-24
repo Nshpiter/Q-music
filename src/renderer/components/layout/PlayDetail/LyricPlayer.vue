@@ -8,13 +8,13 @@
       <div
         v-show="!isShowLrcSelectContent && !instrumental"
         ref="dom_lyric"
-        :class="['lyric', $style.lyric, { [$style.draging]: isMsDown }, { [$style.lrcActiveZoom]: isZoomActiveLrc }]" :style="lrcStyles"
+        :class="['lyric', $style.lyric, { [$style.draging]: isMsDown, [$style.lrcActiveZoom]: isZoomActiveLrc, [$style.fan]: appSetting['playDetail.fanLyrics'], [$style.fanMotion]: appSetting['common.isShowAnimation'] && !appSetting['common.performanceMode'], [$style.wordMotion]: appSetting['playDetail.wordMotion'] && !appSetting['common.performanceMode'] && appSetting['common.isShowAnimation'] }]" :style="lrcStyles"
         @wheel="handleWheel" @mousedown="handleLyricMouseDown" @touchstart="handleLyricTouchStart"
         @mousemove="handleLyricMouseMove"
         @contextmenu.stop="handleShowLyricMenu"
       >
         <div :class="['pre', $style.lyricSpace, $style.lyricSpaceTop]" />
-        <div ref="dom_lyric_text" />
+        <div ref="dom_lyric_text" :class="$style.rows" />
         <div :class="[$style.lyricSpace, $style.lyricSpaceBottom]" />
       </div>
     </transition>
@@ -70,12 +70,14 @@
         </div>
       </div>
     </transition>
+    <LyricLookup v-if="appSetting['playDetail.dictionary']" />
     <LyricMenu v-model="lyricMenuVisible" :xy="lyricMenuXY" :lyric-info="lyricInfo" @update-lyric="handleUpdateLyric" />
   </div>
 </template>
 
 <script>
 import { isInstrumental } from '@common/utils/lyricStatus'
+import LyricLookup from './components/LyricLookup.vue'
 import { clipboardWriteText } from '@common/utils/electron'
 import { lyric } from '@renderer/store/player/lyric'
 import { playProgress } from '@renderer/store/player/playProgress'
@@ -100,6 +102,7 @@ import useSelectAllLrc from './useSelectAllLrc'
 export default {
   components: {
     LyricMenu,
+    LyricLookup,
   },
   props: {
     commentLayoutVisible: Boolean,
@@ -150,7 +153,7 @@ export default {
       lyricResizeTimer = null
     }
     const syncLyricScrollOnResize = () => {
-      if (!isShowPlayComment.value) return
+      if (!isShowPlayComment.value && !appSetting['playDetail.fanLyrics']) return
       clearLyricResizeTimer()
       lyricResizeTimer = setTimeout(() => {
         lyricResizeTimer = null
@@ -390,6 +393,8 @@ export default {
       color: var(--playDetail-lrc-color, rgba(255, 255, 255, .86));
     }
     .line-content {
+      .q-japanese-font { font-family: "Yu Gothic UI", "Hiragino Sans", "Noto Sans CJK JP", sans-serif; }
+      rt { font-size: .5em; line-height: 1.35; font-weight: 500; -webkit-text-fill-color: currentColor; }
       line-height: 1.2;
       padding: calc(var(--playDetail-lrc-font-size, 16px) / 1.85) clamp(10px, 1.4vw, 22px);
       overflow-wrap: break-word;
@@ -444,7 +449,7 @@ export default {
       }
 
       &.font-mode > .line > .font-lrc {
-        > span {
+        > span, > ruby > span {
           transition: @transition-normal;
           transition-property: font-size;
           font-size: 1em;
@@ -472,6 +477,48 @@ export default {
 }
 .lrcActiveZoom :global(.line-content.q-current-line) {
   transform: scale(1.09);
+}
+.rows { position: relative; }
+.lyric[data-arranging] :global(.line-content),
+.lyric[data-arranging] :global(.line-content *) { transition: none !important; }
+.lyric.fan {
+  overflow: clip;
+  -webkit-mask-image: none;
+  padding-inline: 30px;
+  box-sizing: border-box;
+  .rows { height: 100%; }
+  .lyricSpace { display: none; }
+  :global(.line-content) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0;
+    text-align: left;
+    transform-origin: right center;
+    transform: var(--rnp-transform) !important;
+    opacity: var(--rnp-opacity, 1) !important;
+    transition: none;
+  }
+  :global(.line-content.rnp-out-of-range) { visibility: hidden; }
+  :global(.line-content:not(.q-current-line) > div) { opacity: .4; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lyric.fan.fanMotion :global(.line-content) {
+    transition: transform var(--rnp-duration, 0ms) ease var(--rnp-delay, 0ms),
+      filter var(--rnp-duration, 0ms) ease var(--rnp-delay, 0ms),
+      opacity var(--rnp-duration, 0ms) ease var(--rnp-delay, 0ms);
+  }
+  .lyric.wordMotion :global(.line-content.font-mode.active > .line > .font-lrc) {
+    --lyric-feather: .3em;
+    > span, > ruby > span {
+      background-image: linear-gradient(to right, var(--playDetail-lrc-active-color) max(0%, calc(100% - var(--lyric-feather))), transparent);
+    }
+    :global(.sustained-word) {
+      position: relative;
+    }
+  }
 }
 .commentMode {
   .trackHeader {

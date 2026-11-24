@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self'">
+<style>
+* { box-sizing: border-box }
+html, body { margin: 0; height: 100%; overflow: hidden; background: transparent }
+body { display: grid; align-items: center; padding: 0 8px; font: 600 14px/1.3 "Segoe UI", "Microsoft YaHei UI", sans-serif; color: #181818; text-shadow: 0 0 4px #fffc }
+body.dark { color: white; text-shadow: 0 1px 4px #000c }
+p { margin: 0; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; text-align: center }
+body.vertical { writing-mode: vertical-rl; padding: 8px 0 }
+.timed-word { background: linear-gradient(#076252,#076252) left center / 0% 100% no-repeat; background-clip: text; color: #59595999; text-shadow: none; }
+.dark .timed-word { background-image: linear-gradient(#95ffe4,#95ffe4); color: #fffc; }
+</style></head><body><p></p><script src="timedLine.js"></script><script src="view.js"></script></body></html>

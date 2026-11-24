@@ -33,6 +33,7 @@ test('打包清单在隔离目录中保留 SQLite 加载器的传递依赖', asy
     console: { log() {} },
     require: id => {
       if (id === 'electron-builder') return { build: async options => { config = options.config } }
+      if (id === './steam-runtime') return require('../build-config/steam-runtime')
       if (id === './build-before-pack' || id === './build-after-pack') return () => {}
       throw Error(id)
     },
@@ -44,6 +45,7 @@ test('打包清单在隔离目录中保留 SQLite 加载器的传递依赖', asy
     await fs.cp(path.join(__dirname, '..', entry), path.join(directory, entry), { recursive: true })
   }
   const packagedRequire = createRequire(path.join(directory, 'package.json'))
+  for (const entry of require('../build-config/steam-runtime')) assert.ok(config.files.includes(entry), '打包遗漏 ' + entry)
   assert.equal(typeof packagedRequire('bindings'), 'function')
   assert.ok(packagedRequire('file-uri-to-path')('file:///tmp/qmusic.db').endsWith(`${path.sep}tmp${path.sep}qmusic.db`))
 })

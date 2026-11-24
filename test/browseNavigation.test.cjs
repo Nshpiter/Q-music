@@ -6,6 +6,10 @@ const vm = require('node:vm')
 const ts = require('typescript')
 
 function load(file, dependencies = {}) {
+  if (file === 'src/renderer/store/search/music/action.ts') {
+    dependencies['@common/utils/neteaseSongLink'] = load('src/common/utils/neteaseSongLink.ts')
+    dependencies['@renderer/utils/musicSdk/wy/musicDetail'] ??= {}
+  }
   if (file == 'src/renderer/store/list/action.ts') {
     dependencies['@common/utils/playlistMerge'] = load('src/common/utils/playlistMerge.ts')
     dependencies['@renderer/utils/data'] = {}
@@ -339,6 +343,7 @@ function searchRouteHarness(savedSource, readFails = false) {
     './MusicList/index.vue': {},
     './SongListList/index.vue': {},
     './AlbumList.vue': {},
+    './CloudSongs.vue': {},
     './components/BlankView.vue': {},
     '@common/utils/vueTools': require('vue'),
     '@renderer/utils/musicSdk': { sources: ['kw', 'kg', 'tx', 'wy', 'mg'].map(id => ({ id })) },

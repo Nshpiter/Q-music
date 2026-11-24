@@ -30,13 +30,7 @@ export const sync: {
   type: keyof LX.Sync.ModeTypes
   server: {
     port: string
-    status: {
-      status: boolean
-      message: string
-      address: string[]
-      code: string
-      devices: LX.Sync.ServerKeyInfo[]
-    }
+    status: LX.Sync.ServerStatus
   }
   client: {
     host: string
@@ -75,6 +69,7 @@ export const sync: {
 
 export const openAPI = reactive({
   address: '',
+  port: 0,
   message: '',
 })
 

@@ -2,11 +2,17 @@ import { ref, shallowReactive } from '@common/utils/vueTools'
 
 export const setting = shallowReactive<LX.DesktopLyric.Config>({
   'desktopLyric.enable': false,
+  'playDetail.japaneseFont': false,
+  'playDetail.furigana': false,
+  'playDetail.furiganaReadings': '',
   'desktopLyric.isLock': false,
   'desktopLyric.isAlwaysOnTop': false,
   'desktopLyric.isAlwaysOnTopLoop': false,
   'desktopLyric.isShowTaskbar': true,
   'desktopLyric.pauseHide': false,
+  'desktopLyric.hideEmpty': false,
+  'desktopLyric.coverBackground': false,
+  'desktopLyric.hidePausedWindow': false,
   'desktopLyric.audioVisualization': false,
   'desktopLyric.width': 450,
   'desktopLyric.height': 300,
@@ -92,9 +98,11 @@ export const musicInfo = shallowReactive<{
   name: string
   singer: string
   album: string | null
+  pic: string | null
 }>({
   id: null,
   name: '^',
   singer: '^',
   album: null,
+  pic: null,
 })

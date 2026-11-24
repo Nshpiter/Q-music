@@ -4,17 +4,22 @@ import { sendPlayerStatus, onPlayerAction } from '@renderer/utils/ipc'
 
 import { loveList } from '@renderer/store/list/state'
 import { addListMusics, removeListMusics, checkListExistMusic } from '@renderer/store/list/action'
-import { playMusicInfo, musicInfo } from '@renderer/store/player/state'
+import { playMusicInfo, musicInfo, isShowPlayerDetail } from '@renderer/store/player/state'
 import { throttle } from '@common/utils'
 import { pause, play, playNext, playPrev } from '@renderer/core/player'
 import { playProgress } from '@renderer/store/player/playProgress'
-import { appSetting } from '@renderer/store/setting'
+import { appSetting, setTogglePlayMode } from '@renderer/store/setting'
 import { lyric } from '@renderer/store/player/lyric'
 
 export default () => {
   // const setVisibleDesktopLyric = useCommit('setVisibleDesktopLyric')
   // const setLockDesktopLyric = useCommit('setLockDesktopLyric')
   let collect = false
+  const getTrackIdentity = () => {
+    const item = playMusicInfo.musicInfo
+    const track = item && ('progress' in item ? item.metadata.musicInfo : item)
+    return { songSource: track?.source, songId: track && track.source !== 'local' ? String(track.meta.songId) : '' }
+  }
 
   const updateCollectStatus = async() => {
     let status = !!playMusicInfo.musicInfo && await checkListExistMusic(loveList.id, playMusicInfo.musicInfo.id)
@@ -40,12 +45,17 @@ export default () => {
     await updateCollectStatus()
     sendPlayerStatus({
       collect,
+      ...getTrackIdentity(),
       name: musicInfo.name,
       singer: musicInfo.singer,
       albumName: musicInfo.album,
       picUrl: musicInfo.pic ?? '',
       lyric: musicInfo.lrc ?? '',
+      tlyric: musicInfo.tlrc ?? '',
+      rlyric: musicInfo.rlrc ?? '',
+      lxlyric: musicInfo.lxlrc ?? '',
       lyricLineText: '',
+      lyricLineWords: [],
       lyricLineAllText: '',
     })
   }
@@ -56,6 +66,7 @@ export default () => {
       rlyric: musicInfo.rlrc ?? '',
       lxlyric: musicInfo.lxlrc ?? '',
       lyricLineText: '',
+      lyricLineWords: [],
       lyricLineAllText: '',
     })
   }
@@ -68,6 +79,7 @@ export default () => {
     let curLine = lyric.lines[line]?.extendedLyrics.join('\n') ?? ''
     sendPlayerStatus({
       lyricLineText: text,
+      lyricLineWords: (lyric.lines[line]?.words ?? []).map(word => ({ ...word, start: word.start - lyric.offset - lyric.tempOffset })),
       lyricLineAllText: curLine ? text + '\n' + curLine : text,
     })
   }
@@ -121,6 +133,9 @@ export default () => {
       case 'volume':
         window.app_event.setVolume(data as number)
         break
+      case 'playMode':
+        if (data === 'random' || data === 'singleLoop' || data === 'listLoop' || data === 'list') setTogglePlayMode(data)
+        break
       // case 'lrc':
       //   setVisibleDesktopLyric(true)
       //   updateSetting()
@@ -151,6 +166,8 @@ export default () => {
   watch(() => appSetting['player.playbackRate'], rate => {
     sendPlayerStatus({ playbackRate: rate })
   })
+  watch(isShowPlayerDetail, detailVisible => { sendPlayerStatus({ detailVisible }) }, { immediate: true })
+  watch(() => appSetting['player.togglePlayMethod'], playMethod => { sendPlayerStatus({ playMethod }) }, { immediate: true })
 
   window.app_event.on('play', handlePlay)
   window.app_event.on('pause', handlePause)
@@ -185,6 +202,7 @@ export default () => {
     if (playMusicInfo.musicInfo == null) return
     sendPlayerStatus({
       collect,
+      ...getTrackIdentity(),
       name: musicInfo.name,
       singer: musicInfo.singer,
       albumName: musicInfo.album,

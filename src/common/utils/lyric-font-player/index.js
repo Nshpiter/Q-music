@@ -19,6 +19,7 @@ export default class Lyric {
     activeLineClassName = 'active',
     shadowContent = false,
     isVertical = false,
+    wordMotion = false,
     onPlay = function(line, text) { },
     onSetLyric = function(lines, offset) { },
     onUpdateLyric = function(lines) { },
@@ -42,6 +43,7 @@ export default class Lyric {
     this.shadowContent = shadowContent
 
     this.isVertical = isVertical
+    this.wordMotion = wordMotion
     this.playingLineNum = -1
     this.isLineMode = false
 
@@ -59,6 +61,7 @@ export default class Lyric {
   }
 
   _init() {
+    this._lineFonts?.[this.playingLineNum]?.reset()
     this.playingLineNum = -1
     this.isLineMode = false
 
@@ -112,9 +115,10 @@ export default class Lyric {
   }
 
   _initLines = (lyricLines, offset, isUpdate) => {
+    this._lineFonts?.[this.playingLineNum]?.reset()
     // console.log(lyricLines)
     // this._lines = lyricsLines
-    this.isLineMode = lyricLines.length && !/^<\d+,\d+>/.test(lyricLines[0].text)
+    this.isLineMode = lyricLines.length > 0 && !lyricLines.some(line => /^<\d+,\d+>/.test(line.text))
 
     this._lineFonts = []
     if (this.isLineMode) {
@@ -146,6 +150,7 @@ export default class Lyric {
     } else {
       this._lines = lyricLines.map(line => {
         const fontPlayer = new FontPlayer({
+          wordMotion: this.wordMotion,
           time: line.time,
           rate: this.rate,
           lyric: line.text,
@@ -165,6 +170,7 @@ export default class Lyric {
         return {
           text: line.text.replace(fontTimeExp, ''),
           time: line.time,
+          words: fontPlayer.isLineMode ? [] : fontPlayer.fonts.map(({ text, startTime, time }) => ({ text, start: line.time + startTime, duration: time })),
           extendedLyrics: line.extendedLyrics,
           dom_line: fontPlayer.lineContent,
         }
@@ -209,13 +215,8 @@ export default class Lyric {
 
   setPlaybackRate(rate) {
     this.rate = rate
+    for (const line of this._lineFonts ?? []) line.setPlaybackRate(rate)
     this.linePlayer.setPlaybackRate(rate)
-    this._initLines(this.initInfo.lines, this.initInfo.offset, true)
-    if (this.linePlayer.isPlay) {
-      const num = this.playingLineNum
-      this.playingLineNum = 0
-      this._handleLinePlayerOnPlay(num, '', this.linePlayer._currentTime())
-    } else this.playingLineNum = 0
   }
 
   setVertical(isVertical) {

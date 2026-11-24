@@ -2,6 +2,12 @@
 dt#play {{ $t('setting__play') }}
 dd
   .gap-top
+    base-checkbox(id="keyboard_seek" :model-value="appSetting['player.keyboardSeek']" :label="$t('keyboard_seek')" @update:model-value="updateSetting({ 'player.keyboardSeek': $event })")
+    p.small(v-if="appSetting['player.keyboardSeek']") {{ $t('keyboard_seek_help') }}
+  .gap-top
+    label {{ $t('crossfade_seconds') }} · {{ appSetting['player.crossfadeSeconds'] }} s
+      input#crossfade_seconds(type="range" min="0" max="8" step="1" :value="appSetting['player.crossfadeSeconds']" @input="updateSetting({ 'player.crossfadeSeconds': Number($event.target.value) })")
+  .gap-top
     base-checkbox(id="setting_player_startup_auto_play" :model-value="appSetting['player.startupAutoPlay']" :label="$t('setting__play_startup_auto_play')" @update:model-value="updateSetting({'player.startupAutoPlay': $event})")
   .gap-top
     base-checkbox(id="setting_player_power_save_blocker" :model-value="appSetting['player.powerSaveBlocker']" :label="$t('setting__play_power_save_blocker')" @update:model-value="handleUpdatePowerSaveBlocker")
@@ -10,6 +16,19 @@ dd
   .gap-top
     base-checkbox(id="setting_player_auto_clean_played_list" :model-value="appSetting['player.isAutoCleanPlayedList']" :label="$t('setting__play_auto_clean_played_list')" @update:model-value="updateSetting({'player.isAutoCleanPlayedList': $event})")
     svg-icon(class="help-icon" name="help-circle-outline" :aria-label="$t('setting__play_auto_clean_played_list_tip')")
+  .gap-top
+    base-checkbox(id="setting_player_footer_lyric" :model-value="appSetting['player.showFooterLyric']" :label="$t('setting__play_footer_lyric')" @update:model-value="updateSetting({'player.showFooterLyric': $event})")
+    .p.gap-top(v-if="appSetting['player.showFooterLyric']")
+      select(:aria-label="$t('setting__play_footer_lyric')" :value="appSetting['player.footerLyricLanguage']" @change="updateSetting({ 'player.footerLyricLanguage': $event.target.value })")
+        option(v-for="kind in ['original', 'translation', 'roman', 'paired']" :key="kind" :value="kind") {{ $t('footer_text_' + kind) }}
+      base-checkbox.gap-left(id="footer_lyric_glass" :model-value="appSetting['player.footerLyricGlass']" :label="$t('footer_lyric_glass')" @update:model-value="updateSetting({ 'player.footerLyricGlass': $event })")
+      details.gap-top
+        summary {{ $t('footer_text_style') }}
+        .p.gap-top(v-for="kind in ['original', 'translation', 'roman']" :key="kind")
+          label {{ $t('footer_text_' + kind) }} · {{ appSetting['player.footerSize.' + kind] }} px
+            input(type="range" min="10" max="22" :value="appSetting['player.footerSize.' + kind]" @change="updateSetting({ ['player.footerSize.' + kind]: Number($event.target.value) })")
+          base-checkbox.gap-left(:id="'footer_bold_' + kind" :model-value="appSetting['player.footerBold.' + kind]" :label="$t('footer_bold')" @update:model-value="updateSetting({ ['player.footerBold.' + kind]: $event })")
+          base-checkbox.gap-left(:id="'footer_italic_' + kind" :model-value="appSetting['player.footerItalic.' + kind]" :label="$t('footer_italic')" @update:model-value="updateSetting({ ['player.footerItalic.' + kind]: $event })")
   .gap-top
     base-checkbox(id="setting_player_lyric_transition" :model-value="appSetting['player.isShowLyricTranslation']" :label="$t('setting__play_lyric_transition')" @update:model-value="updateSetting({'player.isShowLyricTranslation': $event})")
   .gap-top

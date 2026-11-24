@@ -34,6 +34,13 @@ declare global {
       'common.apiSource': string
       'common.apiPreferQuality': boolean
       'playDetail.lyricEdgeFade': number
+      'playDetail.wordMotion': boolean
+      'playDetail.fanLyrics': boolean
+      'playDetail.fanCurvature': number
+      'playDetail.japaneseFont': boolean
+      'playDetail.furigana': boolean
+      'playDetail.dictionary': boolean
+      'playDetail.furiganaReadings': string
       'common.apiBackupSources': string[]
 
       /**
@@ -60,6 +67,8 @@ declare global {
        * 流畅模式：关闭实时毛玻璃采样以降低图形渲染开销
        */
       'common.performanceMode': boolean
+      'common.hideScrollbars': boolean
+      'common.interfaceZoom': number
 
       /**
        * 是否同意软件协议
@@ -125,6 +134,18 @@ declare global {
        * 是否将歌词显示在状态栏
        */
       'player.isShowStatusBarLyric': boolean
+      'player.showFooterLyric': boolean
+      'player.footerLyricLanguage': 'original' | 'translation' | 'roman' | 'paired'
+      'player.footerLyricGlass': boolean
+      'player.footerSize.original': number
+      'player.footerBold.original': boolean
+      'player.footerItalic.original': boolean
+      'player.footerSize.translation': number
+      'player.footerBold.translation': boolean
+      'player.footerItalic.translation': boolean
+      'player.footerSize.roman': number
+      'player.footerBold.roman': boolean
+      'player.footerItalic.roman': boolean
 
       /**
        * 音量大小
@@ -200,11 +221,17 @@ declare global {
        * 是否启用音频可视化
        */
       'player.audioVisualization': boolean
+      'player.keyboardSeek': boolean
+      'player.crossfadeSeconds': number
 
       /**
        * 音频可视化样式
        */
       'player.audioVisualizationStyle': 'ambient' | 'ribbon' | 'spectrum'
+      'player.spectrumResolution': 'auto' | '2048' | 'multi'
+      'player.spectrumAWeighting': boolean
+      'player.spectrumSmoothing': number
+      'player.spectrumResponse': 'fast' | 'normal' | 'slow'
 
       /**
        * 定时暂停播放-是否等待歌曲播放完毕再暂停
@@ -384,6 +411,11 @@ declare global {
        * 是否在暂停时隐藏歌词
        */
       'desktopLyric.pauseHide': boolean
+      'desktopLyric.hideEmpty': boolean
+      'desktopLyric.coverBackground': boolean
+      'desktopLyric.hidePausedWindow': boolean
+      'desktopLyric.taskbar': boolean
+      'desktopLyric.taskbarPosition': number
 
       /**
        * 桌面歌词窗口宽度
@@ -647,6 +679,19 @@ declare global {
        * 自定义全局背景图（绝对路径或 URL，空为不使用）
        */
       'theme.customBgImage': string
+      'theme.backgroundMotion': boolean
+      'theme.coverPalette': boolean
+      'theme.desktopLayout': string
+      'theme.layoutOptions': Record<string, { accent?: string, radius?: number, docked?: boolean, background?: string, backgroundBlur?: number, vinyl?: boolean, spectrumBar?: boolean, barBlur?: number, barSaturation?: number }>
+      'theme.dimActiveBackground': boolean
+      'theme.backgroundIdleSeconds': number
+      'theme.backgroundActiveOpacity': number
+      'playDetail.videoBackground': string
+      'playDetail.bilibiliVideo': boolean
+      'playDetail.automaticTranslation': boolean
+      'playDetail.transcodeVideo': boolean
+      'playDetail.coverMv': boolean
+      'playDetail.videoVolume': number
 
       /**
        * 是否显示热门搜索
@@ -723,6 +768,25 @@ declare global {
        * 是否启用开放API服务
        */
       'openAPI.enable': boolean
+      'integrations.lyricsIsland': boolean
+      'integrations.keyboardScreen': boolean
+      'integrations.amll': boolean
+      'integrations.amllAudio': boolean
+      'integrations.sixK': boolean
+      'integrations.sixKCoverMode': 'url' | 'base64url'
+      'integrations.sixKCoverSize': string
+      'integrations.liveRequests': boolean
+      'integrations.steam': boolean
+      'integrations.steamPaused': boolean
+      'integrations.steamArtist': boolean
+      'integrations.steamTime': boolean
+      'integrations.steamPrefix': string
+      'integrations.liveRoom': string
+      'integrations.discord': boolean
+      'integrations.discordId': string
+      'integrations.amllUrl': string
+      'integrations.amllVersion': 'v1' | 'v2'
+      'integrations.keyboardHost': string
 
       /**
        * API服务端口号

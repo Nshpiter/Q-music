@@ -1,5 +1,10 @@
 <template lang="pug">
 dt#desktop_lyric {{ $t('setting__desktop_lyric') }}
+dd(v-if="isWin")
+  base-checkbox(id="taskbar_lyrics" :model-value="appSetting['desktopLyric.taskbar']" :label="$t('taskbar_lyrics')" @update:model-value="updateSetting({ 'desktopLyric.taskbar': $event })")
+  div.gap-top(v-if="appSetting['desktopLyric.taskbar']")
+    label(for="taskbar_lyrics_position") {{ $t('taskbar_lyrics_position') }} · {{ appSetting['desktopLyric.taskbarPosition'] }}%
+    input#taskbar_lyrics_position(type="range" min="0" max="100" :value="appSetting['desktopLyric.taskbarPosition']" @input="updateSetting({ 'desktopLyric.taskbarPosition': Number($event.target.value) })")
 dd
   .gap-top
     base-checkbox(id="setting_desktop_lyric_enable" :model-value="appSetting['desktopLyric.enable']" :label="$t('setting__desktop_lyric_enable')" @update:model-value="updateSetting({ 'desktopLyric.enable': $event })")
@@ -9,6 +14,12 @@ dd
     base-checkbox(id="setting_desktop_lyric_fullscreen_hide" :model-value="appSetting['desktopLyric.fullscreenHide']" :label="$t('setting__desktop_lyric_fullscreen_hide')" @update:model-value="updateSetting({ 'desktopLyric.fullscreenHide': $event })")
   .gap-top
     base-checkbox(id="setting_desktop_lyric_pause_hide" :model-value="appSetting['desktopLyric.pauseHide']" :label="$t('setting__desktop_lyric_pause_hide')" @update:model-value="updateSetting({ 'desktopLyric.pauseHide': $event })")
+  .gap-top
+    base-checkbox(id="setting_desktop_lyric_hide_empty" :model-value="appSetting['desktopLyric.hideEmpty']" :label="$t('desktop_lyric_hide_empty')" @update:model-value="updateSetting({ 'desktopLyric.hideEmpty': $event })")
+  .gap-top
+    base-checkbox(id="desktop_lyric_hide_paused" :model-value="appSetting['desktopLyric.hidePausedWindow']" :label="$t('desktop_lyric_hide_paused')" @update:model-value="updateSetting({ 'desktopLyric.hidePausedWindow': $event })")
+  .gap-top
+    base-checkbox(id="desktop_lyric_cover" :model-value="appSetting['desktopLyric.coverBackground']" :label="$t('desktop_lyric_cover')" @update:model-value="updateSetting({ 'desktopLyric.coverBackground': $event })")
   .gap-top
     base-checkbox(id="setting_desktop_lyric_audio_visualization" :model-value="appSetting['desktopLyric.audioVisualization']" :label="$t('setting__desktop_lyric_audio_visualization')" @update:model-value="updateSetting({ 'desktopLyric.audioVisualization': $event })")
   .gap-top
@@ -98,7 +109,7 @@ dd
 <script>
 import { ref, computed, onMounted, onBeforeUnmount } from '@common/utils/vueTools'
 import { getSystemFonts } from '@renderer/utils/ipc'
-import { isLinux } from '@common/utils'
+import { isLinux, isWin } from '@common/utils'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import { useI18n } from '@renderer/plugins/i18n'
 import { pickrTools } from '@renderer/utils/pickrTools'
@@ -296,6 +307,7 @@ export default {
       lyric_shadow_color_ref,
       resetColor,
       resetWindowSetting,
+      isWin,
 
       fontList,
       isLinux,

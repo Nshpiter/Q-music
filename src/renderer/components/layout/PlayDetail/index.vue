@@ -2,6 +2,7 @@
 transition(enter-active-class="q-detail-enter-active" leave-active-class="q-detail-leave-active" @after-enter="handleAfterEnter" @after-leave="handleAfterLeave")
   div(v-if="isShowPlayerDetail" :class="[$style.container, appSetting['playDetail.style.layout'] == 'immersive' ? $style.immersive : $style.classic, { fullscreen: isFullscreen }]" @contextmenu="handleContextMenu")
     div(:class="$style.bg" :style="detailBgStyle")
+    VideoBackdrop(v-if="appSetting['playDetail.videoBackground'] || appSetting['playDetail.bilibiliVideo'] || appSetting['playDetail.coverMv']")
     //- div(:class="$style.bg" :style="bgStyle")
     //- div(:class="$style.bg2")
     ControlBtnsLeftHeader(v-if="appSetting['common.controlBtnPosition'] == 'left'" :detail-action-enabled="appSetting['playDetail.style.layout'] != 'immersive'")
@@ -12,8 +13,8 @@ transition(enter-active-class="q-detail-enter-active" leave-active-class="q-deta
     div(ref="dom_main" :class="[$style.main, {[$style.showComment]: isCommentLayoutVisible, [$style.commentOpening]: isCommentLayoutOpening, [$style.commentGliding]: isCommentLayoutGliding, [$style.commentClosing]: isCommentLayoutClosing, [$style.commentSettling]: isCommentLayoutSettling}]" :style="mainStyle")
       div.left(:class="$style.left")
         div(ref="dom_record" :class="['q-album-stage', $style.albumStage, { [$style.albumStagePlaying]: isPlay }]")
-          div(:class="$style.record")
-            img(v-if="musicInfo.pic" :key="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
+          div.q-layout-record(:class="$style.record")
+            img.q-layout-artwork(v-if="musicInfo.pic" :key="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
             div(v-else :class="$style.emptyCover")
               EmptyCoverMark(:class="$style.emptyCoverMark")
           div(v-if="appSetting['playDetail.style.layout'] == 'classic'" :class="$style.toneArm" aria-hidden="true")
@@ -22,7 +23,9 @@ transition(enter-active-class="q-detail-enter-active" leave-active-class="q-deta
             span(:class="$style.toneArmHead")
         div.description(:class="['scroll', $style.description]")
           div(:key="musicInfo.id || musicInfo.name" :class="$style.trackChange")
-            p {{ musicInfo.name }}
+            p(:class="$style.trackHeading")
+              span {{ musicInfo.name }}
+              TrackLinks(v-if="musicInfo.id")
             p
               button(v-for="(singer, index) in singers" :key="`${singer}:${index}`" type="button" :class="$style.metadataLink" :title="$t('player__search_artist', { name: singer })" @click="openMetadata('music', singer)") {{ singer }}
             p(v-if="musicInfo.album")
@@ -67,6 +70,8 @@ import MusicComment from './components/MusicComment/index.vue'
 import ControlBtnsLeftHeader from './ControlBtnsLeftHeader.vue'
 import ControlBtnsRightHeader from './ControlBtnsRightHeader.vue'
 import EmptyCoverMark from '@renderer/components/common/EmptyCoverMark.vue'
+import TrackLinks from './components/TrackLinks.vue'
+import VideoBackdrop from './components/VideoBackdrop.vue'
 import { registerAutoHideMounse, unregisterAutoHideMounse } from './autoHideMounse'
 import { appSetting } from '@renderer/store/setting'
 import { closeWindow, maxWindow, minWindow, setFullScreen } from '@renderer/utils/ipc'
@@ -112,6 +117,8 @@ export default {
     ControlBtnsLeftHeader,
     ControlBtnsRightHeader,
     EmptyCoverMark,
+    TrackLinks,
+    VideoBackdrop,
     LyricPlayer,
     MusicComment,
   },
@@ -120,8 +127,14 @@ export default {
     const singers = computed(() => musicInfo.singer?.split('、').map(name => name.trim()).filter(Boolean) || [])
     const openMetadata = async(type, text) => {
       if (!text?.trim()) return
-      const song = playMusicInfo.musicInfo
+      const current = playMusicInfo.musicInfo
+      const song = current && ('progress' in current ? current.metadata.musicInfo : current)
       const source = ['tx', 'wy', 'kg', 'kw', 'mg'].includes(song?.source) ? song.source : 'all'
+      if (type == 'music' && source == 'wy') {
+        await router.push({ name: 'ArtistSongs', query: { artist: text, song: String(song.meta.songId) } })
+        hide()
+        return
+      }
       const query = { text, source, type, page: 1 }
       const albumId = song?.meta.albumId
       if (type == 'album' && albumSources.includes(source) && albumId && (source != 'tx' || /^[a-z\d]{14}$/i.test(String(albumId)))) {
@@ -1259,6 +1272,13 @@ export default {
       font-size: 20px;
       font-weight: 700;
     }
+  }
+  p.trackHeading {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    span { min-width: 0; .mixin-ellipsis-1(); }
+    button { flex: none; }
   }
 }
 

@@ -85,7 +85,6 @@
     <ListSortModal v-model:visible="isShowListSortModal" :list-info="sortListInfo" />
     <ListUpdateModal v-model:visible="isShowListUpdateModal" />
     <ExternalImportModal v-model:visible="isShowExternalImportModal" :list-id="listId" :initial-provider="importProvider" @update:visible="!$event && (importProvider = '')" />
-    <LocalMusicModal v-model:visible="isShowLocalMusicModal" @open-list="handleListToggle" />
   </div>
 </template>
 
@@ -95,12 +94,11 @@ import { openUrl } from '@common/utils/electron'
 import musicSdk from '@renderer/utils/musicSdk'
 import DuplicateMusicModal from './components/DuplicateMusicModal.vue'
 import ExternalImportModal from './components/ExternalImportModal.vue'
-import LocalMusicModal from './components/LocalMusicModal.vue'
 import ListSortModal from './components/ListSortModal.vue'
 import ListUpdateModal from './components/ListUpdateModal.vue'
 import PlaylistIdentity from '@renderer/components/common/PlaylistIdentity.vue'
 
-import { defaultList, loveList, userLists, fetchingListStatus } from '@renderer/store/list/state'
+import { defaultList, loveList, userLists, fetchingListStatus, isShowLocalMusicModal } from '@renderer/store/list/state'
 import { removeUserList } from '@renderer/store/list/action'
 
 import { ref, watch } from '@common/utils/vueTools'
@@ -129,7 +127,6 @@ export default {
     PlaylistIdentity,
     DuplicateMusicModal,
     ExternalImportModal,
-    LocalMusicModal,
     ListSortModal,
     ListUpdateModal,
   },
@@ -148,7 +145,6 @@ export default {
     const rightClickItemIndex = ref(-10)
     const importProvider = ref('')
     const isShowExternalImportModal = ref(false)
-    const isShowLocalMusicModal = ref(false)
 
     const { handleImportList, handleExportList } = useShare()
     const { isShowListUpdateModal, handleUpdateSourceList } = useListUpdate()

@@ -15,9 +15,11 @@ export default () => {
       },
     }).then((status) => {
       openAPI.address = status.address
+      openAPI.port = status.status ? status.port ?? 0 : 0
       openAPI.message = status.message
     }).catch((error) => {
       openAPI.address = ''
+      openAPI.port = 0
       openAPI.message = error.message
     }).finally(() => {
       setDisableAutoPauseBySource(!!openAPI.address, 'openAPI')

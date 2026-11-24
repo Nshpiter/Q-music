@@ -7,6 +7,14 @@ const context={exports:{}}
 vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(root,file),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,context)
 const {isInstrumental}=context.exports
 
+test('桌面歌词只在确实存在可展示的歌词时出现', () => {
+ const available = (...lines) => context.exports.hasDisplayLyrics(lines.map(text => ({text})), 'Piano (Instrumental)')
+ assert.equal(available(), false)
+ assert.equal(available('  ', '暂无歌词，静静聆听~'), false)
+ assert.equal(available('作曲：作者', '純音樂，請欣賞'), false)
+ assert.equal(available('Instrumental', 'A real verse'), true)
+})
+
 test('明确纯音乐歌词标记兼容简繁体、平台长文案、制作信息和逐字时间戳',()=>{
  for(const lyric of [
  '[00:00.00]此歌曲为没有填词的纯音乐，请您欣赏',

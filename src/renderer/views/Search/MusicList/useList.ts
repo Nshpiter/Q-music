@@ -3,6 +3,7 @@ import { sortSearchQuality, type SearchSort } from '@common/utils/searchQuality'
 import { searchText } from '@renderer/store/search/state'
 import { playFromPage } from '@renderer/core/player/selection'
 import { addHistoryWord } from '@renderer/store/search/action'
+import { neteaseSongId } from '@common/utils/neteaseSongLink'
 // import { useI18n } from '@renderer/plugins/i18n'
 // import { } from '@renderer/store/search/state'
 import { search as searchMusic, listInfos, getAggregateSources, selectAggregateSource, type ListInfo } from '@renderer/store/search/music'
@@ -24,7 +25,7 @@ export default () => {
 
   const search = (text: string, source: SearchSource, page: number) => {
     listInfo.value = listInfos[source] as ListInfo
-    if (text.length) void addHistoryWord(text)
+    if (text.length && !neteaseSongId(text)) void addHistoryWord(text)
     void searchMusic(text, page, source).then((list: LX.Music.MusicInfo[]) => {
       if (list.length) {
         setTimeout(() => {

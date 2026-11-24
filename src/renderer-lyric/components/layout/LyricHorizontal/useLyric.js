@@ -207,8 +207,10 @@ export default (isComputeHeight) => {
 
   watch(() => lyric.lines, initLrc)
   watch(() => lyric.line, scrollLine)
+  const reflow = () => handleScrollLrc(0)
 
   onMounted(() => {
+    window.addEventListener('lyric-layout-updated', reflow)
     document.addEventListener('mousemove', handleMouseMsMove)
     document.addEventListener('mouseup', handleMouseMsUp)
     document.addEventListener('touchmove', handleTouchMove)
@@ -218,6 +220,7 @@ export default (isComputeHeight) => {
   })
 
   onBeforeUnmount(() => {
+    window.removeEventListener('lyric-layout-updated', reflow)
     document.removeEventListener('mousemove', handleMouseMsMove)
     document.removeEventListener('mouseup', handleMouseMsUp)
     document.removeEventListener('touchmove', handleTouchMove)

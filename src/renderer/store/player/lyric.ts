@@ -5,6 +5,7 @@ export interface Line {
   time: number
   extendedLyrics: string[]
   dom_line: HTMLDivElement
+  words?: LX.Player.TimedWord[]
 }
 
 export const lyric = reactive<{
@@ -35,3 +36,17 @@ export const setOffset = (offset: number) => {
 export const setTempOffset = (offset: number) => {
   lyric.tempOffset = offset
 }
+
+export const getLineAtTime = (seconds: number) => {
+  const time = seconds * 1000 + lyric.offset + lyric.tempOffset
+  const lines = lyric.lines
+  let start = 0
+  let end = lines.length
+  while (start < end) {
+    const mid = Math.floor((start + end) / 2)
+    if (lines[mid].time <= time) start = mid + 1
+    else end = mid
+  }
+  return lines[start - 1]
+}
+export const getLyricAtTime = (seconds: number) => getLineAtTime(seconds)?.text ?? ''

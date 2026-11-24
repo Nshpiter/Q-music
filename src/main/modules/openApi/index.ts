@@ -1,8 +1,11 @@
 import http from 'node:http'
 import querystring from 'node:querystring'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import type { Socket } from 'node:net'
 import { getAddress } from '@common/utils/nodejs'
 import { sendTaskbarButtonClick } from '@main/modules/winMain'
+import { obsOverlay } from './obsOverlay'
 
 const sendResponse = (res: http.ServerResponse, code = 200, msg: string | Record<any, unknown> = 'OK', contentType = 'text/plain; charset=utf-8') => {
   res.writeHead(code, {
@@ -82,13 +85,21 @@ const handleSubscribePlayerStatus = (req: http.IncomingMessage, res: http.Server
   }
 }
 
-const handleStartServer = async(port: number, ip: string) => new Promise<void>((resolve, reject) => {
+const handleStartServer = async(port: number, ip: string) => new Promise<number>((resolve, reject) => {
   playerStatusKeys = Object.keys(global.lx.player_status) as SubscribeKeys[]
   httpServer = http.createServer((req, res): void => {
     const [endUrl, query] = `/${req.url?.split('/').at(-1) ?? ''}`.split('?')
     let code = 200
     let msg = 'OK'
     switch (endUrl) {
+      case '/obs':
+        sendResponse(res, 200, obsOverlay, 'text/html; charset=utf-8')
+        return
+      case '/obs-lyric.js':
+        try {
+          sendResponse(res, 200, readFileSync(path.join(__dirname, 'taskbarLyrics', 'timedLine.js'), 'utf8'), 'text/javascript; charset=utf-8')
+        } catch { sendResponse(res, 404) }
+        return
       case '/status':
         handleSendStatus(res, query)
         return
@@ -224,11 +235,11 @@ const handleStartServer = async(port: number, ip: string) => new Promise<void>((
   httpServer.on('listening', () => {
     const addr = httpServer.address()
     // console.log(addr)
-    if (!addr) {
+    if (!addr || typeof addr === 'string') {
       reject(new Error('address is null'))
       return
     }
-    resolve()
+    resolve(addr.port)
   })
   httpServer.listen(port, ip)
 })
@@ -278,12 +289,13 @@ export const stopServer = async() => {
 }
 export const startServer = async(port: number, bindLan: boolean) => {
   if (status.status) await stopServer()
-  await handleStartServer(port, bindLan ? '0.0.0.0' : '127.0.0.1').then(() => {
+  await handleStartServer(port, bindLan ? '0.0.0.0' : '127.0.0.1').then(boundPort => {
     status.status = true
     status.message = ''
     let address = ['127.0.0.1']
     if (bindLan) address = [...address, ...getAddress()]
     status.address = address.join(', ')
+    status.port = boundPort
   }).catch(err => {
     console.log(err)
     status.status = false

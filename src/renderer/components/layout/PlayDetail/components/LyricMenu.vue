@@ -2,6 +2,10 @@
   <teleport to="#root">
     <div ref="dom_menu" :class="[$style.container, { [$style.immersive]: appSetting['playDetail.style.layout'] == 'immersive' }]" :style="menuStyles" :aria-hidden="!modelValue" :inert="!modelValue || undefined" tabindex="-1" @keydown.esc.stop.prevent="onHide">
       <LyricFontSetting compact />
+      <div v-if="lyricInfo.lyric && !lyricInfo.tlyric" :class="$style.group">
+        <button type="button" :class="$style.btn" :disabled="translating" @click="translate">{{ $t(translating ? 'model_translating' : 'model_translate') }}</button>
+      </div>
+      <span v-if="translationStatus" role="status">{{ translationStatus }}</span>
       <!-- <div :class="$style.group">
       <div :class="$style.title">{{ $t('lyric_menu__align') }}</div>
       <div :class="$style.subGroup">
@@ -48,22 +52,34 @@
 <script>
 import { computed, nextTick, ref, watch } from '@common/utils/vueTools'
 import { useRoute } from '@common/utils/vueRouter'
-import { isShowPlayerDetail } from '@renderer/store/player/state'
+import { isShowPlayerDetail, musicInfo as currentTrack } from '@renderer/store/player/state'
 import useMenuLocation from '@renderer/utils/compositions/useMenuLocation'
-import { debounce } from '@common/utils/common'
-import { saveLyricEdited, removeLyricEdited } from '@renderer/utils/ipc'
-import { appSetting, setPlayDetailLyricFont, setPlayDetailLyricAlign } from '@renderer/store/setting'
+import { saveLyricEdited, getLyricRaw, removeLyricEdited } from '@renderer/utils/ipc'
+import { translateCurrentLyrics } from '@renderer/core/lyricTranslation'
+import { appSetting, updateSetting, setPlayDetailLyricFont, setPlayDetailLyricAlign } from '@renderer/store/setting'
 import LyricFontSetting from '@renderer/components/common/LyricFontSetting.vue'
 
 const offsetTagRxp = /(?:^|\n)\s*\[offset:\s*(\S+(?:\d+)*)\s*\]/
 const offsetTagAllRxp = /(^|\n)\s*\[offset:\s*(\S+(?:\d+)*)\s*\]/g
 
-const saveLyric = debounce((musicInfo, lyricInfo) => {
-  void saveLyricEdited(musicInfo, lyricInfo)
-})
-const removeLyric = debounce(musicInfo => {
-  void removeLyricEdited(musicInfo)
-})
+const pendingEdits = new Map()
+const withoutOffset = value => (value || '').replace(offsetTagAllRxp, '').trim()
+const persistOffset = (track, lyrics, atOriginal) => {
+  // 每首歌单独排队，避免快速拖动、还原和切歌时晚到的写入覆盖新值。
+  const previous = pendingEdits.get(track.id) || Promise.resolve()
+  const task = previous.catch(() => {}).then(async() => {
+    if (atOriginal) {
+      const raw = await getLyricRaw(track)
+      if (raw && Object.keys(lyrics).every(key => withoutOffset(lyrics[key]) === withoutOffset(raw[key]))) {
+        await removeLyricEdited(track)
+        return
+      }
+    }
+    await saveLyricEdited(track, lyrics)
+  })
+  pendingEdits.set(track.id, task)
+  task.catch(console.error).finally(() => { if (pendingEdits.get(track.id) === task) pendingEdits.delete(track.id) })
+}
 
 const getOffset = lrc => {
   let offset = offsetTagRxp.exec(lrc)
@@ -90,6 +106,33 @@ export default {
   },
   emits: ['updateLyric', 'update:modelValue'],
   setup(props, { emit }) {
+    const translating = ref(false)
+    const translationStatus = ref('')
+    let generation = 0
+    watch(() => currentTrack.id, () => {
+      generation++
+      translating.value = false
+      translationStatus.value = ''
+    })
+    const translate = async() => {
+      const info = props.lyricInfo.musicInfo
+      const track = info && ('progress' in info ? info.metadata.musicInfo : info)
+      const original = currentTrack.lrc
+      if (!track || !original || Boolean(currentTrack.tlrc) || translating.value) return
+      const token = ++generation
+      const valid = () => token === generation && currentTrack.lrc === original && !currentTrack.tlrc
+      translating.value = true
+      translationStatus.value = ''
+      try {
+        if (!await translateCurrentLyrics() || token !== generation) return
+        if (!appSetting['player.isShowLyricTranslation']) updateSetting({ 'player.isShowLyricTranslation': true })
+        translationStatus.value = window.i18n.t('model_done')
+      } catch (error) {
+        if (valid()) translationStatus.value = window.i18n.t('model_failed') + (String(error).match(/HTTP \d{3}/)?.[0] ?? '')
+      } finally {
+        if (token === generation) translating.value = false
+      }
+    }
     // const appSetting = useRefGetter('appSetting')
     // const playDetailSetting = useRefGetter('playDetailSetting')
     // const setPlayDetailLyricAlign = useCommit('setPlayDetailLyricAlign')
@@ -147,16 +190,7 @@ export default {
 
       const musicInfo = 'progress' in props.lyricInfo.musicInfo ? props.lyricInfo.musicInfo.metadata.musicInfo : props.lyricInfo.musicInfo
 
-      if (offset == originOffset.value) {
-        removeLyric(musicInfo)
-      } else {
-        saveLyric(musicInfo, {
-          lyric,
-          tlyric,
-          rlyric,
-          lxlyric,
-        })
-      }
+      persistOffset(musicInfo, { lyric, tlyric, rlyric, lxlyric }, offset === originOffset.value)
 
       emit('updateLyric', {
         lyric,
@@ -209,6 +243,9 @@ export default {
       appSetting,
       dom_menu,
       menuStyles,
+      translate,
+      translating,
+      translationStatus,
       offset,
       originOffset,
       fontSizeUp,

@@ -7,21 +7,39 @@ const path = require('node:path')
 const flush = () => new Promise(resolve => setImmediate(resolve))
 function harness() {
   let audio
+  const decks = []
   const requests = []
   class Audio extends EventTarget {
-    constructor() { super(); audio = this; this.src = ''; this.error = null }
+    constructor() { super(); audio = this; decks.push(this); this.src = ''; this.error = null; this.paused = false; this.duration = 100; this.currentTime = 96; this.playbackRate = 1 }
     play() { return new Promise((resolve, reject) => { requests.push({ resolve, reject }) }) }
-    pause() {}
+    pause() { this.paused = true }
+    load() {}
     removeAttribute() { this.src = '' }
   }
   const exports = {}
   const source = fs.readFileSync(path.join(__dirname, '../src/renderer/plugins/player/index.ts'), 'utf8').replaceAll('import.meta.url', JSON.stringify('file:///test/player.js'))
   vm.runInNewContext(ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  }).outputText, { exports, window: { Audio }, DOMException, Event })
+  }).outputText, { exports, window: { Audio }, DOMException, Event, performance, setInterval, clearInterval })
   exports.createAudio()
-  return { api: exports, audio, requests }
+  return { api: exports, audio, requests, decks }
 }
+test('交叉淡化期间暂停、定位和停止均释放尾轨，尾轨结束只通知一次队列', () => {
+  for (const action of ['setPause', 'setCurrentTime', 'setStop']) {
+    const { api, audio, decks } = harness()
+    let ended = 0
+    api.onEnded(() => { ended++ })
+    assert.equal(api.beginCrossfade(), true)
+    audio.dispatchEvent(new Event('ended'))
+    assert.equal(ended, 0)
+    assert.equal(decks[1].volume, 0)
+    api[action](10)
+    assert.equal(audio.paused, true)
+    assert.equal(decks[1].volume, 1)
+    decks[1].dispatchEvent(new Event('ended'))
+    assert.equal(ended, 1)
+  }
+})
 test('获取地址后明确开始播放，拒绝启动时发出错误而不是静默停在 0:00', async() => {
   const { api, requests } = harness()
   let failures = 0

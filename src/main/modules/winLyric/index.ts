@@ -1,6 +1,7 @@
 import { APP_EVENT_NAMES } from '@common/constants'
 import initRendererEvent, { sendMainWindowInitedEvent } from './rendererEvent'
 import { setLrcConfig } from './config'
+import { setupTaskbarLyrics } from '../taskbarLyrics'
 import { HOTKEY_DESKTOP_LYRIC } from '@common/hotKey'
 import { closeWindow, createWindow, isExistWindow } from './main'
 // import main from './main'
@@ -10,6 +11,7 @@ let isMainWidnowFullscreen = false
 
 export default () => {
   initRendererEvent()
+  setupTaskbarLyrics()
   // global.lx.event_app.winLyric = new Event()
   // global.app_event.winMain.
 

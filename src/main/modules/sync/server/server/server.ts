@@ -150,7 +150,7 @@ const handleStartServer = async(port = 9527, ip = '0.0.0.0') => await new Promis
     res.end(msg)
   })
 
-  wss = new WebSocketServer({
+  const pendingServer = wss = new WebSocketServer({
     noServer: true,
   })
 
@@ -290,6 +290,10 @@ const handleStartServer = async(port = 9527, ip = '0.0.0.0') => await new Promis
 
   httpServer.on('error', error => {
     console.log(error)
+    if (!httpServer.listening && wss === pendingServer) {
+      pendingServer.close()
+      wss = null
+    }
     reject(error)
   })
   httpServer.on('connection', (socket) => {
@@ -334,6 +338,7 @@ const handleStopServer = async() => new Promise<void>((resolve, reject) => {
 })
 
 export const stopServer = async() => {
+  delete status.portInUse
   codeTools.stop()
   if (!status.status) {
     status.status = false
@@ -372,6 +377,7 @@ export const startServer = async(port: number) => {
   await initServerInfo()
 
   log.info('starting sync server')
+  delete status.portInUse
   await handleStartServer(port).then(() => {
     console.log('sync server started')
     status.status = true
@@ -384,6 +390,7 @@ export const startServer = async(port: number) => {
     console.log(err)
     status.status = false
     status.message = err.message
+    if (err.code == 'EADDRINUSE') status.portInUse = port
     status.address = []
     status.code = ''
   }).finally(() => {

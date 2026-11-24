@@ -1,4 +1,5 @@
 import { shell, clipboard } from 'electron'
+import { cleanNeteaseShare } from './neteaseSongLink'
 
 
 /**
@@ -25,7 +26,7 @@ export const openUrl = async(url: string) => {
  * @param str
  */
 export const clipboardWriteText = (str: string) => {
-  clipboard.writeText(str)
+  clipboard.writeText(cleanNeteaseShare(str))
 }
 
 /**

@@ -1,10 +1,12 @@
 const path = require('path')
 const ESLintPlugin = require('eslint-webpack-plugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
 
 const isDev = process.env.NODE_ENV === 'development'
 
 module.exports = {
   target: 'electron-main',
+  node: { __dirname: false },
   output: {
     filename: '[name].js',
     library: {
@@ -13,6 +15,8 @@ module.exports = {
     path: path.join(__dirname, '../../dist'),
   },
   externals: {
+    'steam-user': 'steam-user',
+    'steam-session': 'steam-session',
     'font-list': 'font-list',
     'better-sqlite3': 'better-sqlite3',
     'electron-font-manager': 'electron-font-manager',
@@ -44,5 +48,19 @@ module.exports = {
   },
   plugins: [
     new ESLintPlugin(),
+    new CopyWebpackPlugin({
+      patterns: [
+        ...['react', 'react-dom'].flatMap(name => {
+          const root = path.dirname(require.resolve(name + '/package.json'))
+          return [
+            { from: path.join(root, 'umd', name + '.production.min.js'), to: 'betterPlugins/' + name + '.js', info: { minimized: true } },
+            { from: path.join(root, 'LICENSE'), to: 'betterPlugins/licenses/' + name + '.txt' },
+          ]
+        }),
+        { from: path.resolve(__dirname, '../../src/main/modules/betterPlugins/view'), to: 'betterPlugins', info: { minimized: true } },
+        { from: path.resolve(__dirname, '../../src/main/modules/miniPlayer/view'), to: 'miniPlayer' },
+        { from: path.resolve(__dirname, '../../src/main/modules/taskbarLyricsView'), to: 'taskbarLyrics' },
+      ],
+    }),
   ],
 }

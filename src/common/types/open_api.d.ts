@@ -4,6 +4,7 @@ declare namespace LX {
       status: boolean
       message: string
       address: string
+      port?: number
     }
     interface EnableServer {
       enable: boolean

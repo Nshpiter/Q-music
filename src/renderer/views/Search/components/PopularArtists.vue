@@ -2,7 +2,7 @@
   <section :class="$style.section" :aria-busy="loading">
     <header><h3>{{ $t('home_hot_artists') }}</h3><span>{{ $t('home_hot_artists_source') }}</span></header>
     <div v-if="artists.length" :class="$style.shelf">
-      <button v-for="artist in artists" :key="artist.id" type="button" @click="open(artist.name)">
+      <button v-for="artist in artists" :key="artist.id" type="button" @click="open(artist)">
         <img v-if="artist.picture" :src="artist.picture" alt="" loading="lazy"><span v-else :class="$style.fallback">♫</span>
         <strong>{{ artist.name }}</strong>
       </button>
@@ -26,7 +26,7 @@ const load = async() => {
 }
 onMounted(load)
 onBeforeUnmount(() => { active = false })
-const open = (name: string) => { void router.push({ path: '/search', query: { text: name, source: 'wy', type: 'music', page: 1 } }) }
+const open = (artist: PopularArtist) => { void router.push({ name: 'ArtistSongs', params: { id: artist.id }, query: { artist: artist.name } }) }
 </script>
 <style module lang="less">
 .section { order: 4; flex-shrink: 0; margin-top: 24px; color: var(--color-font); }

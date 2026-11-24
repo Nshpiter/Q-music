@@ -57,7 +57,7 @@ const handleDesktopLyricMessage = (action: LX.DesktopLyric.WinMainActions) => {
           tlrc: musicInfo.tlrc,
           rlrc: musicInfo.rlrc,
           lxlrc: musicInfo.lxlrc,
-          // pic: musicInfo.pic,
+          pic: musicInfo.pic,
           isPlay: isPlay.value,
           line: lyric.line,
           played_time: getCurrentTime(),
@@ -83,6 +83,7 @@ const handleDesktopLyricMessage = (action: LX.DesktopLyric.WinMainActions) => {
 }
 export const init = () => {
   lrc = new Lyric({
+    wordMotion: true,
     shadowContent: false,
     onPlay(line, text) {
       setText(text, Math.max(line, 0))
@@ -93,13 +94,13 @@ export const init = () => {
     onSetLyric(lines, offset) { // listening lyrics seting event
       // console.log(lines) // lines is array of all lyric text
       setLines(markRawList([...lines]))
-      setText(lines[0] ?? '', 0)
+      setText(lines[0]?.text ?? '', 0)
       setOffset(offset) // 歌词延迟
       setTempOffset(0) // 重置临时延迟
     },
     onUpdateLyric(lines) {
       setLines(markRawList([...lines]))
-      setText(lines[0] ?? '', 0)
+      setText(lines[0]?.text ?? '', 0)
     },
     rate: appSetting['player.playbackRate'],
     // offset: 80,
@@ -210,6 +211,13 @@ export const play = () => {
   sendDesktopLyricInfo({ action: 'set_play', data: currentTime })
 }
 
+export const seek = (seconds: number) => {
+  if (!musicInfo.lrc) return
+  const time = seconds * 1000
+  lrc.play(time)
+  if (!isPlay.value) lrc.pause()
+}
+
 export const pause = () => {
   lrc.pause()
   sendDesktopLyricInfo({ action: 'set_pause' })
@@ -234,7 +242,7 @@ export const sendInfo = () => {
       tlrc: musicInfo.tlrc,
       rlrc: musicInfo.rlrc,
       lxlrc: musicInfo.lxlrc,
-      // pic: musicInfo.pic,
+      pic: musicInfo.pic,
       isPlay: isPlay.value,
       line: lyric.line,
       played_time: getCurrentTime(),

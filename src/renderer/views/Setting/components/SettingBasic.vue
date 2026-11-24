@@ -23,12 +23,21 @@ dd
           :model-value="closeAction" value="tray" :label="$t('setting__basic_close_action_tray')"
           @update:model-value="updateCloseAction")
       div(:class="$style.closeActionTip") {{ $t('setting__basic_close_action_tip') }}
+    .gap-top
+      base-checkbox(id="setting_hide_scrollbars" :model-value="appSetting['common.hideScrollbars']" :label="$t('hide_scrollbars')" @update:model-value="updateSetting({'common.hideScrollbars': $event})")
     .p.gap-top
       base-btn.btn(min @click="isShowPlayTimeoutModal = true") {{ $t('setting__play_timeout')}} {{ timeLabel ? ` (${timeLabel})` : '' }}
 
 dd
   h3#basic_theme {{ $t('theme_appearance') }}
   theme-appearance(:model-value="appearance" @change="setAppearance")
+  label.p.gap-top(for="desktop_layout") {{ $t('desktop_layout') }}
+    select#desktop_layout.gap-left(:value="appSetting['theme.desktopLayout']" @change="updateSetting({ 'theme.desktopLayout': $event.target.value })")
+      option(value="") Q-music
+      option(v-for="name in ['Ark', 'ReLive', 'Elaina', 'MoTheme', 'Microrange', 'Transmission', 'Unbounded']" :key="name" :value="name") {{ name }}
+  layout-options(v-if="appSetting['theme.desktopLayout']" :key="appSetting['theme.desktopLayout']" :layout="appSetting['theme.desktopLayout']")
+  .gap-top
+    base-checkbox(id="cover_palette" :model-value="appSetting['theme.coverPalette']" :label="$t('cover_palette')" @update:model-value="updateSetting({ 'theme.coverPalette': $event })")
   div(:class="$style.paletteSection")
     div(:class="$style.paletteHeading")
       span {{ $t('setting__basic_theme') }}
@@ -53,6 +62,16 @@ dd
         base-btn.btn(min @click="selectBgImage") {{ $t('setting__basic_glass_bg_select') }}
         base-btn.btn(v-if="appSetting['theme.customBgImage']" min @click="clearBgImage") {{ $t('setting__basic_glass_bg_clear') }}
       div(:class="$style.glassTip") {{ $t('setting__basic_glass_bg_tip') }}
+    template(v-if="appSetting['theme.customBgImage']")
+      .gap-top
+        base-checkbox(id="setting_bg_motion" :model-value="appSetting['theme.backgroundMotion']" :label="$t('background_motion')" @update:model-value="updateSetting({'theme.backgroundMotion': $event})")
+      .gap-top
+        base-checkbox(id="setting_bg_dim" :model-value="appSetting['theme.dimActiveBackground']" :label="$t('background_dim_active')" @update:model-value="updateSetting({'theme.dimActiveBackground': $event})")
+      template(v-if="appSetting['theme.dimActiveBackground']")
+        label.gap-top {{ $t('background_active_opacity') }} · {{ appSetting['theme.backgroundActiveOpacity'] }}%
+          input(type="range" min="0" max="100" step="5" :value="appSetting['theme.backgroundActiveOpacity']" @input="updateSetting({ 'theme.backgroundActiveOpacity': Number($event.target.value) })")
+        label.gap-top {{ $t('background_idle_time') }} · {{ appSetting['theme.backgroundIdleSeconds'] }} s
+          input(type="range" min="0.25" max="10" step="0.25" :value="appSetting['theme.backgroundIdleSeconds']" @input="updateSetting({ 'theme.backgroundIdleSeconds': Number($event.target.value) })")
     .gap-top(:class="$style.glassPresets")
       span(:class="$style.glassLabel") {{ $t('setting__basic_glass_preset') }}
       button(
@@ -68,6 +87,11 @@ dd
       span(:class="$style.glassLabel") {{ $t('setting__basic_glass_blur') }}
       slider-bar(:class="$style.slider" :value="appSetting['theme.glassBlur'] ?? 20" :min="0" :max="40" :step="1" @change="updateSetting({'theme.glassBlur': $event})")
       span(:class="$style.glassValue") {{ appSetting['theme.glassBlur'] ?? 20 }}px
+
+dd
+  style-snippets#style-snippets
+dd
+  better-plugins
 
 dd
   h3#basic_source {{ $t('setting__basic_source') }}
@@ -91,6 +115,14 @@ dd
       v-for="item in windowSizeList" :id="`setting_window_size_${item.id}`" :key="item.id"
       name="setting_window_size" need :model-value="appSetting['common.windowSizeId']" :disabled="isFullscreen" :value="item.id" :label="$t('setting__basic_window_size_' + item.name)"
       @update:model-value="updateSetting({'common.windowSizeId': $event})")
+
+dd
+  h3#basic_interface_zoom {{ $t('interface_zoom') }}
+  div
+    base-checkbox.gap-left(
+      v-for="zoom in [85, 100, 110, 125]" :id="`setting_zoom_${zoom}`" :key="zoom" name="setting_zoom" need
+      :model-value="appSetting['common.interfaceZoom']" :value="zoom" :label="zoom + '%'"
+      @update:model-value="updateSetting({'common.interfaceZoom': $event})")
 
 dd
   h3#basic_font_size {{ $t('setting__basic_font_size') }}
@@ -149,6 +181,9 @@ import { useTimeout } from '@renderer/core/player/timeoutStop'
 import { dialog } from '@renderer/plugins/Dialog'
 
 import ThemeAppearance from './ThemeAppearance.vue'
+import LayoutOptions from './LayoutOptions.vue'
+import StyleSnippets from './StyleSnippets.vue'
+import BetterPlugins from './BetterPlugins.vue'
 import { getBaseThemeId, getThemeAppearance } from '@common/theme/appearance'
 import ThemeEditModal from './ThemeEditModal/index.vue'
 import PlayTimeoutModal from './PlayTimeoutModal.vue'
@@ -162,6 +197,9 @@ export default {
   name: 'SettingBasic',
   components: {
     ThemeAppearance,
+    LayoutOptions,
+    StyleSnippets,
+    BetterPlugins,
     ThemeEditModal,
     PlayTimeoutModal,
     UserApiModal,

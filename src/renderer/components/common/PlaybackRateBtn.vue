@@ -19,7 +19,7 @@
             <base-btn min @click="handleUpdatePlaybackRate(100)">{{ $t('player__playback_rate_reset_btn') }}</base-btn>
           </div>
         </div>
-        <base-slider-bar :class="$style.slider" :value="playbackRate * 100" :min="50" :max="200" @change="handleUpdatePlaybackRate" />
+        <base-slider-bar :class="$style.slider" :value="playbackRate * 100" :min="10" :max="250" @change="handleUpdatePlaybackRate" />
       </div>
     </template>
   </material-popup-btn>

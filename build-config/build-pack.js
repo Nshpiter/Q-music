@@ -30,6 +30,7 @@ const options = {
   npmRebuild: false,
   files: [
     '!node_modules/**/*',
+    ...require('./steam-runtime'),
     'node_modules/font-list',
     'node_modules/better-sqlite3/lib',
     'node_modules/better-sqlite3/package.json',

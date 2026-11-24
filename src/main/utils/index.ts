@@ -37,6 +37,22 @@ export const parseEnvParams = (argv = process.argv): { cmdParams: LX.CmdParams, 
 
 const primitiveType = ['string', 'boolean', 'number']
 const checkPrimitiveType = (val: any): boolean => val === null || primitiveType.includes(typeof val)
+const validSettingValue = (key: keyof LX.AppSetting, value: any): boolean => {
+  if (key === 'common.apiBackupSources') return Array.isArray(value) && value.length <= 20 && value.every(id => typeof id === 'string' && /^user_api/.test(id))
+  if (key !== 'theme.layoutOptions') return checkPrimitiveType(value)
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const layouts = ['Ark', 'ReLive', 'Elaina', 'MoTheme', 'Microrange', 'Transmission', 'Unbounded']
+  return Object.entries(value).every(([name, options]) => layouts.includes(name) && !!options && typeof options === 'object' && !Array.isArray(options) &&
+    Object.entries(options).every(([field, val]) => {
+      switch (field) {
+        case 'accent': return typeof val === 'string' && /^#[0-9a-f]{6}$/i.test(val)
+        case 'radius': return Number.isInteger(val) && val >= 0 && val <= 36
+        case 'docked': return typeof val === 'boolean'
+        case 'background': return typeof val === 'string'
+        default: return false
+      }
+    }))
+}
 // const handleMergeSetting = (defaultSetting: LX.AppSetting, currentSetting: Partial<LX.AppSetting>) => {
 //   const updatedSettingKeys: Array<keyof LX.AppSetting> = []
 //   for (const key of Object.keys(defaultSetting) as Array<keyof LX.AppSetting>) {
@@ -74,9 +90,7 @@ export const mergeSetting = (originSetting: LX.AppSetting, targetSetting?: Parti
     if (originSettingKeys.length > targetSettingKeys.length) {
       for (const key of targetSettingKeys as Array<keyof LX.AppSetting>) {
         const targetValue: any = targetSetting[key]
-        const isPrimitive = key === 'common.apiBackupSources'
-          ? Array.isArray(targetValue) && targetValue.length <= 20 && targetValue.every(id => typeof id === 'string' && /^user_api/.test(id))
-          : checkPrimitiveType(targetValue)
+        const isPrimitive = validSettingValue(key, targetValue)
         // if (checkPrimitiveType(value)) {
         if (!isPrimitive || targetValue == originSettingCopy[key] || originSettingCopy[key] === undefined) continue
         updatedSettingKeys.push(key)
@@ -90,9 +104,7 @@ export const mergeSetting = (originSetting: LX.AppSetting, targetSetting?: Parti
     } else {
       for (const key of originSettingKeys as Array<keyof LX.AppSetting>) {
         const targetValue: any = targetSetting[key]
-        const isPrimitive = key === 'common.apiBackupSources'
-          ? Array.isArray(targetValue) && targetValue.length <= 20 && targetValue.every(id => typeof id === 'string' && /^user_api/.test(id))
-          : checkPrimitiveType(targetValue)
+        const isPrimitive = validSettingValue(key, targetValue)
         // if (checkPrimitiveType(value)) {
         if (!isPrimitive || targetValue == originSettingCopy[key]) continue
         updatedSettingKeys.push(key)

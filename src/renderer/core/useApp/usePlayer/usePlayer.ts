@@ -39,6 +39,7 @@ import { setPowerSaveBlocker } from '@renderer/core/player/utils'
 import usePreloadNextMusic from './usePreloadNextMusic'
 import useOfficialPlaybackReport from './useOfficialPlaybackReport'
 import usePlayHistory from './usePlayHistory'
+import useKeyboardSeek from './useKeyboardSeek'
 
 
 export default () => {
@@ -46,6 +47,7 @@ export default () => {
 
   useOfficialPlaybackReport()
   usePlayHistory()
+  useKeyboardSeek()
   usePlayProgress()
   useMediaSessionInfo()
   usePlayEvent()

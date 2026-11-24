@@ -1,29 +1,31 @@
-import { getNow, TimeoutTools } from './utils'
-
 // const fontFormateRxp = /(?=<\d+,\d+>).*?/g
 const fontSplitRxp = /(?=<\d+,\d+>).*?/g
 const timeRxpAll = /<(\d+),(\d+)>/g
 const timeRxp = /<(\d+),(\d+)>/
 
 
-// Create animation
-const createAnimation = (dom, duration, isVertical) => new window.Animation(new window.KeyframeEffect(dom, isVertical
-  ? [
-      { backgroundSize: '100% 0' },
-      { backgroundSize: '100% 100%' },
-    ]
-  : [
-      { backgroundSize: '0 100%' },
-      { backgroundSize: '100% 100%' },
-    ], {
-  duration,
-  easing: 'linear',
-},
-), document.timeline)
+const emptySize = isVertical => isVertical ? '100% 0%' : '0% 100%'
 
-
-// https://jsfiddle.net/ceqpnbky/
-// https://jsfiddle.net/ceqpnbky/1/
+function createAnimation(dom, startTime, duration, isVertical, wordMotion) {
+  const first = { backgroundSize: emptySize(isVertical) }
+  const last = { backgroundSize: wordMotion ? 'calc(100% + var(--lyric-feather, 0px)) 100%' : '100% 100%' }
+  const frames = [first, last]
+  if (wordMotion && duration >= 650 && dom.textContent.trim()) {
+    dom.classList.add('sustained-word')
+    first.top = last.top = '0em'
+    frames.splice(1, 0,
+      { offset: 0.18, top: '-0.025em' },
+      { offset: 0.52, top: '-0.12em' },
+      { offset: 0.72, top: '-0.115em' },
+      { offset: 0.94, top: '-0.012em' },
+    )
+  }
+  return new window.Animation(new window.KeyframeEffect(dom, frames, {
+    delay: startTime,
+    duration,
+    fill: 'both',
+  }), document.timeline)
+}
 
 export default class FontPlayer {
   constructor({
@@ -40,6 +42,7 @@ export default class FontPlayer {
     shadowContent = false,
     extendedLyrics = [],
     isVertical = false,
+    wordMotion = false,
   }) {
     this.time = time
     this.lyric = lyric
@@ -47,6 +50,7 @@ export default class FontPlayer {
     this._rate = rate
 
     this.isVertical = isVertical
+    this.wordMotion = wordMotion && !isVertical
 
     this.lineContentClassName = lineContentClassName
     this.lineClassName = lineClassName
@@ -62,15 +66,7 @@ export default class FontPlayer {
 
 
     this.isPlay = false
-    this.curFontNum = 0
-    this.maxFontNum = 0
-    this._performanceTime = 0
-    this._startTime = 0
-
     this.lineContent = null
-
-    this.timeoutTools = new TimeoutTools(50)
-    this.waitPlayTimeout = new TimeoutTools(50)
 
     this._init()
   }
@@ -127,19 +123,18 @@ export default class FontPlayer {
     const fonts = this.lyric.split(fontSplitRxp)
     // console.log(fonts)
 
-    this.maxFontNum = fonts.length - 1
     this.fonts = []
-    let text
     // let lineText = ''
     let lrcShadowContent
     for (const font of fonts) {
-      if (!timeRxp.test(font)) return this._handleLineParse()
-      text = font.replace(timeRxp, '')
-      const time = parseInt(RegExp.$2)
-
+      const timing = font.match(timeRxp)
+      if (!timing) return this._handleLineParse()
+      const text = font.slice(timing[0].length)
+      const startTime = Number(timing[1])
+      const time = Number(timing[2])
       const dom = document.createElement('span')
       dom.textContent = text
-      const animation = createAnimation(dom, time / this._rate, this.isVertical)
+      const animation = createAnimation(dom, startTime, time, this.isVertical, this.wordMotion)
       this.lrcContent.appendChild(dom)
       // lineText += text
 
@@ -154,7 +149,7 @@ export default class FontPlayer {
 
       this.fonts.push({
         text,
-        startTime: parseInt(RegExp.$1),
+        startTime,
         time,
         dom,
         animation,
@@ -168,10 +163,15 @@ export default class FontPlayer {
     }
 
     this.line.appendChild(this.lrcContent)
-    this.fonts.at(-1)?.animation.addEventListener('finish', () => {
+    // A sustained syllable can overlap the following word.
+    const last = this.fonts.reduce((end, word) =>
+      word.startTime + word.time >= end.startTime + end.time ? word : end)
+    this.endTime = last.startTime + last.time
+    last.animation.onfinish = () => {
+      if (!this.isPlay || last.animation.playState !== 'finished') return
       this.lineContent.classList.add('played')
       this.isPlay = false
-    })
+    }
     this.lineContent.classList.add(this.fontModeClassName)
     // if (this.shadowContent) this.lrcShadowContent.textContent = lineText
     // console.log(this.fonts)
@@ -188,179 +188,55 @@ export default class FontPlayer {
     })
   }
 
-  _currentTime() {
-    return (getNow() - this._performanceTime) * this._rate + this._startTime
-  }
-
-  _findcurFontNum(curTime, startIndex = 0) {
-    const length = this.fonts.length
-    for (let index = startIndex; index < length; index++) if (curTime < this.fonts[index].startTime) return index == 0 ? 0 : index - 1
-    return length - 1
-  }
-
-  _handlePlayMaxFontNum() {
-    let curFont = this.fonts[this.curFontNum]
-    // console.log(curFont.text)
-    const currentTime = this._currentTime()
-    const driftTime = currentTime - curFont.startTime
-    if (currentTime > curFont.startTime + curFont.time) {
-      this._handlePlayFont(curFont, driftTime / this._rate, true)
-      this.lineContent.classList.add('played')
-      this.isPlay = false
-      this.pause()
-    } else {
-      this._handlePlayFont(curFont, driftTime)
-    }
-  }
-
-  _handlePlayFont(font, currentTime, toFinishe) {
-    switch (font.animation.playState) {
-      case 'finished':
-        break
-      case 'idle':
-        font.dom.style.backgroundSize = '100% 100%'
-        if (!toFinishe) font.animation.play()
-        break
-      default:
-        if (toFinishe) {
-          font.animation.cancel()
-        } else {
-          font.animation.currentTime = currentTime
-          font.animation.play()
-        }
-        break
-    }
-  }
-
-  _handlePlayLine(isPlayed) {
-    this.isPlay = false
-    if (isPlayed) {
-      this.lineContent.classList.add('played')
-    } else {
-      this.lineContent.classList.remove('played')
-    }
-    // this.fonts[0].dom.style.backgroundSize = isPlayed ? '100% 100%' : '100% 0'
-  }
-
-  _handlePauseFont(font) {
-    if (font.animation.playState == 'running') font.animation.pause()
-  }
-
-  _refresh() {
-    this.curFontNum++
-    // console.log('curFontNum time', this.fonts[this.curFontNum].time)
-    if (this.curFontNum >= this.maxFontNum) return this._handlePlayMaxFontNum()
-    let curFont = this.fonts[this.curFontNum]
-    // console.log(curFont, nextFont, this.curFontNum, this.maxFontNum)
-    const currentTime = this._currentTime()
-    // console.log(curFont.text)
-    const driftTime = currentTime - curFont.startTime
-
-    // console.log(currentTime, driftTime)
-
-    if (driftTime >= 0 || this.curFontNum == 0) {
-      let nextFont = this.fonts[this.curFontNum + 1]
-      const delay = (nextFont.startTime - curFont.startTime - driftTime) / this._rate
-      if (delay > 0) {
-        if (this.isPlay) {
-          this.timeoutTools.start(() => {
-            if (!this.isPlay) return
-            this._refresh()
-          }, delay)
-        }
-        this._handlePlayFont(curFont, driftTime)
-        return
-      } else {
-        let newCurLineNum = this._findcurFontNum(currentTime, this.curFontNum + 1)
-        if (newCurLineNum > this.curFontNum) this.curFontNum = newCurLineNum - 1
-        for (let i = 0; i <= this.curFontNum; i++) this._handlePlayFont(this.fonts[i], 0, true)
-        this._refresh()
-        return
-      }
-    } else if (this.curFontNum == 0) {
-      this.curFontNum--
-      if (this.isPlay) {
-        this.waitPlayTimeout.start(() => {
-          if (!this.isPlay) return
-          this._refresh()
-        }, -driftTime)
-      }
-      return
-    }
-
-    this.curFontNum = this._findcurFontNum(currentTime, this.curFontNum) - 1
-    for (let i = 0; i <= this.curFontNum; i++) this._handlePlayFont(this.fonts[i], 0, true)
-    // this.curFontNum--
-    this._refresh()
-  }
-
   play(curTime = 0) {
-    // console.log('play', curTime)
-    if (!this.fonts.length) return
-    this.pause()
-
-    if (this.isLineMode) return this._handlePlayLine(true)
+    if (this.isLineMode || curTime >= this.endTime) return this.finish()
     this.lineContent.classList.remove('played')
     this.isPlay = true
-    this._performanceTime = getNow()
-    this._startTime = curTime
-
-    this.curFontNum = this._findcurFontNum(curTime)
-
-    for (let i = this.curFontNum; i > -1; i--) {
-      this._handlePlayFont(this.fonts[i], 0, true)
+    for (const { dom, animation, startTime, time } of this.fonts) {
+      if (curTime >= startTime + time) {
+        animation.cancel()
+        dom.style.backgroundSize = this.wordMotion ? 'calc(100% + var(--lyric-feather, 0px)) 100%' : '100% 100%'
+        continue
+      }
+      dom.style.backgroundSize = ''
+      // All words use the line's media time including their individual delays.
+      animation.playbackRate = this._rate
+      animation.currentTime = curTime
+      animation.play()
     }
-    for (let i = this.curFontNum, len = this.fonts.length; i < len; i++) {
-      let font = this.fonts[i]
-      font.animation.cancel()
-      font.dom.style.backgroundSize = '0 100%'
-    }
-
-    this.curFontNum--
-
-    this._refresh()
   }
 
   pause() {
     if (!this.isPlay) return
     this.isPlay = false
-    this.timeoutTools.clear()
-    this.waitPlayTimeout.clear()
-    this._handlePauseFont(this.fonts[this.curFontNum])
-    if (this.curFontNum === this.maxLine) return
-    const curFontNum = this._findcurFontNum(this._currentTime())
-    if (this.curFontNum === curFontNum) return
-    for (let i = 0; i < this.curFontNum; i++) this._handlePlayFont(this.fonts[i], 0, true)
-  }
-
-  finish() {
-    this.pause()
-    if (this.isLineMode) return this._handlePlayLine(true)
-    this.lineContent.classList.add('played')
-
-    for (const font of this.fonts) {
-      font.animation.cancel()
-      font.dom.style.backgroundSize = '100% 100%'
+    for (const { animation } of this.fonts) {
+      if (animation.playState === 'running') animation.pause()
     }
-    this.curFontNum = this.maxFontNum
   }
 
   setPlaybackRate(rate) {
     this._rate = rate
-    if (!this.lines.length) return
-    if (!this.isPlay) return
-    this.play(this._currentTime())
+    if (!this.isLineMode && this.isPlay) {
+      for (const { animation } of this.fonts) animation.updatePlaybackRate(rate)
+    }
+  }
+
+  finish() {
+    this.setPlayed(true)
   }
 
   reset() {
-    this.pause()
-    if (this.isLineMode) return this._handlePlayLine(false)
-    this.lineContent.classList.remove('played')
-    for (const font of this.fonts) {
-      font.animation.cancel()
-      font.dom.style.backgroundSize = '0 100%'
+    this.setPlayed(false)
+  }
+
+  setPlayed(played) {
+    this.isPlay = false
+    this.lineContent.classList.toggle('played', played)
+    if (this.isLineMode) return
+    for (const { dom, animation } of this.fonts) {
+      animation.cancel()
+      dom.style.backgroundSize = played ? '100% 100%' : emptySize(this.isVertical)
     }
-    this.curFontNum = 0
   }
 }
 

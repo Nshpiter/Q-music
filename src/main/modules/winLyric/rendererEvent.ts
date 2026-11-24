@@ -3,7 +3,7 @@ import { mainOn, mainHandle } from '@common/mainIpc'
 import { WIN_LYRIC_RENDERER_EVENT_NAME } from '@common/ipcNames'
 import { buildLyricConfig, getLyricWindowBounds } from './utils'
 import { sendNewDesktopLyricClient } from '@main/modules/winMain'
-import { getBounds, getMainFrame, sendEvent, setBounds, setResizeable } from './main'
+import { getBounds, getMainFrame, sendEvent, setBounds, setResizeable, setEmptyHidden } from './main'
 import { MessageChannelMain } from 'electron'
 import { mouseCheckTools } from './mouseCheckTools'
 
@@ -17,6 +17,10 @@ export default () => {
   //   })
   // })
   common(sendEvent)
+
+  mainOn<boolean>(WIN_LYRIC_RENDERER_EVENT_NAME.set_empty_hidden, ({ event, params }) => {
+    if (event.senderFrame === getMainFrame()) setEmptyHidden(params)
+  })
 
   mainHandle<Partial<LX.AppSetting>>(WIN_LYRIC_RENDERER_EVENT_NAME.set_config, async({ params: config }) => {
     global.lx.event_app.update_config(config)

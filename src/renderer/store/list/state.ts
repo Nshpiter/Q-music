@@ -1,4 +1,4 @@
-import { reactive } from '@common/utils/vueTools'
+import { reactive, ref } from '@common/utils/vueTools'
 
 export {
   allMusicList,
@@ -39,5 +39,6 @@ export const tempListMeta = {
 // export const userLists: LX.List.UserListInfo[] = window.lxData.userLists = reactive([])
 
 export const fetchingListStatus = reactive<Record<string, boolean>>({})
+export const isShowLocalMusicModal = ref(false)
 
 export const listUpdateTimes = reactive<Record<string, string>>({})

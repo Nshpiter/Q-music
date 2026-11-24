@@ -19,6 +19,10 @@ export const setWindowBounds = (bounds: LX.DesktopLyric.NewBounds) => {
   rendererSend<LX.DesktopLyric.NewBounds>(WIN_LYRIC_RENDERER_EVENT_NAME.set_win_bounds, bounds)
 }
 let previousResizable: boolean | null = null
+export const setEmptyHidden = (hidden: boolean) => {
+  rendererSend(WIN_LYRIC_RENDERER_EVENT_NAME.set_empty_hidden, hidden)
+}
+
 export const setWindowResizeable = (resizable: boolean) => {
   if (previousResizable === resizable) return
   previousResizable = resizable

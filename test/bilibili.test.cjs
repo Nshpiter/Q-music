@@ -110,6 +110,49 @@ test('没有分 P 标题时使用视频标题，避免结果列表出现空歌�
   assert.equal((await client.search(bvid)).list[0].name, '视频标题')
 })
 
+test('背景 MV 保留分 P，选择可信的 720p AVC 视频流并响应取消', async() => {
+  const client = createBilibiliClient(async(url) => {
+    const route = new URL(url)
+    if (route.pathname.endsWith('/view')) return { code: 0, data: { pages: [{ cid: 1 }, { cid: 2 }] } }
+    assert.equal(route.searchParams.get('cid'), '2')
+    return { code: 0, data: { dash: { video: [
+      { height: 720, codecs: 'av01', baseUrl: 'https://cdn.bilivideo.com/av1' },
+      { height: 1080, codecs: 'avc1', base_url: 'https://cdn.bilivideo.com/1080' },
+      { height: 720, codecs: 'avc1', base_url: 'https://invalid.example/video', backup_url: ['https://cdn.bilivideo.com/720'] },
+    ] } } }
+  })
+  assert.equal(await client.backgroundVideo(bvid + ':2'), 'https://cdn.bilivideo.com/720')
+  await assert.rejects(client.backgroundVideo(bvid + ':4'), /part_removed/)
+  const stopped = new AbortController()
+  stopped.abort()
+  await assert.rejects(client.backgroundVideo(bvid + ':2', stopped.signal), /cancelled/)
+})
+
+test('标题相同但歌手不同不加载背景 MV，空歌名不发请求', async() => {
+  const client = createBilibiliClient(async(url) => {
+    if (url.includes('/finger/')) return { code: 0, data: { b_3: '3', b_4: '4' } }
+    assert.match(url, /search\/type/)
+    return { code: 0, data: { result: [{ bvid, title: '同名 MV', author: '乙' }] } }
+  })
+  assert.equal(await client.findBackgroundVideo('同名', '甲'), '')
+  assert.equal(await client.findBackgroundVideo(' ', '甲'), '')
+})
+
+test('同名同歌手的 MV 根据当前录音时长排除其他版本', async() => {
+  const client = createBilibiliClient(async(url) => {
+    const address = new URL(url)
+    if (url.includes('/finger/')) return { code: 0, data: { b_3: '3', b_4: '4' } }
+    if (url.includes('/search/type')) return { code: 0, data: { result: [
+      { bvid: 'BV0000000000', title: '同名 Live', author: '甲', duration: '03:05' },
+      { bvid, title: '同名 MV', author: '甲', duration: '03:02' },
+    ] } }
+    assert.equal(address.searchParams.get('bvid'), bvid)
+    if (url.includes('/view')) return { code: 0, data: { pages: [{ cid: 2 }] } }
+    return { code: 0, data: { dash: { video: [{ codecs: 'avc1', baseUrl: 'https://cdn.bilivideo.com/mv', height: 720 }] } } }
+  })
+  assert.equal(await client.findBackgroundVideo('同名', '甲', undefined, '03:00'), 'https://cdn.bilivideo.com/mv')
+})
+
 test('主音频为非常规节点时，使用接口提供的常规 CDN 备用地址', async() => {
   const client = createBilibiliClient(async(url) => url.includes('/view')
     ? { code: 0, data: { pages: [{ cid: 1 }] } }

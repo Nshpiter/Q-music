@@ -6,6 +6,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
+    { path: '/artist/wy/:id?', name: 'ArtistSongs', component: require('./views/Search/ArtistSongs.vue').default, meta: { name: 'Search' } },
     { path: '/history', name: 'History', component: require('./views/History/index.vue').default, meta: { name: 'History' } },
     {
       path: '/search',

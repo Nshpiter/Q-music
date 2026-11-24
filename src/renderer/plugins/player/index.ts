@@ -2,6 +2,9 @@ interface HTMLAudioElementChrome extends HTMLAudioElement {
   setSinkId: (id: string) => Promise<void>
 }
 let audio: HTMLAudioElementChrome | null = null
+const listeners = new Map<string, Set<() => void>>()
+let outputVolume = 1
+let tail: { element: HTMLAudioElementChrome, node?: MediaElementAudioSourceNode, timer: ReturnType<typeof setInterval>, fraction: number } | null = null
 let playRevision = 0
 let playErrorCode: number | undefined
 let audioContext: AudioContext
@@ -67,6 +70,9 @@ export const createAudio = () => {
   audio.autoplay = false
   audio.preload = 'auto'
   audio.crossOrigin = 'anonymous'
+  for (const [name, callbacks] of listeners) {
+    for (const callback of callbacks) audio.addEventListener(name, callback)
+  }
 
   // https://developer.chrome.com/blog/autoplay
   audio.addEventListener('playing', () => {
@@ -394,6 +400,52 @@ export const setPitchShifter = (val: number) => {
 
 export const hasInitedAdvancedAudioFeatures = (): boolean => audioContext != null
 
+export const endCrossfade = () => {
+  if (!tail) return
+  clearInterval(tail.timer)
+  tail.element.pause()
+  tail.element.removeAttribute('src')
+  tail.element.load()
+  tail.node?.disconnect()
+  tail = null
+  if (audio) audio.volume = outputVolume
+}
+
+/** 保留当前音轨的结尾，让下一首沿用普通的切歌、音源和错误恢复流程。 */
+export const canCrossfade = () => !!audio && !audio.paused && !audio.ended && !tail && (!audio.sinkId || audio.sinkId === 'default') && pitchShifterNodeLoadStatus !== 'connected'
+export const beginCrossfade = () => {
+  const previous = audio
+  if (!previous || !canCrossfade() || !Number.isFinite(previous.duration)) return false
+  const remaining = (previous.duration - previous.currentTime) / previous.playbackRate
+  if (remaining < 0.15 || remaining > 12) return false
+  for (const [name, callbacks] of listeners) {
+    for (const callback of callbacks) previous.removeEventListener(name, callback)
+  }
+  const oldNode = mediaSource
+  audio = null
+  createAudio()
+  const next = audio as unknown as HTMLAudioElementChrome
+  next.muted = previous.muted
+  next.volume = 0
+  next.defaultPlaybackRate = next.playbackRate = previous.playbackRate
+  next.preservesPitch = previous.preservesPitch
+  if (audioContext) {
+    mediaSource = audioContext.createMediaElementSource(next)
+    mediaSource.connect(analyser)
+  }
+  const deadline = performance.now() + remaining * 1000
+  const timer = setInterval(() => {
+    if (!tail) return
+    const left = Math.min(remaining, Math.max(0, (deadline - performance.now()) / 1000))
+    if (!left || previous.ended) { endCrossfade(); return }
+    tail.fraction = left / remaining
+    previous.volume = outputVolume * Math.sin(tail.fraction * Math.PI / 2)
+    next.volume = outputVolume * Math.cos(tail.fraction * Math.PI / 2)
+  }, 32)
+  tail = { element: previous, node: oldNode, timer, fraction: 1 }
+  return true
+}
+
 export const setResource = (src: string) => {
   if (!audio) return
   ++playRevision
@@ -417,11 +469,13 @@ export const setPlay = () => {
 }
 
 export const setPause = () => {
+  endCrossfade()
   ++playRevision
   audio?.pause()
 }
 
 export const setStop = () => {
+  endCrossfade()
   ++playRevision
   playErrorCode = undefined
   if (audio) {
@@ -442,6 +496,7 @@ export const getPlaybackRate = (): number => {
 
 export const setPlaybackRate = (rate: number) => {
   if (!audio) return
+  endCrossfade()
   audio.defaultPlaybackRate = rate
   audio.playbackRate = rate
 }
@@ -457,6 +512,7 @@ export const getMute = (): boolean => {
 
 export const setMute = (isMute: boolean) => {
   if (audio) audio.muted = isMute
+  if (tail) tail.element.muted = isMute
 }
 
 export const getCurrentTime = () => {
@@ -465,16 +521,34 @@ export const getCurrentTime = () => {
 }
 
 export const setCurrentTime = (time: number) => {
-  if (audio) audio.currentTime = time
+  if (audio) {
+    if (time !== audio.currentTime) endCrossfade()
+    audio.currentTime = time
+  }
 }
 
 export const setMediaDeviceId = async(mediaDeviceId: string): Promise<void> => {
   if (!audio) return
+  endCrossfade()
   return audio.setSinkId(mediaDeviceId)
 }
 
 export const setVolume = (volume: number) => {
-  if (audio) audio.volume = volume
+  outputVolume = volume
+  if (tail) tail.element.volume = volume * Math.sin(tail.fraction * Math.PI / 2)
+  if (audio) audio.volume = tail ? volume * Math.cos(tail.fraction * Math.PI / 2) : volume
+}
+
+const subscribe = (name: string, callback: () => void) => {
+  if (!audio) throw new Error('audio not defined')
+  const callbacks = listeners.get(name) ?? new Set()
+  listeners.set(name, callbacks)
+  callbacks.add(callback)
+  audio.addEventListener(name, callback)
+  return () => {
+    callbacks.delete(callback)
+    audio?.removeEventListener(name, callback)
+  }
 }
 
 export const getDuration = () => {
@@ -488,96 +562,16 @@ export const getDuration = () => {
 
 type Noop = () => void
 
-export const onPlaying = (callback: Noop) => {
-  if (!audio) throw new Error('audio not defined')
-
-  audio.addEventListener('playing', callback)
-  return () => {
-    audio?.removeEventListener('playing', callback)
-  }
-}
-
-export const onPause = (callback: Noop) => {
-  if (!audio) throw new Error('audio not defined')
-
-  audio?.addEventListener('pause', callback)
-  return () => {
-    audio?.removeEventListener('pause', callback)
-  }
-}
-
-export const onEnded = (callback: Noop) => {
-  if (!audio) throw new Error('audio not defined')
-
-  audio.addEventListener('ended', callback)
-  return () => {
-    audio?.removeEventListener('ended', callback)
-  }
-}
-
-export const onError = (callback: Noop) => {
-  if (!audio) throw new Error('audio not defined')
-
-  audio.addEventListener('error', callback)
-  return () => {
-    audio?.removeEventListener('error', callback)
-  }
-}
-
-export const onLoadeddata = (callback: Noop) => {
-  if (!audio) throw new Error('audio not defined')
-
-  audio.addEventListener('loadeddata', callback)
-  return () => {
-    audio?.removeEventListener('loadeddata', callback)
-  }
-}
-
-export const onLoadstart = (callback: Noop) => {
-  if (!audio) throw new Error('audio not defined')
-
-  audio.addEventListener('loadstart', callback)
-  return () => {
-    audio?.removeEventListener('loadstart', callback)
-  }
-}
-
-export const onCanplay = (callback: Noop) => {
-  if (!audio) throw new Error('audio not defined')
-
-  audio.addEventListener('canplay', callback)
-  return () => {
-    audio?.removeEventListener('canplay', callback)
-  }
-}
-
-export const onEmptied = (callback: Noop) => {
-  if (!audio) throw new Error('audio not defined')
-
-  audio.addEventListener('emptied', callback)
-  return () => {
-    audio?.removeEventListener('emptied', callback)
-  }
-}
-
-export const onTimeupdate = (callback: Noop) => {
-  if (!audio) throw new Error('audio not defined')
-
-  audio.addEventListener('timeupdate', callback)
-  return () => {
-    audio?.removeEventListener('timeupdate', callback)
-  }
-}
-
-// 缓冲中
-export const onWaiting = (callback: Noop) => {
-  if (!audio) throw new Error('audio not defined')
-
-  audio.addEventListener('waiting', callback)
-  return () => {
-    audio?.removeEventListener('waiting', callback)
-  }
-}
+export const onPlaying = (callback: Noop) => subscribe('playing', callback)
+export const onPause = (callback: Noop) => subscribe('pause', callback)
+export const onEnded = (callback: Noop) => subscribe('ended', callback)
+export const onError = (callback: Noop) => subscribe('error', callback)
+export const onLoadeddata = (callback: Noop) => subscribe('loadeddata', callback)
+export const onLoadstart = (callback: Noop) => subscribe('loadstart', callback)
+export const onCanplay = (callback: Noop) => subscribe('canplay', callback)
+export const onEmptied = (callback: Noop) => subscribe('emptied', callback)
+export const onTimeupdate = (callback: Noop) => subscribe('timeupdate', callback)
+export const onWaiting = (callback: Noop) => subscribe('waiting', callback)
 
 // 可见性改变
 export const onVisibilityChange = (callback: Noop) => {

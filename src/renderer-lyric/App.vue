@@ -1,6 +1,9 @@
 <template>
   <div id="container" :class="[{ lock: setting['desktopLyric.isLock'] }, { hide: isHide || isHoverHide }]">
     <div id="main">
+      <div v-if="setting['desktopLyric.coverBackground'] && musicInfo.pic" class="cover-background" aria-hidden="true">
+        <img :src="musicInfo.pic" alt="" draggable="false" :class="{ playing: isPlay }" @error="$event.target.hidden = true" @load="$event.target.hidden = false">
+      </div>
       <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
         <div v-show="!setting['desktopLyric.isLock']" class="control-bar">
           <layout-control-bar />
@@ -30,7 +33,7 @@
 import useWindowSize from '@lyric/useApp/useWindowSize'
 import useHoverHide from '@lyric/useApp/useHoverHide'
 import { onMounted } from '@common/utils/vueTools'
-import { setting } from '@lyric/store/state'
+import { isPlay, musicInfo, setting } from '@lyric/store/state'
 import { sendConnectMainWindowEvent } from '@lyric/utils/ipc'
 import useCommon from '@lyric/useApp/useCommon'
 import useLyric from '@lyric/useApp/useLyric'
@@ -57,6 +60,9 @@ onMounted(() => {
 <style lang="less">
 @import './assets/styles/index.less';
 @import './assets/styles/layout.less';
+
+.font-lrc.q-japanese-font, .shadow.q-japanese-font { font-family: "Yu Gothic UI", "Hiragino Sans", "Noto Sans CJK JP", sans-serif; }
+.font-lrc rt, .shadow rt { font-size: .5em; line-height: 1.35; -webkit-text-fill-color: currentColor; }
 
 body {
   user-select: none;
@@ -95,6 +101,12 @@ body {
 }
 
 @resize-width: 6px;
+.cover-background { position: absolute; inset: 0; overflow: hidden; pointer-events: none; border-radius: 12px; z-index: -1; background: rgba(25,25,25,.45); }
+#main:has(.cover-background) { isolation: isolate; }
+.cover-background img { width: 100%; height: 100%; object-fit: cover; filter: blur(12px) brightness(.65); animation: cover-drift 18s ease-in-out infinite alternate; animation-play-state: paused; }
+.cover-background img.playing { animation-play-state: running; }
+@keyframes cover-drift { from { transform: scale(1.24) translateX(-2%); } to { transform: scale(1.32) translateX(2%); } }
+@media (prefers-reduced-motion: reduce) { .cover-background img { animation: none; transform: scale(1.2); } }
 .resize {
   z-index: 2;
 }

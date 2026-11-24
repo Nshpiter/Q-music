@@ -7,6 +7,9 @@ declare namespace LX {
       'desktopLyric.isAlwaysOnTopLoop': LX.AppSetting['desktopLyric.isAlwaysOnTopLoop']
       'desktopLyric.isShowTaskbar': LX.AppSetting['desktopLyric.isShowTaskbar']
       'desktopLyric.pauseHide': LX.AppSetting['desktopLyric.pauseHide']
+      'desktopLyric.hideEmpty': boolean
+      'desktopLyric.coverBackground': boolean
+      'desktopLyric.hidePausedWindow': boolean
       'desktopLyric.audioVisualization': LX.AppSetting['desktopLyric.audioVisualization']
       'desktopLyric.width': LX.AppSetting['desktopLyric.width']
       'desktopLyric.height': LX.AppSetting['desktopLyric.height']
@@ -37,6 +40,9 @@ declare namespace LX {
       'player.isSwapLyricTranslationAndRoma': LX.AppSetting['player.isSwapLyricTranslationAndRoma']
       'player.isPlayLxlrc': LX.AppSetting['player.isPlayLxlrc']
       'player.playbackRate': LX.AppSetting['player.playbackRate']
+      'playDetail.japaneseFont': LX.AppSetting['playDetail.japaneseFont']
+      'playDetail.furigana': LX.AppSetting['playDetail.furigana']
+      'playDetail.furiganaReadings': LX.AppSetting['playDetail.furiganaReadings']
     }
 
     type WinMainActions = 'get_info' | 'get_status' | 'get_analyser_data_array'
@@ -58,7 +64,7 @@ declare namespace LX {
       tlrc: string | null
       rlrc: string | null
       lxlrc: string | null
-      // pic: string | null
+      pic: string | null
       isPlay: boolean
       line: number
       played_time: number
@@ -75,6 +81,7 @@ declare namespace LX {
       lxlrc: string | null
     }>
     | LyricAction<'set_offset', number>
+    | LyricActionData<'set_cover', string | null>
     | LyricAction<'set_playbackRate', number>
     | LyricAction<'set_play', number>
     | LyricAction<'set_pause'>

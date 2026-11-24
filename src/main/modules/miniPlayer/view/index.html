@@ -1,0 +1,26 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src https: http: data:">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+* { box-sizing: border-box; }
+body { color-scheme: dark; margin: 0; padding: 16px; height: 100vh; display: grid; align-content: center; gap: 10px; background: #202421; color: #f2f3ee; font: 14px/1.4 system-ui,sans-serif; }
+header { display: flex; align-items: center; gap: 12px; min-width: 0; }
+section { min-width: 0; }
+h1,p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+h1 { font-size: 18px; } #singer { opacity: .7; }
+img { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; }
+#lyric { min-height: 1.4em; color: #d5e9d9; }
+nav { display: flex; gap: 8px; align-items: center; }
+button { cursor: pointer; border: 0; border-radius: 8px; height: 32px; width: 42px; background: #323934; color: inherit; }
+button:hover,button:focus-visible { background: #48524a; } #toggle { background: #d5e9d9; color: #213125; }
+svg { width: 16px; height: 16px; vertical-align: middle; fill: currentColor; }
+</style></head>
+<body>
+<header><img alt="" referrerpolicy="no-referrer" hidden><section><h1>Q-music</h1><p id="singer"></p></section></header>
+<p id="lyric"></p>
+<nav>
+<button id="prev"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h2v12H2zM14 2 5 8l9 6z"/></svg></button>
+<button id="toggle"><svg viewBox="0 0 16 16" aria-hidden="true"><path id="play" d="M4 2v12l10-6z"/><path id="pause" d="M3 2h4v12H3zM9 2h4v12H9z" style="display:none"/></svg></button>
+<button id="next"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12 2h2v12h-2zM2 2l9 6-9 6z"/></svg></button>
+</nav></body></html>

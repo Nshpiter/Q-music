@@ -2,8 +2,10 @@
 dd
   h3 {{ syncEnableServerTitle }}
   div
-    .p.small {{ $t('setting__sync_server_auth_code', { code: sync.server.status.code || '' }) }}
-    .p.small {{ $t('setting__sync_server_address', { address: sync.server.status.address.join(', ') || '' }) }}
+    .p.small(v-if="sync.server.status.portInUse" role="alert") {{ $t('setting__sync_server_port_busy', { port: sync.server.status.portInUse }) }}
+    template(v-else)
+      .p.small {{ $t('setting__sync_server_auth_code', { code: sync.server.status.code || '' }) }}
+      .p.small {{ $t('setting__sync_server_address', { address: sync.server.status.address.join(', ') || '' }) }}
     .p.small {{ $t('setting__sync_server_device', { devices: syncDevices }) }}
     .p.gap-top
       .p.small {{ $t('setting__sync_server_port') }}
@@ -36,7 +38,7 @@ export default {
 
     const syncEnableServerTitle = computed(() => {
       let title = t('setting__sync_server_mode')
-      if (sync.server.status.message) {
+      if (sync.server.status.message && !sync.server.status.portInUse) {
         title += ` [${sync.server.status.message}]`
       }
       // else if (this.sync.server.status.address.length) {

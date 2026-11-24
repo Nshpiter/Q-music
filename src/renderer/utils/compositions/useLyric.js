@@ -3,6 +3,9 @@ import { throttle, formatPlayTime2 } from '@common/utils/common'
 import { scrollTo } from '@common/utils/renderer'
 import { play } from '@renderer/core/player/action'
 import { appSetting } from '@renderer/store/setting'
+import useFurigana from './useFurigana'
+import { layoutFan } from '../refinedNowPlaying/fanLayout'
+import { getCurrentTime, getPlaybackRate } from '@renderer/plugins/player'
 // import { player as eventPlayerNames } from '@renderer/event/names'
 
 export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isShowPlayComment, offset }) => {
@@ -23,6 +26,9 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
   let cancelScrollFn
   let dom_lines
   let currentLineElement = null
+  let fanFocus = -1
+  let fanAdvanceTimer
+  let fanDragY = 0
   let isSetedLines = false
   let point = {
     x: null,
@@ -109,6 +115,11 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
 
   const throttleSetTime = throttle(() => {
     if (!dom_skip_line.value) return
+    if (appSetting['playDetail.fanLyrics'] && fanFocus >= 0) {
+      time = getPlayTime(fanFocus)
+      timeStr.value = time >= 0 ? formatPlayTime2(time) : '--:--'
+      return
+    }
     const rect = dom_skip_line.value.getBoundingClientRect()
     point.x = rect.x
     point.y = rect.y
@@ -187,7 +198,56 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     else if (dom.scrollTop < 0) dom.scrollTop = 0
   }
 
+  const renderFan = (index, animate) => {
+    const view = dom_lyric.value
+    if (!dom_lines?.length || !view?.clientHeight) return
+    const previous = fanFocus
+    fanFocus = Math.min(Math.max(0, index), dom_lines.length - 1)
+    const transforms = layoutFan({
+      heights: Array.from(dom_lines, row => row.clientHeight),
+      fontSize: parseFloat(window.getComputedStyle(view).fontSize),
+      anchor: view.clientHeight * (isShowPlayComment?.value ? 0.1 : 0.5),
+      currentLineForScrolling: fanFocus,
+      previousLine: previous,
+      scrollingMode: isStopScroll.value,
+      lyricStagger: true,
+      lyricZoom: appSetting['playDetail.isZoomActiveLrc'],
+      RotateCurvature: appSetting['playDetail.fanCurvature'],
+    })
+    for (const [i, t] of transforms.entries()) {
+      const row = dom_lines[i]
+      // 歌词栏在封面右边，以栏的右缘为轴镜像上游位移和旋转，文字本身保持正向。
+      row.style.setProperty('--rnp-transform', `translateX(${-(t.left ?? 0)}px) translateY(${t.top + (t.extraTop ?? 0)}px) scale(${t.scale}) rotate(${-(t.rotate ?? 0)}deg)`)
+      row.style.setProperty('--rnp-opacity', String(t.opacity ?? 1))
+      row.style.setProperty('--rnp-duration', animate && previous >= 0 ? '500ms' : '0ms')
+      row.style.setProperty('--rnp-delay', animate && previous >= 0 ? t.delay + 'ms' : '0ms')
+      row.classList.toggle('rnp-out-of-range', !!t.outOfRangeHidden)
+    }
+  }
+
+  const syncFan = (animate) => {
+    clearTimeout(fanAdvanceTimer)
+    if (!dom_lines?.length) return
+    if (isStopScroll.value) return renderFan(fanFocus, false)
+    let index = getCurrentLineIndex()
+    if (!isPlay.value) return renderFan(index, animate)
+    // 上游在错峰模式下提前 200ms 换行，逐字染色仍由实际音频时间驱动。
+    const threshold = getCurrentTime() * 1000 + lyric.offset + lyric.tempOffset + 200
+    while (lyric.lines[index + 1]?.time <= threshold) index++
+    if (index !== fanFocus || !animate) renderFan(index, animate)
+    const next = lyric.lines[index + 1]
+    if (next) fanAdvanceTimer = setTimeout(() => syncFan(true), Math.max(1, (next.time - threshold) / getPlaybackRate()))
+  }
+
   const handleScrollLrc = (duration = 300, force = false) => {
+    if (appSetting['playDetail.fanLyrics']) {
+      stopScrollAnimation()
+      if (force) {
+        isStopScroll.value = false
+        hideLinePlay()
+      }
+      return syncFan(duration > 0)
+    }
     if (!dom_lines?.length || !dom_lyric.value) return
     const target = getLrcScrollTarget()
     if (target == null) return
@@ -229,7 +289,7 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     stopScrollAnimation()
     isStopScroll.value = true
     isMsDown.value = true
-    msDownY = y
+    msDownY = fanDragY = y
     msDownScrollY = dom_lyric.value.scrollTop
   }
   const handleLyricMouseDown = event => {
@@ -273,7 +333,14 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
         cancelScrollFn()
         cancelScrollFn = null
       }
-      dom_lyric.value.scrollTop = msDownScrollY + msDownY - y
+      if (appSetting['playDetail.fanLyrics']) {
+        const distance = fanDragY - y
+        const step = Math.trunc(distance / Math.max(1, dom_lines?.[fanFocus]?.clientHeight || 32))
+        if (step) {
+          renderFan(fanFocus + step, true)
+          fanDragY = y
+        }
+      } else dom_lyric.value.scrollTop = msDownScrollY + msDownY - y
       startLyricScrollTimeout()
       setTime()
     }
@@ -295,7 +362,8 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
       cancelScrollFn()
       cancelScrollFn = null
     }
-    dom_lyric.value.scrollTop = dom_lyric.value.scrollTop + event.deltaY
+    if (appSetting['playDetail.fanLyrics']) renderFan(fanFocus + Math.sign(event.deltaY), true)
+    else dom_lyric.value.scrollTop += event.deltaY
     startLyricScrollTimeout()
     setTime()
   }
@@ -310,6 +378,7 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     dom_lyric_text.value.appendChild(dom_line_content)
     nextTick(() => {
       dom_lines = dom_lyric.value.querySelectorAll('.line-content')
+      fanFocus = -1
       updateCurrentLine(lyric.line)
       handleScrollLrc()
     })
@@ -351,10 +420,36 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
   }
 
   watch(() => lyric.lines, initLrc)
+  useFurigana(lyric, appSetting, () => nextTick(() => handleScrollLrc(0)))
   watch(() => lyric.line, scrollLine)
+  watch(() => appSetting['playDetail.fanLyrics'], () => {
+    const view = dom_lyric.value
+    if (!view) return
+    clearTimeout(fanAdvanceTimer)
+    clearLyricScrollTimeout()
+    stopScrollAnimation()
+    isMsDown.value = false
+    // 两种排列的定位和行距不同，按切换后的真实行高一次定位到当前歌词。
+    view.dataset.arranging = ''
+    fanFocus = -1
+    view.scrollTop = 0
+    handleScrollLrc(0, true)
+    view.getBoundingClientRect()
+    delete view.dataset.arranging
+  }, { flush: 'post' })
+  watch([() => appSetting['playDetail.fanCurvature'], () => appSetting['playDetail.isZoomActiveLrc']], () => {
+    nextTick(() => handleScrollLrc(0, true))
+  })
+  watch([isPlay, () => appSetting['player.playbackRate']], () => {
+    if (appSetting['playDetail.fanLyrics']) syncFan(false)
+  })
+  const seekFan = () => {
+    if (appSetting['playDetail.fanLyrics']) nextTick(() => handleScrollLrc(0, true))
+  }
   watch(() => [isShowPlayComment?.value, appSetting['playDetail.style.layout']], hideLinePlay)
 
   onMounted(() => {
+    window.app_event.on('setProgress', seekFan)
     window.addEventListener('resize', hideLinePlay)
     document.addEventListener('mousemove', handleMouseMsMove)
     document.addEventListener('mouseup', handleMouseMsUp)
@@ -365,6 +460,8 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
   })
 
   onBeforeUnmount(() => {
+    window.app_event.off('setProgress', seekFan)
+    clearTimeout(fanAdvanceTimer)
     window.removeEventListener('resize', hideLinePlay)
     clearLinePlayRetry()
     stopScrollAnimation()

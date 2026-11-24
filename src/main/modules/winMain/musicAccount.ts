@@ -1,4 +1,5 @@
 import { neteasePlaybackQuality } from '@common/utils/playbackPolicy'
+import type { CloudPage } from '@common/utils/neteaseLibrary'
 import { accountFailureKind, neteaseRestrictedCodes, type AccountFailureKind } from '@common/utils/accountFailure'
 import { BrowserWindow, safeStorage, session, shell, type Session, type WebContents } from 'electron'
 import { getProxy } from '@main/utils'
@@ -1223,6 +1224,40 @@ const getNeteaseAccountProfile = async() => {
 
 const getNeteaseUserId = async(): Promise<string> => (await getNeteaseAccountProfile()).userId
 
+export const getNeteaseBlockedUsers = async() => {
+  const userid = await getNeteaseUserId()
+  if (!userid) throw Error('login_required')
+  interface RecordId { id?: number | string, userId?: number | string, user?: { id: number | string } }
+  const result = await requestNeteaseWeapi<{ data?: RecordId[], blacklist?: RecordId[] }>('/weapi/blacklist/get', { userid })
+  const records = result.blacklist ?? result.data
+  if (!Array.isArray(records)) throw Error('invalid_blacklist')
+  return records.map(record => String(record.userId ?? record.id ?? record.user?.id ?? '')).filter(id => /^\d+$/.test(id))
+}
+
+let cloudCatalog: { owner: string, expires: number, list: Promise<LX.Music.MusicInfoOnline[]> } | undefined
+export const searchNeteaseCloud = async(query: string) => {
+  const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
+  if (!words.length) return []
+  const { loadNeteaseCloudSongs } = await import('@common/utils/neteaseLibrary')
+  const owner = await getNeteaseUserId()
+  if (!owner) throw Error('login_required')
+  if (cloudCatalog?.owner !== owner || cloudCatalog.expires <= Date.now()) {
+    cloudCatalog = { owner, expires: Date.now() + 60000, list: loadNeteaseCloudSongs(async(offset, limit) => requestNeteaseWeapi<CloudPage>('/weapi/v1/cloud/get', { offset, limit })) }
+  }
+  const snapshot = cloudCatalog
+  try {
+    const tracks = await snapshot.list
+    if (snapshot !== cloudCatalog || await getNeteaseUserId() !== owner) throw Error('account_changed')
+    return tracks.filter(track => {
+      const label = [track.name, track.singer, track.meta.albumName].join(' ').toLocaleLowerCase()
+      return words.every(word => label.includes(word))
+    })
+  } catch (error) {
+    if (cloudCatalog === snapshot) cloudCatalog = undefined
+    throw error
+  }
+}
+
 const validateMusicAccount = async(provider: MusicAccountProvider, force = false) => {
   if (provider == 'kg') {
     const connected = Boolean(readKugouSession())
@@ -1501,6 +1536,7 @@ export const openMusicAccountLogin = async(provider: MusicAccountProvider): Prom
 }
 
 export const logoutMusicAccount = async(provider: MusicAccountProvider): Promise<MusicAccountLogoutResult> => {
+  if (provider === 'wy') cloudCatalog = undefined
   try {
     if (provider == 'kg') { logoutKugou(); return { provider, status: 'disconnected' } }
     closeOfficialAccountLogin(provider)

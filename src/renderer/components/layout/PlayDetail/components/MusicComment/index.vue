@@ -16,6 +16,10 @@ div.comment(ref="dom_container" :class="$style.comment")
 
   div(:class="$style.commentMain")
     template(v-if="available")
+      label(v-if="currentMusicInfo.source == 'wy'" :class="$style.filter")
+        input(type="checkbox" :checked="filterBlocked" @change="toggleFilter($event.target.checked)")
+        span {{ $t('comment_hide_blocked') }}
+        small(v-if="filterStatus" role="status") {{ $t(filterStatus) }}
       header(:class="$style.tab_header")
         button(type="button" :class="[$style.commentType, { [$style.active]: tabActiveId == 'hot' }]" @click="handleToggleTab('hot')") {{ $t('comment__hot_title') }} ({{ hotComment.total }})
         button(type="button" :class="[$style.commentType, { [$style.active]: tabActiveId == 'new' }]" @click="handleToggleTab('new')") {{ $t('comment__new_title') }} ({{ newComment.total }})
@@ -24,7 +28,7 @@ div.comment(ref="dom_container" :class="$style.comment")
           div.scroll(ref="dom_commentHot" :class="$style.tab_content_scroll")
             p(v-if="hotComment.isLoadError" :class="$style.commentLabel" style="cursor: pointer;" role="button" tabindex="0" @click="handleGetHotComment(currentMusicInfo, hotComment.nextPage, hotComment.limit)" @keydown.enter.space.prevent="handleGetHotComment(currentMusicInfo, hotComment.nextPage, hotComment.limit)") {{ $t('comment__hot_load_error') }}
             p(v-else-if="hotComment.isLoading && !hotComment.list.length" :class="$style.commentLabel") {{ $t('comment__hot_loading') }}
-            comment-floor(v-if="!hotComment.isLoadError && hotComment.list.length" :class="[$style.commentFloor, hotComment.isLoading ? $style.loading : null]" :comments="hotComment.list")
+            comment-floor(v-if="!hotComment.isLoadError && hotVisible.length" :class="[$style.commentFloor, hotComment.isLoading ? $style.loading : null]" :comments="hotVisible")
             p(v-else-if="!hotComment.isLoadError && !hotComment.isLoading" :class="$style.commentLabel") {{ $t('comment__no_content') }}
             div(:class="$style.pagination")
               material-pagination(:count="hotComment.total" :btn-length="5" :limit="hotComment.limit" :page="hotComment.page" @btn-click="handleToggleHotCommentPage")
@@ -32,7 +36,7 @@ div.comment(ref="dom_container" :class="$style.comment")
           div.scroll(ref="dom_commentNew" :class="$style.tab_content_scroll")
             p(v-if="newComment.isLoadError" :class="$style.commentLabel" style="cursor: pointer;" role="button" tabindex="0" @click="handleGetNewComment(currentMusicInfo, newComment.nextPage, newComment.limit)" @keydown.enter.space.prevent="handleGetNewComment(currentMusicInfo, newComment.nextPage, newComment.limit)") {{ $t('comment__new_load_error') }}
             p(v-else-if="newComment.isLoading && !newComment.list.length" :class="$style.commentLabel") {{ $t('comment__new_loading') }}
-            comment-floor(v-if="!newComment.isLoadError && newComment.list.length" :class="[$style.commentFloor, newComment.isLoading ? $style.loading : null]" :comments="newComment.list")
+            comment-floor(v-if="!newComment.isLoadError && newVisible.length" :class="[$style.commentFloor, newComment.isLoading ? $style.loading : null]" :comments="newVisible")
             p(v-else-if="!newComment.isLoadError && !newComment.isLoading" :class="$style.commentLabel") {{ $t('comment__no_content') }}
             div(:class="$style.pagination")
               material-pagination(:count="newComment.total" :btn-length="5" :limit="newComment.limit" :page="newComment.page" @btn-click="handleToggleCommentPage")
@@ -44,6 +48,8 @@ div.comment(ref="dom_container" :class="$style.comment")
 import { toOldMusicInfo } from '@renderer/utils'
 import music from '@renderer/utils/musicSdk'
 import CommentFloor from './CommentFloor.vue'
+import { getNeteaseBlockedUsers } from '@renderer/utils/ipc'
+import { visibleComments } from '@common/utils/neteaseLibrary'
 
 const normalizeCommentResult = (result, page, limit) => {
   const comments = Array.isArray(result?.comments) ? result.comments : []
@@ -79,6 +85,10 @@ export default {
   data() {
     return {
       available: false,
+      filterBlocked: localStorage.getItem('q-music.comment-blocklist') === 'true',
+      blocked: new Set(),
+      filterStatus: '',
+      filterRevision: 0,
       currentMusicInfo: {
         name: '',
         singer: '',
@@ -135,10 +145,15 @@ export default {
       },
     }
   },
+  computed: {
+    hotVisible() { return this.filteredComments(this.hotComment.list) },
+    newVisible() { return this.filteredComments(this.newComment.list) },
+  },
   watch: {
     show(n) {
       if (n) this.handleShowComment()
     },
+    musicInfo() { if (this.show) this.handleShowComment() },
   },
   mounted() {
     this.setWidth()
@@ -148,6 +163,31 @@ export default {
     window.removeEventListener('resize', this.setWidth)
   },
   methods: {
+    filteredComments(list) {
+      if (this.currentMusicInfo.source !== 'wy' || !this.filterBlocked) return list
+      if (this.filterStatus) return []
+      return visibleComments(list, this.blocked)
+    },
+    toggleFilter(enabled) {
+      this.filterBlocked = enabled
+      localStorage.setItem('q-music.comment-blocklist', String(enabled))
+      void this.loadBlocked()
+    },
+    async loadBlocked() {
+      const token = ++this.filterRevision
+      this.blocked = new Set()
+      this.filterStatus = ''
+      if (!this.filterBlocked || this.currentMusicInfo.source !== 'wy') return
+      this.filterStatus = 'list__loading'
+      try {
+        const ids = await getNeteaseBlockedUsers()
+        if (token !== this.filterRevision) return
+        this.blocked = new Set(ids)
+        this.filterStatus = ''
+      } catch (error) {
+        if (token === this.filterRevision) this.filterStatus = String(error).includes('login_required') ? 'wy_favorite_login_required' : 'comment_filter_failed'
+      }
+    },
     setWidth() {
       setTimeout(() => {
         this.$refs.dom_container.style.width = ''
@@ -226,7 +266,9 @@ export default {
       })
     },
     handleShowComment() {
+      if (!this.musicInfo) return
       this.currentMusicInfo = 'progress' in this.musicInfo ? this.musicInfo.metadata.musicInfo : this.musicInfo
+      void this.loadBlocked()
 
       if (this.currentMusicInfo.source == 'local' || !music[this.currentMusicInfo.source].comment) {
         this.available = false
@@ -275,6 +317,7 @@ export default {
 
 <style lang="less" module>
 @import '@renderer/assets/styles/layout.less';
+.filter { display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 12px; }
 
 .comment {
   display: flex;

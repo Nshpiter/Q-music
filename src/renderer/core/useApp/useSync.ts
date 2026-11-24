@@ -17,6 +17,7 @@ export default () => {
         sync.isShowSyncMode = false
         break
       case 'server_status':
+        sync.server.status.portInUse = event.data.portInUse
         sync.server.status.status = event.data.status
         sync.server.status.message = event.data.message
         sync.server.status.address = markRaw(event.data.address)

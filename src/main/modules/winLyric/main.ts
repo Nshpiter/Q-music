@@ -10,6 +10,7 @@ import { encodePath } from '@common/utils/electron'
 
 let browserWindow: Electron.BrowserWindow | null = null
 let isWinBoundsUpdateing = false
+let hiddenForEmptyLyrics = false
 
 const ensureVisibleBounds = (bounds: Electron.Rectangle): Electron.Rectangle => {
   const displays = screen.getAllDisplays()
@@ -115,6 +116,7 @@ const winEvent = () => {
 export const createWindow = () => {
   closeWindow()
   if (!global.envParams.workAreaSize) return
+  hiddenForEmptyLyrics = global.lx.appSetting['desktopLyric.hideEmpty'] || global.lx.appSetting['desktopLyric.hidePausedWindow']
   let x = global.lx.appSetting['desktopLyric.x']
   let y = global.lx.appSetting['desktopLyric.y']
   let width = global.lx.appSetting['desktopLyric.width']
@@ -188,7 +190,7 @@ export const closeWindow = () => {
 }
 
 export const showWindow = () => {
-  if (!browserWindow) return
+  if (!browserWindow || hiddenForEmptyLyrics) return
   if (browserWindow.isMinimized()) browserWindow.restore()
   const bounds = ensureVisibleBounds(browserWindow.getBounds())
   if (JSON.stringify(bounds) != JSON.stringify(browserWindow.getBounds())) {
@@ -207,6 +209,13 @@ export const showWindow = () => {
 export const setResizeable = (isResizeable: boolean) => {
   if (!browserWindow) return
   browserWindow.setResizable(isResizeable)
+}
+
+export const setEmptyHidden = (hidden: boolean) => {
+  if (hiddenForEmptyLyrics == hidden) return
+  hiddenForEmptyLyrics = hidden
+  if (hidden) browserWindow?.hide()
+  else showWindow()
 }
 
 export const sendEvent = <T = any>(name: string, params?: T) => {

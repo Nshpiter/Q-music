@@ -152,13 +152,6 @@ export default {
       readyFrame = requestAnimationFrame(() => {
         indicatorReady.value = true
       })
-      if (route.query.section != 'cloud-library') return
-      void nextTick(() => {
-        const content = dom_content_ref.value
-        const target = content?.querySelector('#cloud-library')
-        if (!target) return
-        content.scrollTop += target.getBoundingClientRect().top - content.getBoundingClientRect().top
-      })
     })
     onBeforeUnmount(() => {
       resizeObserver?.disconnect()
@@ -173,6 +166,24 @@ export default {
         if (dom_content_ref.value) dom_content_ref.value.scrollTop = 0
       })
     }
+
+    watch(() => [route.query.name, route.query.section], async([name, section], _, cleanup) => {
+      if (route.path !== '/setting' || !tocList.value.some(tab => tab.id === name)) return
+      avtiveComponentName.value = name
+      if (typeof section !== 'string') return
+      let active = true
+      cleanup(() => { active = false })
+      await nextTick()
+      if (!active) return
+      const content = dom_content_ref.value
+      const target = document.getElementById(section)
+      if (!target || !content?.contains(target)) return
+      for (let node = target; node && node !== content; node = node.parentElement) {
+        if (node.tagName === 'DETAILS') node.open = true
+      }
+      content.scrollTop += target.getBoundingClientRect().top - content.getBoundingClientRect().top
+      target.focus({ preventScroll: true })
+    }, { immediate: true, flush: 'post' })
 
     const handleTabKey = (event, index) => {
       const last = tocList.value.length - 1

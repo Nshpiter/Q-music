@@ -21,6 +21,8 @@ import {
 import { findLocalPlayback } from './preferLocal'
 import { appSetting } from '@renderer/store/setting'
 import { requestMsg } from '@renderer/utils/message'
+import { coverOverride } from '@renderer/store/coverOverrides'
+import { lyricFiles, readLyricFile } from './lyricFile'
 import type { UserApiProviderScope } from '@common/utils/userApiFallback'
 export { isCustomApiSource } from './utils'
 
@@ -94,13 +96,15 @@ export const getPicPath = async({
   isRefresh?: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
 }): Promise<string> => {
-  if ('progress' in musicInfo) {
-    return getDownloadPicUrl({ musicInfo, isRefresh, listId, onToggleSource })
-  } else if (musicInfo.source == 'local') {
-    return getLocalPicUrl({ musicInfo, isRefresh, listId, onToggleSource })
-  } else {
-    return getOnlinePicUrl({ musicInfo, isRefresh, listId, onToggleSource })
-  }
+  const track = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
+  const custom = coverOverride(track)
+  if (custom) return custom
+  const resolved = 'progress' in musicInfo
+    ? await getDownloadPicUrl({ musicInfo, isRefresh, listId, onToggleSource })
+    : musicInfo.source == 'local'
+      ? await getLocalPicUrl({ musicInfo, isRefresh, listId, onToggleSource })
+      : await getOnlinePicUrl({ musicInfo, isRefresh, listId, onToggleSource })
+  return coverOverride(track) || resolved
 }
 
 export const getLyricInfo = async({
@@ -112,11 +116,17 @@ export const getLyricInfo = async({
   isRefresh?: boolean
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
 }): Promise<LX.Player.LyricInfo> => {
-  if ('progress' in musicInfo) {
-    return getDownloadLyricInfo({ musicInfo, isRefresh, onToggleSource })
-  } else if (musicInfo.source == 'local') {
-    return getLocalLyricInfo({ musicInfo, isRefresh, onToggleSource })
-  } else {
-    return getOnlineLyricInfo({ musicInfo, isRefresh, onToggleSource })
+  const track = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
+  const selected = lyricFiles.get(track)
+  if (selected) {
+    const custom = await readLyricFile(selected, track).catch(() => null)
+    if (custom && lyricFiles.get(track) === selected) return custom
   }
+  const result = 'progress' in musicInfo
+    ? await getDownloadLyricInfo({ musicInfo, isRefresh, onToggleSource })
+    : musicInfo.source === 'local'
+      ? await getLocalLyricInfo({ musicInfo, isRefresh, onToggleSource })
+      : await getOnlineLyricInfo({ musicInfo, isRefresh, onToggleSource })
+  const latest = lyricFiles.get(track)
+  return latest && latest !== selected ? readLyricFile(latest, track).catch(() => result) : result
 }

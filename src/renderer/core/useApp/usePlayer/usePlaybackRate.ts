@@ -15,8 +15,7 @@ export default () => {
 
 
   const handleSetPlaybackRate = (num: number) => {
-    const rate = num < 0.5 ? 0.5 : num > 2 ? 2 : num
-    setPlaybackRate(rate)
+    if (Number.isFinite(num)) setPlaybackRate(Math.max(0.1, Math.min(2.5, num)))
   }
 
   // const handleSetPlaybackRateUp = (step = 0.02) => {

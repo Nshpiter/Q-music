@@ -105,7 +105,7 @@ let prevFileInfo: {
   path: '',
   promise: Promise.resolve(null),
 }
-const getFileMetadata = async(path: string) => {
+export const getFileMetadata = async(path: string) => {
   if (prevFileInfo.path == path) return prevFileInfo.promise
   prevFileInfo.path = path
   return prevFileInfo.promise = checkPath(path).then(async(isExist) => {

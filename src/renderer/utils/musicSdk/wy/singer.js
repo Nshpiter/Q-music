@@ -8,7 +8,7 @@ export default {
    * @param {*} id
    */
   getInfo(id) {
-    return eapiRequest('/api/artist/head/info/get', { id }).then(({ body }) => {
+    return eapiRequest('/api/artist/head/info/get', { id }).promise.then(({ body }) => {
       if (!body || body.code != 200) throw new Error('get singer info faild.')
       return {
         source: 'wy',
@@ -16,8 +16,8 @@ export default {
         info: {
           name: body.artist.name,
           desc: body.artist.briefDesc,
-          avatar: body.user.avatarUrl,
-          gender: body.user.gender === 1 ? 'man' : 'woman',
+          avatar: body.user?.avatarUrl ?? body.artist.picUrl,
+          gender: body.user?.gender === 1 ? 'man' : 'woman',
         },
         count: {
           music: body.artist.musicSize,
@@ -33,20 +33,19 @@ export default {
    * @param {*} limit
    */
   getSongList(id, page = 1, limit = 100) {
-    if (page === 1) page = 0
     return eapiRequest('/api/v2/artist/songs', {
       id,
       limit,
-      offset: limit * page,
-    }).then(({ body }) => {
-      if (!body.songs || body.code != 200) throw new Error('get singer song list faild.')
+      offset: limit * (page - 1),
+    }).promise.then(({ body }) => {
+      if (!Array.isArray(body?.songs) || body.code != 200) throw new Error('get singer song list faild.')
 
       const list = this.filterSongList(body.songs)
       return {
         list,
         limit,
         page,
-        total: body.total,
+        total: Number.isSafeInteger(body.total) ? body.total : (page - 1) * limit + list.length + Number(body.more === true),
         source: 'wy',
       }
     })
@@ -58,12 +57,11 @@ export default {
    * @param {*} limit
    */
   getAlbumList(id, page = 1, limit = 10) {
-    if (page === 1) page = 0
     return eapiRequest(`/api/artist/albums/${id}`, {
       limit,
-      offset: limit * page,
-    }).then(({ body }) => {
-      if (!body.hotAlbums || body.code != 200) throw new Error('get singer album list faild.')
+      offset: limit * (page - 1),
+    }).promise.then(({ body }) => {
+      if (!Array.isArray(body?.hotAlbums) || body.code != 200) throw new Error('get singer album list faild.')
 
       const list = this.filterAlbumList(body.hotAlbums)
       return {
@@ -95,49 +93,32 @@ export default {
   filterSongList(raw) {
     const list = []
     raw.forEach(item => {
-      if (!item.id) return
+      if (!item?.id) return
 
       const types = []
       const _types = {}
-      let size
-      item.privilege.chargeInfoList.forEach(i => {
-        switch (i.rate) {
-          case 128000:
-            size = item.lMusic ? sizeFormate(item.lMusic.size) : null
-            types.push({ type: '128k', size })
-            _types['128k'] = {
-              size,
-            }
-          case 320000:
-            size = item.hMusic ? sizeFormate(item.hMusic.size) : null
-            types.push({ type: '320k', size })
-            _types['320k'] = {
-              size,
-            }
-          case 999000:
-            size = item.sqMusic ? sizeFormate(item.sqMusic.size) : null
-            types.push({ type: 'flac', size })
-            _types.flac = {
-              size,
-            }
-          case 1999000:
-            size = item.hrMusic ? sizeFormate(item.hrMusic.size) : null
-            types.push({ type: 'flac24bit', size })
-            _types.flac24bit = {
-              size,
-            }
-        }
-      })
-
+      const formats = [
+        ['128k', item.l ?? item.lMusic, 128000],
+        ['320k', item.h ?? item.hMusic, 320000],
+        ['flac', item.sq ?? item.sqMusic, 999000],
+        ['flac24bit', item.hr ?? item.hrMusic, 1999000],
+      ]
+      for (const [type, file, rate] of formats) {
+        if (!file && !item.privilege?.chargeInfoList?.some(info => info.rate === rate)) continue
+        const size = file?.size ? sizeFormate(file.size) : null
+        types.push({ type, size })
+        _types[type] = { size }
+      }
+      const album = item.al ?? item.album
       list.push({
-        singer: formatSingerName(item.artists),
+        singer: formatSingerName(item.ar ?? item.artists ?? []),
         name: item.name,
-        albumName: item.album.name,
-        albumId: item.album.id,
+        albumName: album?.name ?? '',
+        albumId: album?.id,
         songmid: item.id,
         source: 'wy',
-        interval: formatPlayTime(item.duration),
-        img: null,
+        interval: formatPlayTime((item.dt ?? item.duration ?? 0) / 1000),
+        img: album?.picUrl ?? null,
         lrc: null,
         otherSource: null,
         types,

@@ -3,7 +3,7 @@ const root = path.resolve(__dirname, '..')
 const mobile = fs.existsSync(path.join(root, 'src/core/player/session.ts'))
 const read = file => fs.readFileSync(path.join(root, file), 'utf8')
 const load = (file, dependencies = {}) => {
-  const context = { exports: {}, AbortController, URLSearchParams, require: name => { if (dependencies[name]) return dependencies[name]; throw new Error('Unexpected dependency: ' + name) } }
+  const context = { exports: {}, AbortController, URL, URLSearchParams, require: name => { if (dependencies[name]) return dependencies[name]; throw new Error('Unexpected dependency: ' + name) } }
   vm.runInNewContext(ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, context)
   return context.exports
 }
@@ -12,12 +12,46 @@ const { PlayHistory } = load(utils + 'playHistory.ts')
 const song = (id, source = 'wy') => ({ id, source, name: id, singer: 'Artist', meta: { albumName: 'Album' } })
 const plain = value => JSON.parse(JSON.stringify(value))
 
+test('网易云分享跟踪参数不参与歌曲定位', () => {
+  const { neteaseSongId, cleanNeteaseShare } = load('src/common/utils/neteaseSongLink.ts')
+  assert.equal(cleanNeteaseShare('分享 https://music.163.com/#/song?userid=30&id=25，来自我'), '分享 https://music.163.com/#/song?id=25，来自我')
+  assert.equal(cleanNeteaseShare('https://y.music.163.com/m/playlist?id=42&userid=36'), 'https://y.music.163.com/m/playlist?id=42')
+  assert.equal(cleanNeteaseShare('https://music.163.com.example/playlist?userid=36'), 'https://music.163.com.example/playlist?userid=36')
+  assert.equal(neteaseSongId('分享 https://music.163.com/#/song?id=1740&userid=200'), '1740')
+  assert.equal(neteaseSongId('https://music.163.com/m/song?app_version=1&id=1740'), '1740')
+  assert.equal(neteaseSongId('https://music.163.com/playlist?id=1740'), null)
+})
+
+test('翻译保留重复行、多时间标签和偏移，并拒绝错行响应', async() => {
+  const { translateTimedLyrics, translationEndpoint } = load('src/common/utils/modelLyrics.ts')
+  const lrc = '[offset:-25]\n[00:01.00][00:02.00]Hello\n[00:03.00]Hello'
+  const text = await translateTimedLyrics(lrc, async lines => {
+    assert.deepEqual(plain(lines), ['Hello'])
+    return ['你好']
+  })
+  assert.equal(text, lrc.replaceAll('Hello', '你好'))
+  await assert.rejects(translateTimedLyrics(lrc, async() => []), /invalid_translation/)
+  assert.equal(translationEndpoint('https://example.org/v1/chat/completions'), 'https://example.org/v1')
+  assert.throws(() => translationEndpoint('http://example.org/v1'))
+})
+
+test('云盘拒绝截断或重复分页，黑名单处理引用回复', async() => {
+  const { loadNeteaseCloudSongs, visibleComments } = load('src/common/utils/neteaseLibrary.ts', { './common': { formatPlayTime2: String } })
+  const track = { songId: 42, songName: 'One' }
+  await assert.rejects(loadNeteaseCloudSongs(async() => ({ data: [track], count: 2, hasMore: false })), /incomplete/)
+  await assert.rejects(loadNeteaseCloudSongs(async() => ({ data: [track], count: 2 })), /incomplete/)
+  const list = await loadNeteaseCloudSongs(async offset => ({ data: offset ? [{ songId: 43 }] : [track], count: 2 }))
+  assert.deepEqual(plain(list.map(track => track.id)), ['wy_42', 'wy_43'])
+  assert.deepEqual(plain(visibleComments([{ userId: 1 }, { userId: 2, reply: [{ userId: 3 }] }], new Set(['3']))), [{ userId: 1 }])
+})
+
 test('持久历史串行写入、同曲更新到最近；删单条/清空不改歌曲数据；重启保留上限', async() => {
   let saved
   const a = song('a'), b = song('b')
   const history = new PlayHistory(async() => saved, async value => { saved = plain(value) })
   await Promise.all([history.record(a, 1), history.record(b, 2), history.record(a, 3)])
   assert.deepEqual(plain(history.snapshot().entries.map(x => [x.track.id, x.playedAt])), [['a', 3], ['b', 2]])
+  assert.deepEqual(plain(history.snapshot().entries.map(x => x.playCount)), [2, 1])
   a.meta.albumName = 'changed'
   assert.equal(saved.entries[0].track.meta.albumName, 'Album')
   await history.setLimit(1)
@@ -25,12 +59,22 @@ test('持久历史串行写入、同曲更新到最近；删单条/清空不改�
   await restored.load()
   assert.equal(restored.snapshot().limit, 1)
   assert.equal(restored.snapshot().entries.length, 1)
+  assert.equal(restored.snapshot().entries[0].playCount, 2)
   await restored.remove(a)
   assert.equal(restored.snapshot().entries.length, 0)
   await restored.record(b, 4)
   await restored.clear()
   assert.equal(saved.entries.length, 0)
   assert.equal(b.name, 'b')
+})
+test('旧历史从一次起算，同 ID 在不同音源独立累计', async() => {
+  const track = song('a')
+  const history = new PlayHistory(async() => ({ entries: [{ track, playedAt: 1 }] }), async() => {})
+  await history.load()
+  assert.equal(history.snapshot().entries[0].playCount, 1)
+  await history.record(song('a', 'tx'), 2)
+  await history.record(track, 3)
+  assert.deepEqual(plain(history.snapshot().entries.map(x => [x.track.source, x.playCount])), [['wy', 2], ['tx', 1]])
 })
 test('历史保存失败不假报成功；下一次操作可恢复，不因一次拒绝阻塞队列', async() => {
   let reject = true

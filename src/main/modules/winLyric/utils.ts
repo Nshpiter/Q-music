@@ -54,6 +54,9 @@ export const watchConfigKeys = [
   'desktopLyric.isAlwaysOnTopLoop',
   'desktopLyric.isShowTaskbar',
   'desktopLyric.pauseHide',
+  'desktopLyric.hideEmpty',
+  'desktopLyric.coverBackground',
+  'desktopLyric.hidePausedWindow',
   'desktopLyric.audioVisualization',
   'desktopLyric.width',
   'desktopLyric.height',
@@ -84,6 +87,9 @@ export const watchConfigKeys = [
   'player.isSwapLyricTranslationAndRoma',
   'player.isPlayLxlrc',
   'player.playbackRate',
+  'playDetail.japaneseFont',
+  'playDetail.furigana',
+  'playDetail.furiganaReadings',
 ] satisfies Array<keyof LX.AppSetting>
 
 export const buildLyricConfig = (appSetting: Partial<LX.AppSetting>): Partial<LX.DesktopLyric.Config> => {

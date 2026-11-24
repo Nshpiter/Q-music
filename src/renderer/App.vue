@@ -23,20 +23,28 @@
     <layout-sync-auth-code-modal />
     <layout-play-detail />
     <layout-play-queue />
+    <LocalMusicModal />
   </div>
 </template>
 
 <script setup>
-import { onMounted, watch } from '@common/utils/vueTools'
+import { onBeforeUnmount, onMounted, watch } from '@common/utils/vueTools'
 import { appSetting } from '@renderer/store/setting'
 import { isUrl, encodePath } from '@common/utils/common'
 import { isShowPlayerDetail } from '@renderer/store/player/state'
 // import BubbleCursor from '@common/utils/effects/cursor-effects/bubbleCursor'
 // import '@common/utils/effects/snow.min'
 import useApp from '@renderer/core/useApp'
+import useBackgroundEffects from '@renderer/core/useApp/useBackgroundEffects'
+import useCoverTheme from '@renderer/core/useApp/useCoverTheme'
+import { useStyleSnippets } from '@renderer/store/styleSnippets'
 import WindowControlBtns from './components/layout/WindowControlBtns.vue'
+import LocalMusicModal from './views/List/MyList/components/LocalMusicModal.vue'
 
 useApp()
+useBackgroundEffects()
+useCoverTheme()
+onBeforeUnmount(useStyleSnippets())
 
 // 把外观设置实时映射到 CSS 变量与根节点状态
 const buildUserBgUrl = (bg) => {
@@ -45,21 +53,39 @@ const buildUserBgUrl = (bg) => {
 }
 const applyAppearanceSetting = () => {
   const el = document.documentElement
+  el.dataset.desktopLayout = appSetting['theme.desktopLayout'] || ''
+  const layout = appSetting['theme.layoutOptions']?.[el.dataset.desktopLayout]
+  if (layout?.accent && /^#[0-9a-f]{6}$/i.test(layout.accent)) el.style.setProperty('--layout-user-accent', layout.accent)
+  else el.style.removeProperty('--layout-user-accent')
+  if (Number.isFinite(layout?.radius)) el.style.setProperty('--layout-user-radius', Math.min(36, Math.max(0, layout.radius)) + 'px')
+  else el.style.removeProperty('--layout-user-radius')
+  el.classList.toggle('q-docked-bar', !!layout?.docked && !!el.dataset.desktopLayout)
+  const mo = el.dataset.desktopLayout === 'MoTheme'
+  const transmission = el.dataset.desktopLayout === 'Transmission'
+  el.classList.toggle('q-spectrum-bar', mo && layout?.spectrumBar !== false)
+  el.classList.toggle('q-vinyl-cover', transmission && !!layout?.vinyl)
+  el.style.setProperty('--layout-bar-blur', Math.min(36, Math.max(0, layout?.barBlur ?? 12)) + 'px')
+  el.style.setProperty('--layout-bar-saturation', Math.min(200, Math.max(50, layout?.barSaturation ?? 120)) + '%')
+  el.style.setProperty('--layout-background-blur', (transmission ? Math.min(32, Math.max(0, layout?.backgroundBlur ?? 0)) : 0) + 'px')
   const opacity = appSetting['theme.glassOpacity']
   const blur = appSetting['theme.glassBlur']
   el.style.setProperty('--q-glass-opacity', String((typeof opacity == 'number' ? opacity : 22) / 100))
   el.style.setProperty('--q-glass-blur', `${typeof blur == 'number' ? blur : 20}px`)
-  const bgUrl = buildUserBgUrl(appSetting['theme.customBgImage'])
+  const bgUrl = buildUserBgUrl(layout?.background?.length ? layout.background : appSetting['theme.customBgImage'])
   if (bgUrl) el.style.setProperty('--q-user-bg-image', bgUrl)
   else el.style.removeProperty('--q-user-bg-image')
   el.classList.toggle('performanceMode', appSetting['common.performanceMode'])
+  el.classList.toggle('hideScrollbars', appSetting['common.hideScrollbars'])
 }
 watch(
   () => [
     appSetting['theme.glassOpacity'],
+    appSetting['theme.desktopLayout'],
+    appSetting['theme.layoutOptions'],
     appSetting['theme.glassBlur'],
     appSetting['theme.customBgImage'],
     appSetting['common.performanceMode'],
+    appSetting['common.hideScrollbars'],
   ],
   applyAppearanceSetting,
 )
@@ -85,11 +111,16 @@ onMounted(() => {
 <style lang="less">
 @import './assets/styles/index.less';
 @import './assets/styles/layout.less';
+@import './assets/styles/desktopLayouts.less';
 
 @window-control-width: 184px;
 
 html {
   height: 100vh;
+}
+html.hideScrollbars * {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
 }
 html, body {
   // overflow: hidden;
@@ -118,6 +149,26 @@ body {
 .disableAnimation * {
   transition: none !important;
   animation: none !important;
+}
+
+#root.backgroundEffects {
+  isolation: isolate;
+  background-image: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(var(--q-background-scrim), var(--q-background-scrim)), var(--q-user-bg-image) var(--background-image-position) / var(--background-image-size) no-repeat;
+    transition: opacity .24s ease;
+  }
+  &.movingBackground::before {
+    inset: -10px;
+    transform: translate3d(var(--q-bg-x, 0px), var(--q-bg-y, 0px), 0);
+  }
+  &.dimBackground::before { opacity: var(--q-active-bg-opacity, .55); }
 }
 
 // 流畅模式保留半透明配色和阴影层次，仅关闭昂贵的实时背景采样；提示气泡等挂在 body 上的浮层同样生效。

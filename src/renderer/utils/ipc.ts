@@ -735,6 +735,17 @@ export const setWindowSize = (width: number, height: number) => {
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.set_window_size, params)
 }
 
+export const openMiniPlayer = (labels: Record<string, string>) => rendererInvoke(WIN_MAIN_RENDERER_EVENT_NAME.open_mini_player, labels)
+interface TranslationProvider { endpoint: string, model: string, target: string, hasKey: boolean }
+interface PluginCommand { action: string, id?: string, bytes?: Uint8Array, source?: string, key?: number, name?: string, script?: string }
+export const managePlugin = (command: PluginCommand) => rendererInvoke<PluginCommand, Array<{ id: string, name: string, version: string }>>(WIN_MAIN_RENDERER_EVENT_NAME.better_plugins, command)
+export const steamCommand = (action: string, text = '') => rendererInvoke<{ action: string, text: string }, { status: string, qr: string }>(WIN_MAIN_RENDERER_EVENT_NAME.steam_presence, { action, text })
+export const searchNeteaseCloud = (text: string) => rendererInvoke<string, LX.Music.MusicInfoOnline[]>(WIN_MAIN_RENDERER_EVENT_NAME.netease_cloud_search, text)
+export const getNeteaseBlockedUsers = () => rendererInvoke<string[]>(WIN_MAIN_RENDERER_EVENT_NAME.netease_blocked_users)
+export const getTranslationProvider = () => rendererInvoke<TranslationProvider>(WIN_MAIN_RENDERER_EVENT_NAME.translation_get)
+export const saveTranslationProvider = (provider: Omit<TranslationProvider, 'hasKey'> & { key?: string }) => rendererInvoke<typeof provider, TranslationProvider>(WIN_MAIN_RENDERER_EVENT_NAME.translation_save, provider)
+export const translateLyrics = (lyrics: string) => rendererInvoke<string, string>(WIN_MAIN_RENDERER_EVENT_NAME.translation_run, lyrics)
+
 
 export const getPlayerLyric = async(musicInfo: LX.Music.MusicInfo) => {
   return rendererInvoke<string, LX.Player.LyricInfo>(WIN_MAIN_RENDERER_EVENT_NAME.get_palyer_lyric, musicInfo.id)

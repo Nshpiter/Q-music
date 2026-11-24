@@ -20,6 +20,7 @@ const handleDesktopLyricMessage = (event: LX.DesktopLyric.LyricActions) => {
         singer: event.data.singer,
         name: event.data.name,
         album: event.data.album,
+        pic: event.data.pic,
       })
       lyrics.lyric = event.data.lrc ?? ''
       lyrics.tlyric = event.data.tlrc
@@ -31,6 +32,9 @@ const handleDesktopLyricMessage = (event: LX.DesktopLyric.LyricActions) => {
           getStatus()
         })
       }
+      break
+    case 'set_cover':
+      setMusicInfo({ pic: event.data })
       break
     case 'set_lyric':
       lyrics.lyric = event.data.lrc ?? ''

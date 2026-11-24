@@ -5,6 +5,7 @@
     </div>
     <div :class="$style.main">
       <blank-view v-if="isSearchEmpty" :visible="true" :source="source" />
+      <cloud-songs v-else-if="searchType == 'cloud' && source == 'wy'" :text="searchText" />
       <song-list-list v-else-if="searchType == 'songlist'" :page="page" :source-id="source" />
       <album-list v-else-if="searchType == 'album'" :page="page" :source="source" :text="searchText" />
       <music-list v-else :page="page" :source-id="source" />
@@ -22,6 +23,7 @@ import MusicList from './MusicList/index.vue'
 import SongListList from './SongListList/index.vue'
 import BlankView from './components/BlankView.vue'
 import AlbumList from './AlbumList.vue'
+import CloudSongs from './CloudSongs.vue'
 import { computed, ref, nextTick } from '@common/utils/vueTools'
 import { onActivated } from 'vue'
 import music from '@renderer/utils/musicSdk'
@@ -46,11 +48,12 @@ const verifyQueryParams = async(to, from, next) => {
   const _source = validSources.has(to.query.source)
     ? to.query.source
     : validSources.has(setting.source) ? setting.source : 'all'
-  let _type = to.query.type
+  let _type = to.query.type ?? setting.type
+  if (_type === 'cloud' && _source !== 'wy') _type = 'music'
   let _page = to.query.page
   const pageNeedsNormalization = _page != null && _page != normalizePageQuery(_page)
 
-  if (to.query.source != _source || _type == null || pageNeedsNormalization || (_source == 'bi' && _type != 'music')) {
+  if (to.query.source != _source || to.query.type !== _type || pageNeedsNormalization || (_source == 'bi' && _type != 'music')) {
     _type = _source == 'bi' ? 'music' : _type ?? setting.type
 
     next({
@@ -79,6 +82,7 @@ export default {
     SongListList,
     BlankView,
     AlbumList,
+    CloudSongs,
   },
   beforeRouteEnter: verifyQueryParams,
   beforeRouteUpdate: verifyQueryParams,
@@ -110,6 +114,7 @@ export default {
         { label: window.i18n.t('search__type_music'), id: 'music' },
         { label: window.i18n.t('search__type_songlist'), id: 'songlist' },
         { label: window.i18n.t('search__type_album'), id: 'album' },
+        ...(source.value == 'wy' ? [{ label: window.i18n.t('netease_cloud_songs'), id: 'cloud' }] : []),
       ]
     })
     const handleTypeChange = (type) => {

@@ -20,7 +20,10 @@
       <div :key="musicInfo.id || title" :class="$style.trackText">
         <div :class="$style.trackTitle">{{ title || status }}</div>
         <div :class="$style.trackMetaRow">
-          <div :class="$style.trackMeta">{{ artist }}</div>
+          <div :class="[$style.trackMeta, { [$style.lyricGlass]: footerLines.length && appSetting['player.footerLyricGlass'] }]" :title="footerLines.length ? footerLines.map(line => line.text).join(' · ') : artist">
+            <template v-if="footerLines.length"><template v-for="(line, index) in footerLines" :key="line.kind"><span v-if="index"> · </span><span :style="lyricStyle(line.kind)">{{ line.text }}</span></template></template>
+            <template v-else>{{ artist }}</template>
+          </div>
         </div>
       </div>
     </div>
@@ -89,6 +92,9 @@ import { status, isPlay, isPlayPending, isShowPlayComment, isShowPlayQueue, musi
 import { setMusicInfo, setShowPlayerDetail, setShowPlayQueue } from '@renderer/store/player/action'
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
 import { appSetting } from '@renderer/store/setting'
+import { getLineAtTime } from '@renderer/store/player/lyric'
+import { parseTimed } from '@common/utils/amllProtocol'
+import { playProgress } from '@renderer/store/player/playProgress'
 
 import PlayerFavoriteButton from './PlayDetail/components/PlayerFavoriteButton.vue'
 import ControlBtns from './PlayDetail/components/ControlBtns.vue'
@@ -112,6 +118,26 @@ const {
 // 歌手已在第二行单独展示，标题只显示歌名，避免拼接后被截断
 const title = computed(() => musicInfo.name || '')
 const artist = computed(() => musicInfo.singer || status.value || '')
+const translations = computed(() => parseTimed(musicInfo.tlrc))
+const readings = computed(() => parseTimed(musicInfo.rlrc))
+const lyricStyle = kind => ({
+  fontSize: Math.max(10, Math.min(22, appSetting['player.footerSize.' + kind] || 13)) + 'px',
+  fontWeight: appSetting['player.footerBold.' + kind] ? 'bold' : 'normal',
+  fontStyle: appSetting['player.footerItalic.' + kind] ? 'italic' : 'normal',
+})
+const footerLines = computed(() => {
+  if (props.detail || !appSetting['player.showFooterLyric'] || !musicInfo.lrc) return []
+  const line = getLineAtTime(playProgress.nowPlayTime)
+  if (!line) return []
+  const original = { text: line.text, kind: 'original' }
+  const mode = appSetting['player.footerLyricLanguage']
+  if (mode === 'original') return [original]
+  const roman = mode === 'roman'
+  const text = (roman ? readings : translations).value.get(line.time)
+  if (!text) return [original]
+  const extra = { text, kind: roman ? 'roman' : 'translation' }
+  return mode === 'paired' ? [original, extra] : [extra]
+})
 const queueBadgeText = computed(() => tempPlayList.length > 99 ? '99+' : String(tempPlayList.length))
 const isImmersiveDetail = computed(() => props.detail && appSetting['playDetail.style.layout'] == 'immersive')
 
@@ -123,8 +149,8 @@ const togglePlayQueue = () => {
   setShowPlayQueue(!isShowPlayQueue.value)
 }
 
-const handleImgError = () => {
-  setMusicInfo({ pic: null })
+const handleImgError = event => {
+  if (event.currentTarget.getAttribute('src') === musicInfo.pic) setMusicInfo({ pic: null })
 }
 </script>
 
@@ -302,6 +328,13 @@ const handleImgError = () => {
   font-size: 13px;
   color: var(--color-font-label);
   .mixin-ellipsis-1();
+}
+
+.lyricGlass {
+  padding-inline: 6px;
+  border-radius: 5px;
+  background: var(--q-surface);
+  backdrop-filter: blur(var(--q-glass-blur, 10px));
 }
 
 .centerControl {

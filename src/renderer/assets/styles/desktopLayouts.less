@@ -1,0 +1,70 @@
+// 主题仅改变桌面布局，表面色继承当前明暗模式和用户封面取色。
+html[data-desktop-layout]:not([data-desktop-layout=""]) #container {
+  --layout-ink: color-mix(in srgb, var(--layout-user-accent, var(--layout-accent, var(--color-primary))) 52%, var(--color-font));
+  --layout-paper: color-mix(in srgb, var(--layout-user-accent, var(--layout-accent, var(--color-primary))) 7%, var(--color-content-background));
+  #left a[role="tab"][aria-selected="true"] { color: var(--layout-ink); box-shadow: inset 3px 0 var(--layout-ink); }
+  #right { background-color: color-mix(in srgb, var(--layout-paper) 70%, transparent); }
+}
+html[data-desktop-layout="Ark"] #container {
+  --layout-accent: #c5a233;
+  #right { border-radius: 2px; border-inline-start: 3px solid var(--layout-ink); }
+  #left a[role="tab"] { border-radius: 2px; letter-spacing: .04em; }
+  #toolbar { border-bottom: 1px solid var(--q-outline); }
+}
+html[data-desktop-layout="ReLive"] #container {
+  --layout-accent: #52769b;
+  #right { margin: 6px 6px 12px 0; border-radius: 14px 4px 4px 14px; }
+  #left a[role="tab"] { border-radius: 5px; }
+  #toolbar { background: linear-gradient(105deg, var(--layout-paper), transparent); }
+}
+html[data-desktop-layout="Elaina"] #container {
+  --layout-accent: #9b80ba;
+  #right { border-radius: 24px; margin: 6px 8px 12px 0; }
+  #left a[role="tab"] { border-radius: 24px; }
+  #toolbar { border-bottom: 1px solid color-mix(in srgb, var(--layout-accent) 25%, transparent); }
+}
+html[data-desktop-layout="MoTheme"] #container {
+  --layout-accent: #678879;
+  #right { border-radius: 10px; box-shadow: none; }
+  #toolbar { background: var(--layout-paper); }
+  #left a[role="tab"] { height: 40px; border-radius: 6px; }
+}
+html[data-desktop-layout="Microrange"] #container {
+  --layout-accent: #cd874e;
+  #right { border-radius: 10px; margin: 4px 6px 12px 0; }
+  #left a[role="tab"] { height: 38px; border-radius: 5px; }
+}
+html[data-desktop-layout="Transmission"] #container {
+  #right { border-radius: 16px; background-color: color-mix(in srgb, var(--layout-paper) 44%, transparent); }
+  #left a[role="tab"] { border-radius: 28px; }
+  #toolbar { border-bottom: 1px solid var(--q-border); }
+}
+html[data-desktop-layout="Unbounded"] #container {
+  #right { border: 0; margin: 0; border-radius: 0; box-shadow: none; }
+  #toolbar { background-color: transparent; }
+  #left a[role="tab"] { border-radius: 8px; }
+}
+html[data-desktop-layout]:not([data-desktop-layout=""]) #container .q-player-footer {
+  border-radius: var(--layout-user-radius, 24px);
+}
+html.q-docked-bar #container .q-player-footer {
+  margin: 0;
+  border-inline: 0;
+  border-bottom: 0;
+  box-shadow: none;
+}
+html.q-spectrum-bar .q-player-footer {
+  --q-progress-fill: linear-gradient(90deg, #66b4d1, #9c8bd6 45%, #df799a 75%, #e6ac66);
+}
+html[data-desktop-layout="MoTheme"]:not(.performanceMode) #container .q-player-footer {
+  backdrop-filter: blur(var(--layout-bar-blur)) saturate(var(--layout-bar-saturation));
+}
+html[data-desktop-layout="Transmission"]:not(.performanceMode) #root.backgroundEffects::before {
+  filter: blur(var(--layout-background-blur));
+  inset: calc(-1 * var(--layout-background-blur));
+}
+html.q-vinyl-cover .q-album-stage .q-layout-record {
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, #202124 0 2px, #323437 3px, #171819 4px);
+  .q-layout-artwork { width: 62%; height: 62%; border-radius: 50%; }
+}

@@ -1,4 +1,5 @@
 import { watch } from '@common/utils/vueTools'
+import { webFrame } from 'electron'
 import { isFullscreen, proxy, sync, windowSizeList } from '@renderer/store'
 import { appSetting } from '@renderer/store/setting'
 import { sendSyncAction, setWindowSize } from '@renderer/utils/ipc'
@@ -15,6 +16,9 @@ const normalizeFontFamily = (font: string) => {
 
 
 export default () => {
+  watch(() => appSetting['common.interfaceZoom'], (percent) => {
+    webFrame.setZoomFactor(([85, 100, 110, 125].includes(percent) ? percent : 100) / 100)
+  }, { immediate: true })
   watch(() => appSetting['common.windowSizeId'], (index) => {
     const info = index == null ? windowSizeList[2] : windowSizeList[index]
     setWindowSize(info.width, info.height)

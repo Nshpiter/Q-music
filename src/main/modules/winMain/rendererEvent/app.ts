@@ -23,12 +23,17 @@ import {
   showSaveDialog,
 } from '@main/modules/winMain'
 import { quitApp } from '@main/app'
+import { openMiniPlayer } from '@main/modules/miniPlayer'
+import { getProvider, saveProvider, translateSong } from '../modelLyrics'
+import { steamCommand } from '../steamPresence'
+import { managePlugin } from '@main/modules/betterPlugins'
+import { getWebContents } from '../main'
 import { getAllThemes, removeTheme, saveTheme, setPowerSaveBlocker } from '@main/utils'
 import { openDirInExplorer } from '@common/utils/electron'
 import { addQQFavoriteSong, getMusicAccountDailySongIds, getMusicAccountMusicUrl, getMusicAccountPlaylistDetail, getMusicAccountPlaylists, getMusicAccountStatus, getQQDailyKeyStatus, logoutMusicAccount, openMusicAccountLogin, openQQDailyKeyPage, reportMusicAccountPlayback, saveQQDailyApiKey, type MusicAccountDailyResult, type MusicAccountLoginResult, type MusicAccountLogoutResult, type MusicAccountMusicUrlRequest, type MusicAccountMusicUrlResult, type MusicAccountPlaybackReportRequest, type MusicAccountPlaybackReportResult, type MusicAccountPlaylistDetailResult, type MusicAccountPlaylistsResult, type MusicAccountProvider, type QQDailyKeySaveResult } from '../musicAccount'
 import { type QQFavoriteRequest, type QQFavoriteResult } from '@common/types/qqFavorite'
 import type { NeteaseFavoriteRequest, NeteaseFavoriteResult } from '@common/utils/neteaseFavorite'
-import { addNeteaseFavoriteSong } from '../musicAccount'
+import { addNeteaseFavoriteSong, getNeteaseBlockedUsers, searchNeteaseCloud } from '../musicAccount'
 import { addKugouFavoriteSong, verifyKugouAccess } from '../kugouAccount'
 import type { KugouFavoriteRequest, KugouFavoriteResult } from '@common/utils/kugouFavorite'
 import { startAccountTransfer, getAccountTransferState, cancelAccountTransfer } from '../accountTransfer'
@@ -38,6 +43,35 @@ import { generateSnapshotKey, listConfigBackups, uploadConfigBackup, previewConf
 import type { SnapshotSelection } from '@common/utils/cloudSnapshot'
 
 export default () => {
+  mainHandle<{ action: string, id?: string, bytes?: Uint8Array, source?: string, key?: number, name?: string, script?: string }, unknown>(WIN_MAIN_RENDERER_EVENT_NAME.better_plugins, async({ event, params }) => {
+    if (event.senderFrame !== getWebContents().mainFrame) throw Error('invalid_sender')
+    return managePlugin(event.sender, params)
+  })
+  mainHandle<{ action: string, text?: string }, { status: string, qr: string }>(WIN_MAIN_RENDERER_EVENT_NAME.steam_presence, async({ event, params }) => {
+    if (event.senderFrame !== getWebContents().mainFrame) throw Error('invalid_sender')
+    return steamCommand({ action: params.action, text: params.text ?? '' })
+  })
+  mainHandle<undefined, string[]>(WIN_MAIN_RENDERER_EVENT_NAME.netease_blocked_users, async({ event }) => {
+    if (event.senderFrame !== getWebContents().mainFrame) throw Error('invalid_sender')
+    return getNeteaseBlockedUsers()
+  })
+  mainHandle<string, LX.Music.MusicInfoOnline[]>(WIN_MAIN_RENDERER_EVENT_NAME.netease_cloud_search, async({ event, params }) => {
+    if (event.senderFrame !== getWebContents().mainFrame) throw Error('invalid_sender')
+    return searchNeteaseCloud(params)
+  })
+  mainHandle(WIN_MAIN_RENDERER_EVENT_NAME.translation_get, async() => getProvider())
+  mainHandle<Parameters<typeof saveProvider>[0], ReturnType<typeof getProvider>>(WIN_MAIN_RENDERER_EVENT_NAME.translation_save, async({ event, params }) => {
+    if (event.senderFrame !== getWebContents().mainFrame) throw Error('invalid_sender')
+    return saveProvider(params)
+  })
+  mainHandle<string, string>(WIN_MAIN_RENDERER_EVENT_NAME.translation_run, async({ event, params }) => {
+    if (event.senderFrame !== getWebContents().mainFrame) throw Error('invalid_sender')
+    return translateSong(params)
+  })
+  mainHandle<Record<string, string>>(WIN_MAIN_RENDERER_EVENT_NAME.open_mini_player, async({ event, params }) => {
+    const owner = getWebContents()
+    if (event.senderFrame === owner.mainFrame) await openMiniPlayer(owner, params, sendTaskbarButtonClick)
+  })
   mainHandle<string>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_key, async() => generateSnapshotKey())
   mainHandle<string[]>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_list, listConfigBackups)
   mainHandle<{ password: string, selected: SnapshotSelection }, string>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_upload, async({ params }) => uploadConfigBackup(params.password, params.selected))

@@ -184,7 +184,7 @@ export const createBilibiliClient = (request: Request) => {
     if (cache.size > 80) cache.delete(cache.keys().next().value!)
     return result
   }
-  const playback = async(id: string, signal?: AbortSignal) => {
+  const readStreams = async(id: string, signal?: AbortSignal) => {
     const [bvid, rawCid] = id.split(':')
     if (!bvidPattern.test(bvid) || !/^\d+$/.test(rawCid ?? '')) throw new Error('Bilibili: invalid_track')
     const detail = await readVideo(bvid, signal)
@@ -192,7 +192,33 @@ export const createBilibiliClient = (request: Request) => {
     if (!Array.isArray(pages)) throw new Error('Bilibili: invalid_pages')
     const part = rawCid == '0' ? pages[0] : pages.find(item => String(item.cid) == rawCid)
     if (!part) throw new Error('Bilibili: part_removed')
-    const data = await call('/x/player/playurl', { bvid, cid: part.cid, fnval: 16 }, signal)
+    return call('/x/player/playurl', { bvid, cid: part.cid, fnval: 16 }, signal)
+  }
+  const backgroundVideo = async(id: string, signal?: AbortSignal): Promise<string> => {
+    const data = await readStreams(id, signal)
+    const videos: Array<Record<string, any>> = Array.isArray(data.dash?.video) ? data.dash.video : []
+    const tracks = videos.filter(item => item && /^avc1/i.test(String(item.codecs)) && Number(item.height) > 0 && Number(item.height) <= 1080)
+    tracks.sort((a, b) => Math.abs(a.height - 720) - Math.abs(b.height - 720) || a.bandwidth - b.bandwidth)
+    for (const item of tracks) {
+      const backups = item.backupUrl ?? item.backup_url
+      const candidates = [item.baseUrl ?? item.base_url, ...(Array.isArray(backups) ? backups : [])]
+      const url = candidates.find(value => typeof value === 'string' && isBilibiliMediaUrl(value))
+      if (url) return url
+    }
+    throw new Error('Bilibili: video_unavailable')
+  }
+  const findBackgroundVideo = async(name: string, singer: string, signal?: AbortSignal, interval?: string | null) => {
+    const title = name.trim().toLocaleLowerCase()
+    if (!title) return ''
+    const artists = singer.toLocaleLowerCase().split('、').map(artist => artist.trim()).filter(Boolean)
+    const result = await search([name, singer, 'MV'].filter(Boolean).join(' '), 1, 6, signal)
+    const seconds = duration(interval)
+    const match = result.list.find(row => (!seconds || Math.abs(duration(row.interval) - seconds) < 5) && row.name.toLocaleLowerCase().includes(title) &&
+      (!artists.length || artists.some(artist => (row.name + ' ' + row.singer).toLocaleLowerCase().includes(artist))))
+    return match ? backgroundVideo(match.songmid, signal) : ''
+  }
+  const playback = async(id: string, signal?: AbortSignal) => {
+    const data = await readStreams(id, signal)
     const audio: Array<Record<string, any>> = data.dash?.audio
     if (!Array.isArray(audio) || !audio.length) throw new Error('Bilibili: audio_unavailable')
     const tracks = audio.filter(item => /^mp4a/.test(String(item.codecs ?? ''))).sort((a, b) => Number(b.bandwidth) - Number(a.bandwidth))
@@ -203,5 +229,5 @@ export const createBilibiliClient = (request: Request) => {
     if (!url) throw new Error('Bilibili: audio_unavailable')
     return { url, quality: '192k' as const }
   }
-  return { search, suggest, videoContents, playback, collection, importCollection, prepareSearch: getFingerprint }
+  return { search, suggest, videoContents, playback, backgroundVideo, findBackgroundVideo, collection, importCollection, prepareSearch: getFingerprint }
 }

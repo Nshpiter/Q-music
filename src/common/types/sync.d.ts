@@ -42,6 +42,7 @@ declare namespace LX {
     type ServerDevices = ServerKeyInfo[]
 
     interface ServerStatus {
+      portInUse?: number
       status: boolean
       message: string
       address: string[]

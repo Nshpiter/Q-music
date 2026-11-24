@@ -7,6 +7,7 @@
 <script>
 import { computed, ref, onBeforeUnmount, onMounted, watch } from '@common/utils/vueTools'
 import { getAnalyser } from '@renderer/plugins/player'
+import { createSpectrum } from '@renderer/utils/visualizerSpectrum'
 import { isPlay } from '@renderer/store/player/state'
 import { appSetting } from '@renderer/store/setting'
 
@@ -21,7 +22,6 @@ const FALLBACK_COLORS = [
   { r: 192, g: 104, b: 235 },
 ]
 
-const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
 const rgba = (color, alpha) => `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`
 const mixColor = (from, to, weight) => ({
   r: Math.round(from.r + (to.r - from.r) * weight),
@@ -74,7 +74,7 @@ export default {
 
     let analyser = getAnalyser()
     let ctx = null
-    let dataArray = null
+    let spectrum = null
     let width = 0
     let height = 0
     let dpr = 1
@@ -112,15 +112,7 @@ export default {
 
     const ensureAnalyser = () => {
       if (!analyser) analyser = getAnalyser()
-      if (!analyser) {
-        if (!dataArray) dataArray = new Uint8Array(FFT_SIZE / 2)
-        return
-      }
-      analyser.fftSize = FFT_SIZE
-      analyser.smoothingTimeConstant = 0.72
-      analyser.minDecibels = -92
-      analyser.maxDecibels = -18
-      if (dataArray?.length != analyser.frequencyBinCount) dataArray = new Uint8Array(analyser.frequencyBinCount)
+      if (analyser && !spectrum) spectrum = createSpectrum(analyser, appSetting['player.spectrumResolution'], appSetting['player.spectrumAWeighting'], appSetting['player.spectrumResponse'], FFT_SIZE, appSetting['player.spectrumSmoothing'])
     }
 
     // 专辑色只在封面变化时采样，避免逐帧取色拖累 Linux 图形合成。
@@ -213,17 +205,10 @@ export default {
       }
     }
 
-    const sampleBand = (startRatio, endRatio) => {
-      if (!dataArray?.length) return 0
-      const start = clamp(Math.floor(dataArray.length * startRatio), 1, dataArray.length - 1)
-      const end = clamp(Math.ceil(dataArray.length * endRatio), start + 1, dataArray.length)
-      let sum = 0
-      for (let i = start; i < end; i++) sum += dataArray[i]
-      return Math.pow(sum / (end - start) / 255, 0.72)
-    }
+    const sampleBand = (startRatio, endRatio) => spectrum?.sample(startRatio, endRatio) ?? 0
 
     const updateEnergy = () => {
-      if (isPlaying && analyser && dataArray) analyser.getByteFrequencyData(dataArray)
+      if (isPlaying) spectrum?.update()
       let bass = isPlaying ? sampleBand(0.006, 0.055) : 0
       let mid = isPlaying ? sampleBand(0.055, 0.24) : 0
       let treble = isPlaying ? sampleBand(0.24, 0.58) : 0
@@ -461,6 +446,7 @@ export default {
     })
 
     onBeforeUnmount(() => {
+      spectrum?.close()
       isPlaying = false
       if (animationFrameId != null) window.cancelAnimationFrame(animationFrameId)
       window.app_event.off('play', handlePlay)
@@ -470,6 +456,11 @@ export default {
       stopWatchVisualizationStyle()
     })
 
+    watch(() => [appSetting['player.spectrumResolution'], appSetting['player.spectrumAWeighting'], appSetting['player.spectrumResponse'], appSetting['player.spectrumSmoothing']], () => {
+      spectrum?.close()
+      spectrum = null
+      startRender()
+    })
     onMounted(() => {
       ctx = dom_canvas.value.getContext('2d', { alpha: true })
       themeColor = readThemeColor()
