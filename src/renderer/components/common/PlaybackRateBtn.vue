@@ -1,6 +1,6 @@
 <template>
   <material-popup-btn :class="$style.btnContent">
-    <button class="q-player-tool" :class="[$style.btn, { [$style.active]: playbackRate != 1 }]" :aria-label="`${$t('player__playback_rate')}${playbackRate}x`">
+    <button class="q-player-tool" :class="[$style.btn, { [$style.active]: playbackRate != 1 }]" :title="`${$t('player__playback_rate')}${playbackRate.toFixed(2)}x`" :aria-label="`${$t('player__playback_rate')}${playbackRate}x`">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M5.5 18.5a8.5 8.5 0 1 1 13 0zm6.5-5 4-4" />
       </svg>

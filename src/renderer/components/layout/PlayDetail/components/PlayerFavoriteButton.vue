@@ -77,7 +77,13 @@ onBeforeUnmount(() => { ++checkId; window.app_event.off('myListUpdate', handleLi
 <style module lang="less">
 .control { position: relative; flex: none; width: var(--q-footer-tool-size); height: var(--q-footer-tool-size); }
 .loved { --q-footer-tool-accent: #e35278; }
+.loved svg { animation: q-heart-pop .32s cubic-bezier(.34, 1.56, .64, 1); }
 .loved svg path { fill: currentColor; }
+@keyframes q-heart-pop {
+  0% { transform: scale(.78); }
+  50% { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
 .menuButton {
   position: absolute;
   right: -1px;
@@ -97,5 +103,5 @@ onBeforeUnmount(() => { ++checkId; window.app_event.off('myListUpdate', handleLi
 .menuButton[aria-expanded='true'] svg { transform: rotate(180deg); }
 .menuButton:enabled:hover, .menuButton[aria-expanded='true'] { color: var(--q-footer-tool-accent); background: var(--q-footer-tool-hover); }
 .menuButton:disabled { opacity: .4; cursor: default; }
-@media (prefers-reduced-motion: reduce) { .menuButton svg { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .loved svg, .menuButton svg { transition: none; animation: none; } }
 </style>

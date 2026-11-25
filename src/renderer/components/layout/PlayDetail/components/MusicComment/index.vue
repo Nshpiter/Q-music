@@ -16,10 +16,9 @@ div.comment(ref="dom_container" :class="$style.comment")
 
   div(:class="$style.commentMain")
     template(v-if="available")
-      label(v-if="currentMusicInfo.source == 'wy'" :class="$style.filter")
-        input(type="checkbox" :checked="filterBlocked" @change="toggleFilter($event.target.checked)")
-        span {{ $t('comment_hide_blocked') }}
-        small(v-if="filterStatus" role="status") {{ $t(filterStatus) }}
+      div(v-if="currentMusicInfo.source == 'wy'" :class="$style.filter")
+        base-checkbox(id="comment_hide_blocked" :model-value="filterBlocked" :label="$t('comment_hide_blocked')" @update:model-value="toggleFilter")
+        small(v-if="filterStatus" :class="$style.filterStatus" role="status") {{ $t(filterStatus) }}
       header(:class="$style.tab_header")
         button(type="button" :class="[$style.commentType, { [$style.active]: tabActiveId == 'hot' }]" @click="handleToggleTab('hot')") {{ $t('comment__hot_title') }} ({{ hotComment.total }})
         button(type="button" :class="[$style.commentType, { [$style.active]: tabActiveId == 'new' }]" @click="handleToggleTab('new')") {{ $t('comment__new_title') }} ({{ newComment.total }})
@@ -317,7 +316,8 @@ export default {
 
 <style lang="less" module>
 @import '@renderer/assets/styles/layout.less';
-.filter { display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 12px; }
+.filter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 12px 2px; font-size: 12px; }
+.filterStatus { color: var(--color-font-label); font-size: 11.5px; }
 
 .comment {
   display: flex;

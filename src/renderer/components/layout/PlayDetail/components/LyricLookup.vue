@@ -1,13 +1,20 @@
 <template>
-  <material-modal :show="visible" :heading="$t('lyric_dictionary')" width="400px" max-width="90%" bg-close @close="close">
-    <section :class="$style.results">
-      <p v-if="status" role="status">{{ $t(status) }}</p>
-      <article v-for="item in entries" :key="item.dict + ':' + item.n">
-        <strong>{{ item.term }}</strong> <span>{{ item.reading }}</span>
+  <material-modal :show="visible" :heading="$t('lyric_dictionary')" width="420px" max-width="90%" bg-close @close="close">
+    <section class="scroll" :class="$style.results">
+      <p v-if="status" :class="$style.status" role="status">{{ $t(status) }}</p>
+      <article v-for="item in entries" :key="item.dict + ':' + item.n" :class="$style.entry">
+        <div :class="$style.entryHead">
+          <div :class="$style.headword">
+            <strong>{{ item.term }}</strong>
+            <span v-if="item.reading" :class="$style.reading">{{ item.reading }}</span>
+          </div>
+          <span :class="$style.dictTag">{{ item.dict }}</span>
+        </div>
         <DictionaryGlossary v-if="item.structured" :parts="item.structured" :dict="item.dict" />
-        <p v-else>{{ item.meaning }}</p>
-        <small>{{ item.dict }}</small>
-        <button type="button" :disabled="saving || saved.includes(item)" @click="save(item)">{{ $t(saved.includes(item) ? 'dict_card_done' : 'dict_card') }}</button>
+        <p v-else :class="$style.meaning">{{ item.meaning }}</p>
+        <div :class="$style.entryFoot">
+          <button type="button" :class="$style.ankiBtn" :disabled="saving || saved.includes(item)" @click="save(item)">{{ $t(saved.includes(item) ? 'dict_card_done' : 'dict_card') }}</button>
+        </div>
       </article>
     </section>
   </material-modal>
@@ -107,9 +114,29 @@ onBeforeUnmount(() => {
 })
 </script>
 <style module>
-.results { overflow-y: auto; max-height: 60vh; padding: 2px 20px 16px; }
-.results article { padding: 10px 0; border-bottom: 1px solid var(--q-outline); }
-.results p { white-space: pre-line; margin: 5px 0; }
-.results small, .results span { color: var(--color-font-label); }
-.results button { margin-inline-start: 12px; color: var(--color-primary); }
+.results { overflow-y: auto; max-height: 60vh; padding: 4px 20px 18px; display: grid; gap: 10px; }
+.status { margin: 4px 0; font-size: 13px; color: var(--color-font-label); }
+.entry {
+  display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px;
+  background: var(--q-surface); border: 1px solid var(--q-outline);
+}
+.entryHead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.headword { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.headword strong { font-size: 15px; font-weight: 650; }
+.reading { font-size: 12.5px; color: var(--color-font-label); }
+.dictTag {
+  flex: none; padding: 2px 7px; border-radius: 999px; font-size: 11px;
+  color: var(--color-font-label); background: rgb(from var(--color-font) r g b / .07);
+}
+.meaning { white-space: pre-line; margin: 0; font-size: 13px; line-height: 1.55; }
+.entryFoot { display: flex; justify-content: flex-end; }
+.ankiBtn {
+  font: inherit; font-size: 12px; font-weight: 550; cursor: pointer;
+  padding: 4px 10px; border-radius: 8px; border: 1px solid var(--q-outline);
+  color: var(--color-primary); background: var(--q-surface-strong);
+  transition: background-color .18s ease, border-color .18s ease;
+}
+.ankiBtn:hover:not(:disabled) { border-color: var(--color-primary-alpha-600); background: var(--color-primary-alpha-900); }
+.ankiBtn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.ankiBtn:disabled { opacity: .5; cursor: default; }
 </style>

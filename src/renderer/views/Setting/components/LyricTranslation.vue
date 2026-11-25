@@ -1,26 +1,34 @@
 <template>
   <details id="model-lyrics" @toggle="load">
     <summary>{{ $t('model_lyrics') }}</summary>
-    <form v-if="form" :class="$style.form" @submit.prevent="save()">
-      <label>{{ $t('model_endpoint') }}<input v-model.trim="form.endpoint" type="url" required></label>
-      <label>{{ $t('model_name') }}<input v-model.trim="form.model" required></label>
-      <label>{{ $t('model_target') }}<input v-model.trim="form.target" required></label>
-      <label><input type="checkbox" :checked="appSetting['playDetail.automaticTranslation']" @change="updateSetting({ 'playDetail.automaticTranslation': $event.target.checked })">{{ $t('model_auto_translate') }}</label>
-      <label>API Key<input v-model="key" type="password" autocomplete="off" :placeholder="kept ? $t('model_key_saved') : ''"></label>
-      <div><button type="submit">{{ $t('model_save') }}</button> <button v-if="kept" type="button" @click="save(true)">{{ $t('model_key_clear') }}</button></div>
-    </form>
-    <div v-if="form" :class="$style.batch">
-      <label>{{ $t('model_batch_list') }}
-        <select v-model="listId" :disabled="batch.active">
-          <option v-for="list in lists" :key="list.id" :value="list.id">{{ list.name }}</option>
-        </select>
-      </label>
-      <button v-if="batch.active" type="button" :disabled="batch.stopping" @click="batch.stopping = true">{{ $t('model_batch_stop') }}</button>
-      <button v-else type="button" @click="runBatch">{{ $t('model_batch_start') }}</button>
-      <p v-if="batch.total || batch.current" role="status">{{ $t('model_batch_progress', { total: batch.total, saved: batch.saved, skipped: batch.skipped, failed: batch.failures.length }) }} {{ batch.current }}</p>
-      <details v-if="batch.failures.length"><summary>{{ $t('model_batch_failed') }}</summary><ul><li v-for="(failure, i) in batch.failures" :key="i">{{ failure }}</li></ul></details>
+    <div :class="$style.content">
+      <form v-if="form" :class="$style.form" @submit.prevent="save()">
+        <label><span>{{ $t('model_endpoint') }}</span><input v-model.trim="form.endpoint" type="url" required></label>
+        <label><span>{{ $t('model_name') }}</span><input v-model.trim="form.model" required></label>
+        <label><span>{{ $t('model_target') }}</span><input v-model.trim="form.target" required></label>
+        <label><span>API Key</span><input v-model="key" type="password" autocomplete="off" :placeholder="kept ? $t('model_key_saved') : ''"></label>
+        <div :class="$style.checkLine">
+          <base-checkbox id="model_auto_translate" :model-value="appSetting['playDetail.automaticTranslation']" :label="$t('model_auto_translate')" @update:model-value="updateSetting({ 'playDetail.automaticTranslation': $event })" />
+        </div>
+        <div :class="$style.formActions">
+          <button type="submit" :class="$style.primaryBtn">{{ $t('model_save') }}</button>
+          <button v-if="kept" type="button" :class="$style.ghostBtn" @click="save(true)">{{ $t('model_key_clear') }}</button>
+        </div>
+      </form>
+      <div v-if="form" :class="$style.batch">
+        <label :class="$style.batchSelect">
+          <span>{{ $t('model_batch_list') }}</span>
+          <select v-model="listId" :disabled="batch.active">
+            <option v-for="list in lists" :key="list.id" :value="list.id">{{ list.name }}</option>
+          </select>
+        </label>
+        <button v-if="batch.active" type="button" :class="$style.ghostBtn" :disabled="batch.stopping" @click="batch.stopping = true">{{ $t('model_batch_stop') }}</button>
+        <button v-else type="button" :class="$style.secondaryBtn" @click="runBatch">{{ $t('model_batch_start') }}</button>
+        <p v-if="batch.total || batch.current" :class="$style.progressText" role="status">{{ $t('model_batch_progress', { total: batch.total, saved: batch.saved, skipped: batch.skipped, failed: batch.failures.length }) }} {{ batch.current }}</p>
+        <details v-if="batch.failures.length" :class="$style.failures"><summary>{{ $t('model_batch_failed') }}</summary><ul><li v-for="(failure, i) in batch.failures" :key="i">{{ failure }}</li></ul></details>
+      </div>
+      <p v-if="status" :class="$style.status" role="status">{{ status }}</p>
     </div>
-    <p v-if="status" role="status">{{ status }}</p>
   </details>
 </template>
 
@@ -62,11 +70,42 @@ const save = async(clear = false) => {
 </script>
 
 <style module>
-.form { display: grid; gap: 8px; margin: 10px 0; max-width: 420px; }
-.form label { display: grid; grid-template-columns: 6em 1fr; align-items: center; }
-.form input, .form button { min-width: 0; color: inherit; background: var(--q-surface-strong); border: 1px solid var(--q-outline); border-radius: 6px; padding: 6px 9px; font: inherit; }
-.form button { cursor: pointer; }
-.batch { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-width: 460px; }
-.batch select, .batch button { font: inherit; color: inherit; background: var(--q-surface-strong); border: 1px solid var(--q-outline); border-radius: 6px; padding: 5px 8px; max-width: 200px; }
-.batch p, .batch details { width: 100%; }
+.content { display: grid; gap: 14px; padding-top: 8px; max-width: 520px; }
+.form { display: grid; gap: 10px; }
+.form label { display: grid; grid-template-columns: 6.5em 1fr; align-items: center; gap: 10px; font-size: 13px; }
+.form label span { color: var(--color-font-label); }
+.form input { min-width: 0; width: 100%; }
+.checkLine { padding-left: calc(6.5em + 10px); }
+.formActions { display: flex; flex-wrap: wrap; gap: 8px; padding-left: calc(6.5em + 10px); }
+.primaryBtn {
+  min-height: 28px; padding: 5px 14px; border: 0; border-radius: 10px;
+  font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  color: #fff; background: linear-gradient(145deg, var(--color-primary-light-100), var(--color-primary));
+  box-shadow: 0 4px 12px var(--color-primary-alpha-700);
+}
+.secondaryBtn {
+  min-height: 28px; padding: 5px 12px; border: 0; border-radius: 10px;
+  font: inherit; font-size: 12.5px; font-weight: 550; cursor: pointer;
+  color: var(--color-button-font); background: var(--color-button-background);
+  box-shadow: inset 0 0 0 1px var(--q-border);
+}
+.secondaryBtn:hover:not(:disabled) { background: var(--color-button-background-hover); color: var(--color-primary-dark-300); }
+.ghostBtn {
+  min-height: 28px; padding: 5px 12px; border: 0; border-radius: 10px;
+  font: inherit; font-size: 12.5px; cursor: pointer;
+  color: var(--color-font-label); background: transparent;
+  box-shadow: inset 0 0 0 1px var(--q-outline);
+}
+.ghostBtn:hover:not(:disabled) { background: var(--q-surface-strong); color: var(--color-font); }
+.primaryBtn:disabled, .secondaryBtn:disabled, .ghostBtn:disabled { opacity: .45; cursor: default; }
+.batch {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 12px; border-radius: 12px; background: var(--q-surface); box-shadow: inset 0 0 0 1px var(--q-outline);
+}
+.batchSelect { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.batchSelect select { max-width: 210px; }
+.progressText { width: 100%; margin: 0; font-size: 12.5px; color: var(--color-font-label); }
+.failures { width: 100%; }
+.failures ul { margin: 6px 0 0; padding-left: 18px; font-size: 12px; color: var(--color-font-label); display: grid; gap: 4px; }
+.status { margin: 0; font-size: 12.5px; color: var(--color-primary-font); }
 </style>

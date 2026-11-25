@@ -19,6 +19,7 @@ export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, qualit
       providers: getUserApiProviderIds(appSetting['common.apiSource'], appSetting['common.apiBackupSources'], list, options.providerScope),
       source: musicInfo.source,
       quality,
+      metadataQualitys: 'progress' in musicInfo || musicInfo.source === 'local' ? undefined : musicInfo.meta?._qualitys,
       signal: controller.signal,
       async getInfo(id) {
         const status = await getUserApiStatus(id)

@@ -1,5 +1,7 @@
 <template lang="pug">
 dt#basic {{ $t('setting__basic') }}
+.q-section-nav
+  button.q-section-pill(v-for="item in quickSections" :key="item.id" type="button" @click="focusSettingSection(item.id)") {{ $t(item.label) }}
 dd
   div
     .gap-top
@@ -31,8 +33,9 @@ dd
 dd
   h3#basic_theme {{ $t('theme_appearance') }}
   theme-appearance(:model-value="appearance" @change="setAppearance")
-  label.p.gap-top(for="desktop_layout") {{ $t('desktop_layout') }}
-    select#desktop_layout.gap-left(:value="appSetting['theme.desktopLayout']" @change="updateSetting({ 'theme.desktopLayout': $event.target.value })")
+  .gap-top(:class="$style.layoutRow")
+    label(for="desktop_layout" :class="$style.layoutLabel") {{ $t('desktop_layout') }}
+    select#desktop_layout(:value="appSetting['theme.desktopLayout']" @change="updateSetting({ 'theme.desktopLayout': $event.target.value })")
       option(value="") Q-music
       option(v-for="name in ['Ark', 'ReLive', 'Elaina', 'MoTheme', 'Microrange', 'Transmission', 'Unbounded']" :key="name" :value="name") {{ name }}
   layout-options(v-if="appSetting['theme.desktopLayout']" :key="appSetting['theme.desktopLayout']" :layout="appSetting['theme.desktopLayout']")
@@ -68,10 +71,14 @@ dd
       .gap-top
         base-checkbox(id="setting_bg_dim" :model-value="appSetting['theme.dimActiveBackground']" :label="$t('background_dim_active')" @update:model-value="updateSetting({'theme.dimActiveBackground': $event})")
       template(v-if="appSetting['theme.dimActiveBackground']")
-        label.gap-top {{ $t('background_active_opacity') }} · {{ appSetting['theme.backgroundActiveOpacity'] }}%
-          input(type="range" min="0" max="100" step="5" :value="appSetting['theme.backgroundActiveOpacity']" @input="updateSetting({ 'theme.backgroundActiveOpacity': Number($event.target.value) })")
-        label.gap-top {{ $t('background_idle_time') }} · {{ appSetting['theme.backgroundIdleSeconds'] }} s
-          input(type="range" min="0.25" max="10" step="0.25" :value="appSetting['theme.backgroundIdleSeconds']" @input="updateSetting({ 'theme.backgroundIdleSeconds': Number($event.target.value) })")
+        .gap-top(:class="$style.glassSlider")
+          span(:class="$style.glassLabelWide") {{ $t('background_active_opacity') }}
+          slider-bar(:class="$style.slider" :value="appSetting['theme.backgroundActiveOpacity']" :min="0" :max="100" :step="5" @change="updateSetting({ 'theme.backgroundActiveOpacity': $event })")
+          span(:class="$style.glassValue") {{ appSetting['theme.backgroundActiveOpacity'] }}%
+        .gap-top(:class="$style.glassSlider")
+          span(:class="$style.glassLabelWide") {{ $t('background_idle_time') }}
+          slider-bar(:class="$style.slider" :value="appSetting['theme.backgroundIdleSeconds']" :min="0.25" :max="10" :step="0.25" @change="updateSetting({ 'theme.backgroundIdleSeconds': $event })")
+          span(:class="$style.glassValue") {{ appSetting['theme.backgroundIdleSeconds'] }}s
     .gap-top(:class="$style.glassPresets")
       span(:class="$style.glassLabel") {{ $t('setting__basic_glass_preset') }}
       button(
@@ -91,7 +98,7 @@ dd
 dd
   style-snippets#style-snippets
 dd
-  better-plugins
+  better-plugins#better_plugins
 
 dd
   h3#basic_source {{ $t('setting__basic_source') }}
@@ -173,10 +180,9 @@ user-api-modal(v-model="isShowUserApiModal")
 
 <script>
 import { computed, ref, shallowReactive } from '@common/utils/vueTools'
-import { windowSizeList, userApi, isFullscreen, themeId } from '@renderer/store'
+import { windowSizeList, isFullscreen, themeId } from '@renderer/store'
 import { langList, useI18n } from '@root/lang'
 import { getSystemFonts, showSelectDialog } from '@renderer/utils/ipc'
-import apiSourceInfo from '@renderer/utils/musicSdk/api-source-info'
 import { useTimeout } from '@renderer/core/player/timeoutStop'
 import { dialog } from '@renderer/plugins/Dialog'
 
@@ -189,6 +195,8 @@ import ThemeEditModal from './ThemeEditModal/index.vue'
 import PlayTimeoutModal from './PlayTimeoutModal.vue'
 import UserApiModal from './UserApiModal.vue'
 import SliderBar from '@renderer/components/base/SliderBar.vue'
+import { focusSettingSection } from '../settingCatalog'
+import { useApiSources } from './apiSources'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import { getThemes, applyTheme, buildBgUrl } from '@renderer/store/utils'
 import { isUrl, encodePath } from '@common/utils/common'
@@ -326,34 +334,7 @@ export default {
     }
 
     const isShowUserApiModal = ref(false)
-    const getApiStatus = () => {
-      let status
-      if (userApi.status) status = t('setting__basic_source_status_success')
-      else if (userApi.message == 'initing') status = t('setting__basic_source_status_initing')
-      else status = `${t('setting__basic_source_status_failed')}`
-
-      return status
-    }
-    const apiSources = computed(() => {
-      return [
-        ...apiSourceInfo.map(api => ({
-          id: api.id,
-          name: api.name,
-          label: api.name,
-          disabled: api.disabled,
-        })),
-        ...userApi.list.map(api => ({
-          id: api.id,
-          name: api.name,
-          label: `${api.name}${api.id == appSetting['common.apiSource'] ? `[${getApiStatus()}]` : ''}`,
-          desc: [/^\d/.test(api.version) ? `v${api.version}` : api.version].filter(Boolean).join(', '),
-          statusLabel: api.id == appSetting['common.apiSource'] ? `[${getApiStatus()}]` : '',
-          status: api.status,
-          message: api.message,
-          disabled: false,
-        })),
-      ]
-    })
+    const apiSources = useApiSources(t)
 
     const controlBtnPositionList = computed(() => {
       return [
@@ -435,6 +416,15 @@ export default {
       clearBgImage,
       glassPresets,
       applyGlassPreset,
+      focusSettingSection,
+      quickSections: [
+        { id: 'basic_theme', label: 'theme_appearance' },
+        { id: 'basic_glass', label: 'setting__basic_glass' },
+        { id: 'style-snippets', label: 'style_snippets' },
+        { id: 'better_plugins', label: 'better_plugins' },
+        { id: 'basic_source', label: 'setting__basic_source' },
+        { id: 'basic_font_size', label: 'setting__basic_font_size' },
+      ],
     }
   },
 }
@@ -443,6 +433,9 @@ export default {
 <style lang="less" module>
 @import '@renderer/assets/styles/layout.less';
 .paletteSection { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--color-primary-alpha-900); }
+.layoutRow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
+.layoutLabel { font-size: 13px; color: var(--color-font); font-weight: 550; }
+.glassLabelWide { flex: none; min-width: 8.5em; font-size: 13px; color: var(--color-font); }
 .paletteHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; font-size: 13px; color: var(--color-font-label); }
 .paletteToggle { padding: 4px 0; border: 0; background: none; color: var(--color-primary-font); font: inherit; cursor: pointer; }
 .paletteToggle:focus-visible, .themeItem:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 4px; }

@@ -116,52 +116,38 @@ onBeforeUnmount(() => {
 
 .popup {
   position: absolute;
-  // top: -100%;
-  // width: 645px;
-  // left: 8px;
-  // margin-top: 12px;
   max-width: 98%;
-  border-radius: 4px;
+  border-radius: 16px;
   background-color: var(--color-content-background);
+  background: var(--q-menu-bg);
   opacity: 0;
-  transform: scale(.8);
+  transform: scale(.94) translateY(-6px);
   transform-origin: 50% 0 0;
-  transition: .16s ease;
-  transition-property: transform, opacity;
+  transition: transform .22s cubic-bezier(.22, 1, .36, 1), opacity .18s ease;
   max-height: 250px;
   z-index: var(--q-z-float);
   pointer-events: none;
-  filter: drop-shadow(0px 0px 3px rgba(0, 0, 0, .12));
+  box-shadow: var(--q-menu-border), var(--q-shadow-float);
+  backdrop-filter: blur(var(--q-menu-blur)) saturate(1.45);
   display: flex;
-
-  &:before {
-    content: " ";
-    position: absolute;
-    top: -6px;
-    left: var(--arrow-left);
-    width: 0;
-    height: 0;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-bottom: 8px solid var(--color-content-background);
-  }
 
   &.active {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
     pointer-events: initial;
   }
 
   &.top {
-    filter: drop-shadow(0px 1px 3px rgba(0, 0, 0, .12));
+    transform: scale(.94) translateY(6px);
     transform-origin: 50% 100% 0;
 
-    &:before {
-      top: 100%;
-      border-bottom: none;
-      border-top: 8px solid var(--color-content-background);
+    &.active {
+      transform: scale(1) translateY(0);
     }
   }
+}
+@media (prefers-reduced-motion: reduce) {
+  .popup { transition: none; }
 }
 .list {
   padding: 10px;
@@ -178,19 +164,6 @@ onBeforeUnmount(() => {
   background: rgba(25, 30, 34, .88);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 18px 42px rgba(0, 0, 0, .34);
   backdrop-filter: blur(24px) saturate(1.16);
-  filter: none;
-
-  &:before {
-    border-bottom-color: rgba(25, 30, 34, .92);
-  }
-
-  &.top {
-    filter: none;
-
-    &:before {
-      border-top-color: rgba(25, 30, 34, .92);
-    }
-  }
 }
 
 </style>

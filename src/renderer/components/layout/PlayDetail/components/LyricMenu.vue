@@ -5,7 +5,7 @@
       <div v-if="lyricInfo.lyric && !lyricInfo.tlyric" :class="$style.group">
         <button type="button" :class="$style.btn" :disabled="translating" @click="translate">{{ $t(translating ? 'model_translating' : 'model_translate') }}</button>
       </div>
-      <span v-if="translationStatus" role="status">{{ translationStatus }}</span>
+      <span v-if="translationStatus" :class="$style.translationStatus" role="status">{{ translationStatus }}</span>
       <!-- <div :class="$style.group">
       <div :class="$style.title">{{ $t('lyric_menu__align') }}</div>
       <div :class="$style.subGroup">
@@ -370,6 +370,13 @@ export default {
   &[disabled] {
     opacity: .3;
   }
+}
+.translationStatus {
+  display: block;
+  padding: 6px 10px 2px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--color-font-label);
 }
 
 </style>

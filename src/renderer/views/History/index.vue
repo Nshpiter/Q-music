@@ -11,9 +11,9 @@
     </div>
     <div v-if="error" :class="$style.error" role="alert"><span>{{ error }}</span><base-btn v-if="!entries.length" min :disabled="loading" @click="load">{{ $t('search__retry') }}</base-btn></div>
     <base-virtualized-list v-if="entries.length" :key="Number(ranked)" :list="rows" :item-height="64" key-name="key" container-class="scroll" :class="$style.list">
-      <template #default="{ item, index }: { item: HistoryRow, index: number }">
+      <template #default="{ item, index }: { item: { track: LX.Music.MusicInfo, playedAt: number, playCount: number, key: string }, index: number }">
         <div :class="$style.row">
-          <span v-if="ranked" :class="$style.rank">{{ index + 1 }}</span>
+          <span v-if="ranked" :class="[$style.rank, { [$style.rankTop]: index < 3 }]">{{ index + 1 }}</span>
           <button type="button" :class="$style.track" :disabled="busy" @click="playAt(index)">
             <TrackArtwork :music="item.track" :class="$style.cover">
               <source-icon v-if="item.track.source != 'local'" :source="item.track.source" :size="22" />
@@ -42,7 +42,6 @@ import { useI18n } from '@root/lang'
 import SourceIcon from '@renderer/components/common/SourceIcon.vue'
 import TrackArtwork from '@renderer/components/common/TrackArtwork.vue'
 const t = useI18n()
-interface HistoryRow { track: LX.Music.MusicInfo, playedAt: number, playCount: number, key: string }
 const entries = ref(playHistory.snapshot().entries)
 const ranked = ref(false)
 const rows = computed(() => {
@@ -101,10 +100,12 @@ const clear = async() => run(async() => { if (await dialog.confirm({ message: t(
   }
 }
 .rank { min-width: 2ch; color: var(--color-font-label); text-align: right; font-variant-numeric: tabular-nums; }
+.rankTop { color: var(--color-primary); font-weight: 700; }
 .count { width: clamp(64px, 10vw, 130px); display: grid; gap: 5px; text-align: right; font-size: 12px; font-variant-numeric: tabular-nums; }
 .meter { height: 4px; overflow: hidden; border-radius: 4px; background: var(--q-outline); }
 .meter i { display: block; height: 100%; min-width: 1px; border-radius: inherit; background: var(--color-primary); }
-.row { display: flex; align-items: center; box-sizing: border-box; height: 64px; gap: 12px; padding: 0 8px; border-radius: 12px; transition: background-color .15s ease; &:hover, &:focus-within { background: var(--color-primary-background-hover); } }
+.row { display: flex; align-items: center; box-sizing: border-box; height: 64px; gap: 12px; padding: 0 8px; border-radius: 12px; transition: background-color .16s ease, transform .18s cubic-bezier(.22, 1, .36, 1); &:hover, &:focus-within { background: var(--color-primary-background-hover); transform: translateX(2px); } }
+@media (prefers-reduced-motion: reduce) { .row { transition: none; &:hover, &:focus-within { transform: none; } } }
 .row button { color: inherit; border: 0; background: transparent; cursor: pointer; border-radius: 10px; &:disabled { opacity: .4; cursor: default; } &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; } }
 .track { flex: 1; min-width: 0; align-self: stretch; padding: 6px 8px; text-align: left; display: flex; align-items: center; gap: 12px; }
 .cover { --track-artwork-size: 36px; --track-artwork-radius: 10px; svg { width: 22px; height: 22px; } }

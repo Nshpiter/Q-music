@@ -4,17 +4,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 * { box-sizing: border-box; }
-body { color-scheme: dark; margin: 0; padding: 16px; height: 100vh; display: grid; align-content: center; gap: 10px; background: #202421; color: #f2f3ee; font: 14px/1.4 system-ui,sans-serif; }
+body {
+  color-scheme: dark; margin: 0; padding: 16px 18px; height: 100vh;
+  display: grid; align-content: center; gap: 11px;
+  background:
+    radial-gradient(120% 100% at 10% 0%, rgba(77, 175, 124, .18), transparent 55%),
+    linear-gradient(160deg, #252b27, #1a1e1c);
+  color: #f3f5f2; font: 14px/1.4 system-ui, "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+}
 header { display: flex; align-items: center; gap: 12px; min-width: 0; }
-section { min-width: 0; }
+section { min-width: 0; flex: 1; }
 h1,p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-h1 { font-size: 18px; } #singer { opacity: .7; }
-img { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; }
-#lyric { min-height: 1.4em; color: #d5e9d9; }
-nav { display: flex; gap: 8px; align-items: center; }
-button { cursor: pointer; border: 0; border-radius: 8px; height: 32px; width: 42px; background: #323934; color: inherit; }
-button:hover,button:focus-visible { background: #48524a; } #toggle { background: #d5e9d9; color: #213125; }
-svg { width: 16px; height: 16px; vertical-align: middle; fill: currentColor; }
+h1 { font-size: 16px; font-weight: 650; letter-spacing: -.01em; }
+#singer { font-size: 12.5px; color: rgba(243, 245, 242, .64); margin-top: 2px; }
+img {
+  width: 50px; height: 50px; flex: none; object-fit: cover; border-radius: 11px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(255, 255, 255, .12);
+}
+#lyric { min-height: 1.4em; font-size: 13px; color: #ccebd7; }
+nav { display: flex; gap: 10px; align-items: center; }
+button {
+  cursor: pointer; border: 1px solid rgba(255, 255, 255, .1); border-radius: 50%;
+  height: 34px; width: 34px; display: grid; place-items: center;
+  background: rgba(255, 255, 255, .08); color: inherit;
+  transition: background-color .16s ease, transform .14s ease, border-color .16s ease;
+}
+button:hover { background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .2); }
+button:active { transform: scale(.94); }
+button:focus-visible { outline: 2px solid #68cf97; outline-offset: 2px; }
+#toggle {
+  width: 38px; height: 38px; border: 0;
+  background: linear-gradient(145deg, #68cf97, #4daf7c); color: #102418;
+  box-shadow: 0 4px 14px rgba(77, 175, 124, .35);
+}
+#toggle:hover { background: linear-gradient(145deg, #77daa4, #58ba87); }
+svg { width: 15px; height: 15px; display: block; fill: currentColor; }
+@media (prefers-reduced-motion: reduce) { button { transition: none; } }
 </style></head>
 <body>
 <header><img alt="" referrerpolicy="no-referrer" hidden><section><h1>Q-music</h1><p id="singer"></p></section></header>

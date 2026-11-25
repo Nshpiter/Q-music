@@ -219,3 +219,93 @@ test('quality first checks higher-tier backups before using a cached primary dow
   assert.equal(result.providerId, backup)
   assert.equal(result.isFromCache, false)
 })
+
+test('populated track metadata caps custom API quality requests and rejects nonexistent 24-bit when strict', async() => {
+  const metadataQualitys = { '128k': { size: '3MB' }, '320k': { size: '8MB' }, flac: { size: '25MB' } }
+  const strict = harness({
+    quality: 'flac24bit',
+    allowQualityFallback: false,
+    metadataQualitys,
+    getInfo: async id => info(id, ['128k', '320k', 'flac', 'flac24bit']),
+  })
+  await assert.rejects(strict.run(), /requested quality unavailable/)
+  assert.deepEqual(strict.calls, [])
+
+  const adaptive = harness({
+    quality: 'flac24bit',
+    preferQuality: true,
+    metadataQualitys,
+    getInfo: async id => info(id, ['128k', '320k', 'flac', 'flac24bit']),
+    request: (id, quality) => {
+      adaptive.calls.push(`request:${id}:${quality}`)
+      return { promise: id === primary ? Promise.reject(Error('unavailable')) : Promise.resolve('https://music.example/sq.flac') }
+    },
+  })
+  const result = await adaptive.run()
+  assert.equal(result.quality, 'flac')
+  assert.equal(result.providerId, backup)
+  assert.deepEqual(adaptive.calls, [`request:${primary}:flac`, `request:${backup}:flac`])
+})
+
+test('primary supporting only HQ skips stale SQ cache and picks SQ backup under preferQuality', async() => {
+  const h = harness({
+    quality: 'flac',
+    preferQuality: true,
+    getInfo: async id => info(id, id === primary ? ['128k', '320k'] : ['128k', '320k', 'flac']),
+    readCache: async(id, quality) => id === primary && quality === 'flac' ? 'https://stale.example/primary-sq.flac' : null,
+    request: (id, quality) => {
+      h.calls.push(`request:${id}:${quality}`)
+      return { promise: Promise.resolve(`https://music.example/${id}-${quality}.flac`) }
+    },
+  })
+  const result = await h.run()
+  assert.equal(result.providerId, backup)
+  assert.equal(result.quality, 'flac')
+  assert.deepEqual(h.calls, [`request:${backup}:flac`])
+})
+
+test('QQ quality parser ignores missing, null or "0" size_hires while preserving real 24-bit playback', async() => {
+  const txDir = path.join(root, 'src/renderer/utils/musicSdk/tx')
+  const loadTx = (file) => {
+    const deps = {
+      '../../request': {},
+      '../../index': { formatPlayTime: () => '03:30', sizeFormate: s => `${s}B`, decodeName: s => s, dateFormat: s => s, formatPlayCount: s => s },
+      '../utils': { formatSingerName: () => 'Artist' },
+      './utils': { signRequest: () => ({ promise: Promise.resolve({}) }) },
+    }
+    const ctx = { exports: {}, require: id => deps[id] }
+    vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(txDir, file), 'utf8'), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText, ctx)
+    return ctx.exports.default
+  }
+  const search = loadTx('musicSearch.js')
+  const leaderboard = loadTx('leaderboard.js')
+  const songList = loadTx('songList.js')
+  const makeRow = sizeHires => ({
+    title: 'Track', mid: 'mid1', id: 1, interval: 210, singer: [{ name: 'Artist' }], album: { name: 'Alb', mid: 'amid1' },
+    file: { media_mid: 'm1', size_128mp3: 100, size_320mp3: 200, size_flac: 300, ...(sizeHires === undefined ? {} : { size_hires: sizeHires }) },
+  })
+  for (const invalid of [undefined, null, 0, '0']) {
+    for (const parsed of [search.handleResult([makeRow(invalid)])[0], leaderboard.filterData([makeRow(invalid)])[0], songList.filterListDetail([makeRow(invalid)])[0]]) {
+      assert.ok(!('flac24bit' in parsed._types))
+      assert.ok(parsed.types.every(t => t.type !== 'flac24bit'))
+    }
+  }
+  const real = search.handleResult([makeRow(400)])[0]
+  assert.equal(real._types.flac24bit.size, '400B')
+  const strictReal = harness({
+    quality: 'flac24bit',
+    allowQualityFallback: false,
+    preferQuality: true,
+    metadataQualitys: real._types,
+    getInfo: async id => info(id, ['128k', '320k', 'flac', 'flac24bit']),
+    request: (id, quality) => {
+      strictReal.calls.push(`request:${id}:${quality}`)
+      return { promise: Promise.resolve(`https://music.example/${id}-${quality}`) }
+    },
+  })
+  const res = await strictReal.run()
+  assert.equal(res.quality, 'flac24bit')
+  assert.equal(res.providerId, primary)
+})

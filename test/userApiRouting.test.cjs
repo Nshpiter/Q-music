@@ -179,3 +179,36 @@ test('启用音源音质优先后，先尝试同平台备用的无损档，再�
   assert.equal(result.quality, 'flac')
   assert.deepEqual(h.routes, ['tx:user_api_primary:flac', 'tx:user_api_backup:flac'])
 })
+
+test('关闭跨平台后，播放设置的优先保持音质仍先查备用无损再降级主源', async() => {
+  const h = harness({
+    quality: 'flac',
+    allowToggleSource: true,
+    officialAvailable: false,
+    settings: { 'player.fallbackOrder': 'quality', 'player.autoSourceFallback': false, 'player.autoQualityFallback': true },
+    requestUrl: async(source, quality, id) => {
+      if (id === 'user_api_primary' && quality === 'flac') throw Error('quality unavailable')
+      return `https://audio.test/${id}-${quality}`
+    },
+  })
+  const result = await h.run()
+  assert.equal(result.quality, 'flac')
+  assert.deepEqual(h.routes, ['tx:user_api_primary:flac', 'tx:user_api_backup:flac'])
+  assert.ok(!h.calls.includes('search'))
+})
+
+test('getPlayQualityCandidates 对缺少 24-bit 元数据的歌屏蔽 24-bit，有真实 24-bit 时正常可选', () => {
+  const setting = { 'common.apiSource': 'user_api_primary', 'common.apiBackupSources': ['user_api_backup'], 'common.apiPreferQuality': true }
+  const deps = {
+    '@common/utils/playbackPolicy': load('src/common/utils/playbackPolicy.ts'),
+    './userApiFallback': { resolveCustomMusicUrl: async() => {} }, '@renderer/store': { apiSource: { value: 'user_api_primary' }, qualityList: { value: { tx: ['128k', '320k', 'flac', 'flac24bit'] } } },
+    '@renderer/store/utils': {},
+    '@renderer/utils/musicSdk': {}, '@renderer/utils/ipc': {}, '@renderer/store/setting': { appSetting: setting },
+    '@renderer/utils': { toNewMusicInfo: i => i }, '@renderer/utils/message': { requestMsg: {} }, '@renderer/utils/musicSdk/api-source': {},
+  }
+  const api = load('src/renderer/core/music/utils.ts', deps, { window: { i18n: { t: k => k } } })
+  const sqOnly = { id: 'tx_1', source: 'tx', meta: { _qualitys: { '128k': {}, '320k': {}, flac: {} } } }
+  const hiRes = { id: 'tx_2', source: 'tx', meta: { _qualitys: { '128k': {}, '320k': {}, flac: {}, flac24bit: {} } } }
+  assert.deepEqual(Array.from(api.getPlayQualityCandidates('flac24bit', sqOnly)), ['flac', '320k', '128k'])
+  assert.deepEqual(Array.from(api.getPlayQualityCandidates('flac24bit', hiRes)), ['flac24bit', 'flac', '320k', '128k'])
+})

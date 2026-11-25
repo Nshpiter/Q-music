@@ -1,8 +1,16 @@
 // 主题仅改变桌面布局，表面色继承当前明暗模式和用户封面取色。
+html #container {
+  #right,
+  #toolbar,
+  #left a[role="tab"],
+  .q-player-footer {
+    transition: border-radius .32s cubic-bezier(.22, 1, .36, 1), margin .32s cubic-bezier(.22, 1, .36, 1), background-color .3s ease, border-color .3s ease, box-shadow .3s ease;
+  }
+}
 html[data-desktop-layout]:not([data-desktop-layout=""]) #container {
   --layout-ink: color-mix(in srgb, var(--layout-user-accent, var(--layout-accent, var(--color-primary))) 52%, var(--color-font));
   --layout-paper: color-mix(in srgb, var(--layout-user-accent, var(--layout-accent, var(--color-primary))) 7%, var(--color-content-background));
-  #left a[role="tab"][aria-selected="true"] { color: var(--layout-ink); box-shadow: inset 3px 0 var(--layout-ink); }
+  #left a[role="tab"][aria-selected="true"] { color: var(--layout-ink); }
   #right { background-color: color-mix(in srgb, var(--layout-paper) 70%, transparent); }
 }
 html[data-desktop-layout="Ark"] #container {

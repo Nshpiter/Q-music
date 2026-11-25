@@ -22,6 +22,7 @@ interface FallbackOptions {
   providers: string[]
   source: LX.Source
   quality: LX.Quality
+  metadataQualitys?: LX.Music._MusicQualityType
   preferQuality?: boolean
   allowQualityFallback?: boolean
   signal?: AbortSignal
@@ -76,8 +77,19 @@ export const resolveUserApiFallback = async(options: FallbackOptions): Promise<U
     if (options.excludedUrls?.has(url)) throw new Error('music URL already failed')
     return url
   }
+  const trackQualitys = options.metadataQualitys && Object.keys(options.metadataQualitys).length
+    ? QUALITY_ORDER.filter(q => q === '128k' || (q === 'flac' && !!(options.metadataQualitys!.flac ?? options.metadataQualitys!.ape ?? options.metadataQualitys!.wav)) || !!options.metadataQualitys![q])
+    : null
   const qualityIndex = QUALITY_ORDER.indexOf(options.quality)
-  const qualitys = options.allowQualityFallback === false ? [options.quality] : QUALITY_ORDER.slice(qualityIndex < 0 ? -1 : qualityIndex)
+  let qualitys: LX.Quality[]
+  if (options.allowQualityFallback === false) {
+    if (trackQualitys && !trackQualitys.includes(options.quality)) throw new Error('requested quality unavailable')
+    qualitys = [options.quality]
+  } else {
+    const sliced = QUALITY_ORDER.slice(qualityIndex < 0 ? -1 : qualityIndex)
+    const filtered = trackQualitys ? sliced.filter(q => trackQualitys.includes(q)) : sliced
+    qualitys = filtered.length ? filtered : ['128k']
+  }
   let lastError = new Error('no enabled music API supports this song')
   const providers = [...new Set(options.providers)]
   const byQuality = options.preferQuality && options.source !== 'local'
@@ -86,12 +98,40 @@ export const resolveUserApiFallback = async(options: FallbackOptions): Promise<U
     : providers.map(id => ({ id, tiers: qualitys }))
   const infos = new Map<string, LX.UserApi.UserApiInfo>()
   const unavailable = new Set<string>()
+  const getSourceInfo = async(id: string): Promise<LX.UserApi.UserApiInfo | null> => {
+    const cached = infos.get(id)
+    if (cached) return cached
+    try {
+      const loaded = await wait({ promise: options.getInfo(id) })
+      infos.set(id, loaded)
+      assertCurrent()
+      return loaded
+    } catch (error) {
+      assertCurrent()
+      lastError = error as Error
+      if (lastError.message === USER_API_CANCELLED) throw error
+      unavailable.add(id)
+      options.onFailure?.(id, null, lastError)
+      return null
+    }
+  }
   for (const { id, tiers } of attempts) {
     assertCurrent()
     if (Date.now() >= deadline) break
     if (unavailable.has(id) || options.isProviderBlocked?.(id)) continue
-    if (options.readCache) {
-      for (const quality of tiers) {
+    let info: LX.UserApi.UserApiInfo | undefined = infos.get(id)
+    if (!info && byQuality) {
+      // 音质优先开启时先确认脚本当前声明的能力，避免主源只剩 HQ 却误用旧 SQ 缓存。
+      const loaded = await getSourceInfo(id)
+      if (!loaded) continue
+      info = loaded
+      const declared = info.sources?.[options.source]
+      if (declared?.type !== 'music' || !declared.actions.includes('musicUrl')) continue
+    }
+    const knownSource = options.source === 'local' ? null : info?.sources?.[options.source]
+    const cacheTiers = knownSource ? tiers.filter(quality => knownSource.qualitys.includes(quality)) : tiers
+    if (options.readCache && cacheTiers.length) {
+      for (const quality of cacheTiers) {
         if (options.isExcluded?.(id, quality, true)) continue
         try {
           const cached = await wait({ promise: options.readCache(id, quality) })
@@ -104,18 +144,10 @@ export const resolveUserApiFallback = async(options: FallbackOptions): Promise<U
         }
       }
     }
-    let info: LX.UserApi.UserApiInfo
-    try {
-      info = infos.get(id) ?? await wait({ promise: options.getInfo(id) })
-      infos.set(id, info)
-      assertCurrent()
-    } catch (error) {
-      assertCurrent()
-      lastError = error as Error
-      if (lastError.message === USER_API_CANCELLED) throw error
-      unavailable.add(id)
-      options.onFailure?.(id, null, lastError)
-      continue
+    if (!info) {
+      const loaded = await getSourceInfo(id)
+      if (!loaded) continue
+      info = loaded
     }
     const source = info.sources?.[options.source]
     if (source?.type !== 'music' || !source.actions.includes('musicUrl')) continue

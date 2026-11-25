@@ -378,29 +378,24 @@ export const getPlayQualityCandidates = (highQuality: LX.Quality, musicInfo: LX.
   const supportedQualitys = qualityList.value[musicInfo.source]
   const fallbackQualitys = getQualityFallbacks(highQuality)
   const metadataQualitys = musicInfo.meta?._qualitys ?? {}
-  // 自定义 API 的 qualitys 声明就是该接口可尝试的音质范围。
-  // 与官方/内置接口不同，它不一定能在搜索结果的歌曲元数据中完整标注，
-  // 因此不能再用歌曲元数据把自定义高音质提前过滤掉。
-  const isUserApi = isCustomApiSource()
-  if (isUserApi && appSetting['common.apiBackupSources'].length) return fallbackQualitys
-  if (!supportedQualitys?.length) {
-    // 自定义接口刚切换或仍在初始化时 qualityList 可能暂时为空。
-    // 不要立即把用户选择降成 128K：接口声明未知时先按自定义接口
-    // 的完整回退链尝试；内置接口则只相信歌曲元数据，避免无意义请求。
-    if (isUserApi) return fallbackQualitys
-    const metadataCandidates = fallbackQualitys.filter(quality => {
-      if (quality == '128k') return true
-      if (quality == 'flac' && (metadataQualitys.flac ?? metadataQualitys.ape ?? metadataQualitys.wav)) return true
-      return !!metadataQualitys[quality]
-    })
-    return metadataCandidates.length ? metadataCandidates : ['128k']
+  const hasKnownMetadata = Object.keys(metadataQualitys).length > 0
+  const supportsMetadata = (quality: LX.Quality) => {
+    if (!hasKnownMetadata || quality == '128k') return true
+    if (quality == 'flac') return !!(metadataQualitys.flac ?? metadataQualitys.ape ?? metadataQualitys.wav)
+    return !!metadataQualitys[quality]
   }
-  const candidates = fallbackQualitys.filter(quality => {
-    return supportedQualitys.includes(quality) && (isUserApi || quality == '128k' || !!metadataQualitys[quality])
-  })
+  const trackFallbacks = fallbackQualitys.filter(supportsMetadata)
+  const effectiveFallbacks = trackFallbacks.length ? trackFallbacks : ['128k'] as LX.Quality[]
+  // 歌曲明确带有音质清单时，不能把不存在的高音质强行传给自定义源（否则脚本静默降档后会误标为高音质）。
+  const isUserApi = isCustomApiSource()
+  if (isUserApi && appSetting['common.apiBackupSources'].length) return effectiveFallbacks
+  if (!supportedQualitys?.length) {
+    return effectiveFallbacks
+  }
+  const candidates = effectiveFallbacks.filter(quality => supportedQualitys.includes(quality))
   if (candidates.length) return candidates
 
-  const lowestSupportedQuality = [...fallbackQualitys].reverse().find(quality => supportedQualitys.includes(quality))
+  const lowestSupportedQuality = [...effectiveFallbacks].reverse().find(quality => supportedQualitys.includes(quality))
   return [lowestSupportedQuality ?? '128k']
 }
 
@@ -808,15 +803,15 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
 }): Promise<OnlineMusicUrlResult> => {
   const targetQuality = quality ?? appSetting['player.playQuality']
   allowToggleSource = allowToggleSource && appSetting['player.autoSourceFallback'] !== false
-  if (allowToggleSource && appSetting['player.fallbackOrder'] == 'quality' && (!requestOptions?.routeStrategy || requestOptions.routeStrategy == 'all')) {
-    const exactOptions = { ...requestOptions, allowQualityFallback: false }
+  if (!requestOptions?.exact && appSetting['player.fallbackOrder'] == 'quality' && (!requestOptions?.routeStrategy || requestOptions.routeStrategy == 'all')) {
+    const exactOptions = { ...requestOptions, exact: true, allowQualityFallback: false }
     return resolveQualityFirst({
       quality: targetQuality,
       downgrade: appSetting['player.autoQualityFallback'] !== false,
       signal: requestOptions?.signal,
       cancelledMessage: requestMsg.cancelRequest,
       original: async target => resolveOnlineMusicUrl({ musicInfo, quality: target, isRefresh, requestOptions: exactOptions }),
-      alternatives: async() => { onToggleSource(); return getOtherSource(musicInfo, isRefresh, requestOptions?.signal) },
+      alternatives: allowToggleSource ? async() => { onToggleSource(); return getOtherSource(musicInfo, isRefresh, requestOptions?.signal) } : async() => [],
       fallback: async(items, target) => getOnlineOtherSourceMusicUrl({ musicInfos: items, quality: target, isRefresh, onToggleSource, retryedMusic: [createMusicCandidateKey(musicInfo)], requestOptions: exactOptions }),
     })
   }

@@ -51,6 +51,7 @@ export interface MusicUrlRequestOptions {
   blockedApiProviders?: Map<string, Error>
   signal?: AbortSignal
   directOnly?: boolean
+  exact?: boolean
 }
 
 

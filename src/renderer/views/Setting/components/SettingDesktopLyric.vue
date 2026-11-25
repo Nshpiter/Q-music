@@ -2,9 +2,10 @@
 dt#desktop_lyric {{ $t('setting__desktop_lyric') }}
 dd(v-if="isWin")
   base-checkbox(id="taskbar_lyrics" :model-value="appSetting['desktopLyric.taskbar']" :label="$t('taskbar_lyrics')" @update:model-value="updateSetting({ 'desktopLyric.taskbar': $event })")
-  div.gap-top(v-if="appSetting['desktopLyric.taskbar']")
-    label(for="taskbar_lyrics_position") {{ $t('taskbar_lyrics_position') }} · {{ appSetting['desktopLyric.taskbarPosition'] }}%
+  div(v-if="appSetting['desktopLyric.taskbar']" :class="$style.taskbarRow")
+    label(for="taskbar_lyrics_position") {{ $t('taskbar_lyrics_position') }}
     input#taskbar_lyrics_position(type="range" min="0" max="100" :value="appSetting['desktopLyric.taskbarPosition']" @input="updateSetting({ 'desktopLyric.taskbarPosition': Number($event.target.value) })")
+    span(:class="$style.taskbarValue") {{ appSetting['desktopLyric.taskbarPosition'] }}%
 dd
   .gap-top
     base-checkbox(id="setting_desktop_lyric_enable" :model-value="appSetting['desktopLyric.enable']" :label="$t('setting__desktop_lyric_enable')" @update:model-value="updateSetting({ 'desktopLyric.enable': $event })")
@@ -322,6 +323,21 @@ export default {
 .groupContent {
   display: flex;
   flex-flow: row wrap;
+}
+.taskbarRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-top: 10px;
+  padding-left: 24px;
+  font-size: 13px;
+}
+.taskbarValue {
+  min-width: 3.2em;
+  font-size: 12.5px;
+  color: var(--color-primary-font);
+  font-variant-numeric: tabular-nums;
 }
 .item {
   padding-right: 40px;

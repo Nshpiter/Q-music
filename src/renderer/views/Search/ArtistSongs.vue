@@ -65,7 +65,7 @@ onBeforeUnmount(() => { revision++ })
 <style module lang="less">
 @import '@renderer/assets/styles/layout.less';
 .panel { display: flex; height: 100%; box-sizing: border-box; flex-direction: column; padding-bottom: @height-player; min-height: 0; }
-.panel header { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; gap: 10px; }
+.panel header { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px 12px; gap: 12px; border-bottom: 1px solid var(--q-outline); }
 .panel h2 { font-weight: 650; font-size: 1.4em; }
 .panel p { margin-top: 5px; color: var(--color-font-label); }
 </style>

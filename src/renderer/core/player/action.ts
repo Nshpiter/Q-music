@@ -290,8 +290,8 @@ const getMusicPlayUrl = async(musicInfo: LX.Music.MusicInfo | LX.Download.ListIt
     const primaryMusicInfo = hasExplicitToggle ? targetToggleMusicInfo : onlineMusicInfo
     const exactCandidates = hasExplicitToggle ? (appSetting['player.autoSourceFallback'] ? [primaryMusicInfo, onlineMusicInfo] : [primaryMusicInfo]) : [onlineMusicInfo]
     const preferCustomApi = isCustomApiSource() && !hasExplicitToggle
-    if (!hasExplicitToggle && appSetting['player.fallbackOrder'] == 'quality' && appSetting['player.autoSourceFallback']) {
-      attempts.push({ musicInfo: primaryMusicInfo, allowToggleSource: true, routeStrategy: 'all' })
+    if (!hasExplicitToggle && appSetting['player.fallbackOrder'] == 'quality') {
+      attempts.push({ musicInfo: primaryMusicInfo, allowToggleSource: !!appSetting['player.autoSourceFallback'], routeStrategy: 'all' })
       return
     }
     for (const candidate of exactCandidates) {

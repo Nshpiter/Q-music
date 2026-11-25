@@ -123,7 +123,8 @@ export default {
   gap: 25px;
   padding: 0 15px;
   overflow-x: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
   &.left {
     justify-content: flex-start;
@@ -169,6 +170,9 @@ export default {
   pointer-events: none;
 }
 .indicatorReady {
-  transition: transform .32s cubic-bezier(.2, .8, .2, 1), width .32s cubic-bezier(.2, .8, .2, 1);
+  transition: transform .36s cubic-bezier(.22, 1, .36, 1), width .36s cubic-bezier(.22, 1, .36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .listItem, .indicatorReady { transition: none; }
 }
 </style>
