@@ -234,35 +234,14 @@ export default {
   filterListDetail(rawList) {
     // console.log(rawList)
     return rawList.map(item => {
-      let types = []
-      let _types = {}
-      if (item.file.size_128mp3 !== 0) {
-        let size = sizeFormate(item.file.size_128mp3)
-        types.push({ type: '128k', size })
-        _types['128k'] = {
-          size,
-        }
-      }
-      if (item.file.size_320mp3 !== 0) {
-        let size = sizeFormate(item.file.size_320mp3)
-        types.push({ type: '320k', size })
-        _types['320k'] = {
-          size,
-        }
-      }
-      if (item.file.size_flac !== 0) {
-        let size = sizeFormate(item.file.size_flac)
-        types.push({ type: 'flac', size })
-        _types.flac = {
-          size,
-        }
-      }
-      if (item.file.size_hires !== 0) {
-        let size = sizeFormate(item.file.size_hires)
-        types.push({ type: 'flac24bit', size })
-        _types.flac24bit = {
-          size,
-        }
+      const types = []
+      const _types = {}
+      for (const [field, type] of [['size_128mp3', '128k'], ['size_320mp3', '320k'], ['size_flac', 'flac'], ['size_hires', 'flac24bit']]) {
+        const rawSize = Number(item.file?.[field])
+        if (!Number.isFinite(rawSize) || rawSize <= 0) continue
+        const size = sizeFormate(rawSize)
+        types.push({ type, size })
+        _types[type] = { size }
       }
       // types.reverse()
       return {

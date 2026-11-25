@@ -1,5 +1,5 @@
-import { useImperativeHandle, forwardRef, useMemo, useRef } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { useImperativeHandle, forwardRef, useMemo, useRef, useEffect, useCallback } from 'react'
+import { Animated, StyleSheet, View } from 'react-native'
 
 import Modal, { type ModalType } from './Modal'
 import IconButton from '@/components/common/IconButton'
@@ -8,6 +8,8 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
 import { scaleSizeH } from '@/utils/pixelRatio'
+import { Q_UI } from '@/theme/ui'
+import { useInteractionMotion } from '@/utils/useMotion'
 
 const HEADER_HEIGHT = 48
 const styles = createStyle({
@@ -82,9 +84,42 @@ export default forwardRef<DialogType, DialogProps>(({
   const { keyboardShown, keyboardHeight } = useKeyboard()
   const modalRef = useRef<ModalType>(null)
   const lightEdge = theme['q-outline']
+  const motion = useInteractionMotion()
+  const entrance = useRef(new Animated.Value(1)).current
+  const fallbackTimer = useRef<number | null>(null)
+  const clearFallback = () => {
+    if (fallbackTimer.current != null) {
+      cancelAnimationFrame(fallbackTimer.current)
+      fallbackTimer.current = null
+    }
+  }
+
+  useEffect(() => {
+    if (!motion) { entrance.stopAnimation(); entrance.setValue(1) }
+    return () => {
+      clearFallback()
+      entrance.stopAnimation()
+    }
+  }, [entrance, motion])
+
+  const handleShow = useCallback(() => {
+    clearFallback()
+    entrance.stopAnimation()
+    if (!motion) { entrance.setValue(1); return }
+    Animated.spring(entrance, { toValue: 1, ...Q_UI.motion.settle, overshootClamping: true, useNativeDriver: true }).start()
+  }, [entrance, motion])
 
   useImperativeHandle(ref, () => ({
     setVisible(visible: boolean) {
+      clearFallback()
+      entrance.stopAnimation()
+      if (visible) {
+        entrance.setValue(motion ? 0 : 1)
+        fallbackTimer.current = requestAnimationFrame(() => {
+          fallbackTimer.current = null
+          handleShow()
+        })
+      }
       modalRef.current?.setVisible(visible)
     },
   }))
@@ -104,14 +139,16 @@ export default forwardRef<DialogType, DialogProps>(({
   }, [closeBtn, theme])
 
   return (
-    <Modal onHide={onHide} keyHide={keyHide} bgHide={bgHide} bgColor={theme['q-scrim']} ref={modalRef}>
+    <Modal onHide={onHide} onShow={handleShow} keyHide={keyHide} bgHide={bgHide} bgColor={theme['q-scrim']} ref={modalRef}>
       <View pointerEvents="box-none" style={{ ...styles.centeredView, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
-        <View
+        <Animated.View
           style={{
             ...styles.modalView,
             height,
             backgroundColor: theme['c-content-background'],
             borderColor: lightEdge,
+            opacity: entrance.interpolate({ inputRange: [0, 1], outputRange: [0.68, 1] }),
+            transform: [{ scale: entrance.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) }],
           }}
         >
           <View
@@ -126,7 +163,7 @@ export default forwardRef<DialogType, DialogProps>(({
             {closeBtnComponent}
           </View>
           {children}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   )

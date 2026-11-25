@@ -6,6 +6,7 @@ import { Icon } from '@/components/common/Icon'
 import DownloadLocationEntry from '@/components/DownloadLocationEntry'
 import { useI18n } from '@/lang'
 import { useTheme } from '@/store/theme/hook'
+import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 import { getSettingSearchQuery, setSettingSearchQuery, selectSettingSection } from '@/store/setting/navigation'
 import SettingsSearch from './SettingsSearch'
 import AccountEntry from './AccountEntry'
@@ -21,19 +22,22 @@ const groups = [
 export default () => {
   const theme = useTheme()
   const t = useI18n()
+  const { wide } = useAdaptiveLayout()
   const [query, setQuery] = useState(getSettingSearchQuery)
   return <>
     <SettingsSearch query={query} onChange={value => { setQuery(value); setSettingSearchQuery(value) }} />
     {!query.trim() ? <>
-    <View style={styles.shortcuts}>
-      <DownloadLocationEntry card />
-      <AccountEntry />
+    <View style={[styles.shortcuts, wide && styles.shortcutsWide]}>
+      <View style={wide ? styles.shortcutCell : undefined}><DownloadLocationEntry card /></View>
+      <View style={wide ? styles.shortcutCell : undefined}><AccountEntry /></View>
     </View>
     {groups.map(group => <View key={group.title} style={styles.group}>
       <Text size={12} style={styles.groupTitle} color={theme['q-text-secondary']}>{t(group.title)}</Text>
       <View style={[styles.card, { backgroundColor: theme['q-surface-raised'], borderColor: theme['q-outline'] }]}>
         {group.items.map(([id, icon], index) => <Button key={id} pressScale={0.985} onPress={() => { selectSettingSection(id as SettingScreenIds) }} style={styles.row}>
-          <Icon accessible={false} name={icon} rawSize={20} color={theme['q-text-secondary']} />
+          <View style={[styles.iconBadge, { backgroundColor: theme['q-surface-base'], borderColor: theme['q-outline'] }]}>
+            <Icon accessible={false} name={icon} rawSize={18} color={theme['q-text-secondary']} />
+          </View>
           <View style={[styles.rowContent, { borderTopWidth: index ? StyleSheet.hairlineWidth : 0, borderTopColor: theme['q-outline'] }]}>
             <View style={styles.label}>
               <Text size={14} color={theme['q-text-primary']}>{t(`setting_${id}`)}</Text>
@@ -50,10 +54,13 @@ export default () => {
 
 const styles = StyleSheet.create({
   shortcuts: { gap: 10, marginBottom: 6 },
+  shortcutsWide: { flexDirection: 'row', alignItems: 'stretch' },
+  shortcutCell: { flex: 1, minWidth: 0 },
   group: { marginTop: 18 },
   groupTitle: { paddingHorizontal: 4, marginBottom: 8, fontWeight: '600' },
   card: { borderRadius: 16, padding: 4, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', paddingLeft: 12, gap: 14 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingLeft: 12, gap: 12 },
+  iconBadge: { width: 34, height: 34, borderRadius: 11, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
   rowContent: { flex: 1, minWidth: 0, minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingRight: 14 },
   label: { flex: 1, minWidth: 0, gap: 3 },
   description: { lineHeight: 17 },

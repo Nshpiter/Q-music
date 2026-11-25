@@ -1,4 +1,4 @@
-import { useImperativeHandle, forwardRef, useMemo, useRef, useState, type Ref } from 'react'
+import { useImperativeHandle, forwardRef, useMemo, useRef, useState, useEffect, useCallback, type Ref } from 'react'
 import { View, Animated, StyleSheet } from 'react-native'
 import { useWindowSize } from '@/utils/hooks'
 
@@ -9,6 +9,7 @@ import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from './Text'
 import { Q_UI, qFloatingShadow } from '@/theme/ui'
+import { useInteractionMotion } from '@/utils/useMotion'
 
 const MENU_PADDING = 5
 const MENU_EDGE_MARGIN = 8
@@ -78,6 +79,7 @@ interface Props<M extends Menus = Menus> {
   center?: boolean
   activeId?: M[number]['action'] | null
   showCheckmark?: boolean
+  entrance: Animated.Value
 }
 
 const finiteOr = (value: number | undefined, fallback: number) => {
@@ -101,6 +103,7 @@ const Menu = ({
   fontSize = 13,
   center = false,
   showCheckmark = true,
+  entrance,
 }: Props) => {
   const theme = useTheme()
   const windowSize = useWindowSize()
@@ -146,6 +149,7 @@ const Menu = ({
       top,
       width: menuWidth,
       left,
+      showInBottom,
     }
   }, [menus.length, menuItemStyle, buttonPosition, windowSize])
 
@@ -155,16 +159,23 @@ const Menu = ({
     onHide()
   }
 
+  const { showInBottom, ...boxStyle } = menuStyle
+
   return (
-    <View
+    <Animated.View
       testID="context-menu-surface"
       style={{
         ...styles.menu,
         ...qFloatingShadow,
-        ...menuStyle,
+        ...boxStyle,
         // 浮动菜单必须遮住下层文字；玻璃表面色会让菜单与页面内容重叠。
         backgroundColor: theme['c-content-background'],
         borderColor: theme['q-outline'],
+        opacity: entrance.interpolate({ inputRange: [0, 1], outputRange: [0.68, 1] }),
+        transform: [
+          { translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [showInBottom ? -4 : 4, 0] }) },
+          { scale: entrance.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) },
+        ],
       }}
     >
       <Animated.ScrollView
@@ -193,6 +204,7 @@ const Menu = ({
             : (
                 <Button
                   key={menu.action}
+                  pressScale={0.985}
                   style={{
                     ...styles.menuItem,
                     minHeight: Q_UI.touchSize,
@@ -224,7 +236,7 @@ const Menu = ({
               )
         ))}
       </Animated.ScrollView>
-    </View>
+    </Animated.View>
   )
 }
 
@@ -249,14 +261,45 @@ const Component = <M extends Menus>({ menus, width, height, activeId, onHide, on
   const modalRef = useRef<ModalType>(null)
   const [position, setPosition] = useState<Position>({ w: 0, h: 0, x: 0, y: 0 })
   const [menuSize, setMenuSize] = useState<MenuSize>({})
+  const motion = useInteractionMotion()
+  const entrance = useRef(new Animated.Value(1)).current
+  const fallbackTimer = useRef<number | null>(null)
+  const clearFallback = () => {
+    if (fallbackTimer.current != null) {
+      cancelAnimationFrame(fallbackTimer.current)
+      fallbackTimer.current = null
+    }
+  }
+  useEffect(() => {
+    if (!motion) { entrance.stopAnimation(); entrance.setValue(1) }
+    return () => {
+      clearFallback()
+      entrance.stopAnimation()
+    }
+  }, [entrance, motion])
+  const playEntrance = useCallback(() => {
+    clearFallback()
+    entrance.stopAnimation()
+    if (!motion) { entrance.setValue(1); return }
+    Animated.spring(entrance, { toValue: 1, ...Q_UI.motion.settle, overshootClamping: true, useNativeDriver: true }).start()
+  }, [entrance, motion])
   const hide = () => {
+    clearFallback()
     modalRef.current?.setVisible(false)
   }
   useImperativeHandle(ref, () => ({
     show(newPosition, newMenuSize) {
+      clearFallback()
+      entrance.stopAnimation()
+      entrance.setValue(motion ? 0 : 1)
       setPosition(newPosition)
       if (newMenuSize) setMenuSize(newMenuSize)
       modalRef.current?.setVisible(true)
+      // Rapid close -> reopen within one React commit may keep NativeModal mounted without re-firing onShow.
+      fallbackTimer.current = requestAnimationFrame(() => {
+        fallbackTimer.current = null
+        playEntrance()
+      })
     },
     hide() {
       hide()
@@ -265,9 +308,10 @@ const Component = <M extends Menus>({ menus, width, height, activeId, onHide, on
 
   // Menu coordinates come from measure(pageX/pageY). The modal already
   // renders edge-to-edge, so do not add a second status-bar inset.
+  // animationType="fade" avoids Modal's vertical 18dp slide competing with anchored placement.
   return (
-    <Modal statusBarPadding={false} onHide={onHide} ref={modalRef}>
-      <Menu showCheckmark={showCheckmark} menus={menus} width={width} height={height} activeId={activeId} buttonPosition={position} menuSize={menuSize} onPress={onPress} onHide={hide} fontSize={fontSize} center={center} />
+    <Modal statusBarPadding={false} animationType="fade" onHide={onHide} onShow={playEntrance} ref={modalRef}>
+      <Menu showCheckmark={showCheckmark} menus={menus} width={width} height={height} activeId={activeId} buttonPosition={position} menuSize={menuSize} onPress={onPress} onHide={hide} fontSize={fontSize} center={center} entrance={entrance} />
     </Modal>
   )
 }

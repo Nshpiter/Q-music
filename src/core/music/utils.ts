@@ -232,21 +232,27 @@ export const getPlayQualityCandidates = (highQuality: LX.Quality, musicInfo: LX.
   const fallbacks = index < 0 ? ['128k'] as LX.Quality[] : QUALITY_FALLBACKS.slice(index)
   const supportedQualitys = global.lx.qualityList[musicInfo.source]
   const metadataQualitys = musicInfo.meta?._qualitys ?? {}
+  const hasKnownMetadata = Object.keys(metadataQualitys).length > 0
+  const supportsMetadata = (quality: LX.Quality) => {
+    if (!hasKnownMetadata || quality == '128k') return true
+    if (quality == 'flac') return !!(metadataQualitys.flac ?? metadataQualitys.ape ?? metadataQualitys.wav)
+    return !!metadataQualitys[quality]
+  }
+  const trackFallbacks = fallbacks.filter(supportsMetadata)
+  const effectiveFallbacks = trackFallbacks.length ? trackFallbacks : ['128k'] as LX.Quality[]
   const isUserApi = isCustomApiSource()
 
-  if (isUserApi && settingState.setting['common.apiPreferQuality'] && settingState.setting['common.apiBackupSources']?.length) return fallbacks
+  if (isUserApi && (settingState.setting['common.apiPreferQuality'] || settingState.setting['common.apiBackupSources']?.length)) {
+    return effectiveFallbacks
+  }
   if (!supportedQualitys?.length) {
-    if (isUserApi) return fallbacks
-    const candidates = fallbacks.filter(quality => quality == '128k' || !!metadataQualitys[quality])
-    return candidates.length ? candidates : ['128k']
+    return effectiveFallbacks
   }
 
-  const candidates = fallbacks.filter(quality => {
-    return supportedQualitys.includes(quality) && (isUserApi || quality == '128k' || !!metadataQualitys[quality])
-  })
+  const candidates = effectiveFallbacks.filter(quality => supportedQualitys.includes(quality))
   if (candidates.length) return candidates
 
-  const lowestSupportedQuality = [...fallbacks].reverse().find(quality => supportedQualitys.includes(quality))
+  const lowestSupportedQuality = [...effectiveFallbacks].reverse().find(quality => supportedQualitys.includes(quality))
   return [lowestSupportedQuality ?? '128k']
 }
 
@@ -385,14 +391,14 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
   if (signal?.aborted) throw new Error(requestMsg.cancelRequest)
   const targetQuality = quality ?? settingState.setting['player.playQuality']
   allowToggleSource = allowToggleSource && settingState.setting['player.autoSourceFallback']
-  if (!exact && allowToggleSource && settingState.setting['player.fallbackOrder'] == 'quality') {
+  if (!exact && settingState.setting['player.fallbackOrder'] == 'quality') {
     return resolveQualityFirst({
       quality: targetQuality,
       downgrade: allowQualityFallback,
       signal,
       cancelledMessage: requestMsg.cancelRequest,
       original: async target => handleGetOnlineMusicUrl({ musicInfo, quality: target, isRefresh, onToggleSource, allowToggleSource: false, signal, allowQualityFallback: false, exact: true }),
-      alternatives: async() => { onToggleSource(); return getOtherSource(musicInfo) },
+      alternatives: allowToggleSource ? async() => { onToggleSource(); return getOtherSource(musicInfo) } : async() => [],
       fallback: async(items, target) => getOnlineOtherSourceMusicUrl({ musicInfos: items, quality: target, isRefresh, onToggleSource, retryedSource: [musicInfo.source], signal, allowQualityFallback: false }),
     })
   }

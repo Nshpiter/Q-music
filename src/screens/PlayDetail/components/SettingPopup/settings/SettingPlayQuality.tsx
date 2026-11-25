@@ -24,7 +24,6 @@ const QUALITY_INFO: Partial<Record<LX.Quality, { name: 'standard' | 'high' | 'lo
 export default memo(() => {
   const quality = useSettingValue('player.playQuality')
   const apiSource = useSettingValue('common.apiSource')
-  const backupSources = useSettingValue('common.apiBackupSources')
   const qualitys = useMemo(() => [...TRY_QUALITYS_LIST, '128k'].reverse() as LX.Quality[], [])
   const playMusicInfo = usePlayMusicInfo()
   const playerMusicInfo = usePlayerMusicInfo()
@@ -39,7 +38,8 @@ export default memo(() => {
     : null
   const customApi = isCustomApiSource(apiSource)
   const actualApi = playerMusicInfo.apiSourceId?.length ? playerMusicInfo.apiSourceId : undefined
-  const customApiName = customApi ? userApiList.find(item => item.id == (actualApi ?? apiSource))?.name : null
+  const usedCustomApi = !!actualApi || (!currentMusic && customApi)
+  const customApiName = usedCustomApi ? userApiList.find(item => item.id == (actualApi ?? apiSource))?.name : null
   const apiStatusLabel = !!actualApi || apiStatus.status
     ? t('setting_basic_source_status_success')
     : apiStatus.message == 'initing'
@@ -61,10 +61,10 @@ export default memo(() => {
           : <Icon name="music_time" color={theme['q-accent-text']} rawSize={24} />}
         <View style={styles.routeCopy}>
           <Text size={13} style={styles.routeTitle} color={theme['q-text-primary']}>
-            {customApi ? t('play_detail_quality_custom_first') : t('play_detail_quality_official_first')}
+            {usedCustomApi ? t('play_detail_quality_custom_first') : t('play_detail_quality_official_first')}
           </Text>
           <Text size={11} color={theme['q-text-secondary']} numberOfLines={2}>
-            {customApi
+            {usedCustomApi
               ? t('play_detail_quality_custom_desc', { name: customApiName ?? t('play_detail_quality_custom_source'), status: apiStatusLabel })
               : t('play_detail_quality_official_desc')}
           </Text>
@@ -74,7 +74,7 @@ export default memo(() => {
         {qualitys.map(id => {
           const info = QUALITY_INFO[id]!
           const active = activeQuality == id
-          const available = !onlineMusic || (customApi && backupSources.length > 0) || getPlayQualityCandidates(id, onlineMusic)[0] == id
+          const available = !onlineMusic || getPlayQualityCandidates(id, onlineMusic)[0] == id
           return (
             <Button
               key={id}

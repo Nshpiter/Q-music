@@ -29,6 +29,7 @@ export const resolveCustomMusicUrl = async(musicInfo: LX.Music.MusicInfo, qualit
       providers,
       source: musicInfo.source,
       quality,
+      metadataQualitys: 'progress' in musicInfo || musicInfo.source === 'local' ? undefined : musicInfo.meta?._qualitys,
       allowQualityFallback,
       preferQuality: settingState.setting['common.apiPreferQuality'],
       signal: controller.signal,

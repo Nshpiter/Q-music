@@ -1,5 +1,5 @@
-import { memo } from 'react'
-import { Image, ScrollView, StyleSheet, View } from 'react-native'
+import { memo, useEffect, useRef } from 'react'
+import { Animated, Image, ScrollView, StyleSheet, View } from 'react-native'
 import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
@@ -12,6 +12,8 @@ import { useI18n } from '@/lang'
 import Button from '@/components/common/Button'
 import Text from '@/components/common/Text'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
+import { Q_UI } from '@/theme/ui'
+import { useInteractionMotion } from '@/utils/useMotion'
 
 const NAV_WIDTH = 64
 
@@ -38,6 +40,14 @@ const MenuItem = ({ id, icon, onPress }: {
   const t = useI18n()
   const active = activeId == id
   const { isCar } = useAdaptiveLayout()
+  const motion = useInteractionMotion()
+  const selectScale = useRef(new Animated.Value(active ? 1.04 : 1)).current
+  useEffect(() => {
+    selectScale.stopAnimation()
+    if (motion) Animated.spring(selectScale, { toValue: active ? 1.04 : 1, ...Q_UI.motion.settle, overshootClamping: true, useNativeDriver: true }).start()
+    else selectScale.setValue(active ? 1.04 : 1)
+    return () => { selectScale.stopAnimation() }
+  }, [active, motion, selectScale])
   const iconContent = (
     <View style={styles.iconContent}>
       <Icon
@@ -57,16 +67,16 @@ const MenuItem = ({ id, icon, onPress }: {
       style={[styles.menuItem, { height: isCar ? 76 : 72 }]}
       onPress={() => { onPress(id) }}
     >
-      <View
+      <Animated.View
         style={[
           styles.activeItem,
-          { width: isCar ? 84 : 72, height: isCar ? 66 : 62 },
-          active && { backgroundColor: theme['q-surface-tint'] },
+          { width: isCar ? 84 : 72, height: isCar ? 66 : 62, transform: [{ scale: selectScale }] },
+          active && { backgroundColor: theme['q-surface-tint'], borderColor: theme['q-outline'] },
         ]}
       >
         {iconContent}
         <Text style={{ fontWeight: active ? '600' : '400' }} size={isCar ? 14 : 12} numberOfLines={1} color={active ? theme['q-accent-text'] : theme['q-text-secondary']}>{t(id)}</Text>
-      </View>
+      </Animated.View>
     </Button>
   )
 }

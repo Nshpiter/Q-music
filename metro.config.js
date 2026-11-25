@@ -1,4 +1,8 @@
+const fs = require('node:fs')
+const path = require('node:path')
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config')
+
+const realModules = fs.realpathSync(path.join(__dirname, 'node_modules'))
 
 /**
  * Metro configuration
@@ -7,7 +11,9 @@ const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config')
  * @type {import('metro-config').MetroConfig}
  */
 const config = {
+  watchFolders: realModules.startsWith(__dirname) ? [] : [realModules],
   resolver: {
+    unstable_enableSymlinks: true,
     extraNodeModules: {
       // crypto: require.resolve('react-native-quick-crypto'),
       // stream: require.resolve('stream-browserify'),

@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import { View, ScrollView, FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
+import { StyleSheet, View, ScrollView, FlatList, type NativeScrollEvent, type NativeSyntheticEvent, type FlatListProps } from 'react-native'
 
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
@@ -191,8 +191,8 @@ export default ({ onShowMenu, sorting = false, catalog = false, header, onSelect
       onScroll={handleScroll}
       style={styles.container}
       data={data}
-      ListHeaderComponent={<>{header}{catalog && !sorting ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingBottom: 12 }}>
-        {categories.map(id => <Button key={id} pressScale={0.96} accessibilityRole="tab" accessibilityState={{ selected: category == id }} onPress={() => { setCategory(id) }} style={{ minHeight: 44, paddingHorizontal: 12, borderRadius: 22, overflow: 'hidden', justifyContent: 'center', backgroundColor: category == id ? theme['q-surface-tint'] : 'transparent' }}>
+      ListHeaderComponent={<>{header}{catalog && !sorting ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingBottom: 12 }}>
+        {categories.map(id => <Button key={id} pressScale={0.96} accessibilityRole="tab" accessibilityState={{ selected: category == id }} onPress={() => { setCategory(id) }} style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: category == id ? theme['q-accent'] : theme['q-outline'], overflow: 'hidden', justifyContent: 'center', backgroundColor: theme[category == id ? 'q-surface-tint' : 'q-surface-raised'] }}>
           <Text size={12} color={theme[category == id ? 'q-accent-text' : 'q-text-secondary']} style={{ fontWeight: category == id ? '600' : '400' }}>{id == 'all' ? t('library_all') : id == 'local' ? t('playlist_local') : SOURCE_LOGOS[id].label}</Text>
         </Button>)}
       </ScrollView> : null}</>}
