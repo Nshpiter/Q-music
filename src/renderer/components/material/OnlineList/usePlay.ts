@@ -19,7 +19,7 @@ export default ({ selectedList, props, removeAllSelect, emit }: {
   let clickIndex = -1
 
   const handlePlayMusic = async(index: number, single: boolean) => {
-    let targetSong = props.list[index]
+    const targetSong = props.list[index]
     if (!targetSong) return
     if (single || !selectedList.value.length) {
       emit('play-list', index)
@@ -32,9 +32,18 @@ export default ({ selectedList, props, removeAllSelect, emit }: {
       await addListMusics(defaultList.id, [targetSong])
     }
     const defaultListMusics = await getListMusics(defaultList.id)
-    let targetIndex = defaultListMusics.findIndex(s => s.id === targetSong.id && s.source === targetSong.source)
+    const targetIndex = defaultListMusics.findIndex(s => s.id === targetSong.id && s.source === targetSong.source)
     if (targetIndex > -1) {
       playList(defaultList.id, targetIndex)
+    }
+  }
+
+  const handlePlayMusicNext = (index: number, single: boolean) => {
+    if (selectedList.value.length && !single) {
+      addTempPlayList(selectedList.value.map(s => ({ listId: LIST_IDS.PLAY_LATER, musicInfo: s, isTop: true })))
+      removeAllSelect()
+    } else if (props.list[index]) {
+      addTempPlayList([{ listId: LIST_IDS.PLAY_LATER, musicInfo: props.list[index], isTop: true }])
     }
   }
 
@@ -42,7 +51,7 @@ export default ({ selectedList, props, removeAllSelect, emit }: {
     if (selectedList.value.length && !single) {
       addTempPlayList(selectedList.value.map(s => ({ listId: LIST_IDS.PLAY_LATER, musicInfo: s })))
       removeAllSelect()
-    } else {
+    } else if (props.list[index]) {
       addTempPlayList([{ listId: LIST_IDS.PLAY_LATER, musicInfo: props.list[index] }])
     }
   }
@@ -63,6 +72,7 @@ export default ({ selectedList, props, removeAllSelect, emit }: {
 
   return {
     handlePlayMusic,
+    handlePlayMusicNext,
     handlePlayMusicLater,
     doubleClickPlay,
   }

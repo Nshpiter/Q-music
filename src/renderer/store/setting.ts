@@ -2,6 +2,14 @@ import { reactive, computed } from '@common/utils/vueTools'
 import defaultSetting from '@common/defaultSetting'
 import { updateSetting as saveSetting } from '@renderer/utils/ipc'
 
+export const playModeLabels = {
+  listLoop: 'player__play_toggle_mode_list_loop',
+  random: 'player__play_toggle_mode_random',
+  list: 'player__play_toggle_mode_list',
+  singleLoop: 'player__play_toggle_mode_single_loop',
+  none: 'player__play_toggle_mode_off',
+} as const satisfies Record<LX.AppSetting['player.togglePlayMethod'], string>
+
 export const appSetting = window.lxData.appSetting = reactive<LX.AppSetting>({ ...defaultSetting })
 
 export const isShowAnimation = computed(() => {
@@ -15,6 +23,10 @@ export const initSetting = (newSetting: LX.AppSetting) => {
 
 export const mergeSetting = (newSetting: Partial<LX.AppSetting>) => {
   for (const [key, value] of Object.entries(newSetting)) {
+    if (key == 'player.togglePlayMethod' && (typeof value != 'string' || !Object.hasOwn(playModeLabels, value))) {
+      appSetting[key] = defaultSetting[key]
+      continue
+    }
     // @ts-expect-error
     appSetting[key] = value
   }
@@ -87,6 +99,7 @@ export const setLockDesktopLyric = (isLock: boolean) => {
  * @param mode
  */
 export const setTogglePlayMode = (mode: LX.AppSetting['player.togglePlayMethod']) => {
+  if (!Object.hasOwn(playModeLabels, mode)) return
   updateSetting({ 'player.togglePlayMethod': mode })
 }
 

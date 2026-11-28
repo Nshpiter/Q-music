@@ -9,12 +9,13 @@ import { throttle } from '@common/utils'
 import { pause, play, playNext, playPrev } from '@renderer/core/player'
 import { playProgress } from '@renderer/store/player/playProgress'
 import { appSetting, setTogglePlayMode } from '@renderer/store/setting'
-import { lyric } from '@renderer/store/player/lyric'
+import { getLineAtTime, lyric, type Line } from '@renderer/store/player/lyric'
 
 export default () => {
   // const setVisibleDesktopLyric = useCommit('setVisibleDesktopLyric')
   // const setLockDesktopLyric = useCommit('setLockDesktopLyric')
   let collect = false
+  let collectRequest = 0
   const getTrackIdentity = () => {
     const item = playMusicInfo.musicInfo
     const track = item && ('progress' in item ? item.metadata.musicInfo : item)
@@ -22,7 +23,10 @@ export default () => {
   }
 
   const updateCollectStatus = async() => {
-    let status = !!playMusicInfo.musicInfo && await checkListExistMusic(loveList.id, playMusicInfo.musicInfo.id)
+    const request = ++collectRequest
+    const item = playMusicInfo.musicInfo
+    const status = !!item && await checkListExistMusic(loveList.id, item.id)
+    if (request !== collectRequest || item !== playMusicInfo.musicInfo) return false
     if (collect == status) return false
     collect = status
     return true
@@ -42,7 +46,7 @@ export default () => {
     sendPlayerStatus({ status: 'error' })
   }
   const handleSetPlayInfo = async() => {
-    await updateCollectStatus()
+    collect = false
     sendPlayerStatus({
       collect,
       ...getTrackIdentity(),
@@ -58,16 +62,21 @@ export default () => {
       lyricLineWords: [],
       lyricLineAllText: '',
     })
+    if (await updateCollectStatus()) sendPlayerStatus({ collect })
   }
+  const lineStatus = (text: string, line?: Line) => ({
+    lyricLineText: text,
+    lyricLineWords: (line?.words ?? []).map(word => ({ ...word, start: word.start - lyric.offset - lyric.tempOffset })),
+    lyricLineAllText: [text, ...(line?.extendedLyrics ?? [])].join('\n'),
+  })
   const handleSetLyric = () => {
+    const line = musicInfo.lrc ? getLineAtTime(playProgress.nowPlayTime) : undefined
     sendPlayerStatus({
       lyric: musicInfo.lrc ?? '',
       tlyric: musicInfo.tlrc ?? '',
       rlyric: musicInfo.rlrc ?? '',
       lxlyric: musicInfo.lxlrc ?? '',
-      lyricLineText: '',
-      lyricLineWords: [],
-      lyricLineAllText: '',
+      ...lineStatus(line?.text ?? '', line),
     })
   }
   const handleSetPic = () => {
@@ -76,12 +85,7 @@ export default () => {
     })
   }
   const handleSetLyricLine = (text: string, line: number) => {
-    let curLine = lyric.lines[line]?.extendedLyrics.join('\n') ?? ''
-    sendPlayerStatus({
-      lyricLineText: text,
-      lyricLineWords: (lyric.lines[line]?.words ?? []).map(word => ({ ...word, start: word.start - lyric.offset - lyric.tempOffset })),
-      lyricLineAllText: curLine ? text + '\n' + curLine : text,
-    })
+    sendPlayerStatus(lineStatus(text, lyric.lines[line]))
   }
   // const handleSetTaskbarThumbnailClip = (clip) => {
   //   setTaskbarThumbnailClip(clip)

@@ -1,5 +1,13 @@
-import { closeApis, loadApi, setAllowShowUpdateAlert as setRendererEventAllowShowUpdateAlert, init } from './runtime'
-import { getUserApis, importApi as handleImportApi, removeApi as handleRemoveApi, setAllowShowUpdateAlert as saveAllowShowUpdateAlert } from './utils'
+import { closeApis, loadApi, reloadLoadedApi, setAllowShowUpdateAlert as setRendererEventAllowShowUpdateAlert, init } from './runtime'
+import {
+  getUserApis,
+  importApi as handleImportApi,
+  removeApi as handleRemoveApi,
+  replaceApiScript as handleReplaceApiScript,
+  setAllowShowUpdateAlert as saveAllowShowUpdateAlert,
+  setAutoUpdate as saveAutoUpdate,
+  setSourceUrl as saveSourceUrl,
+} from './utils'
 
 
 let userApiId: string | null
@@ -7,12 +15,27 @@ let selectionRevision = 0
 
 export const getApiList = getUserApis
 
-export const importApi = async(script: string): Promise<LX.UserApi.ImportUserApi> => {
+export const importApi = async(script: string, sourceUrl?: string): Promise<LX.UserApi.ImportUserApi> => {
   return {
-    apiInfo: await handleImportApi(script),
+    apiInfo: await handleImportApi(script, sourceUrl),
     apiList: getUserApis(),
   }
 }
+
+export const replaceApiScript = async(id: string, script: string): Promise<LX.UserApi.UserApiReplaceScriptResult> => {
+  const result = await handleReplaceApiScript(id, script)
+  if (result.changed) await reloadLoadedApi(id)
+  return result
+}
+
+export const setSourceUrl = (id: string, sourceUrl: string): LX.UserApi.UserApiInfo[] => {
+  return saveSourceUrl(id, sourceUrl)
+}
+
+export const setAutoUpdate = (id: string, enable: boolean): LX.UserApi.UserApiInfo[] => {
+  return saveAutoUpdate(id, enable)
+}
+
 export const removeApi = async(ids: string[]): Promise<LX.UserApi.UserApiInfo[]> => {
   if (userApiId && ids.includes(userApiId)) {
     userApiId = null

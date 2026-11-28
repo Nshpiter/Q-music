@@ -1,7 +1,13 @@
 <template>
-  <div v-if="loading || failed" :class="$style.notice" role="status">
-    <span>{{ $t(loading ? 'list__loading' : 'list__load_failed') }}</span>
-    <base-btn v-if="failed" @click="loadBoards">{{ $t('play_queue__retry') }}</base-btn>
+  <ul v-if="loading" :class="[$style.listsContent, $style.skeletonList]" :aria-label="$t('list__loading')" aria-busy="true">
+    <li v-for="index in 10" :key="index" :class="$style.skeletonItem">
+      <i :class="$style.skeletonNum" />
+      <i :class="$style.skeletonLabel" :style="{ width: `${66 - (index % 3) * 14}%` }" />
+    </li>
+  </ul>
+  <div v-else-if="failed" :class="$style.notice" role="status">
+    <span>{{ $t('list__load_failed') }}</span>
+    <base-btn min @click="loadBoards">{{ $t('play_queue__retry') }}</base-btn>
   </div>
   <ul v-else ref="dom_lists_list" class="scroll" :class="$style.listsContent">
     <li
@@ -131,17 +137,22 @@ defineExpose({ hideMenu: handleMenuClick })
   position: relative;
   margin-bottom: 3px;
   border-radius: 12px;
-  transition: .3s ease;
-  transition-property: color, background-color;
+  transition: .22s cubic-bezier(.22, 1, .36, 1);
+  transition-property: color, background-color, box-shadow, transform;
   background-color: transparent;
   &:hover:not(.active) {
     background-color: var(--color-primary-background-hover);
     cursor: pointer;
   }
+  &:active:not(.active) {
+    transform: scale(.98);
+  }
   &.active {
     color: var(--color-primary-dark-300);
+    font-weight: 600;
     background-color: rgb(from var(--color-main-background) r g b / .76);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .78), 0 8px 20px rgba(72, 91, 112, .08);
+    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-700), 0 8px 20px rgba(72, 91, 112, .08);
+    &:before { content: ''; position: absolute; left: 0; top: 11px; bottom: 11px; width: 3px; border-radius: 3px; background: var(--color-primary); }
   }
   &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
   &.selected {
@@ -179,6 +190,32 @@ defineExpose({ hideMenu: handleMenuClick })
 }
 .number { flex: none; width: 20px; font-size: 10px; opacity: .5; font-variant-numeric: tabular-nums; }
 .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.skeletonList { overflow: hidden; pointer-events: none; }
+.skeletonItem {
+  height: 40px;
+  margin-bottom: 3px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  i {
+    display: block;
+    height: 10px;
+    border-radius: 6px;
+    background: linear-gradient(100deg, rgb(from var(--color-font) r g b / .06) 20%, rgb(from var(--color-font) r g b / .13) 45%, rgb(from var(--color-font) r g b / .06) 70%);
+    background-size: 220% 100%;
+    animation: q-board-skeleton 1.4s ease-in-out infinite;
+  }
+}
+.skeletonNum { flex: none; width: 16px; }
+.skeletonLabel { flex: none; }
+@keyframes q-board-skeleton {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .listsItem, .skeletonItem i { transition: none; animation: none; }
+}
 
 
 </style>

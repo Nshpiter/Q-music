@@ -1,5 +1,6 @@
 import { userApis as defaultUserApis } from './config'
 import { STORE_NAMES } from '@common/constants'
+import { normalizeUserApiUrl } from '@common/utils/userApiImport'
 import getStore from '@main/utils/store'
 import zlib from 'node:zlib'
 
@@ -107,7 +108,7 @@ const inflateScript = async(script: string) => new Promise<string>((resolve, rej
     })
   } else resolve(script)
 })
-export const importApi = async(scriptRaw: string): Promise<LX.UserApi.UserApiInfo> => {
+export const importApi = async(scriptRaw: string, sourceUrl?: string): Promise<LX.UserApi.UserApiInfo> => {
   let scriptInfo = parseScriptInfo(scriptRaw)
   const script = await deflateScript(scriptRaw)
   userApis ??= []
@@ -117,15 +118,69 @@ export const importApi = async(scriptRaw: string): Promise<LX.UserApi.UserApiInf
       throw new Error(`导入失败，脚本内容与已有的源「${api.name}」相同`)
     }
   }
-  const apiInfo = {
+  const normalizedUrl = sourceUrl?.trim() ? normalizeUserApiUrl(sourceUrl) : undefined
+  const apiInfo: LX.UserApi.UserApiInfo = {
     id: `user_api_${Math.random().toString().substring(2, 5)}_${Date.now()}`,
     ...scriptInfo,
     allowShowUpdateAlert: true,
+    ...(normalizedUrl ? { sourceUrl: normalizedUrl } : {}),
   }
   userApis.push(apiInfo)
   scripts.set(apiInfo.id, script)
   saveData()
   return apiInfo
+}
+
+export const replaceApiScript = async(id: string, scriptRaw: string): Promise<{ changed: boolean, apiInfo: LX.UserApi.UserApiInfo, apiList: LX.UserApi.UserApiInfo[] }> => {
+  userApis ??= getUserApis()
+  const targetApi = userApis.find(api => api.id == id)
+  if (!targetApi) throw new Error('API not found')
+  const scriptInfo = parseScriptInfo(scriptRaw)
+  const script = await deflateScript(scriptRaw)
+  if (scripts.get(id) === script) {
+    return {
+      changed: false,
+      apiInfo: targetApi,
+      apiList: [...userApis],
+    }
+  }
+  for (const api of userApis) {
+    if (api.id === id) continue
+    if (scripts.get(api.id) === script) {
+      throw new Error(`更新失败，脚本内容与已有的源「${api.name}」相同`)
+    }
+  }
+  Object.assign(targetApi, {
+    ...scriptInfo,
+    name: scriptInfo.name || targetApi.name,
+  })
+  scripts.set(id, script)
+  saveData()
+  return {
+    changed: true,
+    apiInfo: targetApi,
+    apiList: [...userApis],
+  }
+}
+
+export const setSourceUrl = (id: string, sourceUrl: string): LX.UserApi.UserApiInfo[] => {
+  userApis ??= getUserApis()
+  const targetApi = userApis.find(api => api.id == id)
+  if (!targetApi) return [...userApis]
+  const trimmed = sourceUrl.trim()
+  if (!trimmed) delete targetApi.sourceUrl
+  else targetApi.sourceUrl = normalizeUserApiUrl(trimmed)
+  saveData()
+  return [...userApis]
+}
+
+export const setAutoUpdate = (id: string, enable: boolean): LX.UserApi.UserApiInfo[] => {
+  userApis ??= getUserApis()
+  const targetApi = userApis.find(api => api.id == id)
+  if (!targetApi) return [...userApis]
+  targetApi.autoUpdate = enable
+  saveData()
+  return [...userApis]
 }
 
 export const removeApi = (ids: string[]) => {

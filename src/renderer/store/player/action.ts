@@ -235,25 +235,20 @@ export const clearPlayedList = () => {
 }
 
 let tempPlayItemId = 0
-const createTempPlayItem = (musicInfo: LX.Player.TempPlayListItem['musicInfo'], listId: string | null): LX.Player.PlayMusicInfo => {
-  return { musicInfo, listId, isTempPlay: true, tempId: ++tempPlayItemId }
-}
 
 /**
  * 添加歌曲到稍后播放列表
  * @param list 歌曲列表
  */
 export const addTempPlayList = (list: LX.Player.TempPlayListItem[]) => {
-  const topList: Array<Omit<LX.Player.TempPlayListItem, 'top'>> = []
-  const bottomList = list.filter(({ isTop, ...musicInfo }) => {
-    if (isTop) {
-      topList.push(musicInfo)
-      return false
-    }
-    return true
-  })
-  if (topList.length) arrUnshift(tempPlayList, topList.map(({ musicInfo, listId }) => createTempPlayItem(musicInfo, listId)))
-  if (bottomList.length) arrPush(tempPlayList, bottomList.map(({ musicInfo, listId }) => createTempPlayItem(musicInfo, listId)))
+  const topList: LX.Player.PlayMusicInfo[] = []
+  const bottomList: LX.Player.PlayMusicInfo[] = []
+  for (const item of list) {
+    const target = item.isTop ? topList : bottomList
+    target.push({ ...item, isTempPlay: true, tempId: ++tempPlayItemId })
+  }
+  if (topList.length) arrUnshift(tempPlayList, topList)
+  if (bottomList.length) arrPush(tempPlayList, bottomList)
 
   if (!playMusicInfo.musicInfo) void playNext()
 }

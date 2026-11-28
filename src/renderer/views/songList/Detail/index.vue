@@ -4,20 +4,21 @@
       <button type="button" :class="$style.backButton" :aria-label="$t('back')" :title="$t('back')" @click="handleBack">
         <svg-icon name="angle-right-solid" />
       </button>
-      <div :class="$style.songListHeaderLeft" :style="{ backgroundImage: (picUrl || listDetailInfo.info.img) ? `url(${picUrl || listDetailInfo.info.img})` : 'none' }">
-        <!-- <span v-if="listDetailInfo.info.play_count" :class="$style.playNum">{{ listDetailInfo.info.play_count }}</span> -->
+      <div :class="$style.songListHeaderLeft">
+        <img v-if="picUrl || listDetailInfo.info.img" :key="picUrl || listDetailInfo.info.img" :class="$style.coverImg" :src="picUrl || listDetailInfo.info.img" alt="" decoding="async">
+        <empty-cover-mark v-else :class="$style.coverPlaceholder" />
+        <span v-if="listDetailInfo.info.play_count" :class="$style.playNum">{{ listDetailInfo.info.play_count }}</span>
       </div>
       <div :class="$style.songListHeaderMiddle">
         <h3 :title="listDetailInfo.info.name">{{ listDetailInfo.info.name }}</h3>
-        <p :title="listDetailInfo.info.desc">{{ listDetailInfo.info.desc }}</p>
+        <p v-if="listDetailInfo.info.desc" :title="listDetailInfo.info.desc">{{ listDetailInfo.info.desc }}</p>
         <div :class="$style.songListHeaderRight">
-          <base-btn :class="$style.headerRightBtn" :disabled="listDetailInfo.noItemLabel == $t('list__loading')" @click="getListData(source, id, listDetailInfo.page, true)">{{ $t('playlist_import_modal__refresh') }}</base-btn>
           <base-btn
-            :class="$style.headerRightBtn"
+            :class="[$style.headerRightBtn, $style.primaryPlayBtn]"
             :disabled="!listDetailInfo.list.length || !!listDetailInfo.noItemLabel"
             @click="playSongListDetail(listDetailInfo.id, listDetailInfo.source, listDetailInfo.list)"
           >
-            {{ $t('list__play') }}
+            <svg-icon name="play-outline" />{{ $t('list__play') }}
           </base-btn>
           <base-btn
             :class="$style.headerRightBtn"
@@ -26,6 +27,7 @@
           >
             {{ $t('list__collect') }}
           </base-btn>
+          <base-btn :class="$style.headerRightBtn" outline :disabled="listDetailInfo.noItemLabel == $t('list__loading')" @click="getListData(source, id, listDetailInfo.page, true)">{{ $t('playlist_import_modal__refresh') }}</base-btn>
         </div>
       </div>
     </div>
@@ -49,8 +51,9 @@
 import { ref, watch } from '@common/utils/vueTools'
 import { listDetailInfo } from '@renderer/store/songList/state'
 import { setVisibleListDetail } from '@renderer/store/songList/action'
-import { useRouter } from '@common/utils/vueRouter'
+import { useRoute, useRouter } from '@common/utils/vueRouter'
 import { addSongListDetail, playSongListDetail } from './action'
+import EmptyCoverMark from '@renderer/components/common/EmptyCoverMark.vue'
 import useList from './useList'
 import useKeyBack from './useKeyBack'
 
@@ -120,10 +123,14 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
 
 
 export default {
+  components: {
+    EmptyCoverMark,
+  },
   beforeRouteEnter: verifyQueryParams,
   beforeRouteUpdate: verifyQueryParams,
   setup() {
     const router = useRouter()
+    const route = useRoute()
 
     const {
       listRef,
@@ -133,8 +140,8 @@ export default {
     } = useList()
 
 
-    const togglePage = (page: number) => {
-      void getListData(source.value, id.value, page, refresh.value)
+    const togglePage = (nextPage: number) => {
+      void router.replace({ path: route.path, query: { ...route.query, page: String(nextPage) } })
     }
 
     const handleBack = () => {
@@ -179,66 +186,98 @@ export default {
 @import '@renderer/assets/styles/layout.less';
 
 .container {
-  // position: absolute;
-  // left: 0;
-  // top: 0;
-  // width: 100%;
-  // height: 100%;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
   display: flex;
   flex-flow: column nowrap;
+  gap: 12px;
+  --online-list-end-inset: 18px;
+  padding: 14px 0 calc(@height-player + 16px) var(--online-list-end-inset);
   container-type: inline-size;
 }
 
 .songListHeader {
+  margin-right: var(--online-list-end-inset);
   flex: none;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  gap: 12px;
-  min-height: 108px;
-  padding: 14px 18px;
+  gap: 14px;
+  min-height: 112px;
+  padding: 16px 18px;
   box-sizing: border-box;
+  border-radius: 20px;
+  background: rgb(from var(--color-main-background) r g b / .58);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .68), 0 14px 32px rgba(72, 91, 112, .07);
+  backdrop-filter: blur(calc(var(--q-glass-blur, 20px) * .8)) saturate(1.1);
 }
 .backButton {
   flex: none;
   align-self: flex-start;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 10px;
+  border-radius: 11px;
   color: var(--color-font);
-  background: var(--color-primary-alpha-1000);
+  background: var(--q-surface);
+  box-shadow: inset 0 0 0 1px var(--q-border);
   cursor: pointer;
-  &:hover { background: var(--color-primary-background-hover); }
+  transition: background-color @transition-fast, color @transition-fast, transform @transition-fast, box-shadow @transition-fast;
+  &:hover {
+    color: var(--color-primary-dark-200);
+    background: var(--q-surface-strong);
+    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800);
+    svg { transform: rotate(180deg) translateX(1.5px); }
+  }
+  &:active { transform: scale(.94); }
   &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-  svg { width: 13px; height: 13px; transform: rotate(180deg); }
+  svg { width: 13px; height: 13px; transform: rotate(180deg); transition: transform @transition-fast; }
 }
 .songListHeaderLeft {
   flex: none;
-  width: 76px;
-  height: 76px;
+  width: 82px;
+  height: 82px;
   aspect-ratio: 1 / 1;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
-  border-radius: 14px;
-  background-position: center;
-  background-size: cover;
-  opacity: .9;
-  box-shadow: 0 0 2px 0 rgba(0,0,0,.2);
+  border-radius: 15px;
+  background: var(--color-primary-alpha-900);
+  box-shadow: 0 10px 24px rgba(35, 54, 46, .14), inset 0 0 0 1px var(--q-border);
+}
+.coverImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: q-detail-cover-in .38s cubic-bezier(.22, 1, .36, 1);
+}
+.coverPlaceholder {
+  width: 34px;
+  height: 34px;
+  color: var(--color-font-label);
+}
+@keyframes q-detail-cover-in {
+  from { opacity: 0; transform: scale(.93); }
+  to { opacity: 1; transform: scale(1); }
 }
 .playNum {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 4px;
-  background-color: rgba(0, 0, 0, 0.4);
+  bottom: 5px;
+  right: 5px;
+  max-width: calc(100% - 10px);
+  padding: 2px 6px;
+  border-radius: 999px;
+  background-color: rgba(20, 26, 24, .58);
+  backdrop-filter: blur(6px);
   color: #fff;
-  font-size: 12px;
-  text-align: right;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
   .mixin-ellipsis-1();
 }
 
@@ -247,15 +286,16 @@ export default {
   min-width: 0;
   h3 {
     .mixin-ellipsis-1();
-    line-height: 1.2;
+    line-height: 1.25;
     padding-bottom: 5px;
-    font-size: 16px;
+    font-size: 18px;
+    font-weight: 680;
     color: var(--color-font);
   }
   p {
     .mixin-ellipsis(2);
     font-size: 12px;
-    line-height: 1.2;
+    line-height: 1.45;
     color: var(--color-font-label);
   }
 }
@@ -264,13 +304,24 @@ export default {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 10px;
 
   .headerRightBtn {
+    min-height: 30px;
     border-radius: 10px;
-    padding: 7px 13px;
+    padding: 5px 13px;
     font-size: 12px;
+    svg { width: 13px; height: 13px; }
+  }
+  .primaryPlayBtn:not([disabled]) {
+    color: #fff;
+    background: var(--color-primary);
+    box-shadow: 0 6px 16px var(--color-primary-alpha-700);
+    &:hover {
+      color: #fff;
+      background: var(--color-primary-dark-100);
+    }
   }
 }
 
@@ -280,11 +331,19 @@ export default {
   min-height: 0;
   flex: auto;
   height: 100%;
+  overflow: hidden;
+  border-radius: 20px;
+  background: rgb(from var(--color-main-background) r g b / .54);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .68), 0 16px 38px rgba(72, 91, 112, .08);
+  backdrop-filter: blur(calc(var(--q-glass-blur, 20px) * .8)) saturate(1.1);
 }
 
 @container (max-width: 520px) {
   .songListHeader { gap: 10px; padding: 12px; }
-  .songListHeaderLeft { width: 60px; height: 60px; }
+  .songListHeaderLeft { width: 64px; height: 64px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .backButton, .backButton svg, .coverImg { transition: none; animation: none; }
 }
 </style>
 

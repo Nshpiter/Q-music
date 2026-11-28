@@ -21,6 +21,9 @@
     <button v-if="searchBtn" type="button" :disabled="disabled" :aria-label="$t('list__search')" @contextmenu.capture.stop @click.stop="handleClick('search')">
       <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-search-2" /></svg>
     </button>
+    <button v-if="menuBtn" type="button" :disabled="disabled" :aria-label="$t('more')" @contextmenu.capture.stop @click.stop="handleClick('menu', $event)">
+      <svg viewBox="0 0 24 24" :class="$style.outlineIcon" aria-hidden="true"><circle cx="6" cy="12" r="1.4" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" /><circle cx="18" cy="12" r="1.4" fill="currentColor" stroke="none" /></svg>
+    </button>
     <button v-if="removeBtn" type="button" :disabled="disabled" :aria-label="removeLabel || $t('list__remove')" @click.stop="handleClick('remove')">
       <svg viewBox="0 0 24 24" :class="$style.outlineIcon" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
     </button>
@@ -74,6 +77,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    menuBtn: {
+      type: Boolean,
+      default: true,
+    },
   },
   emits: ['btn-click'],
   setup() {
@@ -82,9 +89,9 @@ export default {
     }
   },
   methods: {
-    handleClick(action) {
+    handleClick(action, event) {
       if (this.disabled) return
-      this.$emit('btn-click', { action, index: this.index })
+      this.$emit('btn-click', { action, index: this.index, event })
     },
   },
 }
@@ -101,6 +108,8 @@ export default {
   line-height: 1.2;
 
   button {
+    position: relative;
+    overflow: hidden;
     background-color: transparent;
     border: none;
     border-radius: 8px;
@@ -114,7 +123,7 @@ export default {
     padding: 6px;
     color: color-mix(in srgb, var(--color-font) 80%, transparent);
     outline: none;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, color 0.16s ease, transform 0.14s ease;
     line-height: 0;
     &:last-child {
       margin-right: 0;
@@ -132,6 +141,7 @@ export default {
     }
     &:active:not(:disabled) {
       background-color: var(--color-button-background-active);
+      transform: scale(.92);
     }
     .outlineIcon { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     &:focus-visible {

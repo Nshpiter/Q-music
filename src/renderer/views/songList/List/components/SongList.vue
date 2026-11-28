@@ -44,7 +44,10 @@
       </div>
       <div v-else-if="props.listInfo.noItemLabel" :class="$style.noitem">
         <p v-text="props.listInfo.noItemLabel" />
-        <base-btn v-if="retryable" @click="$emit('retry')">{{ $t('play_queue__retry') }}</base-btn>
+        <div v-if="props.listInfo.page > 1 || retryable" :class="$style.emptyActions">
+          <base-btn v-if="props.listInfo.page > 1" min @click="togglePage(props.listInfo.page - 1)">{{ $t('pagination__prev') }}</base-btn>
+          <base-btn v-if="retryable" min @click="$emit('retry')">{{ $t('play_queue__retry') }}</base-btn>
+        </div>
       </div>
     </transition>
   </div>
@@ -130,7 +133,7 @@ defineExpose({
   flex-flow: column nowrap;
   font-size: 14px;
   box-sizing: border-box;
-  padding: 12px 12px 0;
+  padding: 12px calc(12px + var(--song-grid-end-inset, 0px)) 0 12px;
 }
 .grid {
   display: grid;
@@ -315,6 +318,11 @@ defineExpose({
     font-size: 16px;
     color: var(--color-font-label);
   }
+}
+.emptyActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 </style>

@@ -1,7 +1,7 @@
 import { onBeforeUnmount, watch } from '@common/utils/vueTools'
 import { onTimeupdate, getCurrentTime, getPlaybackRate, endCrossfade, canCrossfade } from '@renderer/plugins/player'
 import { playProgress } from '@renderer/store/player/playProgress'
-import { isPlay, musicInfo } from '@renderer/store/player/state'
+import { isPlay, musicInfo, tempPlayList } from '@renderer/store/player/state'
 // import { getList } from '@renderer/store/utils'
 import { getNextPlayMusicInfo, playNext, resetRandomNextMusicInfo } from '@renderer/core/player'
 import { getMusicUrl } from '@renderer/core/music'
@@ -105,6 +105,7 @@ export default () => {
     preloadMusicInfo.preProgress = playProgress.nowPlayTime
   })
   watch(() => appSetting['player.crossfadeSeconds'], seconds => { if (!seconds) endCrossfade() })
+  watch(() => tempPlayList[0], resetPreloadInfo)
 
   window.app_event.on('setProgress', setProgress)
   window.app_event.on('musicToggled', handleSetPlayInfo)

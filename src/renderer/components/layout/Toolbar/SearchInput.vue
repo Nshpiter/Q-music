@@ -14,7 +14,12 @@
       <source-icon v-if="selectedSource != 'all'" :source="selectedSource" :size="18" />
       <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z" /></svg>
     </button>
-    <transition enter-active-class="animated-fast fadeIn" leave-active-class="animated-fast fadeOut">
+    <transition
+      :enter-active-class="$style.popoverEnterActive"
+      :leave-active-class="$style.popoverLeaveActive"
+      :enter-from-class="$style.popoverEnterFrom"
+      :leave-to-class="$style.popoverLeaveTo"
+    >
       <div v-show="panelVisible || sourceMenuVisible" :class="[$style.searchPopover, { [$style.expandedPopover]: isFocused }]">
         <div v-show="sourceMenuVisible" :class="[$style.sourceMenu, { [$style.inlineSourceMenu]: isFocused }]" role="listbox" :aria-label="$t('search__source_select')" @mousedown.prevent>
           <div :class="$style.sourceMenuHeading">
@@ -466,6 +471,7 @@ export default {
   box-sizing: border-box;
   overflow: auto;
   overscroll-behavior: contain;
+  transform-origin: top center;
   color: var(--color-font);
   border: 1px solid rgb(from var(--color-font) r g b / .1);
   border-radius: 20px;
@@ -481,6 +487,19 @@ export default {
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { border-radius: 99px; background: rgb(from var(--color-font) r g b / .22); }
   &::-webkit-scrollbar-thumb:hover { background: rgb(from var(--color-font) r g b / .34); }
+}
+
+.popoverEnterActive {
+  transition: opacity .2s ease, transform .26s cubic-bezier(.22, 1, .36, 1);
+}
+.popoverLeaveActive {
+  transition: opacity .14s ease, transform .16s cubic-bezier(.4, 0, 1, 1);
+  pointer-events: none;
+}
+.popoverEnterFrom,
+.popoverLeaveTo {
+  opacity: 0;
+  transform: translateY(-6px) scale(.985);
 }
 
 .expandedPopover { width: 100%; }
@@ -517,9 +536,9 @@ export default {
 .historySection { align-self: start; box-sizing: border-box; }
 .hotSection { min-height: 0; }
 .historyMore { margin-top: 10px; padding: 5px 0; color: var(--color-primary); border: 0; background: transparent; cursor: pointer; font-size: 11px; }
-.chips { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px; button { max-width: 100%; padding: 8px 11px; overflow: hidden; color: var(--color-font); border: 0; border-radius: 10px; background: rgb(from var(--color-font) r g b / .055); cursor: pointer; font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; transition: color .15s ease, background-color .15s ease; } button:hover { color: var(--color-primary); background: var(--color-primary-alpha-800); } }
+.chips { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px; button { max-width: 100%; padding: 8px 11px; overflow: hidden; color: var(--color-font); border: 0; border-radius: 10px; background: rgb(from var(--color-font) r g b / .055); cursor: pointer; font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; transition: color .15s ease, background-color .15s ease, transform .14s ease; } button:hover { color: var(--color-primary); background: var(--color-primary-alpha-800); } button:active { transform: scale(.96); } }
 .emptyHistory { min-height: 88px; display: flex; align-items: center; justify-content: center; color: var(--color-font-label); font-size: 11.5px; line-height: 1.5; text-align: center; }
-.hotList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 14px; li { min-width: 0; } button { width: 100%; height: 44px; padding: 0 7px; display: flex; align-items: center; gap: 8px; color: var(--color-font); border: 0; border-radius: 9px; background: transparent; cursor: pointer; text-align: left; transition: background-color .15s ease; } button:hover { background: rgb(from var(--color-font) r g b / .055); } b { width: 20px; color: var(--color-font-label); font-size: 10.5px; font-weight: 600; text-align: center; } li:nth-child(-n+3) b { color: var(--color-primary); } span { min-width: 0; overflow: hidden; font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; } }
+.hotList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 14px; li { min-width: 0; } button { width: 100%; height: 44px; padding: 0 7px; display: flex; align-items: center; gap: 8px; color: var(--color-font); border: 0; border-radius: 9px; background: transparent; cursor: pointer; text-align: left; transition: background-color .15s ease, transform .16s cubic-bezier(.22, 1, .36, 1); } button:hover { background: rgb(from var(--color-font) r g b / .055); transform: translateX(2px); } button:active { transform: scale(.985); } b { width: 20px; color: var(--color-font-label); font-size: 10.5px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; } li:nth-child(-n+3) b { color: var(--color-primary); font-weight: 700; } span { min-width: 0; overflow: hidden; font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; } }
 .loading { min-height: 88px; display: flex; align-items: center; justify-content: center; padding: 12px 6px; color: var(--color-font-label); font-size: 11.5px; text-align: center; }
 
 @media (max-width: 940px) {

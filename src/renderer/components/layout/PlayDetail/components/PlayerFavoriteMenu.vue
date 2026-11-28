@@ -19,6 +19,7 @@
 </template>
 
 <script setup>
+import useMenuOutsideClick from '@renderer/utils/compositions/useMenuOutsideClick'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from '@common/utils/vueTools'
 import { checkListExistMusic, addListMusics, removeListMusics } from '@renderer/store/list/action'
 import { loveList } from '@renderer/store/list/state'
@@ -55,13 +56,12 @@ const toggleLocal = async() => {
     localMessage.value = localFavorite.value ? 'player_favorite_local_added' : 'player_favorite_local_removed'
   } catch { localMessage.value = 'list_add__action_failed' } finally { localBusy.value = false }
 }
-const handleOutside = event => { if (!menuRef.value?.contains(event.target)) close(false) }
+useMenuOutsideClick(menuRef, () => props.anchor?.trigger, () => { close(false) })
 const handleKeydown = event => {
   if (event.key == 'Escape') { event.preventDefault(); event.stopPropagation(); close() }
 }
 const handleResize = () => { viewport.value = { width: window.innerWidth, height: window.innerHeight } }
 onMounted(async() => {
-  document.addEventListener('click', handleOutside)
   document.addEventListener('keydown', handleKeydown, true)
   window.addEventListener('resize', handleResize)
   try { localFavorite.value = await checkListExistMusic(loveList.id, props.musicInfo.id) } catch { localMessage.value = 'list_add__action_failed' }
@@ -69,7 +69,6 @@ onMounted(async() => {
   menuRef.value?.querySelector('button:not(:disabled)')?.focus()
 })
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleOutside)
   document.removeEventListener('keydown', handleKeydown, true)
   window.removeEventListener('resize', handleResize)
 })

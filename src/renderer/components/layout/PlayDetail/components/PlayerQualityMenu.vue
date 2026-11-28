@@ -47,6 +47,7 @@
 </template>
 
 <script setup>
+import useMenuOutsideClick from '@renderer/utils/compositions/useMenuOutsideClick'
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from '@common/utils/vueTools'
 import { useI18n } from '@renderer/plugins/i18n'
 import { appSetting } from '@renderer/store/setting'
@@ -66,23 +67,16 @@ const viewport = ref({
 const otherSources = shallowRef([])
 const isSourceLoading = ref(false)
 let sourceRequestId = 0
-const menuMetrics = computed(() => {
-  // 窗口缩放后重新计算面板尺寸；CSS 的 max-width/max-height 作为首屏兜底。
-  const width = Math.min(292, Math.max(176, viewport.value.width - 24))
-  const maxHeight = Math.max(0, Math.min(560, viewport.value.height - 24))
-  return { width, maxHeight }
-})
 const menuStyle = computed(() => {
-  const { width, maxHeight } = menuMetrics.value
   const viewportWidth = viewport.value.width
   const viewportHeight = viewport.value.height
+  const width = Math.min(292, Math.max(176, viewportWidth - 24))
   const left = props.anchor
     ? Math.max(12, Math.min(props.anchor.x - width / 2, viewportWidth - width - 12))
     : Math.max(12, (viewportWidth - width) / 2)
   const preferredBottom = props.anchor ? viewportHeight - props.anchor.y + 10 : 84
-  // 为整个面板预留边距，避免平台列表较长时顶部超出窗口。
-  const maxBottom = Math.max(12, viewportHeight - maxHeight - 12)
-  const bottom = Math.max(12, Math.min(preferredBottom, maxBottom))
+  const bottom = Math.max(12, Math.min(preferredBottom, viewportHeight - 24))
+  const maxHeight = Math.min(560, viewportHeight - bottom - 12)
   return { left: `${left}px`, bottom: `${bottom}px`, width: `${width}px`, maxHeight: `${maxHeight}px` }
 })
 const parseDuration = interval => {
@@ -207,23 +201,22 @@ const needsMembershipHint = computed(() => {
   return ['tx', 'wy'].includes(requestedSource.value) && (mode == 'official' || (!mode && !isCustomApiSource()))
 })
 const close = () => { emit('update:modelValue', false) }
-const handleOutside = event => { if (props.modelValue && !menuRef.value?.contains(event.target)) close() }
+useMenuOutsideClick(menuRef, () => props.anchor?.trigger, close)
 const handleKeydown = event => {
   if (!props.modelValue || event.key != 'Escape') return
   event.preventDefault()
   event.stopPropagation()
   close()
+  props.anchor?.trigger?.focus()
 }
 const handleResize = () => {
   viewport.value = { width: window.innerWidth, height: window.innerHeight }
 }
 onMounted(() => {
-  document.addEventListener('click', handleOutside)
   document.addEventListener('keydown', handleKeydown, true)
   window.addEventListener('resize', handleResize)
 })
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleOutside)
   document.removeEventListener('keydown', handleKeydown, true)
   window.removeEventListener('resize', handleResize)
 })

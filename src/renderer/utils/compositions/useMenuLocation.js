@@ -5,25 +5,27 @@ export default ({ visible, location, onHide }) => {
   const transition1 = 'transform, opacity'
   const transition2 = 'transform, opacity, top, left'
   let show = false
+  let lastOffset = '0px, 0px'
   const dom_menu = ref(null)
   const menuStyles = reactive({
     left: 0,
     top: 0,
     opacity: 0,
     transitionProperty: 'transform, opacity',
-    transform: 'scale(.8, .7) translate(0,0)',
+    transform: 'scale(.92) translate(0px, -4px)',
     pointerEvents: 'none',
   })
 
   const handleShow = () => {
     show = true
+    lastOffset = handleGetOffsetXY(location.value.x, location.value.y)
     menuStyles.opacity = 1
-    menuStyles.transform = `scale(1) translate(${handleGetOffsetXY(location.value.x, location.value.y)})`
+    menuStyles.transform = `scale(1) translate(${lastOffset})`
     menuStyles.pointerEvents = 'auto'
   }
   const handleHide = () => {
     menuStyles.opacity = 0
-    menuStyles.transform = 'scale(.8, .7) translate(0, 0)'
+    menuStyles.transform = `scale(.95) translate(${lastOffset})`
     menuStyles.pointerEvents = 'none'
     show = false
   }
@@ -65,7 +67,8 @@ export default ({ visible, location, onHide }) => {
     // nextTick(() => {
     if (show) {
       if (menuStyles.transitionProperty != transition2) menuStyles.transitionProperty = transition2
-      menuStyles.transform = `scale(1) translate(${handleGetOffsetXY(location.x, location.y)})`
+      lastOffset = handleGetOffsetXY(location.x, location.y)
+      menuStyles.transform = `scale(1) translate(${lastOffset})`
     }
     // })
   }, { deep: true })

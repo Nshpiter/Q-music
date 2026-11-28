@@ -12,11 +12,20 @@ export default ({ props, selectedList, list, removeAllSelect }) => {
     return playFromList(props.listId, index)
   }
 
+  const handlePlayMusicNext = (index, single) => {
+    if (selectedList.value.length && !single) {
+      addTempPlayList(selectedList.value.map(s => ({ listId: props.listId, musicInfo: s, isTop: true })))
+      removeAllSelect()
+    } else if (list.value[index]) {
+      addTempPlayList([{ listId: props.listId, musicInfo: list.value[index], isTop: true }])
+    }
+  }
+
   const handlePlayMusicLater = (index, single) => {
     if (selectedList.value.length && !single) {
       addTempPlayList(selectedList.value.map(s => ({ listId: props.listId, musicInfo: s })))
       removeAllSelect()
-    } else {
+    } else if (list.value[index]) {
       addTempPlayList([{ listId: props.listId, musicInfo: list.value[index] }])
     }
   }
@@ -46,6 +55,7 @@ export default ({ props, selectedList, list, removeAllSelect }) => {
     handleSaveAudition,
     handlePlayAll: () => playAllFromList(props.listId),
     handlePlayMusic,
+    handlePlayMusicNext,
     handlePlayMusicLater,
     doubleClickPlay,
   }

@@ -79,7 +79,8 @@ const buildHttpPromose = (url, options) => {
       obj.cancelFn = null
     },
   }
-  obj.promise = new Promise((resolve, reject) => {
+  /** @type {Promise<import('node:http').IncomingMessage & { statusCode: number, body: unknown }>} */
+  const promise = new Promise((resolve, reject) => {
     obj.cancelFn = reject
     debugRequest && console.log(`\n---send request------${url}------------`)
     fetchData(url, options.method, options, (err, resp, body) => {
@@ -93,9 +94,9 @@ const buildHttpPromose = (url, options) => {
     }).then(ro => {
       obj.requestObj = ro
       if (obj.isCancelled) obj.cancelHttp()
-    })
+    }).catch(reject)
   })
-  return obj
+  return Object.assign(obj, { promise })
 }
 
 /**

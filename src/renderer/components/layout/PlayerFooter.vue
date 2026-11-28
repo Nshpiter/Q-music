@@ -28,7 +28,7 @@
       </div>
     </div>
     <div :class="['q-player-center-control', $style.centerControl]">
-      <div :class="$style.playControl">
+      <div ref="transportControls" :class="$style.playControl">
         <button type="button" :class="$style.playBtn" :aria-label="$t('player__prev')" @click="playPrev()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="6.5" y="7" width="2.5" height="10" rx="1.25" />
@@ -55,6 +55,7 @@
         <span :class="$style.timeLabel">{{ nowPlayTimeStr }}</span>
         <div :class="$style.progressContent">
           <common-progress-bar
+            :preview-anchor="transportControls"
             :class-name="$style.progress"
             :progress="progress"
             :handle-transition-end="handleTransitionEnd"
@@ -87,7 +88,7 @@
 
 <script setup>
 import { playNext, playPrev, togglePlay } from '@renderer/core/player'
-import { computed } from '@common/utils/vueTools'
+import { computed, ref } from '@common/utils/vueTools'
 import { status, isPlay, isPlayPending, isShowPlayComment, isShowPlayQueue, musicInfo, tempPlayList } from '@renderer/store/player/state'
 import { setMusicInfo, setShowPlayerDetail, setShowPlayQueue } from '@renderer/store/player/action'
 import usePlayProgress from '@renderer/utils/compositions/usePlayProgress'
@@ -140,6 +141,7 @@ const footerLines = computed(() => {
 })
 const queueBadgeText = computed(() => tempPlayList.length > 99 ? '99+' : String(tempPlayList.length))
 const isImmersiveDetail = computed(() => props.detail && appSetting['playDetail.style.layout'] == 'immersive')
+const transportControls = ref(null)
 
 const toggleDetail = () => {
   setShowPlayerDetail(!props.detail)

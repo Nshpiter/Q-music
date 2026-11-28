@@ -59,6 +59,7 @@ module.exports = {
         }),
         { from: path.resolve(__dirname, '../../src/main/modules/betterPlugins/view'), to: 'betterPlugins', info: { minimized: true } },
         { from: path.resolve(__dirname, '../../src/main/modules/miniPlayer/view'), to: 'miniPlayer' },
+        { from: path.resolve(__dirname, '../../src/main/modules/taskbarLyricsView/timedLine.js'), to: 'miniPlayer/timedLine.js' },
         { from: path.resolve(__dirname, '../../src/main/modules/taskbarLyricsView'), to: 'taskbarLyrics' },
       ],
     }),

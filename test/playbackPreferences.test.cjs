@@ -12,8 +12,8 @@ const file = {
   local: mobile ? 'src/core/music/preferLocal.ts' : 'src/renderer/core/music/preferLocal.ts',
   remove: mobile ? 'src/utils/removeLocalMusic.ts' : 'src/main/utils/trashLocalMusic.ts',
 }
-function load(file, dependencies = {}) {
-  const context = { exports: {}, require: id => {
+function load(file, dependencies = {}, globals = {}) {
+  const context = { ...globals, exports: {}, require: id => {
     if (!(id in dependencies)) throw Error(id)
     return dependencies[id]
   } }
@@ -22,6 +22,26 @@ function load(file, dependencies = {}) {
   }).outputText, context)
   return context.exports
 }
+test('播放模式支持五个有效值，旧配置中的空值回到列表循环，空操作不会覆盖已选模式', () => {
+  const vue = require('vue')
+  const key = 'player.togglePlayMethod'
+  const writes = []
+  const store = load('src/renderer/store/setting.ts', {
+    '@common/utils/vueTools': vue,
+    '@common/defaultSetting': { [key]: 'listLoop' },
+    '@renderer/utils/ipc': { updateSetting: patch => { writes.push(patch[key]); store.mergeSetting(patch) } },
+  }, { window: { lxData: {} } })
+  for (const mode of ['random', 'list', 'singleLoop', 'none', 'listLoop']) {
+    store.setTogglePlayMode(mode)
+    assert.equal(store.appSetting[key], mode)
+  }
+  store.setTogglePlayMode('random')
+  store.setTogglePlayMode(undefined)
+  assert.deepEqual(writes, ['random', 'list', 'singleLoop', 'none', 'listLoop', 'random'])
+  assert.equal(store.appSetting[key], 'random')
+  store.initSetting({ [key]: null })
+  assert.equal(store.appSetting[key], 'listLoop')
+})
 const track = (id, extra = {}) => ({ id, source: 'tx', name: 'Same Song', singer: 'Artist', interval: '03:20', meta: { songId: id }, ...extra })
 const matching = load(file.match)
 
@@ -166,6 +186,7 @@ test('音质面板勾选跟随实际回退来源和音质，仍允许重新请�
     '@renderer/store': { apiSource: vue.ref(''), qualityList: vue.ref({}), userApi: { list: [] } },
     '@renderer/store/player/state': { playbackSourceInfo: route },
     '@renderer/components/common/SourceIcon.vue': {},
+    '@renderer/utils/compositions/useMenuOutsideClick': () => {},
     '@renderer/core/music/utils': { getOtherSource: async() => [], isCustomApiSource: () => false },
   }
   const context = { exports: {}, require: id => { if (!(id in deps)) throw Error(id); return deps[id] } }

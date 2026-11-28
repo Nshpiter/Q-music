@@ -9,11 +9,20 @@
   .numberColumn { width: 34px !important; flex: 0 0 34px !important; }
   .singerColumn { width: 22% !important; flex: 0 0 22% !important; }
   .albumColumn { width: 22% !important; flex: 0 0 22% !important; }
-  .durationColumn { width: 58px !important; flex: 0 0 58px !important; }
-  .actionColumn { width: 104px !important; flex: 0 0 104px !important; }
+  .durationColumn { width: 58px !important; flex: 0 0 58px !important; font-variant-numeric: tabular-nums; }
+  .actionColumn { width: 128px !important; flex: 0 0 128px !important; }
+  .menuColumn { width: 42px !important; flex: 0 0 42px !important; }
+  .rowArtwork {
+    --track-artwork-size: 34px;
+    --track-artwork-radius: 8px;
+    margin-right: 10px;
+    flex: none;
+  }
   .selectColumn {
     position: relative;
     input {
+      appearance: none;
+      -webkit-appearance: none;
       position: absolute;
       z-index: 1;
       left: 50%;
@@ -21,12 +30,46 @@
       width: 16px;
       height: 16px;
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
       transform: translate(-50%, -50%);
+      border-radius: 4px;
+      border: 1.5px solid rgb(from var(--color-font) r g b / .34);
+      background-color: color-mix(in srgb, var(--color-content-background) 86%, var(--color-font) 5%);
       opacity: 0;
       cursor: pointer;
-      accent-color: var(--color-primary);
-      &:checked, &:focus-visible { opacity: 1; }
-      &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+      transition: opacity .14s ease, border-color .14s ease, background-color .14s ease, box-shadow .14s ease;
+      &::after {
+        content: '';
+        position: absolute;
+        left: 4px;
+        top: 1px;
+        width: 4px;
+        height: 8px;
+        border-right: 1.8px solid #fff;
+        border-bottom: 1.8px solid #fff;
+        transform: rotate(45deg) scale(0);
+        opacity: 0;
+        transition: transform .12s ease, opacity .12s ease;
+      }
+      &:hover {
+        border-color: rgb(from var(--color-font) r g b / .55);
+      }
+      &:checked {
+        opacity: 1;
+        border-color: var(--color-primary);
+        background-color: var(--color-primary);
+        &::after {
+          transform: rotate(45deg) scale(1);
+          opacity: 1;
+        }
+      }
+      &:focus-visible {
+        opacity: 1;
+        border-color: var(--color-primary);
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+      }
     }
     &:hover input { opacity: 1; }
     &:has(input:checked), &:has(input:focus-visible), &:hover {

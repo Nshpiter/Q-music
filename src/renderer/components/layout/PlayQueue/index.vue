@@ -8,7 +8,10 @@
         role="region"
         aria-labelledby="play_queue_title"
         @click.stop
-        @keydown.esc.stop.prevent="closeQueue"
+        @dragend="dragged = null"
+        @keydown.esc.stop.prevent="handleEscape"
+        @keydown.ctrl.f.stop.prevent="openSearch"
+        @keydown.meta.f.stop.prevent="openSearch"
       >
         <header :class="$style.header">
           <div :class="$style.heading">
@@ -18,6 +21,13 @@
               {{ currentTrackText }}
             </p>
           </div>
+          <button
+            ref="searchButton" type="button" :class="[$style.closeBtn, $style.searchButton]"
+            :aria-expanded="searchOpen" :aria-label="$t('play_queue__search')" :title="$t('play_queue__search')"
+            @click="searchOpen ? closeSearch() : openSearch()"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
+          </button>
           <button
             type="button"
             :class="$style.closeBtn"
@@ -32,6 +42,19 @@
           </button>
         </header>
 
+        <transition
+          :enter-active-class="$style.searchEnterActive"
+          :leave-active-class="$style.searchLeaveActive"
+          :enter-from-class="$style.searchHidden"
+          :leave-to-class="$style.searchHidden"
+        >
+          <div v-if="searchOpen" :class="$style.searchBox">
+            <div :class="$style.searchFieldWrap">
+              <svg :class="$style.searchFieldIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
+              <input ref="searchField" v-model="query" type="search" :placeholder="$t('play_queue__search_hint')" :aria-label="$t('play_queue__search_hint')" @keydown.space.stop>
+            </div>
+          </div>
+        </transition>
         <div :class="$style.tabs">
           <button
             type="button"
@@ -54,18 +77,19 @@
         </div>
 
         <section v-show="activeTab == 'playlist'" :class="$style.tabPanel">
-          <div v-if="playMusicInfo.isTempPlay && playMusicInfo.musicInfo" :class="$style.nowPlaying">
+          <div v-if="!filterText && playMusicInfo.isTempPlay && playMusicInfo.musicInfo" :class="$style.nowPlaying">
             <strong>{{ $t('play_queue__now_playing') }}</strong>
             <QueueItem :music-info="playMusicInfo.musicInfo" :index="0" active :playing="isPlay" @play="isPlay ? pause() : play()" />
           </div>
-          <div v-if="tempPlayList.length" :class="['scroll', $style.upcoming]">
+          <div v-if="!filterText && tempPlayList.length" :class="['scroll', $style.upcoming]">
             <strong>{{ $t('queue_session_next') }} · {{ tempPlayList.length }}</strong>
-            <QueueItem v-for="(item, index) in tempPlayList" :key="item.tempId" :music-info="item.musicInfo" :index="index" removable draggable="true" @dragstart="startDrag('later', item)" @dragover.prevent @drop.prevent="dropAt('later', index)" @play="handlePlayLater(index)" @remove="removeTempPlayList(index)" />
+            <QueueItem v-for="(item, index) in tempPlayList" :key="item.tempId" :music-info="item.musicInfo" :index="index" removable draggable="true" @dragstart="startDrag('later', item, index)" @dragover.prevent @drop.prevent="dropAt('later', index)" @play="handlePlayLater(index)" @remove="removeTempPlayList(index)" />
           </div>
           <div :class="$style.listMeta">
             <strong>{{ currentListName }}</strong>
-            <button type="button" :class="$style.locateBtn" :disabled="editingQueue || !currentList.length && !tempPlayList.length && !playMusicInfo.musicInfo" @click="handleClearQueue">{{ $t('queue_clear') }}</button>
-            <button v-if="currentIndex >= 0 && !isListLoading && !listError" type="button" :class="$style.locateBtn" @click="scrollToCurrent(true)">{{ $t('play_queue__locate') }}</button>
+            <button v-if="!filterText" type="button" :class="$style.locateBtn" :disabled="editingQueue || !currentList.length && !tempPlayList.length && !playMusicInfo.musicInfo" @click="handleClearQueue">{{ $t('queue_clear') }}</button>
+            <span v-if="filterText" role="status">{{ $t('play_queue__songs', { num: playlistRows.length }) }}</span>
+            <button v-else-if="currentIndex >= 0 && !isListLoading && !listError" type="button" :class="$style.locateBtn" @click="scrollToCurrent(true)">{{ $t('play_queue__locate') }}</button>
             <span v-else>{{ $t('play_queue__songs', { num: currentList.length }) }}</span>
           </div>
           <div v-if="isListLoading && !currentList.length" :class="$style.empty" role="status">{{ $t('loading') }}</div>
@@ -74,13 +98,13 @@
             <button type="button" :class="$style.locateBtn" @click="loadCurrentList">{{ $t('play_queue__retry') }}</button>
           </div>
           <base-virtualized-list
-            v-else-if="currentList.length"
+            v-else-if="playlistRows.length"
             ref="listRef"
-            v-slot="{ item, index }"
+            v-slot="{ item: { item, index } }"
             :class="$style.list"
-            :list="currentList"
+            :list="playlistRows"
             :item-height="56"
-            key-name="id"
+            key-name="index"
             container-class="scroll"
           >
             <QueueItem
@@ -89,13 +113,13 @@
               :active="currentIndex == index"
               :playing="isPlay && currentIndex == index"
               removable
-              draggable="true"
+              :draggable="!filterText"
               @remove="handleRemoveCurrent(index, item)"
-              @dragstart="startDrag('playlist', item)"
+              @dragstart="startDrag('playlist', item, index)"
               @dragover.prevent
               @drop.prevent="dropAt('playlist', index)"
-              @keydown.alt.up.prevent="moveCurrent(index, index - 1)"
-              @keydown.alt.down.prevent="moveCurrent(index, index + 1)"
+              @keydown.alt.up.prevent="!filterText && moveCurrent(index, index - 1)"
+              @keydown.alt.down.prevent="!filterText && moveCurrent(index, index + 1)"
               @play="handlePlayCurrent(index, item)"
             />
           </base-virtualized-list>
@@ -105,16 +129,17 @@
               <circle cx="6" cy="18" r="3" />
               <circle cx="16" cy="16" r="3" />
             </svg>
-            <p>{{ $t('play_queue__empty') }}</p>
+            <p>{{ $t(filterText ? 'play_queue__no_match' : 'play_queue__empty') }}</p>
           </div>
           <p v-if="playError" :class="$style.feedback" role="alert">{{ playError }}</p>
         </section>
 
         <section v-show="activeTab == 'later'" :class="$style.tabPanel">
           <div :class="$style.listMeta">
-            <strong>{{ $t('queue_session_sort_hint') }}</strong>
+            <strong v-if="filterText" role="status">{{ $t('play_queue__songs', { num: laterRows.length }) }}</strong>
+            <strong v-else>{{ $t('queue_session_sort_hint') }}</strong>
             <button
-              v-if="tempPlayList.length"
+              v-if="!filterText && tempPlayList.length"
               type="button"
               :class="$style.clearBtn"
               :aria-label="$t('play_queue__clear_later')"
@@ -130,19 +155,19 @@
               </svg>
             </button>
           </div>
-          <transition-group v-if="tempPlayList.length" tag="div" name="q-queue-item" :class="['scroll', $style.laterList]">
+          <transition-group v-if="laterRows.length" tag="div" name="q-queue-item" :class="['scroll', $style.laterList]">
             <QueueItem
-              v-for="(item, index) in tempPlayList"
+              v-for="{ item, index } in laterRows"
               :key="item.tempId ?? `${item.musicInfo.id}_${index}`"
               :music-info="item.musicInfo"
               :index="index"
               removable
-              draggable="true"
-              @dragstart="startDrag('later', item)"
+              :draggable="!filterText"
+              @dragstart="startDrag('later', item, index)"
               @dragover.prevent
               @drop.prevent="dropAt('later', index)"
-              @keydown.alt.up.prevent="moveTempPlayList(index, index - 1)"
-              @keydown.alt.down.prevent="moveTempPlayList(index, index + 1)"
+              @keydown.alt.up.prevent="!filterText && moveTempPlayList(index, index - 1)"
+              @keydown.alt.down.prevent="!filterText && moveTempPlayList(index, index + 1)"
               @play="handlePlayLater(index)"
               @remove="removeTempPlayList(index)"
             />
@@ -155,7 +180,7 @@
               <path d="M17 14v6" />
               <path d="M17 14l4 2.5-4 2.5" />
             </svg>
-            <p>{{ $t('play_queue__empty_later') }}</p>
+            <p>{{ $t(filterText ? 'play_queue__no_match' : 'play_queue__empty_later') }}</p>
           </div>
         </section>
       </aside>
@@ -164,8 +189,9 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from '@common/utils/vueTools'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, toRaw, watch } from '@common/utils/vueTools'
 import { LIST_IDS } from '@common/constants'
+import { matchesTrackSearch, trackSearchTerms } from '@common/utils/trackSearch'
 import { play, pause, playQueueIndex, playTempListByIndex, resetRandomNextMusicInfo, removeQueueIndex, clearPlayQueue } from '@renderer/core/player'
 import { playbackSession } from '@renderer/core/player/session'
 import { useI18n } from '@renderer/plugins/i18n'
@@ -198,11 +224,31 @@ const SCROLL_TOP_OFFSET = -112
 
 const t = useI18n()
 const activeTab = ref('playlist')
+const searchOpen = ref(false)
+const query = ref('')
+const searchField = ref(null)
+const searchButton = ref(null)
+const filterText = computed(() => query.value.trim().toLowerCase())
+const openSearch = async() => {
+  searchOpen.value = true
+  await nextTick()
+  searchField.value?.focus()
+}
+const closeSearch = () => {
+  query.value = ''
+  searchOpen.value = false
+  searchButton.value?.focus()
+}
+const handleEscape = (event) => {
+  if (event.isComposing) return
+  if (searchOpen.value) closeSearch()
+  else closeQueue()
+}
 const unsubscribeSession = playbackSession.subscribe(() => {
   void loadCurrentList()
 })
 let dragged = null
-const startDrag = (kind, item) => { dragged = { kind, item } }
+const startDrag = (kind, item, index) => { dragged = { kind, item: toRaw(item), index } }
 const moveCurrent = (from, to) => {
   const id = playInfo.playerListId
   const anchor = currentList.value[playInfo.playerPlayIndex]
@@ -213,13 +259,30 @@ const moveCurrent = (from, to) => {
   void loadCurrentList()
 }
 const dropAt = (kind, to) => {
-  if (dragged?.kind != kind) return
-  const from = (kind == 'later' ? tempPlayList : currentList.value).indexOf(dragged.item)
+  if (filterText.value || dragged?.kind != kind) return
+  const rows = kind == 'later' ? tempPlayList : currentList.value
+  const from = dragged.index
+  if (toRaw(rows[from]) !== dragged.item) return
   if (kind == 'later') moveTempPlayList(from, to)
   else moveCurrent(from, to)
   dragged = null
 }
 const currentList = shallowRef([])
+const matchingRows = (list, getTrack) => {
+  const terms = trackSearchTerms(filterText.value)
+  const rows = []
+  for (const [index, item] of list.entries()) {
+    if (terms.length) {
+      const track = getTrack(item)
+      const info = 'progress' in track ? track.metadata.musicInfo : track
+      if (!matchesTrackSearch(info, terms)) continue
+    }
+    rows.push({ item, index })
+  }
+  return rows
+}
+const playlistRows = computed(() => matchingRows(currentList.value, item => item))
+const laterRows = computed(() => matchingRows(tempPlayList, item => item.musicInfo))
 const editingQueue = ref(false)
 const handleRemoveCurrent = async(index, item) => {
   const current = getList(playInfo.playerListId)[index]
@@ -306,9 +369,9 @@ const loadCurrentList = async() => {
 }
 
 const scrollToCurrent = async(animate = false) => {
-  if (!isShowPlayQueue.value || activeTab.value != 'playlist' || currentIndex.value < 0) return
+  if (!isShowPlayQueue.value || activeTab.value != 'playlist' || currentIndex.value < 0 || filterText.value) return
   await nextTick()
-  if (!isShowPlayQueue.value || activeTab.value != 'playlist') return
+  if (!isShowPlayQueue.value || activeTab.value != 'playlist' || filterText.value) return
   listRef.value?.scrollToIndex(currentIndex.value, SCROLL_TOP_OFFSET, animate)
 }
 
@@ -364,6 +427,8 @@ watch(isShowPlayQueue, async(visible) => {
   const requestId = ++showId
   if (!visible) {
     ++playRequestId
+    query.value = ''
+    searchOpen.value = false
     if (panelRef.value?.contains(document.activeElement) && previousFocus?.isConnected) previousFocus.focus({ preventScroll: true })
     return
   }
@@ -378,6 +443,12 @@ watch(isShowPlayQueue, async(visible) => {
 
 watch([activeTab, currentIndex], () => {
   void scrollToCurrent(true)
+})
+
+watch(filterText, async(text) => {
+  await nextTick()
+  if (text) listRef.value?.scrollToIndex(0)
+  else void scrollToCurrent()
 })
 
 onMounted(() => {
@@ -555,6 +626,7 @@ onBeforeUnmount(() => {
 }
 
 .heading {
+  flex: auto;
   min-width: 0;
 
   h2 {
@@ -635,12 +707,79 @@ onBeforeUnmount(() => {
   flex: none;
 }
 
+.searchButton {
+  margin-right: -4px;
+  &[aria-expanded=true] {
+    color: var(--color-primary);
+    background-color: var(--color-primary-alpha-900);
+  }
+}
+.searchBox {
+  flex: none;
+  padding: 10px 14px 4px;
+  overflow: hidden;
+}
+.searchFieldWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 34px;
+    padding: 0 12px 0 34px;
+    border: 1px solid var(--q-outline);
+    border-radius: 11px;
+    color: inherit;
+    background-color: var(--q-surface-soft);
+    font: inherit;
+    font-size: 12.5px;
+    transition: border-color @transition-fast, background-color @transition-fast, box-shadow @transition-fast;
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      background-color: var(--q-surface-strong);
+      box-shadow: 0 0 0 3px var(--color-primary-alpha-900);
+    }
+  }
+}
+.searchFieldIcon {
+  position: absolute;
+  left: 11px;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--color-font-label);
+  stroke-width: 2;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+.searchEnterActive {
+  transition: opacity .2s ease, transform .24s cubic-bezier(.22, 1, .36, 1);
+}
+.searchLeaveActive {
+  transition: opacity .14s ease, transform .16s cubic-bezier(.4, 0, 1, 1);
+}
+.searchHidden {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+.immersive .searchFieldWrap input {
+  background: rgba(255, 255, 255, .08);
+  border-color: rgba(255, 255, 255, .14);
+  &:focus {
+    background: rgba(255, 255, 255, .12);
+    border-color: rgba(140, 232, 180, .65);
+    box-shadow: 0 0 0 3px rgba(104, 207, 151, .18);
+  }
+}
+
 .tabs {
   flex: none;
   height: 44px;
   padding: 0 14px;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
   border-bottom: 1px solid var(--q-outline);
 

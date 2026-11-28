@@ -70,7 +70,7 @@ export default {
   display: flex;
   position: relative;
   gap: 16px;
-  padding: 16px 18px calc(@height-player + 18px);
+  padding: 16px 0 calc(@height-player + 18px) 18px;
   box-sizing: border-box;
   background:
     linear-gradient(135deg, var(--q-surface-soft), var(--q-surface)),

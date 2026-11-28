@@ -115,6 +115,9 @@ const modules = {
     get_hot_key: 'get_hot_key',
 
     import_user_api: 'import_user_api',
+    replace_user_api_script: 'replace_user_api_script',
+    user_api_set_source_url: 'user_api_set_source_url',
+    user_api_set_auto_update: 'user_api_set_auto_update',
     remove_user_api: 'remove_user_api',
     set_user_api: 'set_user_api',
     get_user_api_list: 'get_user_api_list',

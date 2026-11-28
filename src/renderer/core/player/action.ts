@@ -537,8 +537,10 @@ export const resetRandomNextMusicInfo = () => {
   }
 }
 
+const getForwardBeforeQueue = () => tempPlayList[0]?.isTop ? null : playbackSession.history[playbackSession.cursor + 1]
+
 export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | null> => {
-  const forward = playbackSession.history[playbackSession.cursor + 1]
+  const forward = getForwardBeforeQueue()
   if (forward) return forward
 
   if (tempPlayList.length) { // 如果稍后播放列表存在歌曲则直接播放改列表的歌曲
@@ -631,7 +633,7 @@ const handlePlayNext = (playMusicInfo: LX.Player.PlayMusicInfo, replay = false, 
       const initial: LX.Player.PlayMusicInfo = { listId: current.listId, musicInfo: current.musicInfo, isTempPlay: current.isTempPlay }
       playbackSession.record(initial)
     }
-    playbackSession.record(playMusicInfo)
+    playbackSession.record(playMusicInfo, playMusicInfo.isTop)
   }
   const overlapping = crossfade && beginCrossfade()
   setPlayMusicInfo(playMusicInfo.listId, playMusicInfo.musicInfo, playMusicInfo.isTempPlay)
@@ -662,8 +664,12 @@ export const playNext = async(isAutoToggle = false, crossfade = false): Promise<
   const token = playbackRecovery.begin()
   isPlayPending.value = true
   console.log('skip next', isAutoToggle)
-  const forward = playbackSession.forward()
-  if (forward) { handlePlayNext(forward, true, crossfade); return }
+  const forward = getForwardBeforeQueue()
+  if (forward) {
+    playbackSession.forward()
+    handlePlayNext(forward, true, crossfade)
+    return
+  }
   if (tempPlayList.length) { // 如果稍后播放列表存在歌曲则直接播放改列表的歌曲
     playTempListByIndex(0, isAutoToggle, crossfade)
     console.log('play temp list')
@@ -1006,7 +1012,7 @@ export const removeQueueIndex = (index: number) => {
     removeTempPlayList(0)
     playInfo.playerPlayIndex = Math.min(index - 1, remaining.length - 1)
     setPlayMusicInfo(next.listId, next.musicInfo, true)
-    playbackSession.record(next)
+    playbackSession.record(next, next.isTop)
     if (shouldResume) handlePlay()
     return
   }

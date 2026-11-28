@@ -1,6 +1,14 @@
 <template>
   <teleport to="#root">
     <div ref="dom_menu" :class="[$style.container, { [$style.immersive]: appSetting['playDetail.style.layout'] == 'immersive' }]" :style="menuStyles" :aria-hidden="!modelValue" :inert="!modelValue || undefined" tabindex="-1" @keydown.esc.stop.prevent="onHide">
+      <div v-if="lines[selectedLine]" :class="$style.lineActions">
+        <p :class="$style.linePreview" :title="lines[selectedLine].text">{{ lines[selectedLine].text }}</p>
+        <div :class="$style.subGroup">
+          <button type="button" :class="$style.btn" :disabled="selectedLine === 0" @click="$emit('navigate', -1)">{{ $t('lyric_menu__previous_line') }}</button>
+          <button type="button" :class="$style.btn" @click="$emit('navigate', 0)">{{ $t('lyric_menu__replay_line') }}</button>
+          <button type="button" :class="$style.btn" :disabled="selectedLine === lines.length - 1" @click="$emit('navigate', 1)">{{ $t('lyric_menu__next_line') }}</button>
+        </div>
+      </div>
       <LyricFontSetting compact />
       <div v-if="lyricInfo.lyric && !lyricInfo.tlyric" :class="$style.group">
         <button type="button" :class="$style.btn" :disabled="translating" @click="translate">{{ $t(translating ? 'model_translating' : 'model_translate') }}</button>
@@ -95,6 +103,8 @@ export default {
   components: { LyricFontSetting },
   props: {
     modelValue: Boolean,
+    selectedLine: { type: Number, default: -1 },
+    lines: { type: Array, required: true },
     xy: {
       type: Object,
       required: true,
@@ -104,7 +114,7 @@ export default {
       required: true,
     },
   },
-  emits: ['updateLyric', 'update:modelValue'],
+  emits: ['updateLyric', 'update:modelValue', 'navigate'],
   setup(props, { emit }) {
     const translating = ref(false)
     const translationStatus = ref('')
@@ -301,6 +311,8 @@ export default {
   margin-top: 6px;
   border-top: 1px solid var(--q-outline);
 }
+.lineActions { padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid var(--q-outline); }
+.linePreview { margin: 4px 8px 3px; max-width: 230px; color: var(--color-font-label); .mixin-ellipsis-1(); }
 .title {
   flex: auto;
   padding: 10px 0 10px 10px;

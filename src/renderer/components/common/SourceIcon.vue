@@ -45,7 +45,9 @@ const officialIcons: Record<string, string> = {
 }
 const sourceLabel = computed(() => props.label || sourceLabels[props.source] || props.source)
 const officialIcon = computed(() => officialIcons[props.source] ?? '')
-const iconStyle = computed(() => ({ width: `${props.size}px`, height: `${props.size}px` }))
+const iconStyle = computed(() => showOfficialIcon.value
+  ? { width: `${props.size}px`, height: `${props.size}px` }
+  : { minWidth: `${props.size}px`, height: `${props.size}px` })
 const imageFailed = ref(false)
 const showOfficialIcon = computed(() => Boolean(officialIcon.value) && !imageFailed.value)
 const handleImageError = () => { imageFailed.value = true }
@@ -70,9 +72,11 @@ watch(() => props.source, () => { imageFailed.value = false })
   }
   > span {
     color: var(--color-font-label);
-    font-size: 8px;
-    font-weight: 700;
+    font-size: 9px;
+    font-weight: 650;
     line-height: 1;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
   }
 }
 </style>

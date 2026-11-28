@@ -92,6 +92,13 @@ export const loadApi = async(id: string) => {
   await ensureRuntime(id)
 }
 
+export const reloadLoadedApi = async(id: string) => {
+  if (!runtimes.has(id) && primaryId !== id) return
+  await closeApis([id])
+  if (primaryId === id) await loadApi(id)
+  else if (isAllowed(id)) void ensureRuntime(id)
+}
+
 export const getStatus = async(id?: string): Promise<LX.UserApi.UserApiStatus> => {
   if (id) return ensureRuntime(id)
   return runtimes.get(primaryId)?.status ?? { status: false, message: 'initing' }

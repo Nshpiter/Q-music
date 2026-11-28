@@ -48,6 +48,26 @@
       </button>
       </transition>
     </teleport>
+    <transition
+      :enter-active-class="$style.followEnterActive"
+      :leave-active-class="$style.followLeaveActive"
+      :enter-from-class="$style.followHidden"
+      :leave-to-class="$style.followHidden"
+    >
+      <button
+        v-if="isStopScroll && !isShowLrcSelectContent && !instrumental && lyric.lines.length"
+        type="button" :class="$style.followBtn"
+        @mouseenter="handleLinePlayMouseEnter" @mouseleave="handleLinePlayMouseLeave"
+        @focus="handleLinePlayMouseEnter" @blur="handleLinePlayMouseLeave"
+        @click="resumeLyricFollow"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 4v3m0 10v3M4 12h3m10 0h3" />
+        </svg>
+        <span>{{ $t('lyric__back_to_current') }}</span>
+      </button>
+    </transition>
     <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
       <div v-if="isShowLyricProgressSetting" v-show="isStopScroll && !isShowLrcSelectContent" :class="$style.skip">
         <div ref="dom_skip_line" :class="$style.line" />
@@ -71,7 +91,10 @@
       </div>
     </transition>
     <LyricLookup v-if="appSetting['playDetail.dictionary']" />
-    <LyricMenu v-model="lyricMenuVisible" :xy="lyricMenuXY" :lyric-info="lyricInfo" @update-lyric="handleUpdateLyric" />
+    <LyricMenu
+      v-model="lyricMenuVisible" :xy="lyricMenuXY" :lyric-info="lyricInfo"
+      :selected-line="menuLineIndex" :lines="lyric.lines" @navigate="navigateLyricLine" @update-lyric="handleUpdateLyric"
+    />
   </div>
 </template>
 
@@ -92,7 +115,7 @@ import {
 import {
   setMusicInfo,
 } from '@renderer/store/player/action'
-import { onMounted, onBeforeUnmount, computed, reactive, ref, nextTick, watch } from '@common/utils/vueTools'
+import { onMounted, onBeforeUnmount, computed, reactive, ref, shallowRef, nextTick, watch } from '@common/utils/vueTools'
 import useLyric from '@renderer/utils/compositions/useLyric'
 import LyricMenu from './components/LyricMenu.vue'
 import { appSetting } from '@renderer/store/setting'
@@ -130,6 +153,8 @@ export default {
       handleLyricTouchStart,
       handleLyricMouseMove,
       handleWheel,
+      resumeLyricFollow,
+      seekLyricLine,
       handleSkipPlay,
       handleSkipMouseEnter,
       handleSkipMouseLeave,
@@ -182,6 +207,19 @@ export default {
     })
 
     const lyricMenuVisible = ref(false)
+    const menuLine = shallowRef(null)
+    const menuLineIndex = computed(() => lyric.lines.indexOf(menuLine.value))
+    const navigateLyricLine = direction => {
+      const index = menuLineIndex.value + direction
+      if (menuLineIndex.value < 0 || !lyric.lines[index]) return
+      menuLine.value = lyric.lines[index]
+      seekLyricLine(index, direction === 0)
+      if (direction === 0) lyricMenuVisible.value = false
+    }
+    watch(() => playerMusicInfo.id, () => {
+      menuLine.value = null
+      lyricMenuVisible.value = false
+    })
     const lyricMenuXY = reactive({
       x: 0,
       y: 0,
@@ -204,6 +242,8 @@ export default {
     }
     const handleShowLyricMenu = event => {
       updateMusicInfo()
+      const row = event.target.closest('.line-content')
+      menuLine.value = row ? lyric.lines[Number(row.dataset.lineIndex)] ?? null : null
       lyricMenuXY.x = event.pageX
       lyricMenuXY.y = event.pageY
       if (lyricMenuVisible.value) return
@@ -280,6 +320,7 @@ export default {
       handleLyricTouchStart,
       handleLyricMouseMove,
       handleWheel,
+      resumeLyricFollow,
       handleSkipPlay,
       handleSkipMouseEnter,
       handleSkipMouseLeave,
@@ -297,6 +338,8 @@ export default {
       isStopScroll,
       playerMusicInfo,
       lyricMenuVisible,
+      menuLineIndex,
+      navigateLyricLine,
       lyricMenuXY,
       handleShowLyricMenu,
       handleUpdateLyric,
@@ -561,6 +604,68 @@ export default {
   }
 }
 
+.followBtn {
+  position: absolute;
+  z-index: 3;
+  align-self: center;
+  bottom: clamp(10px, 2.2vh, 22px);
+  max-width: 100%;
+  min-height: 34px;
+  padding: 0 15px 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, .65);
+  border-radius: 999px;
+  color: #2c3431;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 10px 26px rgba(24, 36, 31, .14), inset 0 1px 0 rgba(255, 255, 255, .8);
+  backdrop-filter: blur(18px) saturate(1.4);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 620;
+  cursor: pointer;
+  transition: transform .2s cubic-bezier(.22, 1, .36, 1), background-color .18s ease, box-shadow .2s ease, border-color .18s ease;
+  svg {
+    width: 15px;
+    height: 15px;
+    flex: none;
+    fill: none;
+    stroke: var(--color-primary);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+  &:hover {
+    background: rgba(255, 255, 255, .94);
+    border-color: var(--color-primary-alpha-600);
+    box-shadow: 0 12px 30px rgba(24, 36, 31, .18);
+    transform: translateY(-1px);
+  }
+  &:active { transform: scale(.95); }
+  &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+}
+.followEnterActive {
+  transition: opacity .22s ease, transform .28s cubic-bezier(.22, 1, .36, 1);
+}
+.followLeaveActive {
+  transition: opacity .15s ease, transform .18s cubic-bezier(.4, 0, 1, 1);
+  pointer-events: none;
+}
+.followHidden {
+  opacity: 0;
+  transform: translateY(10px) scale(.94);
+}
+.immersive .followBtn {
+  color: rgba(255, 255, 255, .94);
+  border-color: rgba(255, 255, 255, .18);
+  background: rgba(22, 27, 30, .72);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 255, 255, .14);
+  svg { stroke: #8ce8b4; }
+  &:hover {
+    background: rgba(30, 36, 40, .86);
+    border-color: rgba(140, 232, 180, .42);
+  }
+}
 .skip {
   position: absolute;
   top: 50%;

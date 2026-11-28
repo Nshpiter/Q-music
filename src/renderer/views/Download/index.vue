@@ -2,6 +2,7 @@
   <div :class="$style.download">
     <div :class="$style.header">
       <base-tab v-model="activeTab" :class="$style.tab" :list="tabs" />
+      <router-link :class="$style.settingsLink" :to="{ path: '/setting', query: { name: 'SettingDownload', section: 'download_path' } }">{{ $t('setting__download') }}</router-link>
     </div>
     <div :class="[$style.downloadPanel, $style.listColumns, { [$style.selecting]: isSelectionMode }]">
       <material-list-toolbar show-play :count="list.length" :selected-count="selectedList.length" :selecting="isSelectionMode" @play="handlePlayAll" @select="startSelection" @invert="invertSelection" @clear="removeAllSelect" @select-all="handleSelectAllData">
@@ -28,25 +29,22 @@
       <div v-if="list.length" ref="dom_listContent" :class="$style.listContent">
         <base-virtualized-list
           ref="listRef" v-slot="{ item, index }" :list="list" key-name="id" :item-height="listItemHeight"
-          container-class="scroll" content-class="list"
+          container-class="scroll" :content-class="`list ${$style.downloadRows}`"
         >
           <div
             class="list-item"
-            :class="[{[$style.active]: playTaskId == item.id }, { selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }]"
+            :class="[{ playing: playTaskId == item.id }, { selected: rightClickSelectedIndex == index }, { active: selectedList.includes(item) }]"
             @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
           >
             <div class="list-item-cell no-select" :class="[$style.num, $style.numberColumn, $style.selectColumn]">
-              <input type="checkbox" :checked="selectedList.includes(item)" :aria-label="$t('list__select_song', { name: getName(item) })" @click.stop @change="toggleSelect(index)">
               <transition name="play-active">
-                <div v-if="playTaskId == item.id" :class="$style.playIcon">
-                  <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="50%" viewBox="0 0 512 512" space="preserve">
-                    <use xlink:href="#icon-play-outline" />
-                  </svg>
-                </div>
+                <span v-if="playTaskId == item.id" class="list-eq" :class="{ [$style.paused]: !isPlay }" aria-hidden="true"><i /><i /><i /></span>
                 <div v-else class="num">{{ index + 1 }}</div>
               </transition>
+              <input type="checkbox" :checked="selectedList.includes(item)" :aria-label="$t('list__select_song', { name: getName(item) })" @click.stop @change="toggleSelect(index)">
             </div>
             <div class="list-item-cell auto name">
+              <TrackArtwork :music="item.metadata.musicInfo" :class="$style.rowArtwork" />
               <span class="select name" :aria-label="getName(item)">{{ getName(item) }}</span>
             </div>
             <div class="list-item-cell" :class="$style.progress">
@@ -104,9 +102,11 @@ import { downloadStatus } from '@renderer/store/download/state'
 import { appSetting } from '@renderer/store/setting'
 import { formatMusicName } from '@renderer/utils'
 import { isPlay } from '@renderer/store/player/state'
+import TrackArtwork from '@renderer/components/common/TrackArtwork.vue'
 
 export default {
   name: 'Download',
+  components: { TrackArtwork },
   setup() {
     const listRef = ref()
     const {
@@ -132,6 +132,7 @@ export default {
     const {
       handlePlayAll,
       handlePlayMusic,
+      handlePlayMusicNext,
       handlePlayMusicLater,
     } = usePlay({ selectedList, list, listAll, removeAllSelect })
 
@@ -170,6 +171,7 @@ export default {
       handleRemoveTask,
       handleOpenFile,
       handlePlayMusic,
+      handlePlayMusicNext,
       handlePlayMusicLater,
       handleShowMusicAddModal,
       handleSearch,
@@ -211,7 +213,7 @@ export default {
       menuClick(action)
     }
 
-    const handleListBtnClick = ({ action, index }) => {
+    const handleListBtnClick = ({ action, index, event }) => {
       switch (action) {
         case 'play':
           handlePlayMusic(index, true)
@@ -230,6 +232,9 @@ export default {
           break
         case 'search':
           handleSearch(index)
+          break
+        case 'menu':
+          showMenu(event, list.value[index])
           break
       }
     }
@@ -294,49 +299,81 @@ export default {
 }
 
 .download {
+  container-type: inline-size;
+  --download-inset: max(22px, calc((100cqi - 1240px) / 2));
   position: relative;
   overflow: hidden;
   height: 100%;
   display: flex;
   flex-flow: column nowrap;
 
-  :global(.list-item) {
-    &.active {
-      color: var(--color-button-font);
-    }
+  .actionColumn {
+    width: 148px !important;
+    flex: 0 0 148px !important;
   }
 }
+.paused i { animation-play-state: paused !important; }
 .header {
   flex: none;
-  width: min(1240px, calc(100% - 44px));
-  margin: 10px auto 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 10px var(--download-inset) 8px;
+}
+.settingsLink {
+  margin-inline-start: auto;
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--color-font-label);
+  font-size: 12px;
+  text-decoration: none;
+  &:hover, &:focus-visible { color: var(--color-primary); background: var(--color-primary-background-hover); }
 }
 .tab { gap: clamp(10px, 2vw, 25px); font-variant-numeric: tabular-nums; }
-.progress {
+.downloadPanel .listContent .progress {
   flex: 0 0 20%;
   font-variant-numeric: tabular-nums;
   .progressInfo { display: flex; align-items: baseline; gap: 6px; }
   .speed { overflow: hidden; text-overflow: ellipsis; font-size: 11px; color: var(--color-font-label); }
   progress {
-    display: block; width: 100%; max-width: 140px; height: 3px; margin-top: 3px; appearance: none;
-    &::-webkit-progress-bar { background: var(--q-outline); border-radius: 3px; }
-    &::-webkit-progress-value { background: var(--color-primary); border-radius: 3px; }
+    display: block; width: 100%; max-width: 140px; height: 4px; margin-top: 4px; appearance: none;
+    &::-webkit-progress-bar { background: var(--q-outline); border-radius: 4px; }
+    &::-webkit-progress-value { background: var(--color-primary); border-radius: 4px; transition: width .24s cubic-bezier(.22, 1, .36, 1); }
   }
 }
 .downloadPanel {
+  position: relative;
+  isolation: isolate;
   min-height: 0;
-  width: min(1240px, calc(100% - 44px));
-  margin: 0 auto calc(@height-player + 14px);
+  margin-bottom: calc(@height-player + 14px);
   display: flex;
   flex-flow: column nowrap;
   flex: auto;
-  overflow: hidden;
+  font-size: 14px;
+}
+.downloadPanel::before {
+  content: '';
+  position: absolute;
+  inset: 0 var(--download-inset);
+  z-index: -1;
+  pointer-events: none;
   border: 1px solid rgb(from var(--color-font) r g b / .08);
   border-radius: 18px;
   background: rgb(from var(--color-content-background) r g b / .46);
   box-shadow: 0 18px 44px rgba(34, 45, 48, .08), inset 0 1px 0 rgba(255, 255, 255, .5);
   backdrop-filter: blur(16px);
-  font-size: 14px;
+}
+.downloadPanel > :not(.listContent) { margin-inline: var(--download-inset); }
+.downloadPanel .thead {
+  padding-inline: 0;
+  padding-inline-end: 6px;
+}
+.listContent > :global(.scroll) { scrollbar-gutter: stable; }
+.downloadPanel .downloadRows {
+  position: relative;
+  width: auto;
+  margin-inline: var(--download-inset);
 }
 .num {
   height: 100%;
@@ -376,6 +413,7 @@ export default {
   align-items: center;
   gap: 8px;
   color: var(--color-font-label);
+  animation: q-download-empty-in .32s cubic-bezier(.22, 1, .36, 1);
 
   p {
     margin: 0;
@@ -411,11 +449,13 @@ export default {
   }
 }
 
+@keyframes q-download-empty-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 980px) {
-  .header,
-  .downloadPanel {
-    width: calc(100% - 24px);
-  }
+  .download { --download-inset: 12px; }
 }
 
 </style>

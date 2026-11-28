@@ -45,7 +45,7 @@
             <base-btn min :disabled="busy" @click="browse">{{ $t('plugin_catalog_load') }}</base-btn>
           </div>
           <input v-if="rows.length" v-model.trim="search" type="search" :placeholder="$t('plugin_catalog_search')" :aria-label="$t('plugin_catalog_search')">
-          <div v-if="filtered.length" :class="$style.results">
+          <div v-if="filtered.length" class="scroll" :class="$style.results">
             <div v-for="item in filtered" :key="item.id" :class="$style.cardRow">
               <div :class="$style.caption">
                 <div :class="$style.titleRow">

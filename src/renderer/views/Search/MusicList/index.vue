@@ -84,10 +84,11 @@ const handleTogglePage = (page: number) => {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  padding: 4px 16px calc(@height-player - 6px);
+  --online-list-end-inset: 16px;
+  padding: 4px 0 calc(@height-player - 6px) 16px;
 }
 
-.sortBar { display: flex; align-items: center; gap: 12px; padding: 6px 4px 10px; font-size: 12px; flex: none; }
+.sortBar { display: flex; align-items: center; gap: 12px; padding: 6px 4px 10px; margin-right: var(--online-list-end-inset); font-size: 12px; flex: none; }
 .sortBar span { flex: 1; min-width: 0; font-size: 11px; color: var(--color-font-label); }
 .sortBar select { color: var(--color-font); border-radius: 10px; padding: 6px; background: var(--color-content-background); }
 .container > :last-child { flex: 1; min-height: 0; }

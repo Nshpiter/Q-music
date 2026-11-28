@@ -64,7 +64,7 @@ export default {
       try {
         const script = await this.importer.load(this.url)
         if (script == null) return
-        this.$emit('import', script)
+        this.$emit('import', { script, sourceUrl: this.url.trim() })
         this.handleClose()
       } catch (err) {
         void dialog(this.$t('user_api_import__failed', { message: err.message }))

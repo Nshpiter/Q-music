@@ -123,9 +123,9 @@ export default {
   font-size: 12px;
   position: absolute;
   opacity: 0;
-  transform: scale(0);
+  transform: scale(.92);
   transform-origin: 0 0 0;
-  transition: .14s ease;
+  transition: .18s cubic-bezier(.2, .8, .2, 1);
   transition-property: transform, opacity;
   border-radius: 12px;
   color: var(--color-font);
@@ -164,8 +164,9 @@ export default {
     color: var(--color-primary-dark-300);
     background-color: var(--q-menu-hover-bg);
   }
-  &:active {
+  &:active:not(:disabled) {
     background-color: var(--q-menu-active-bg);
+    transform: scale(.98);
   }
 
   &:disabled {

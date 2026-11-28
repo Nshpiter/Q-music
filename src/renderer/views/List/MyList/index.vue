@@ -288,8 +288,8 @@ export default {
   flex-flow: column nowrap;
   overflow: hidden;
   border-radius: 20px;
-  background: rgb(from var(--color-main-background) r g b / .52);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .66), 0 16px 38px rgba(72, 91, 112, .08);
+  background: var(--q-surface);
+  box-shadow: inset 0 0 0 1px var(--q-panel-border), var(--q-shadow-soft);
   backdrop-filter: blur(16px) saturate(1.1);
 }
 .cloudLink {
@@ -297,21 +297,21 @@ export default {
   flex: none;
   align-items: center;
   gap: 9px;
-  min-height: 42px;
+  min-height: 40px;
   margin: 8px;
   padding: 0 10px;
-  border: 1px solid var(--color-primary-alpha-600);
+  border: 1px solid var(--q-outline);
   border-radius: 12px;
-  background: var(--color-primary-background-hover);
-  color: var(--color-button-font);
+  background: rgb(from var(--color-font) r g b / .04);
+  color: var(--color-font);
   font-size: 12px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
   transition: background-color @transition-fast, box-shadow @transition-fast, transform @transition-fast;
   &:hover, &:focus-visible {
-    background: var(--color-primary-alpha-800);
-    box-shadow: 0 8px 18px var(--color-primary-alpha-900);
+    background: rgb(from var(--color-font) r g b / .075);
+    box-shadow: var(--q-shadow-soft);
     .cloudArrow { opacity: 1; transform: translateX(3px); }
   }
   &:active { transform: scale(.98); }
@@ -396,9 +396,9 @@ export default {
   height: 32px;
   margin: 0;
   padding: 0 8px;
-  color: var(--color-primary);
-  background-color: var(--color-primary-background-hover);
-  box-shadow: inset 0 0 0 1px var(--color-primary-alpha-600);
+  color: var(--color-font);
+  background-color: rgb(from var(--color-font) r g b / .045);
+  box-shadow: inset 0 0 0 1px var(--q-outline);
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
@@ -414,7 +414,8 @@ export default {
 
   &:hover {
     opacity: 1 !important;
-    color: var(--color-primary-dark-300);
+    color: var(--color-font);
+    background-color: rgb(from var(--color-font) r g b / .085);
   }
 }
 .listsContent > :global(.default-list) .listsLabel { height: 42px; }
@@ -464,18 +465,18 @@ export default {
   }
   &:not(.active) {
     &:hover {
-      background-color: var(--color-primary-background-hover);
+      background-color: rgb(from var(--color-font) r g b / .045);
       cursor: pointer;
     }
     &:not(.editing):hover {
-      background-color: var(--color-primary-background-hover);
+      background-color: rgb(from var(--color-font) r g b / .045);
     }
   }
   &.active {
-    color: var(--color-primary-dark-300);
-    background-color: rgb(from var(--color-main-background) r g b / .76);
-    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-700);
-    &:before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 3px; background: var(--color-primary); }
+    color: var(--color-font);
+    font-weight: 650;
+    background-color: rgb(from var(--color-font) r g b / .068);
+    box-shadow: inset 0 0 0 1px var(--q-panel-border);
   }
   &.selected {
     background-color: var(--color-primary-font-active);

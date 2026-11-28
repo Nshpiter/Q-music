@@ -138,7 +138,7 @@
             </div>
           </header>
           <div :class="$style.detailList">
-            <div :class="$style.detailTableHeader" aria-hidden="true">
+            <div class="scroll" :class="$style.detailTableHeader" aria-hidden="true">
               <span>#</span><span>{{ $t('music_name') }}</span><span>{{ $t('music_singer') }}</span><span>{{ $t('music_album') }}</span><span>{{ $t('music_time') }}</span><span />
             </div>
             <ol v-if="detailMusicList.length" class="scroll" :class="$style.detailTracks">
@@ -154,7 +154,7 @@
                 <button type="button" :aria-label="isCurrentTrack(item) && isPlay ? $t('player__pause') : $t('list__play')" @click="playDetailList(index)">{{ isCurrentTrack(item) && isPlay ? '❚❚' : '▶' }}</button>
               </li>
             </ol>
-            <ol v-else-if="isDetailLoading" :class="$style.detailTracksSkeleton" :aria-label="detailEmptyText">
+            <ol v-else-if="isDetailLoading" class="scroll" :class="$style.detailTracksSkeleton" :aria-label="detailEmptyText">
               <li v-for="index in 8" :key="index"><i /><i /><i /><i /><i /></li>
             </ol>
             <p v-else :class="$style.detailEmpty">{{ detailEmptyText }}</p>
@@ -446,7 +446,7 @@ const loadDailyRecommend = async(force = false, sourceOverride = selectedDailyPr
         } else if (sourceOverride == 'wy') {
           list = await wyMusicDetail.getList(result.ids.slice(0, 30)).then(data => data.list.map(item => toNewMusicInfo(item))).catch(() => [])
         } else {
-          const details = await Promise.all(result.ids.slice(0, 30).map(id => txMusicInfo(id).catch(() => null)))
+          const details = await Promise.all(result.ids.slice(0, 30).map(async id => txMusicInfo(id).catch(() => null)))
           list = details.filter(Boolean).map(item => toNewMusicInfo(item))
         }
       }
@@ -576,7 +576,7 @@ const openAccountPlaylist = async(playlist) => {
       } else {
         const list = []
         for (let index = 0; index < result.ids.length; index += 30) {
-          const items = await Promise.all(result.ids.slice(index, index + 30).map(id => txMusicInfo(id).catch(() => null)))
+          const items = await Promise.all(result.ids.slice(index, index + 30).map(async id => txMusicInfo(id).catch(() => null)))
           if (requestId != playlistDetailRequestId) return
           list.push(...items.filter(Boolean).map(item => toNewMusicInfo(item)))
         }
@@ -752,6 +752,7 @@ void refreshAccountStatus().then(() => {
 @import '@renderer/assets/styles/layout.less';
 
 .noitem {
+  --home-gutter: clamp(22px, 6vw, 82px);
   position: absolute;
   inset: 0;
   overflow: hidden;
@@ -759,18 +760,19 @@ void refreshAccountStatus().then(() => {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  padding: clamp(26px, 5vh, 58px) clamp(22px, 6vw, 82px) calc(@height-player + 18px);
+  padding: clamp(26px, 5vh, 58px) 0 calc(@height-player + 18px);
 }
 .noitemShell {
   position: relative;
-  width: min(1180px, 100%);
+  width: 100%;
   max-height: 100%;
   display: flex;
   flex-flow: column nowrap;
   > * { flex-shrink: 0; }
   gap: 18px;
   overflow-y: auto;
-  padding: 2px 8px 12px;
+  padding: 2px 0 12px;
+  padding-inline: calc(8px + max(var(--home-gutter), (100% - 1180px) / 2));
   box-sizing: border-box;
 }
 .welcomeBar {
@@ -1136,7 +1138,8 @@ void refreshAccountStatus().then(() => {
   .discoveryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .dailyDetail {
-  width: min(1160px, 100%);
+  --detail-gutter: max(16px, calc(50% - 580px));
+  width: 100%;
   height: 100%;
   min-height: 0;
   padding: 0;
@@ -1145,6 +1148,7 @@ void refreshAccountStatus().then(() => {
   flex-flow: column nowrap;
 }
 .detailHeader {
+  margin-inline: var(--detail-gutter);
   flex: none;
   min-height: 112px;
   display: flex;
@@ -1202,6 +1206,7 @@ void refreshAccountStatus().then(() => {
   gap: 9px;
 }
 .detailList {
+  container-type: inline-size;
   min-height: 0;
   flex: 1;
   overflow: hidden;
@@ -1219,10 +1224,12 @@ void refreshAccountStatus().then(() => {
   align-items: center;
   gap: 12px;
 }
+.detailTableHeader, .detailTracks, .detailTracksSkeleton { scrollbar-gutter: stable; }
 .detailTableHeader {
   flex: none;
   min-height: 46px;
-  padding: 0 16px;
+  overflow: hidden;
+  padding: 0 calc(var(--detail-gutter) + 16px);
   color: var(--color-font-label);
   border-bottom: 1px solid rgba(54, 83, 70, .09);
   font-size: 12px;
@@ -1231,7 +1238,7 @@ void refreshAccountStatus().then(() => {
   min-height: 0;
   flex: 1;
   margin: 0;
-  padding: 7px 8px 12px;
+  padding: 7px calc(var(--detail-gutter) + 8px) 12px;
   list-style: none;
 
   li {
@@ -1638,7 +1645,7 @@ void refreshAccountStatus().then(() => {
   min-height: 0;
   flex: 1;
   margin: 0;
-  padding: 7px 8px 12px;
+  padding: 7px calc(var(--detail-gutter) + 8px) 12px;
   list-style: none;
   overflow: hidden;
 
@@ -1691,24 +1698,26 @@ void refreshAccountStatus().then(() => {
 
 @media (max-width: 900px) {
   .noitem {
-    padding-left: 28px;
-    padding-right: 28px;
+    --home-gutter: 28px;
   }
   .detailHeader { flex-wrap: wrap; }
   .detailActions { width: 100%; padding-left: 54px; }
-  .detailTableHeader, .detailTracks li {
-    grid-template-columns: 38px minmax(160px, 1.4fr) minmax(110px, .8fr) 54px 40px;
-
-    > :nth-child(4) { display: none; }
-  }
-  .detailTracksSkeleton li {
-    grid-template-columns: 38px minmax(160px, 1.4fr) minmax(110px, .8fr) 54px 40px;
-
-    > :nth-child(4) { display: none; }
-  }
   .playlistRail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .discoveryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .playlistSkeleton > div:nth-child(n + 4) { display: none; }
+}
+@container (max-width: 810px) {
+  .detailTableHeader, .detailTracks li, .detailTracksSkeleton li {
+    grid-template-columns: 38px minmax(0, 1.4fr) minmax(0, .8fr) 54px 40px;
+    > :nth-child(4) { display: none; }
+  }
+}
+@container (max-width: 500px) {
+  .detailTableHeader, .detailTracks li, .detailTracksSkeleton li {
+    grid-template-columns: 28px minmax(0, 1fr) 44px 34px;
+    gap: 8px;
+    > :nth-child(3) { display: none; }
+  }
 }
 
 @media (max-height: 680px) {
@@ -1727,7 +1736,7 @@ void refreshAccountStatus().then(() => {
   .trackPreview li:nth-child(n + 3) { display: none; }
 }
 .noitem.detailView {
-  padding: 12px 16px calc(@height-player - 6px);
+  padding: 12px 0 calc(@height-player - 6px);
   .detailHeader { min-height: 84px; padding: 4px 8px 12px; }
 }
 </style>

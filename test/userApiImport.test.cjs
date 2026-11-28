@@ -11,7 +11,7 @@ const sandbox = { exports: {}, Promise, Error }
 vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(root, source), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText, sandbox)
-const { createUserApiImporter } = sandbox.exports
+const { createUserApiImporter, normalizeUserApiUrl, runUserApiUpdates } = sandbox.exports
 const script = '/** @name fixture */'
 const deferred = () => { let resolve, reject; const promise = new Promise((res, rej) => { resolve = res; reject = rej }); return { promise, resolve, reject } }
 
@@ -83,4 +83,64 @@ test('network failure releases the operation for retry', async() => {
   const importer = createUserApiImporter(() => ({ promise: ++attempts === 1 ? Promise.reject(Error('offline')) : Promise.resolve({ statusCode: 200, body: script }) }))
   await assert.rejects(importer.load('https://example.test/source'), /offline/)
   assert.equal(await importer.load('https://example.test/source'), script)
+})
+
+test('normalizeUserApiUrl trims whitespace and rejects non-http links', () => {
+  assert.equal(normalizeUserApiUrl('  https://example.test/api.js  '), 'https://example.test/api.js')
+  assert.throws(() => normalizeUserApiUrl('   '), /Invalid HTTP/)
+  assert.throws(() => normalizeUserApiUrl('ftp://example.test/api.js'), /Invalid HTTP/)
+})
+
+test('runUserApiUpdates reports updated, unchanged, failed, and skipped sources and keeps old script on failure', async() => {
+  const store = new Map([
+    ['s1', { id: 's1', name: 'Source 1', sourceUrl: 'https://example.test/s1.js', autoUpdate: true, script: '/** @name s1 v1 */' }],
+    ['s2', { id: 's2', name: 'Source 2', sourceUrl: 'https://example.test/s2.js', autoUpdate: false, script: '/** @name s2 v1 */' }],
+    ['s3', { id: 's3', name: 'Source 3', sourceUrl: 'https://example.test/s3.js', autoUpdate: true, script: '/** @name s3 old */' }],
+    ['s4', { id: 's4', name: 'Local Source', sourceUrl: '', autoUpdate: false, script: '/** @name local */' }],
+  ])
+  const order = ['s1', 's2', 's3', 's4']
+
+  const outcome = await runUserApiUpdates({
+    apis: order.map(id => store.get(id)),
+    fetchScript: (url) => {
+      if (url.endsWith('s1.js')) return { promise: Promise.resolve({ statusCode: 200, body: '/** @name s1 v2 */' }) }
+      if (url.endsWith('s2.js')) return { promise: Promise.resolve({ statusCode: 200, body: '/** @name s2 v1 */' }) }
+      return { promise: Promise.resolve({ statusCode: 500, body: 'server error' }) }
+    },
+    replaceScript: async(id, nextScript) => {
+      const current = store.get(id)
+      const changed = current.script !== nextScript
+      if (changed) {
+        store.set(id, { ...current, name: 'Source 1 v2', script: nextScript })
+      }
+      return { changed, apiInfo: store.get(id) }
+    },
+  })
+
+  assert.deepEqual({ ...outcome.summary }, { updated: 1, unchanged: 1, failed: 1, skipped: 1 })
+  assert.deepEqual(
+    [...outcome.results].map(item => [item.id, item.status]),
+    [['s1', 'updated'], ['s2', 'unchanged'], ['s3', 'failed'], ['s4', 'skipped']],
+  )
+  assert.match(outcome.results[2].message, /HTTP 500/)
+  assert.equal(store.get('s1').script, '/** @name s1 v2 */')
+  assert.equal(store.get('s1').autoUpdate, true)
+  assert.equal(store.get('s3').script, '/** @name s3 old */')
+  assert.deepEqual(order, ['s1', 's2', 's3', 's4'])
+})
+
+test('runUserApiUpdates leaves existing script intact if replaceScript rejects invalid script', async() => {
+  let stored = '/** @name stable */'
+  const outcome = await runUserApiUpdates({
+    apis: [{ id: 's1', name: 'Stable', sourceUrl: 'https://example.test/bad.js' }],
+    fetchScript: () => ({ promise: Promise.resolve({ statusCode: 200, body: 'not valid header' }) }),
+    replaceScript: async() => {
+      throw Error('无效的自定义源文件')
+    },
+  })
+
+  assert.deepEqual({ ...outcome.summary }, { updated: 0, unchanged: 0, failed: 1, skipped: 0 })
+  assert.equal(outcome.results[0].status, 'failed')
+  assert.match(outcome.results[0].message, /无效的自定义源文件/)
+  assert.equal(stored, '/** @name stable */')
 })

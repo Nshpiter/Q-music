@@ -6,7 +6,7 @@ import useListSelection from '@renderer/utils/compositions/useListSelection'
 
 export default ({ listRef, props }: { listRef: Ref<any>, props: { list: LX.Music.MusicInfoOnline[] } }) => {
   const selection = useListSelection(() => props.list, listRef)
-  const listItemHeight = computed(() => Math.max(34, Math.ceil((isFullscreen.value ? getFontSizeWithScreen() : appSetting['common.fontSize']) * 2.3)))
+  const listItemHeight = computed(() => Math.max(50, Math.ceil((isFullscreen.value ? getFontSizeWithScreen() : appSetting['common.fontSize']) * 3.15)))
   watch(() => props.list, selection.removeAllSelect)
   return { ...selection, listItemHeight }
 }

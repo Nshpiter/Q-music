@@ -34,6 +34,13 @@ watch(() => props.text, load, { immediate: true })
 
 <style module lang="less">
 @import '@renderer/assets/styles/layout.less';
-.panel { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 4px 16px calc(@height-player - 6px); }
+.panel {
+  --online-list-end-inset: 16px;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0 calc(@height-player - 6px) 16px;
+}
 .panel > * { flex: 1; min-height: 0; }
 </style>

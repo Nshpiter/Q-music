@@ -18,7 +18,7 @@ export default () => {
     if (!musicInfo.id) return
     if (maxTime != null) setMaxplayTime(maxTime)
     console.log('setProgress', time, maxTime)
-    if (time > 0) restorePlayTime = time
+    restorePlayTime = time
     setNowPlayTime(time)
     setCurrentTime(time)
 

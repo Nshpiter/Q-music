@@ -114,7 +114,8 @@ export default {
   display: flex;
   position: relative;
   gap: 16px;
-  padding: 16px 18px calc(@height-player + 18px);
+  --online-list-end-inset: 18px;
+  padding: 16px 0 calc(@height-player + 18px) var(--online-list-end-inset);
   box-sizing: border-box;
   min-height: 0;
 }
@@ -238,7 +239,7 @@ export default {
   // }
 }
 @media (max-width: 900px) {
-  .leaderboard { gap: 10px; padding: 10px 10px calc(@height-player + 12px); }
+  .leaderboard { --online-list-end-inset: 10px; gap: 10px; padding: 10px 0 calc(@height-player + 12px) var(--online-list-end-inset); }
   .lists { width: 150px; }
   .boardHeader { padding: 14px; }
   .boardTitle h2 { font-size: 20px; }

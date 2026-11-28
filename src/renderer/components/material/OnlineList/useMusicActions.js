@@ -1,10 +1,11 @@
 import { useRouter } from '@common/utils/vueRouter'
 import musicSdk from '@renderer/utils/musicSdk'
-import { openUrl } from '@common/utils/electron'
-import { toOldMusicInfo } from '@renderer/utils'
+import { clipboardWriteText, openUrl } from '@common/utils/electron'
+import { formatMusicName, toOldMusicInfo } from '@renderer/utils'
 import { addDislikeInfo, hasDislike } from '@renderer/core/dislikeList'
 import { playNext } from '@renderer/core/player'
 import { playMusicInfo } from '@renderer/store/player/state'
+import { appSetting } from '@renderer/store/setting'
 import { dialog } from '@renderer/plugins/Dialog'
 import { useI18n } from '@renderer/plugins/i18n'
 
@@ -21,6 +22,12 @@ export default ({ props }) => {
         text: `${info.name} ${info.singer}`,
       },
     })
+  }
+
+  const handleCopyName = index => {
+    const minfo = props.list[index]
+    if (!minfo) return
+    clipboardWriteText(formatMusicName(appSetting['download.fileName'], minfo.name, minfo.singer))
   }
 
   const handleOpenMusicDetail = index => {
@@ -47,6 +54,7 @@ export default ({ props }) => {
 
   return {
     handleSearch,
+    handleCopyName,
     handleOpenMusicDetail,
     handleDislikeMusic,
   }

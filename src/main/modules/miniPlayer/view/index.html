@@ -1,19 +1,21 @@
 <!doctype html>
 <html><head><meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src https: http: data:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src https: http: data:">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 * { box-sizing: border-box; }
-body {
-  color-scheme: dark; margin: 0; padding: 16px 18px; height: 100vh;
+html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+body { color-scheme: dark; color: #f3f5f2; font: 14px/1.4 system-ui, "Segoe UI", "Microsoft YaHei UI", sans-serif; }
+.surface {
+  position: relative; padding: 14px 16px; height: 100%;
   display: grid; align-content: center; gap: 11px;
   background:
     radial-gradient(120% 100% at 10% 0%, rgba(77, 175, 124, .18), transparent 55%),
     linear-gradient(160deg, #252b27, #1a1e1c);
-  color: #f3f5f2; font: 14px/1.4 system-ui, "Segoe UI", "Microsoft YaHei UI", sans-serif;
   border-top: 1px solid rgba(255, 255, 255, .08);
+  -webkit-app-region: drag; user-select: none;
 }
-header { display: flex; align-items: center; gap: 12px; min-width: 0; }
+header { display: flex; align-items: center; gap: 12px; min-width: 0; padding-right: 58px; }
 section { min-width: 0; flex: 1; }
 h1,p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 h1 { font-size: 16px; font-weight: 650; letter-spacing: -.01em; }
@@ -25,6 +27,7 @@ img {
 #lyric { min-height: 1.4em; font-size: 13px; color: #ccebd7; }
 nav { display: flex; gap: 10px; align-items: center; }
 button {
+  -webkit-app-region: no-drag;
   cursor: pointer; border: 1px solid rgba(255, 255, 255, .1); border-radius: 50%;
   height: 34px; width: 34px; display: grid; place-items: center;
   background: rgba(255, 255, 255, .08); color: inherit;
@@ -40,13 +43,114 @@ button:focus-visible { outline: 2px solid #68cf97; outline-offset: 2px; }
 }
 #toggle:hover { background: linear-gradient(145deg, #77daa4, #58ba87); }
 svg { width: 15px; height: 15px; display: block; fill: currentColor; }
-@media (prefers-reduced-motion: reduce) { button { transition: none; } }
+#close, #minimize {
+  position: absolute; top: 8px; width: 28px; height: 28px;
+  border: 0; border-radius: 8px; background: transparent; color: #c2cac5;
+}
+#close { right: 8px; }
+#minimize { right: 38px; }
+#close:hover { color: #ffaeae; background: rgba(255, 107, 107, .16); }
+#minimize:hover { color: #fff; background: rgba(255, 255, 255, .14); }
+#ambient { display: none; }
+.capsule body { padding: 1px; }
+.capsule .surface {
+  isolation: isolate;
+  display: flex; align-items: center; gap: 11px; padding: 0 11px 0 10px;
+  border: 0; border-radius: 999px;
+  background:
+    radial-gradient(64% 160% at 8% 50%, rgba(104, 207, 151, .22), transparent 68%),
+    linear-gradient(155deg, #1c221f, #121614);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .18),
+    inset 0 0 0 1px rgba(255, 255, 255, .11);
+  overflow: hidden;
+  transition: box-shadow .24s ease;
+}
+.capsule .surface:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .24),
+    inset 0 0 0 1px rgba(130, 226, 173, .22);
+}
+.capsule #ambient {
+  display: block;
+  position: absolute;
+  inset: -14px;
+  width: calc(100% + 28px);
+  height: calc(100% + 28px);
+  object-fit: cover;
+  filter: blur(24px) saturate(1.45);
+  opacity: .2;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity .4s ease;
+}
+.capsule #ambient[hidden], .capsule.lightweight #ambient { display: none; }
+.capsule header { display: contents; }
+.capsule header section, .capsule #prev, .capsule #minimize { display: none; }
+.capsule #cover {
+  position: relative;
+  z-index: 1;
+  width: 34px; height: 34px; border-radius: 50%;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .42), 0 0 0 1.5px rgba(255, 255, 255, .2);
+}
+.capsule.motion #cover { animation: q-capsule-spin 18s linear infinite paused; }
+.capsule.motion.playing #cover { animation-play-state: running; }
+.capsule.playing #cover {
+  box-shadow: 0 3px 12px rgba(77, 175, 124, .34), 0 0 0 1.5px rgba(140, 232, 180, .48);
+}
+@keyframes q-capsule-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.capsule #lyric {
+  position: relative;
+  z-index: 1;
+  flex: 1; min-width: 0; min-height: 0; color: #f4faf6; margin-left: 2px;
+  font-size: 13.5px; font-weight: 600; letter-spacing: .01em; line-height: 1.32;
+  white-space: normal; overflow-wrap: anywhere;
+  max-height: 2lh; overflow: hidden; text-overflow: clip;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .28);
+}
+.capsule .timed-word {
+  color: rgba(232, 242, 236, .42);
+  background: linear-gradient(90deg, #9ef3c1, #f3fff8) left center / 0% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.capsule nav {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  gap: 3px;
+  padding-left: 6px;
+  border-left: 1px solid rgba(255, 255, 255, .09);
+  -webkit-app-region: no-drag;
+}
+.capsule button { width: 29px; height: 29px; color: rgba(232, 242, 236, .82); background: transparent; border: 0; }
+.capsule #toggle {
+  width: 32px; height: 32px; color: #0e2619;
+  background: linear-gradient(145deg, #86e6b0, #52b882);
+  box-shadow: 0 3px 10px rgba(77, 175, 124, .36), inset 0 1px 0 rgba(255, 255, 255, .4);
+}
+.capsule #toggle:hover { background: linear-gradient(145deg, #96efb9, #60c790); }
+.capsule #close { position: static; display: grid; width: 29px; height: 29px; border-radius: 50%; color: rgba(232, 242, 236, .58); }
+.capsule #next:hover { color: #fff; background: rgba(255, 255, 255, .14); }
+.capsule #close:hover { color: #ff9f9f; background: rgba(255, 107, 107, .16); }
+:root:not(.motion) *, :root:not(.motion) *::before, :root:not(.motion) *::after { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  button, .capsule .surface, .capsule #ambient { transition: none; }
+  .capsule.motion #cover { animation: none; }
+}
 </style></head>
 <body>
-<header><img alt="" referrerpolicy="no-referrer" hidden><section><h1>Q-music</h1><p id="singer"></p></section></header>
+<main class="surface">
+<img id="ambient" alt="" referrerpolicy="no-referrer" hidden aria-hidden="true">
+<header><img id="cover" alt="" referrerpolicy="no-referrer" hidden><section><h1>Q-music</h1><p id="singer"></p></section></header>
 <p id="lyric"></p>
 <nav>
 <button id="prev"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h2v12H2zM14 2 5 8l9 6z"/></svg></button>
 <button id="toggle"><svg viewBox="0 0 16 16" aria-hidden="true"><path id="play" d="M4 2v12l10-6z"/><path id="pause" d="M3 2h4v12H3zM9 2h4v12H9z" style="display:none"/></svg></button>
 <button id="next"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12 2h2v12h-2zM2 2l9 6-9 6z"/></svg></button>
-</nav></body></html>
+<button id="minimize"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10v1.4H3z"/></svg></button>
+<button id="close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 3.5 3.5 3.5 3.5-3.5 1 1L9 8l3.5 3.5-1 1L8 9l-3.5 3.5-1-1L7 8 3.5 4.5z"/></svg></button>
+</nav></main><script src="timedLine.js"></script><script src="view.js"></script></body></html>

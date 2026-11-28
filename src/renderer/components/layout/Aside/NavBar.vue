@@ -143,7 +143,7 @@ export default {
   inset: 0 0 auto;
   pointer-events: none;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  background: rgb(from var(--color-font) r g b / .075);
 }
 .indicatorReady { transition: transform .28s cubic-bezier(.2, .8, .2, 1); }
 .link {
@@ -163,7 +163,7 @@ export default {
   &:hover:not(.active) { color: var(--color-font); background: rgb(from var(--color-font) r g b / .06); }
   &:active:not(.active) { background: rgb(from var(--color-font) r g b / .1); }
   &.active {
-    color: color-mix(in srgb, var(--color-primary) 45%, var(--color-font));
+    color: var(--color-font);
     span { font-weight: 650; }
   }
   &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }

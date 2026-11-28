@@ -14,6 +14,8 @@ declare namespace LX {
         * 是否属于 “稍后播放”
         */
       isTempPlay: boolean
+      /** 用户指定的「下一首播放」优先于回听后的前进历史。 */
+      isTop?: boolean
       /**
         * “稍后播放”条目的稳定标识（用于列表渲染 key，同一歌曲可重复添加）
         */

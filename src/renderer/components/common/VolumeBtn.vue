@@ -1,6 +1,12 @@
 <template>
   <material-popup-btn :class="$style.btnContent">
-    <button class="q-player-tool" :class="$style.btn" :aria-label="isMute ? $t('player__volume_muted') : `${$t('player__volume')}${parseInt(volume * 100)}%`" @wheel="handleWheel">
+    <button
+      class="q-player-tool"
+      :class="$style.btn"
+      :aria-label="isMute ? $t('player__volume_muted') : `${$t('player__volume')}${parseInt(volume * 100)}%`"
+      @wheel="handleWheel"
+      @contextmenu.prevent="saveVolumeIsMute(!isMute)"
+    >
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M3.5 9h4L13 4.8v14.4L7.5 15h-4z" />
         <path v-if="isMute || volume == 0" d="m16.5 9.5 4.5 5m0-5-4.5 5" />
@@ -112,6 +118,8 @@ const handleUpdateVolume = (val) => {
   font-size: 13px;
   span {
     line-height: 1.2;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
 }
 

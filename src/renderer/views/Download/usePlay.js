@@ -16,11 +16,20 @@ export default ({ selectedList, list, listAll, removeAllSelect }) => {
     } else playList(LIST_IDS.DOWNLOAD, targetIndex)
   }
 
+  const handlePlayMusicNext = (index, single) => {
+    if (selectedList.value.length && !single) {
+      addTempPlayList(selectedList.value.map(s => ({ listId: LIST_IDS.DOWNLOAD, musicInfo: s, isTop: true })))
+      removeAllSelect()
+    } else if (list.value[index]) {
+      addTempPlayList([{ listId: LIST_IDS.DOWNLOAD, musicInfo: list.value[index], isTop: true }])
+    }
+  }
+
   const handlePlayMusicLater = (index, single) => {
     if (selectedList.value.length && !single) {
       addTempPlayList(selectedList.value.map(s => ({ listId: LIST_IDS.DOWNLOAD, musicInfo: s })))
       removeAllSelect()
-    } else {
+    } else if (list.value[index]) {
       addTempPlayList([{ listId: LIST_IDS.DOWNLOAD, musicInfo: list.value[index] }])
     }
   }
@@ -36,6 +45,7 @@ export default ({ selectedList, list, listAll, removeAllSelect }) => {
   return {
     handlePlayAll,
     handlePlayMusic,
+    handlePlayMusicNext,
     handlePlayMusicLater,
   }
 }

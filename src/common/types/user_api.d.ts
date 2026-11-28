@@ -19,6 +19,8 @@ declare namespace LX {
       description: string
       script: string
       allowShowUpdateAlert: boolean
+      sourceUrl?: string
+      autoUpdate?: boolean
       author?: string
       homepage?: string
       version?: string
@@ -49,6 +51,32 @@ declare namespace LX {
     type UserApiSetApiParams = string
 
     interface UserApiSetAllowUpdateAlertParams {
+      id: string
+      enable: boolean
+    }
+
+    interface ImportUserApiParams {
+      script: string
+      sourceUrl?: string
+    }
+
+    interface UserApiReplaceScriptParams {
+      id: string
+      script: string
+    }
+
+    interface UserApiReplaceScriptResult {
+      changed: boolean
+      apiInfo: UserApiInfo
+      apiList: UserApiInfo[]
+    }
+
+    interface UserApiSetSourceUrlParams {
+      id: string
+      sourceUrl: string
+    }
+
+    interface UserApiSetAutoUpdateParams {
       id: string
       enable: boolean
     }

@@ -41,15 +41,16 @@ export default {
   gap: 6px;
   border: none;
   border-radius: @form-radius;
+  overflow: hidden;
   cursor: pointer;
   padding: 8px 16px;
-  color: var(--color-button-font);
+  color: var(--color-font);
   outline: none;
   transition: @transition-fast;
   transition-property: background-color, color, box-shadow, transform, opacity;
   transition-timing-function: cubic-bezier(.2, .8, .2, 1);
-  background: var(--color-button-background);
-  box-shadow: inset 0 0 0 1px var(--q-border);
+  background: rgb(from var(--color-font) r g b / .045);
+  box-shadow: inset 0 0 0 1px var(--q-outline);
   font-size: 14px;
   font-weight: 550;
   line-height: 1.4;
@@ -63,20 +64,20 @@ export default {
   &.outline {
     background-color: transparent;
     background-image: none;
-    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800);
+    box-shadow: inset 0 0 0 1px var(--q-outline);
   }
 
   &:hover:not([disabled]) {
-    color: var(--color-primary-dark-300);
-    background-color: var(--color-button-background-hover);
-    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-700);
+    color: var(--color-font);
+    background-color: rgb(from var(--color-font) r g b / .085);
+    box-shadow: inset 0 0 0 1px rgb(from var(--color-font) r g b / .14);
   }
   &.outline:hover:not([disabled]) {
-    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-500);
+    box-shadow: inset 0 0 0 1px rgb(from var(--color-font) r g b / .16);
   }
   &:active:not([disabled]) {
-    background-color: var(--color-button-background-active);
-    box-shadow: inset 0 0 0 1px var(--color-primary-alpha-600);
+    background-color: rgb(from var(--color-font) r g b / .12);
+    box-shadow: inset 0 0 0 1px rgb(from var(--color-font) r g b / .16);
     transform: translateY(0) scale(.97);
     transition-duration: .08s;
   }

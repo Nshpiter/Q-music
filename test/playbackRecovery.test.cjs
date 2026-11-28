@@ -224,6 +224,54 @@ test('无效的列表播放请求不清空播放会话或修改当前列表', as
   assert.equal(h.state.playInfo.playerListId, 'test')
 })
 
+test('回听时指定下一首，预加载与播放依次选择插队项、前进历史、稍后播放', async() => {
+  const h = harness()
+  h.request(async() => 'https://example.test/audio.mp3')
+  await h.start()
+  await h.api.playNext()
+  await h.api.playPrev()
+  assert.equal(h.state.musicInfo.id, 'one')
+
+  const later = { listId: null, musicInfo: { ...h.tracks[0], id: 'later' }, isTempPlay: true }
+  h.state.tempPlayList.push(later)
+  assert.equal((await h.api.getNextPlayMusicInfo()).musicInfo.id, 'two')
+  h.state.tempPlayList.unshift(...h.tracks.slice(2).map(musicInfo => ({ listId: null, musicInfo, isTop: true, isTempPlay: true })))
+  for (const id of ['three', 'four', 'two', 'later']) {
+    assert.equal((await h.api.getNextPlayMusicInfo()).musicInfo.id, id)
+    await h.api.playNext()
+    assert.equal(h.state.musicInfo.id, id)
+  }
+  assert.deepEqual(Array.from(h.playbackSession.history, item => item.musicInfo.id), ['one', 'three', 'four', 'two', 'later'])
+})
+
+test('搜索、歌单、下载菜单批量插队保持选择顺序并保留原有队尾', () => {
+  const state = { musicInfo: {}, tempPlayList: [], playMusicInfo: { musicInfo: { id: 'playing' } } }
+  const deps = {
+    '@common/utils/common': load('src/common/utils/common.ts'),
+    '@common/constants': { LIST_IDS: { PLAY_LATER: 'later', DOWNLOAD: 'download' } },
+    '@common/utils/vueTools': {}, '@renderer/core/player': {}, '@renderer/core/player/session': {},
+    '@renderer/core/player/selection': {}, '@renderer/plugins/Dialog': {}, '@renderer/store/download/state': {},
+    '@renderer/store/list/action': {}, '@renderer/store/list/state': {}, '@renderer/store/player/state': state,
+    './playProgress': {}, './state': state,
+  }
+  const store = load('src/renderer/store/player/action.ts', deps)
+  deps['@renderer/store/player/action'] = store
+  for (const entry of ['components/material/OnlineList/usePlay.ts', 'views/List/MusicList/usePlay.js', 'views/Download/usePlay.js']) {
+    store.clearTempPlayeList()
+    store.addTempPlayList([{ listId: null, musicInfo: { id: 'D' } }])
+    const tracks = ['A', 'B', 'C'].map(id => ({ id }))
+    const selectedList = { value: tracks.slice() }
+    const handlers = load('src/renderer/' + entry, deps).default({
+      selectedList, props: { listId: 'list', list: tracks }, list: { value: tracks },
+      removeAllSelect: () => { selectedList.value = [] },
+    })
+    handlers.handlePlayMusicNext(0, false)
+    assert.deepEqual(state.tempPlayList.map(item => item.musicInfo.id), ['A', 'B', 'C', 'D'], entry)
+    assert.deepEqual(state.tempPlayList.map(item => !!item.isTop), [true, true, true, false], entry)
+    assert.deepEqual(selectedList.value, [], entry)
+  }
+})
+
 test('连续选集忽略随机历史，并按顺序下一集、上一集且不改用户模式', async() => {
   const h = harness()
   h.request(async() => 'https://example.test/audio.mp3')

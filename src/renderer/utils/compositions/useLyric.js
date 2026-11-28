@@ -5,7 +5,7 @@ import { play } from '@renderer/core/player/action'
 import { appSetting } from '@renderer/store/setting'
 import useFurigana from './useFurigana'
 import { layoutFan } from '../refinedNowPlaying/fanLayout'
-import { getCurrentTime, getPlaybackRate } from '@renderer/plugins/player'
+import { getCurrentTime, getDuration, getPlaybackRate } from '@renderer/plugins/player'
 // import { player as eventPlayerNames } from '@renderer/event/names'
 
 export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isShowPlayComment, offset }) => {
@@ -87,22 +87,23 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     window.app_event.setProgress(targetTime)
   }
 
-  const handleLinePlay = () => {
-    if (linePlayTime < 0) return
-    const targetTime = linePlayTime
+  const seekLyricTime = (targetTime, startPlaying) => {
+    if (!Number.isFinite(targetTime) || targetTime < 0) return
+    clearLyricScrollTimeout()
+    clearLinePlayRetry()
     hideLinePlay()
     isStopScroll.value = false
-    setLinePlayProgress(targetTime)
-    if (!isPlay.value) play()
+    if (startPlaying && !isPlay.value && !getDuration()) setLinePlayProgress(targetTime)
+    else window.app_event.setProgress(targetTime)
+    if (startPlaying && !isPlay.value) play()
   }
+  const seekLyricLine = (index, startPlaying) => seekLyricTime(getPlayTime(index), startPlaying)
+  const handleLinePlay = () => seekLyricTime(linePlayTime, true)
 
   const handleSkipPlay = () => {
     if (time == -1) return
     handleSkipMouseLeave()
-    hideLinePlay()
-    isStopScroll.value = false
-    window.app_event.setProgress(time)
-    if (!isPlay.value) play()
+    seekLyricTime(time, true)
   }
   const handleSkipMouseEnter = () => {
     isSkipMouseEnter = true
@@ -124,6 +125,7 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     point.x = rect.x
     point.y = rect.y
     let dom = document.elementFromPoint(point.x, point.y)
+    if (!dom) return
     if (dom_pre_line === dom) return
     if (dom.tagName == 'SPAN') {
       dom = dom.parentNode.parentNode
@@ -273,26 +275,25 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     clearTimeout(timeout)
     timeout = null
   }
+  const resumeLyricFollow = () => {
+    clearLyricScrollTimeout()
+    isStopScroll.value = false
+    hideLinePlay()
+    handleScrollLrc(300, true)
+  }
   const startLyricScrollTimeout = () => {
     clearLyricScrollTimeout()
-    if (isSkipMouseEnter || isMsDown.value) return
-    timeout = setTimeout(() => {
-      timeout = null
-      isStopScroll.value = false
-      hideLinePlay()
-      if (!isPlay.value) return
-      handleScrollLrc()
-    }, 3000)
+    if (!isStopScroll.value || !isPlay.value || isSkipMouseEnter || isMsDown.value) return
+    timeout = setTimeout(resumeLyricFollow, 3000)
   }
   const handleLyricDown = (y) => {
-    // console.log(event)
-    stopScrollAnimation()
-    isStopScroll.value = true
+    if (!dom_lines?.length) return
     isMsDown.value = true
     msDownY = fanDragY = y
     msDownScrollY = dom_lyric.value.scrollTop
   }
   const handleLyricMouseDown = event => {
+    if (event.button !== 0) return
     handleLyricDown(event.clientY)
   }
   const handleLyricTouchStart = event => {
@@ -327,12 +328,10 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
   }
   const handleMove = (y) => {
     if (isMsDown.value) {
-      isStopScroll.value ||= true
+      if (!isStopScroll.value && Math.abs(y - msDownY) < 4) return
+      isStopScroll.value = true
       hideLinePlay()
-      if (cancelScrollFn) {
-        cancelScrollFn()
-        cancelScrollFn = null
-      }
+      stopScrollAnimation()
       if (appSetting['playDetail.fanLyrics']) {
         const distance = fanDragY - y
         const step = Math.trunc(distance / Math.max(1, dom_lines?.[fanFocus]?.clientHeight || 32))
@@ -356,12 +355,10 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
   }
 
   const handleWheel = (event) => {
+    if (!dom_lines?.length || !event.deltaY) return
     isStopScroll.value ||= true
     hideLinePlay()
-    if (cancelScrollFn) {
-      cancelScrollFn()
-      cancelScrollFn = null
-    }
+    stopScrollAnimation()
     if (appSetting['playDetail.fanLyrics']) renderFan(fanFocus + Math.sign(event.deltaY), true)
     else dom_lyric.value.scrollTop += event.deltaY
     startLyricScrollTimeout()
@@ -394,6 +391,12 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
   }
 
   const initLrc = (lines, oLines) => {
+    clearLyricScrollTimeout()
+    isMsDown.value = false
+    isStopScroll.value = false
+    isSkipMouseEnter = false
+    hideLinePlay()
+    clearLinePlayRetry()
     isSetedLines = true
     if (oLines) {
       if (lines.length) {
@@ -443,6 +446,7 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
   watch([isPlay, () => appSetting['player.playbackRate']], () => {
     if (appSetting['playDetail.fanLyrics']) syncFan(false)
   })
+  watch(isPlay, startLyricScrollTimeout)
   const seekFan = () => {
     if (appSetting['playDetail.fanLyrics']) nextTick(() => handleScrollLrc(0, true))
   }
@@ -455,6 +459,7 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     document.addEventListener('mouseup', handleMouseMsUp)
     document.addEventListener('touchmove', handleTouchMove)
     document.addEventListener('touchend', handleMouseMsUp)
+    document.addEventListener('touchcancel', handleMouseMsUp)
 
     initLrc(lyric.lines, null)
   })
@@ -470,6 +475,7 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     document.removeEventListener('mouseup', handleMouseMsUp)
     document.removeEventListener('touchmove', handleTouchMove)
     document.removeEventListener('touchend', handleMouseMsUp)
+    document.removeEventListener('touchcancel', handleMouseMsUp)
   })
 
   return {
@@ -487,6 +493,8 @@ export default ({ isPlay, lyric, playProgress, isShowLyricProgressSetting, isSho
     handleLyricTouchStart,
     handleLyricMouseMove,
     handleWheel,
+    resumeLyricFollow,
+    seekLyricLine,
     handleSkipPlay,
     handleSkipMouseEnter,
     handleSkipMouseLeave,

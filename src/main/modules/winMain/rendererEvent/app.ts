@@ -68,9 +68,9 @@ export default () => {
     if (event.senderFrame !== getWebContents().mainFrame) throw Error('invalid_sender')
     return translateSong(params)
   })
-  mainHandle<Record<string, string>>(WIN_MAIN_RENDERER_EVENT_NAME.open_mini_player, async({ event, params }) => {
+  mainHandle<{ labels: Record<string, string>, capsule: boolean }>(WIN_MAIN_RENDERER_EVENT_NAME.open_mini_player, async({ event, params }) => {
     const owner = getWebContents()
-    if (event.senderFrame === owner.mainFrame) await openMiniPlayer(owner, params, sendTaskbarButtonClick)
+    if (event.senderFrame === owner.mainFrame) await openMiniPlayer(owner, params.labels, sendTaskbarButtonClick, params.capsule)
   })
   mainHandle<string>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_key, async() => generateSnapshotKey())
   mainHandle<string[]>(WIN_MAIN_RENDERER_EVENT_NAME.cloud_backup_list, listConfigBackups)

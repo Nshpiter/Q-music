@@ -72,7 +72,7 @@ dd
       base-btn.btn(min :disabled="busy || !canUse || !selectedIds.length" @click="importSelected('playlist')") 导入歌单
       base-btn.btn.gap-left(min :disabled="busy || !canUse || !selectedIds.length" @click="importSelected('songs')") 导入歌曲
       base-btn.btn.gap-left(v-if="importedListId" min @click="openImportedList") 查看导入结果
-    div(v-if="tracks.length" :class="$style.trackList")
+    div.scroll(v-if="tracks.length" :class="$style.trackList")
       label(v-for="track in visibleTracks" :key="track.id" :class="[$style.track, selectedIds.includes(track.id) ? $style.selectedTrack : null]")
         input(v-model="selectedIds" type="checkbox" :value="track.id" :disabled="busy" :aria-label="`选择 ${track.name}`")
         span(:class="$style.trackInfo")

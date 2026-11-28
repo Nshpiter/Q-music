@@ -7,16 +7,16 @@
 }
 
 :root {
-  --color-primary: rgb(77, 175, 124);
-  --color-primary-alpha-100: rgba(77, 175, 124, 0.90);
-  --color-primary-alpha-200: rgba(77, 175, 124, 0.80);
-  --color-primary-alpha-300: rgba(77, 175, 124, 0.70);
-  --color-primary-alpha-400: rgba(77, 175, 124, 0.60);
-  --color-primary-alpha-500: rgba(77, 175, 124, 0.50);
-  --color-primary-alpha-600: rgba(77, 175, 124, 0.40);
-  --color-primary-alpha-700: rgba(77, 175, 124, 0.30);
-  --color-primary-alpha-800: rgba(77, 175, 124, 0.20);
-  --color-primary-alpha-900: rgba(77, 175, 124, 0.10);
+  --color-primary: rgb(31, 107, 82);
+  --color-primary-alpha-100: rgba(31, 107, 82, 0.90);
+  --color-primary-alpha-200: rgba(31, 107, 82, 0.80);
+  --color-primary-alpha-300: rgba(31, 107, 82, 0.70);
+  --color-primary-alpha-400: rgba(31, 107, 82, 0.60);
+  --color-primary-alpha-500: rgba(31, 107, 82, 0.50);
+  --color-primary-alpha-600: rgba(31, 107, 82, 0.40);
+  --color-primary-alpha-700: rgba(31, 107, 82, 0.30);
+  --color-primary-alpha-800: rgba(31, 107, 82, 0.20);
+  --color-primary-alpha-900: rgba(31, 107, 82, 0.10);
   --color-primary-dark-100: rgb(69,158,112);
   --color-primary-dark-100-alpha-100: rgba(69, 158, 112, 0.90);
   --color-primary-dark-100-alpha-200: rgba(69, 158, 112, 0.80);
@@ -265,19 +265,19 @@
   --color-950: rgb(44,44,44);
   --color-1000: rgb(33, 33, 33);
 
-  --color-app-background: var(--color-primary-light-600-alpha-600);
-  --color-main-background: rgba(255, 255, 255, 0.9);
-  --color-nav-font: var(--color-primary);
+  --color-app-background: #F4F2ED;
+  --color-main-background: rgba(255, 255, 255, 0.90);
+  --color-nav-font: var(--color-font);
   // --color-app-background: rgba(0, 0, 0, .5);
   // --color-main-background: rgba(0, 0, 0, 0.26);
-  --color-btn-hide: #3bc2b2;
-  --color-btn-min: #85c43b;
+  --color-btn-hide: #2ec4b6;
+  --color-btn-min: #7ac74f;
   --color-btn-max: #5db7ef;
-  --color-btn-close: #fab4a0;
+  --color-btn-close: #f28482;
 
   --color-badge-primary: var(--color-primary);
-  --color-badge-secondary: #4baed5;
-  --color-badge-tertiary: #e7aa36;
+  --color-badge-secondary: #4b5563;
+  --color-badge-tertiary: #b45309;
 
   --color-font: var(--color-850);
   --color-font-label: var(--color-450);
@@ -302,16 +302,18 @@
   --q-menu-blur: 22px;
   --q-menu-hover-bg: var(--color-primary-alpha-800);
   --q-menu-active-bg: var(--color-primary-alpha-600);
-  --q-menu-border: inset 0 0 0 1px rgba(255, 255, 255, .5);
-  --q-icon-btn-hover-bg: var(--color-primary-alpha-800);
-  --q-surface: rgba(255, 255, 255, .52);
-  --q-surface-strong: rgba(255, 255, 255, .72);
-  --q-surface-soft: rgba(255, 255, 255, .36);
-  --q-border: rgba(255, 255, 255, .64);
-  --q-highlight: rgba(255, 255, 255, .5);
-  --q-outline: rgb(from var(--color-font) r g b / .14);
-  --q-shadow-soft: 0 14px 32px rgba(72, 91, 112, .08);
-  --q-shadow-float: 0 24px 64px rgba(55, 69, 86, .16);
+  --q-menu-border: inset 0 0 0 1px var(--q-panel-border);
+  --q-icon-btn-hover-bg: rgb(from var(--color-font) r g b / .07);
+  --q-surface: rgba(255, 255, 255, .82);
+  --q-surface-strong: rgba(255, 255, 255, .94);
+  --q-surface-soft: rgba(255, 255, 255, .64);
+  --q-border: rgba(255, 255, 255, .84);
+  --q-panel-border: rgba(28, 30, 32, .065);
+  --q-highlight: rgba(255, 255, 255, .64);
+  --q-outline: rgba(28, 30, 32, .09);
+  --q-list-selected-bg: rgba(28, 30, 32, .055);
+  --q-shadow-soft: 0 10px 28px rgba(0, 0, 0, .05);
+  --q-shadow-float: 0 24px 64px rgba(0, 0, 0, .14);
   --q-z-float: 1000;
 
 
@@ -464,21 +466,18 @@ input, textarea {
     background-color: rgba(0, 0, 0, 0);
   }
   &::-webkit-scrollbar-track {
-    background-color: var(--color-primary-light-100-alpha-800);
+    background-color: transparent;
     border-radius: 3px;
-    // background-color: rgba(0, 0, 0, 0.1);
   }
   &::-webkit-scrollbar-thumb {
     border-radius: 3px;
-    background-color: var(--color-primary-alpha-600);
-    // background-color: rgba(0, 0, 0, 0.2);
-    transition: background-color 0.4s ease;
+    background-color: rgb(from var(--color-font) r g b / .16);
+    transition: background-color 0.3s ease;
   }
   &::-webkit-scrollbar-thumb:hover {
     border-radius: 3px;
-    background-color: var(--color-primary-alpha-400);
-    // background-color: rgba(0, 0, 0, 0.4);
-    transition: background-color 0.4s ease;
+    background-color: rgb(from var(--color-font) r g b / .28);
+    transition: background-color 0.3s ease;
   }
 }
 
@@ -533,28 +532,34 @@ table {
     box-shadow: inset 0 -1px 0 rgb(from var(--color-font) r g b / .05);
 
     &:hover {
-      background-color: rgb(from var(--color-content-background) r g b / .5);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4), 0 6px 16px rgba(24, 34, 45, .08);
-      transform: translateX(2px);
+      background-color: rgb(from var(--color-font) r g b / .035);
+      box-shadow: none;
+      transform: none;
     }
     &.active {
-      background-color: var(--color-primary-background-active);
+      background-color: var(--q-list-selected-bg, rgba(28, 30, 32, .055));
+      box-shadow: none;
     }
     &.selected {
-      background-color: var(--color-primary-background-hover);
+      background-color: rgb(from var(--color-font) r g b / .045);
     }
-    // 正在播放行：主色底 + 主色歌名 + 均衡跳动条
+    // 正在播放的歌曲用底色、歌名和均衡动画标识。
     &.playing {
-      background-color: var(--color-primary-alpha-800);
-      box-shadow: inset 0 0 0 1px var(--color-primary-alpha-700);
+      background-color: color-mix(in srgb, var(--color-primary) 7%, transparent);
+      box-shadow: none;
 
       .name {
-        color: var(--color-primary-dark-200);
+        color: var(--color-primary);
         font-weight: 700;
       }
       &:hover {
-        background-color: var(--color-primary-alpha-700);
+        background-color: color-mix(in srgb, var(--color-primary) 11%, transparent);
       }
+    }
+    // 同时选中时叠加选中底色。
+    &.playing.active,
+    &.playing.selected {
+      background-color: color-mix(in srgb, var(--color-primary) 11%, var(--q-list-selected-bg, rgba(28, 30, 32, .055)));
     }
     &.disabled {
       opacity: .5;
@@ -591,9 +596,12 @@ table {
         white-space: initial;
         text-overflow: initial;
         align-items: center;
+        gap: 6px;
 
         >.name {
           .mixin-ellipsis-1();
+          min-width: 0;
+          flex: 0 1 auto;
         }
       }
       .badge {

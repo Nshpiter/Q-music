@@ -4,7 +4,10 @@ import {
   getApiList,
   importApi,
   removeApi,
+  replaceApiScript,
   setApi,
+  setAutoUpdate,
+  setSourceUrl,
   getStatus,
   request,
   cancelRequest,
@@ -13,8 +16,21 @@ import {
 import { sendEvent } from '@main/modules/winMain/main'
 
 export default () => {
-  mainHandle<string, LX.UserApi.ImportUserApi>(WIN_MAIN_RENDERER_EVENT_NAME.import_user_api, async({ params: script }) => {
-    return importApi(script)
+  mainHandle<string | LX.UserApi.ImportUserApiParams, LX.UserApi.ImportUserApi>(WIN_MAIN_RENDERER_EVENT_NAME.import_user_api, async({ params }) => {
+    if (typeof params == 'string') return importApi(params)
+    return importApi(params.script, params.sourceUrl)
+  })
+
+  mainHandle<LX.UserApi.UserApiReplaceScriptParams, LX.UserApi.UserApiReplaceScriptResult>(WIN_MAIN_RENDERER_EVENT_NAME.replace_user_api_script, async({ params }) => {
+    return replaceApiScript(params.id, params.script)
+  })
+
+  mainHandle<LX.UserApi.UserApiSetSourceUrlParams, LX.UserApi.UserApiInfo[]>(WIN_MAIN_RENDERER_EVENT_NAME.user_api_set_source_url, async({ params }) => {
+    return setSourceUrl(params.id, params.sourceUrl)
+  })
+
+  mainHandle<LX.UserApi.UserApiSetAutoUpdateParams, LX.UserApi.UserApiInfo[]>(WIN_MAIN_RENDERER_EVENT_NAME.user_api_set_auto_update, async({ params }) => {
+    return setAutoUpdate(params.id, params.enable)
   })
 
   mainHandle<string[], LX.UserApi.UserApiInfo[]>(WIN_MAIN_RENDERER_EVENT_NAME.remove_user_api, async({ params: apiIds }) => {
@@ -51,4 +67,3 @@ export const sendStatusChange = (status: LX.UserApi.UserApiStatus) => {
 export const sendShowUpdateAlert = (info: LX.UserApi.UserApiUpdateInfo) => {
   sendEvent(WIN_MAIN_RENDERER_EVENT_NAME.user_api_show_update_alert, info)
 }
-

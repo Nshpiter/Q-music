@@ -34,6 +34,39 @@ const timeout = load('src/renderer/store/browseRequest.ts')
 const deferred = () => { let resolve, reject; const promise = new Promise((a, b) => { resolve = a; reject = b }); return { promise, resolve, reject } }
 const result = (name, source = 'wy') => ({ list: [{ id: name, name }], total: 1, limit: 30, page: 1, source, info: { name } })
 
+test('桌面歌单详情翻页后切换设置再返回时保留歌单和页码', async () => {
+  const vue = require('vue')
+  const { createRouter, createMemoryHistory } = require('vue-router')
+  const routes = ['/songList/detail', '/setting'].map(path => ({ path, component: {} }))
+  const router = createRouter({ history: createMemoryHistory(), routes })
+  const requests = []
+  const component = load('src/renderer/views/songList/Detail/index.vue', {
+    '@common/utils/vueTools': vue,
+    '@common/utils/vueRouter': { useRoute: () => router.currentRoute.value, useRouter: () => router },
+    '@renderer/store/songList/state': { listDetailInfo: {} },
+    '@renderer/store/songList/action': { setVisibleListDetail() {} },
+    '@renderer/components/common/EmptyCoverMark.vue': {}, './action': {}, './useKeyBack': () => {},
+    './useList': () => ({ getListData: (source, id, page) => { requests.push([source, id, page]) } }),
+  }).default
+  router.beforeResolve((to, from, next) => {
+    if (to.path === '/songList/detail') void component.beforeRouteEnter(to, from, next)
+    else next()
+  })
+  await router.push({ path: '/songList/detail', query: { source: 'wy', id: 'playlist', picUrl: 'cover' } })
+  const scope = vue.effectScope()
+  try {
+    const state = scope.run(() => component.setup())
+    state.togglePage(3)
+    await new Promise(setImmediate)
+    assert.equal(router.currentRoute.value.query.page, '3')
+    assert.deepEqual(requests, [['wy', 'playlist', 1], ['wy', 'playlist', 3]])
+    await router.push('/setting')
+    router.back()
+    await new Promise(setImmediate)
+    assert.deepEqual({ ...router.currentRoute.value.query }, { source: 'wy', id: 'playlist', picUrl: 'cover', page: '3' })
+  } finally { scope.stop() }
+})
+
 test('离开并返回同一专辑不重新请求或清空曲目，切换专辑仍重新加载', async () => {
   const vue = require('vue')
   const query = { albumId: 'first', albumSource: 'tx', albumName: '专辑' }
@@ -476,6 +509,29 @@ test('清空排行榜使在途请求失效', async () => {
   assert.equal(state.listDetailInfo.list.length, 0)
   assert.equal(state.listDetailInfo.id, '')
 })
+
+for (const view of ['歌单广场', '歌单详情', '排行榜']) {
+  test(view + '翻页收到空结果后结束加载，可以返回上一页', async () => {
+    const { api, state, calls } = harness(view === '排行榜' ? 'leaderboard' : 'songList')
+    const list = view === '歌单广场' ? state.listInfo : state.listDetailInfo
+    const loadPage = view === '歌单广场' ? page => api.getAndSetList('wy', '', 'hot', page)
+      : view === '歌单详情' ? page => api.getAndSetListDetail('id', 'wy', page)
+      : page => api.getAndSetListDetail('wy__id', page)
+    const first = loadPage(1)
+    calls[0].resolve({ ...result('first'), total: 60 })
+    await first
+    const second = loadPage(2)
+    assert.equal(list.noItemLabel, 'list__loading')
+    calls[1].resolve({ ...result('empty'), list: [], total: 12 })
+    await second
+    assert.equal(list.noItemLabel, 'no_item')
+    assert.equal(list.total, 12)
+    await loadPage(1)
+    assert.equal(list.page, 1)
+    assert.equal(list.list[0].id, 'first')
+    assert.equal(list.noItemLabel, '')
+  })
+}
 
 test('永不返回的请求有超时，正常请求不遗留定时器', async () => {
   await assert.rejects(timeout.withBrowseTimeout(new Promise(() => {}), 10), /timed out/)

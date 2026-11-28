@@ -2,6 +2,7 @@ import { computed, ref, reactive, nextTick } from '@common/utils/vueTools'
 import musicSdk from '@renderer/utils/musicSdk'
 import { useI18n } from '@renderer/plugins/i18n'
 import { hasDislike } from '@renderer/core/dislikeList'
+import { buildSongMenus } from '@renderer/utils/songMenu'
 
 export default ({
   isSelectionMode,
@@ -13,17 +14,21 @@ export default ({
 
   handleShowDownloadModal,
   handlePlayMusic,
+  handlePlayMusicNext,
   handlePlayMusicLater,
   handleSearch,
   handleShowMusicAddModal,
   handleOpenMusicDetail,
   handleDislikeMusic,
+  handleCopyName,
 }) => {
   const itemMenuControl = reactive({
     play: true,
-    addTo: true,
+    playNext: true,
     playLater: true,
+    addTo: true,
     download: true,
+    copyName: true,
     search: true,
     sourceDetail: true,
     dislike: true,
@@ -34,67 +39,41 @@ export default ({
   const isShowItemMenu = ref(false)
 
   const menus = computed(() => {
-    return [
-      {
-        name: t(!isSelectionMode.value ? 'list__multi_select' : selectedList.value.includes(menuMusic.value) ? 'list__unselect_item' : 'list__select_item'),
-        action: 'select',
-      },
-      {
-        name: t('list__play'),
-        action: 'play',
-        disabled: !itemMenuControl.play,
-      },
-      {
-        name: t('list__download'),
-        action: 'download',
-        disabled: !itemMenuControl.download,
-      },
-      {
-        name: t('list__play_later'),
-        action: 'playLater',
-        disabled: !itemMenuControl.playLater,
-      },
-      {
-        name: t('list__search'),
-        action: 'search',
-        disabled: !itemMenuControl.search,
-      },
-      {
-        name: t('list__add_to'),
-        action: 'addTo',
-        disabled: !itemMenuControl.addTo,
-      },
-      {
-        name: t('list__source_detail'),
-        action: 'sourceDetail',
-        disabled: !itemMenuControl.sourceDetail,
-      },
-      {
-        name: t('list__dislike'),
-        action: 'dislike',
-        disabled: !itemMenuControl.dislike,
-      },
-    ]
+    return buildSongMenus({
+      t,
+      isSelectionMode: isSelectionMode.value,
+      isSelected: selectedList.value.includes(menuMusic.value),
+      control: itemMenuControl,
+      includeCopyName: !!handleCopyName,
+    })
   })
 
   const showMenu = (event, musicInfo) => {
     if (!musicInfo) return
     menuMusic.value = musicInfo
     itemMenuControl.sourceDetail = !!musicSdk[musicInfo.source]?.getMusicDetailPageUrl
-    // this.listMenu.itemMenuControl.play =
-    //   this.listMenu.itemMenuControl.playLater =
     itemMenuControl.download = assertApiSupport(musicInfo.source)
-
     itemMenuControl.dislike = !hasDislike(musicInfo)
 
     if (props.checkApiSource) {
+      itemMenuControl.playNext =
       itemMenuControl.playLater =
       itemMenuControl.play =
         itemMenuControl.download
+    } else {
+      itemMenuControl.playNext =
+      itemMenuControl.playLater =
+      itemMenuControl.play = true
     }
 
-    menuLocation.x = event.pageX
-    menuLocation.y = event.pageY
+    if (event.pageX || event.pageY) {
+      menuLocation.x = event.pageX
+      menuLocation.y = event.pageY
+    } else if (event.currentTarget?.getBoundingClientRect) {
+      const rect = event.currentTarget.getBoundingClientRect()
+      menuLocation.x = rect.right
+      menuLocation.y = rect.bottom
+    }
 
     if (isShowItemMenu.value) return
     emit('show-menu')
@@ -108,7 +87,6 @@ export default ({
   }
 
   const menuClick = (action, index) => {
-    // console.log(action)
     hideMenu()
     if (!action) return
 
@@ -122,8 +100,14 @@ export default ({
       case 'play':
         handlePlayMusic(index)
         break
+      case 'playNext':
+        handlePlayMusicNext(index)
+        break
       case 'playLater':
         handlePlayMusicLater(index)
+        break
+      case 'copyName':
+        handleCopyName?.(index)
         break
       case 'search':
         handleSearch(index)

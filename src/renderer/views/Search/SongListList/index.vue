@@ -55,12 +55,11 @@ const togglePage = (page: number) => {
 
 
 <style lang="less" module>
+@import '@renderer/assets/styles/layout.less';
 .container {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0 0 calc(@height-player - 6px);
+  box-sizing: border-box;
   padding-top: 5px;
 }
 

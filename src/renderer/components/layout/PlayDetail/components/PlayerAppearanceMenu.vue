@@ -3,7 +3,6 @@
     <section v-if="modelValue" ref="menuRef" :class="[$style.container, { [$style.dark]: dark }]" :style="menuStyle" role="dialog" :aria-label="$t('play_detail_appearance_menu')" @click.stop>
       <header :class="$style.header">
         <strong>{{ $t('play_detail_appearance_menu') }}</strong>
-        <button type="button" :class="$style.mini" @click="openMini">{{ $t('mini_player') }}</button>
       </header>
       <div :class="$style.body">
         <div :class="$style.group">
@@ -24,12 +23,21 @@
           <div :class="$style.groupTitle">{{ $t('setting__play_detail_visualization') }}</div>
           <div :class="$style.options"><button v-for="option in visualizationOptions" :key="option.value" type="button" :class="[$style.option, { [$style.active]: option.active }]" :aria-pressed="option.active" @click="selectVisualization(option.value)">{{ option.label }}</button></div>
         </div>
+        <details :class="$style.windows" @toggle="revealWindows">
+          <summary>
+            {{ $t('play_detail_floating_window') }}
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 4 4 4-4 4" /></svg>
+          </summary>
+          <button type="button" @click="openMini(false)">{{ $t('mini_player') }}</button>
+          <button type="button" @click="openMini(true)">{{ $t('lyric_capsule') }}</button>
+        </details>
       </div>
     </section>
   </teleport>
 </template>
 
 <script setup>
+import useMenuOutsideClick from '@renderer/utils/compositions/useMenuOutsideClick'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from '@common/utils/vueTools'
 import LyricArrangement from '@renderer/components/common/LyricArrangement.vue'
 import { useI18n } from '@renderer/plugins/i18n'
@@ -64,37 +72,40 @@ const visualizationOptions = computed(() => [
   { value: 'spectrum', label: t('setting__play_detail_visualization_spectrum'), active: appSetting['player.audioVisualization'] && appSetting['player.audioVisualizationStyle'] == 'spectrum' },
 ])
 const close = () => { emit('update:modelValue', false) }
+const revealWindows = ({ currentTarget }) => {
+  if (currentTarget.open) currentTarget.scrollIntoView({ block: 'nearest' })
+}
 let opener
 watch(() => props.modelValue, visible => {
   if (!visible) return
   opener = document.activeElement
   menuRef.value?.querySelector('button[aria-pressed="true"]')?.focus({ preventScroll: true })
 }, { flush: 'post' })
-const openMini = async() => {
+const openMini = async(capsule) => {
   close()
-  setDisableAutoPauseBySource(true, 'miniPlayer')
+  const source = capsule ? 'lyricCapsule' : 'miniPlayer'
+  setDisableAutoPauseBySource(true, source)
   try {
-    await openMiniPlayer({ title: t('mini_player'), play: t('player__play'), pause: t('player__pause'), prev: t('player__prev'), next: t('player__next') })
+    await openMiniPlayer({ title: t(capsule ? 'lyric_capsule' : 'mini_player'), play: t('player__play'), pause: t('player__pause'), prev: t('player__prev'), next: t('player__next'), minimize: t('theme_edit_modal__min_btn'), close: t('close') }, capsule)
   } finally {
-    setDisableAutoPauseBySource(false, 'miniPlayer')
+    setDisableAutoPauseBySource(false, source)
   }
 }
-const handleOutside = event => { if (props.modelValue && !menuRef.value?.contains(event.target)) close() }
+useMenuOutsideClick(menuRef, () => null, close)
 const handleKeydown = event => {
   if (!props.modelValue || event.key != 'Escape') return
   event.preventDefault()
   event.stopPropagation()
   close()
+  props.anchor?.trigger?.focus()
   opener?.focus({ preventScroll: true })
 }
 const handleResize = () => { viewport.value = { width: window.innerWidth, height: window.innerHeight } }
 onMounted(() => {
-  document.addEventListener('click', handleOutside)
   document.addEventListener('keydown', handleKeydown, true)
   window.addEventListener('resize', handleResize)
 })
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleOutside)
   document.removeEventListener('keydown', handleKeydown, true)
   window.removeEventListener('resize', handleResize)
 })
@@ -106,7 +117,6 @@ const selectVisualization = value => { emit('select-visualization', value) }
 .container { position: fixed; z-index: 80; display: flex; flex-direction: column; overflow: hidden; max-width: calc(100vw - 24px); box-sizing: border-box; color: var(--color-font); border: 1px solid rgb(from var(--color-font) r g b / .11); border-radius: 15px; background: rgb(from var(--color-content-background) r g b / .96); box-shadow: 0 12px 36px rgba(20,28,32,.2); backdrop-filter: blur(16px); animation: popIn .16s cubic-bezier(.2,.8,.2,1); transform-origin: 50% 100%; }
 .dark { color: rgba(255,255,255,.94); border-color: rgba(255,255,255,.12); background: rgba(24,29,32,.92); box-shadow: 0 22px 54px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08); }
 .header { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; font-size: 14px; border-bottom: 1px solid rgb(from currentColor r g b / .09); }
-.mini { appearance: none; border: 0; background: transparent; color: inherit; font: inherit; font-size: 11px; padding: 5px 7px; border-radius: 6px; cursor: pointer; &:hover { background: rgb(from currentColor r g b / .08); } }
 .body {
   overflow-y: auto; min-height: 0; overscroll-behavior: contain; padding: 11px 14px 14px;
   &::-webkit-scrollbar { width: 5px; }
@@ -116,6 +126,35 @@ const selectVisualization = value => { emit('select-visualization', value) }
 }
 .group + .group { margin-top: 12px; }
 .groupTitle { padding: 0 2px 5px; font-size: 11px; font-weight: 650; opacity: .7; }
+.windows {
+  margin-top: 12px;
+  padding-top: 4px;
+  border-top: 1px solid rgb(from currentColor r g b / .1);
+  summary, button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 30px;
+    box-sizing: border-box;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    &:hover { background: rgb(from currentColor r g b / .06); }
+    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+  }
+  summary {
+    justify-content: space-between;
+    padding: 0 6px;
+    &::-webkit-details-marker { display: none; }
+    svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  }
+  &[open] summary svg { transform: rotate(90deg); }
+  button { padding: 0 14px; }
+}
 .options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .option { min-width: 0; min-height: 30px; padding: 3px 8px; font: inherit; font-size: 12px; font-weight: 550; color: currentColor; border: 1px solid rgb(from currentColor r g b / .08); border-radius: 8px; background: rgb(from currentColor r g b / .045); cursor: pointer; &:hover { background: rgb(from currentColor r g b / .1); } }
 .container button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }

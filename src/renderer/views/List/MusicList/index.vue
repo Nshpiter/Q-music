@@ -19,41 +19,30 @@
     <div class="thead">
       <table>
         <thead>
-          <tr v-if="actionButtonsVisible">
+          <tr>
             <th class="num" :class="$style.numberColumn">#</th>
             <th class="nobreak">{{ $t('music_name') }}</th>
             <th class="nobreak" :class="$style.singerColumn">{{ $t('music_singer') }}</th>
             <th class="nobreak" :class="$style.albumColumn">{{ $t('music_album') }}</th>
             <th class="nobreak" :class="$style.durationColumn">{{ $t('music_time') }}</th>
-            <th class="nobreak" :class="$style.actionColumn">{{ $t('action') }}</th>
-          </tr>
-          <tr v-else>
-            <th class="num" :class="$style.numberColumn">#</th>
-            <th class="nobreak">{{ $t('music_name') }}</th>
-            <th class="nobreak" :class="$style.singerColumn">{{ $t('music_singer') }}</th>
-            <th class="nobreak" :class="$style.albumColumn">{{ $t('music_album') }}</th>
-            <th class="nobreak" :class="$style.durationColumn">{{ $t('music_time') }}</th>
+            <th class="nobreak" :class="actionButtonsVisible ? $style.actionColumn : $style.menuColumn">{{ actionButtonsVisible ? $t('action') : '' }}</th>
           </tr>
         </thead>
       </table>
     </div>
     <div v-show="list.length" ref="dom_listContent" :class="$style.content">
       <base-virtualized-list
-        v-if="actionButtonsVisible" ref="listRef" v-slot="{ item, index }" :list="list" key-name="id"
+        ref="listRef" v-slot="{ item, index }" :list="list" key-name="id"
         :item-height="listItemHeight" container-class="scroll" content-class="list"
         @scroll="saveListPosition" @contextmenu.capture="handleListRightClick"
       >
         <div
-          class="list-item" :class="[{ [$style.active]: playerInfo.isPlayList && playerInfo.playIndex === index }, { selected: selectedIndex == index || rightClickSelectedIndex == index }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }]"
+          class="list-item" :class="[{ playing: isCurrentMusic(item) }, { selected: selectedIndex == index || rightClickSelectedIndex == index }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }]"
           @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
         >
           <div class="list-item-cell no-select" :class="[$style.num, $style.numberColumn, $style.selectColumn]">
             <transition name="play-active">
-              <div v-if="playerInfo.isPlayList && playerInfo.playIndex === index" :class="$style.playIcon">
-                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="50%" viewBox="0 0 512 512" space="preserve">
-                  <use xlink:href="#icon-play-outline" />
-                </svg>
-              </div>
+              <span v-if="isCurrentMusic(item)" class="list-eq" :class="{ [$style.paused]: !isPlay }" aria-hidden="true"><i /><i /><i /></span>
               <div v-else class="num">{{ index + 1 }}</div>
             </transition>
             <input type="checkbox" :checked="selectedList.includes(item)" :aria-label="$t('list__select_song', { name: item.name })" @click.stop @change="toggleSelectData(index)">
@@ -65,39 +54,17 @@
           <div class="list-item-cell" :class="$style.singerColumn"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
           <div class="list-item-cell" :class="$style.albumColumn"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
           <div class="list-item-cell" :class="$style.durationColumn"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
-          <div class="list-item-cell" :class="$style.actionColumn" style="padding-left: 0; padding-right: 0;">
-            <material-list-buttons :index="index" :playing="isCurrentMusic(item) && isPlay" :download-btn="assertApiSupport(item.source) && item.source != 'local'" @btn-click="handleListBtnClick" />
+          <div class="list-item-cell" :class="actionButtonsVisible ? $style.actionColumn : $style.menuColumn" style="padding-left: 0; padding-right: 0; display: flex; justify-content: flex-end; align-items: center;">
+            <material-list-buttons
+              :index="index"
+              :playing="isCurrentMusic(item) && isPlay"
+              :play-btn="actionButtonsVisible"
+              :list-add-btn="actionButtonsVisible"
+              :download-btn="actionButtonsVisible && assertApiSupport(item.source) && item.source != 'local'"
+              :menu-btn="true"
+              @btn-click="handleListBtnClick"
+            />
           </div>
-        </div>
-      </base-virtualized-list>
-      <base-virtualized-list
-        v-else ref="listRef" v-slot="{ item, index }" :list="list" key-name="id"
-        :item-height="listItemHeight" container-class="scroll" content-class="list"
-        @scroll="saveListPosition" @contextmenu.capture="handleListRightClick"
-      >
-        <div
-          class="list-item"
-          :class="[{ [$style.active]: playerInfo.isPlayList && playerInfo.playIndex === index }, { selected: selectedIndex == index || rightClickSelectedIndex == index }, { active: selectedList.includes(item) }, { disabled: !assertApiSupport(item.source) }]"
-          @click="handleListItemClick($event, index)" @contextmenu="handleListItemRightClick($event, index)"
-        >
-          <div class="list-item-cell no-select" :class="[$style.num, $style.numberColumn, $style.selectColumn]">
-            <transition name="play-active">
-              <div v-if="playerInfo.isPlayList && playerInfo.playIndex === index" :class="$style.playIcon">
-                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="50%" viewBox="0 0 512 512" space="preserve">
-                  <use xlink:href="#icon-play-outline" />
-                </svg>
-              </div>
-              <div v-else class="num">{{ index + 1 }}</div>
-            </transition>
-            <input type="checkbox" :checked="selectedList.includes(item)" :aria-label="$t('list__select_song', { name: item.name })" @click.stop @change="toggleSelectData(index)">
-          </div>
-          <div class="list-item-cell auto name">
-            <span class="select name" :aria-label="item.name">{{ item.name }}</span>
-            <source-icon v-if="isShowSource || item.source != 'local'" class="no-select label-source" :source="item.source" :size="14" />
-          </div>
-          <div class="list-item-cell" :class="$style.singerColumn"><span class="select" :aria-label="item.singer">{{ item.singer }}</span></div>
-          <div class="list-item-cell" :class="$style.albumColumn"><span class="select" :aria-label="item.meta.albumName">{{ item.meta.albumName }}</span></div>
-          <div class="list-item-cell" :class="$style.durationColumn"><span class="no-select">{{ item.interval || '--/--' }}</span></div>
         </div>
       </base-virtualized-list>
     </div>
@@ -216,6 +183,7 @@ export default {
       handleSaveAudition,
       handlePlayAll,
       handlePlayMusic,
+      handlePlayMusicNext,
       handlePlayMusicLater,
       doubleClickPlay,
     } = usePlay({ props, selectedList, list, removeAllSelect })
@@ -275,6 +243,7 @@ export default {
 
       handleShowDownloadModal,
       handlePlayMusic,
+      handlePlayMusicNext,
       handlePlayMusicLater,
       handleShowMusicToggleModal,
       handleSearch,
@@ -327,7 +296,7 @@ export default {
         clipboardWriteText(str)
       })
     }
-    const handleListBtnClick = ({ action, index }) => {
+    const handleListBtnClick = ({ action, index, event }) => {
       switch (action) {
         case 'download':
           handleShowDownloadModal(index, true)
@@ -341,6 +310,10 @@ export default {
           break
         case 'listAdd':
           handleShowMusicAddModal(index, true)
+          break
+        case 'menu':
+          rightClickSelectedIndex.value = index
+          showMenu(event, list.value[index], index)
           break
       }
     }
@@ -432,41 +405,38 @@ export default {
 @import '@renderer/assets/styles/listColumns.less';
 
 .list {
+  --track-list-inset: 18px;
   overflow: hidden;
   height: 100%;
   flex: auto;
   display: flex;
   flex-flow: column nowrap;
   min-width: 0;
+  box-sizing: border-box;
+  padding-right: var(--track-list-inset);
   border-radius: 20px;
-  background: rgb(from var(--color-main-background) r g b / .54);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .68), 0 16px 38px rgba(72, 91, 112, .08);
+  background: var(--q-surface);
+  box-shadow: inset 0 0 0 1px var(--q-panel-border), var(--q-shadow-soft);
   backdrop-filter: blur(calc(var(--q-glass-blur, 20px) * .8)) saturate(1.1);
 
   :global(.thead) {
     flex: none;
-    background: rgb(from var(--color-main-background) r g b / .4);
-    border-bottom: 1px solid rgba(122, 136, 150, .1);
+    background: transparent;
+    border-bottom: 1px solid var(--q-panel-border);
   }
 
   :global(.list-item) {
     margin: 2px 7px;
     width: calc(100% - 14px);
-    border-radius: 12px;
+    border-radius: 10px;
     transition: background-color @transition-fast, box-shadow @transition-fast, transform @transition-fast;
-
-    &:hover:not(.active) {
-      background-color: rgb(from var(--color-main-background) r g b / .46);
-    }
-    &.active {
-      color: var(--color-button-font);
-      background-color: var(--color-primary-alpha-900);
-      box-shadow: inset 0 0 0 1px var(--color-primary-alpha-800);
-    }
   }
+  .paused i { animation-play-state: paused !important; }
   :global {
     .label-source {
-      margin-left: 6px;
+      flex: none;
+      margin-left: 0;
+      color: var(--color-font-label);
       opacity: .9;
     }
   }
@@ -521,11 +491,13 @@ export default {
   opacity: .7;
 }
 .content {
+  margin-right: calc(-1 * var(--track-list-inset));
   min-height: 0;
   font-size: 14px;
   display: flex;
   flex-flow: column nowrap;
   flex: auto;
+  :global(.list) { width: calc(100% - var(--track-list-inset)); }
 }
 
 .noItem {
@@ -540,8 +512,8 @@ export default {
     margin: 0;
     padding: 12px 18px;
     border-radius: 14px;
-    background: rgb(from var(--color-main-background) r g b / .46);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .62);
+    background: var(--q-surface);
+    box-shadow: inset 0 0 0 1px var(--q-panel-border);
     font-size: 14px;
     color: var(--color-font-label);
   }

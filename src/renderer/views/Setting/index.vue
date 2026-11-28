@@ -8,8 +8,8 @@
           type="search"
           role="searchbox"
           :class="$style.searchInput"
-          :placeholder="$t('setting_search_placeholder')"
-          :aria-label="$t('setting_search_placeholder')"
+          :placeholder="$t('setting__search')"
+          :aria-label="$t('setting__search')"
           @keydown.esc="searchQuery = ''"
         >
         <button
@@ -298,7 +298,7 @@ export default {
   flex-flow: row nowrap;
   height: 100%;
   gap: 16px;
-  padding: 16px 18px 0;
+  padding: 16px 0 calc(@height-player + 18px) 18px;
   box-sizing: border-box;
   border-top: var(--color-list-header-border-bottom);
   background:
@@ -383,7 +383,7 @@ export default {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 2px 4px calc(@height-player + 18px);
+  padding: 2px 4px 0;
   box-sizing: border-box;
 }
 .tocList {
@@ -610,13 +610,14 @@ export default {
 // }
 
 .setting {
-  padding: 0 6px calc(@height-player + 24px) 0;
+  flex: 1;
+  min-width: 0;
+  padding: 0 24px 6px 0;
   font-size: 14px;
   box-sizing: border-box;
   overflow-y: auto;
   height: 100%;
   position: relative;
-  width: 100%;
 
   :global {
     dl {

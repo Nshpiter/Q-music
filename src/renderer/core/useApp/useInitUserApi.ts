@@ -1,6 +1,8 @@
 import { onBeforeUnmount, watch } from '@common/utils/vueTools'
 import { useI18n } from '@renderer/plugins/i18n'
-import { onUserApiStatus, getUserApiList, sendUserApiRequest as sendUserApiRequestRemote, userApiRequestCancel, onShowUserApiUpdateAlert } from '@renderer/utils/ipc'
+import { onUserApiStatus, getUserApiList, replaceUserApiScript, sendUserApiRequest as sendUserApiRequestRemote, userApiRequestCancel, onShowUserApiUpdateAlert } from '@renderer/utils/ipc'
+import { httpFetch } from '@renderer/utils/request'
+import { runUserApiUpdates } from '@common/utils/userApiImport'
 import { openUrl } from '@common/utils/electron'
 import { qualityList, userApi } from '@renderer/store'
 import { appSetting } from '@renderer/store/setting'
@@ -172,13 +174,20 @@ export default () => {
   return async() => {
     await setUserApi(appSetting['common.apiSource'])
     void getUserApiList().then(list => {
-      // console.log(list)
-      // if (![...apiSourceInfo.map(s => s.id), ...list.map(s => s.id)].includes(appSetting['common.apiSource'])) {
-      //   console.warn('reset api')
-      //   let api = apiSourceInfo.find(api => !api.disabled)
-      //   if (api) apiSource.value = api.id
-      // }
       userApi.list = list
+      const autoUpdateApis = list.filter(api => api.autoUpdate && api.sourceUrl?.trim())
+      if (!autoUpdateApis.length) return
+      void runUserApiUpdates({
+        apis: autoUpdateApis,
+        fetchScript: url => httpFetch(url, { follow_max: 3 }),
+        replaceScript: async(id, script) => {
+          const result = await replaceUserApiScript({ id, script })
+          userApi.list = result.apiList
+          return { changed: result.changed, apiInfo: result.apiInfo }
+        },
+      }).catch(err => {
+        console.log(err)
+      })
     }).catch(err => {
       console.log(err)
     })

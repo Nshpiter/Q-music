@@ -157,41 +157,46 @@ export default {
   flex-flow: column nowrap;
   position: relative;
   box-sizing: border-box;
-  padding: 12px 14px calc(@height-player + 12px);
+  --song-grid-end-inset: 14px;
+  padding: 12px 0 calc(@height-player + 12px) 14px;
   min-height: 0;
 }
 .header {
   flex: none;
-  width: 100%;
+  margin-right: var(--song-grid-end-inset);
   display: flex;
   flex-flow: row wrap;
   align-items: center;
   gap: 8px;
-  // padding-right: 5px;
-  // box-sizing: border-box;
-  padding: 8px;
+  padding: 8px 12px;
   margin-bottom: 8px;
   box-sizing: border-box;
   border-radius: 16px;
-  background: rgb(from var(--color-main-background) r g b / .7);
-  border: 1px solid var(--color-primary-alpha-900);
+  background: rgb(from var(--color-main-background) r g b / .62);
+  box-shadow: inset 0 0 0 1px var(--q-border), 0 10px 26px rgba(72, 91, 112, .06);
+  backdrop-filter: blur(calc(var(--q-glass-blur, 20px) * .75)) saturate(1.1);
 }
 .left {
   flex: auto;
   display: flex;
   flex-flow: row wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
-.sourceSelect { width: 120px; font-size: 12px; }
+.sourceSelect {
+  width: 120px;
+  font-size: 12px;
+  :global(.label-content) {
+    height: 32px;
+    border-radius: 10px;
+  }
+}
 
 .btn {
-  color: var(--color-font);
-  transition: color @transition-fast;
-  background: none !important;
-  &:hover {
-    color: var(--color-primary-font-hover);
-  }
+  min-height: 32px;
+  padding: 0 13px;
+  border-radius: 10px;
+  font-size: 12px;
 }
 
 

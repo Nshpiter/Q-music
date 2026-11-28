@@ -299,8 +299,17 @@ export const onUpdateNotAvailable = (listener: LX.IpcRendererEventListenerParams
 }
 
 
-export const importUserApi = async(fileText: string) => {
-  return rendererInvoke<string, LX.UserApi.ImportUserApi>(WIN_MAIN_RENDERER_EVENT_NAME.import_user_api, fileText)
+export const importUserApi = async(params: string | LX.UserApi.ImportUserApiParams) => {
+  return rendererInvoke<string | LX.UserApi.ImportUserApiParams, LX.UserApi.ImportUserApi>(WIN_MAIN_RENDERER_EVENT_NAME.import_user_api, params)
+}
+export const replaceUserApiScript = async(params: LX.UserApi.UserApiReplaceScriptParams) => {
+  return rendererInvoke<LX.UserApi.UserApiReplaceScriptParams, LX.UserApi.UserApiReplaceScriptResult>(WIN_MAIN_RENDERER_EVENT_NAME.replace_user_api_script, params)
+}
+export const setUserApiSourceUrl = async(params: LX.UserApi.UserApiSetSourceUrlParams) => {
+  return rendererInvoke<LX.UserApi.UserApiSetSourceUrlParams, LX.UserApi.UserApiInfo[]>(WIN_MAIN_RENDERER_EVENT_NAME.user_api_set_source_url, params)
+}
+export const setUserApiAutoUpdate = async(params: LX.UserApi.UserApiSetAutoUpdateParams) => {
+  return rendererInvoke<LX.UserApi.UserApiSetAutoUpdateParams, LX.UserApi.UserApiInfo[]>(WIN_MAIN_RENDERER_EVENT_NAME.user_api_set_auto_update, params)
 }
 export const setUserApi = async(source: LX.UserApi.UserApiSetApiParams): Promise<void> => {
   return rendererInvoke<LX.UserApi.UserApiSetApiParams>(WIN_MAIN_RENDERER_EVENT_NAME.set_user_api, source)
@@ -735,7 +744,7 @@ export const setWindowSize = (width: number, height: number) => {
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.set_window_size, params)
 }
 
-export const openMiniPlayer = (labels: Record<string, string>) => rendererInvoke(WIN_MAIN_RENDERER_EVENT_NAME.open_mini_player, labels)
+export const openMiniPlayer = (labels: Record<string, string>, capsule = false) => rendererInvoke(WIN_MAIN_RENDERER_EVENT_NAME.open_mini_player, { labels, capsule })
 interface TranslationProvider { endpoint: string, model: string, target: string, hasKey: boolean }
 interface PluginCommand { action: string, id?: string, bytes?: Uint8Array, source?: string, key?: number, name?: string, script?: string }
 export const managePlugin = (command: PluginCommand) => rendererInvoke<PluginCommand, Array<{ id: string, name: string, version: string }>>(WIN_MAIN_RENDERER_EVENT_NAME.better_plugins, command)
