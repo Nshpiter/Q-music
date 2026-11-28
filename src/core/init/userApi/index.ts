@@ -1,5 +1,5 @@
 import { type InitParams, onScriptAction, type UpdateInfoParams } from '@/utils/nativeModules/userApi'
-import { log, setUserApiList, setUserApiStatus } from '@/core/userApi'
+import { log, setUserApiList, setUserApiStatus, updateUserApisFromUrls } from '@/core/userApi'
 import settingState from '@/store/setting/state'
 import { requestUserApi, cancelUserApiRequest, handleUserApiRuntimeEvent, pruneUserApiRuntimes } from '@/core/userApiRuntime'
 import { getUserApiList } from '@/utils/data'
@@ -183,5 +183,10 @@ export default async(setting: LX.AppSetting) => {
   global.state_event.on('configUpdated', keys => {
     if (keys.includes('common.apiBackupSources')) pruneUserApiRuntimes()
   })
-  setUserApiList(await getUserApiList())
+  const list = await getUserApiList()
+  setUserApiList(list)
+  const autoIds = list.filter(api => api.autoUpdate && api.sourceUrl).map(api => api.id)
+  if (autoIds.length) {
+    void updateUserApisFromUrls(autoIds).catch(() => {})
+  }
 }

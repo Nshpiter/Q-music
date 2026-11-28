@@ -14,10 +14,13 @@ import { useStatusbarHeight } from '@/store/common/hook'
 import commonState from '@/store/common/state'
 import { useTrackChangeAnimation } from '@/components/player/useTrackChangeAnimation'
 import { useCoverPlayScale } from '@/components/player/useCoverPlayScale'
+import { useTheme } from '@/store/theme/hook'
+import { qFloatingShadow } from '@/theme/ui'
 
 
 export default memo(({ componentId }: { componentId: string }) => {
   const musicInfo = usePlayerMusicInfo()
+  const theme = useTheme()
   const { width: winWidth, height: winHeight } = useWindowSize()
   const statusBarHeight = useStatusbarHeight()
 
@@ -40,12 +43,14 @@ export default memo(({ componentId }: { componentId: string }) => {
 
   return (
     <View style={{ ...styles.container, height: contentHeight }}>
-      <Animated.View style={[styles.content, { elevation: animated ? 3 : 0, opacity: coverAnimation.opacity, transform: [{ scale: coverScale }] }]}>
-        <Image url={pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={{
-          width: imgWidth,
-          height: imgWidth,
-          borderRadius: 2,
-        }} />
+      <Animated.View style={[styles.shadowWrap, animated && qFloatingShadow, { opacity: coverAnimation.opacity, transform: [{ scale: coverScale }] }]}>
+        <View style={[styles.content, { borderColor: theme['q-outline'] }]}>
+          <Image url={pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={{
+            width: imgWidth,
+            height: imgWidth,
+            borderRadius: 16,
+          }} />
+        </View>
       </Animated.View>
     </View>
   )
@@ -57,12 +62,15 @@ const styles = createStyle({
     flexGrow: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    // backgroundColor: 'rgba(0,0,0,0.1)',
-    overflow: 'hidden',
+    overflow: 'visible',
+  },
+  shadowWrap: {
+    borderRadius: 16,
   },
   content: {
-    // elevation: 3,
     backgroundColor: 'rgba(0,0,0,0)',
-    borderRadius: 4,
+    borderRadius: 16,
+    borderWidth: 0.5,
+    overflow: 'hidden',
   },
 })

@@ -18,6 +18,7 @@ test('持久历史串行写入、同曲更新到最近；删单条/清空不改�
   const history = new PlayHistory(async() => saved, async value => { saved = plain(value) })
   await Promise.all([history.record(a, 1), history.record(b, 2), history.record(a, 3)])
   assert.deepEqual(plain(history.snapshot().entries.map(x => [x.track.id, x.playedAt])), [['a', 3], ['b', 2]])
+  assert.deepEqual(plain(history.snapshot().entries.map(x => x.playCount)), [2, 1])
   a.meta.albumName = 'changed'
   assert.equal(saved.entries[0].track.meta.albumName, 'Album')
   await history.setLimit(1)
@@ -25,6 +26,7 @@ test('持久历史串行写入、同曲更新到最近；删单条/清空不改�
   await restored.load()
   assert.equal(restored.snapshot().limit, 1)
   assert.equal(restored.snapshot().entries.length, 1)
+  assert.equal(restored.snapshot().entries[0].playCount, 2)
   await restored.remove(a)
   assert.equal(restored.snapshot().entries.length, 0)
   await restored.record(b, 4)

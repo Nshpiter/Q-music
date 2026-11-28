@@ -5,34 +5,31 @@ import playerState from '@/store/player/state'
 import { isCached } from '@/plugins/player/utils'
 
 
-const preloadMusicInfo = {
-  isLoading: false,
-  preProgress: 0,
-  info: null as LX.Player.PlayMusicInfo | null,
-}
+const newPreload = () => ({ isLoading: false, preProgress: 0, info: null as LX.Player.PlayMusicInfo | null })
+let preloadMusicInfo = newPreload()
 const resetPreloadInfo = () => {
-  preloadMusicInfo.preProgress = 0
-  preloadMusicInfo.info = null
-  preloadMusicInfo.isLoading = false
+  preloadMusicInfo = newPreload()
 }
 const preloadNextMusicUrl = async(curTime: number) => {
-  if (preloadMusicInfo.isLoading || curTime - preloadMusicInfo.preProgress < 3) return
-  preloadMusicInfo.isLoading = true
-  console.log('preload next music url')
-  const info = await getNextPlayMusicInfo()
-  if (info) {
-    preloadMusicInfo.info = info
-    const url = await getMusicUrl({ musicInfo: info.musicInfo }).catch(() => '')
-    if (url) {
-      console.log('preload url', url)
-      const [cached, available] = await Promise.all([isCached(url), checkUrl(url).then(() => true).catch(() => false)])
-      if (!cached && !available) {
-        const url = await getMusicUrl({ musicInfo: info.musicInfo, isRefresh: true }).catch(() => '')
-        console.log('preload url refresh', url)
-      }
+  const task = preloadMusicInfo
+  if (task.isLoading || curTime - task.preProgress < 3) return
+  task.isLoading = true
+  try {
+    const info = await getNextPlayMusicInfo()
+    if (!info || task !== preloadMusicInfo) return
+    task.info = info
+    const url = await getMusicUrl({ musicInfo: info.musicInfo })
+    if (!url || task !== preloadMusicInfo) return
+    const [cached, available] = await Promise.all([isCached(url), checkUrl(url).then(() => true).catch(() => false)])
+    if (!cached && !available && task === preloadMusicInfo) {
+      await getMusicUrl({ musicInfo: info.musicInfo, isRefresh: true })
     }
+  } catch {
+    task.info = null
+    task.preProgress = curTime
+  } finally {
+    task.isLoading = false
   }
-  preloadMusicInfo.isLoading = false
 }
 
 export default () => {
@@ -49,7 +46,7 @@ export default () => {
     if (!keys.includes('player.togglePlayMethod')) return
     if (!preloadMusicInfo.info || preloadMusicInfo.info.isTempPlay) return
     resetRandomNextMusicInfo()
-    preloadMusicInfo.info = null
+    resetPreloadInfo()
     preloadMusicInfo.preProgress = playerState.progress.nowPlayTime
   }
 
@@ -60,6 +57,13 @@ export default () => {
     }
   }
 
+  let headId = playerState.tempPlayList[0]?.tempId
+  global.state_event.on('playTempPlayListChanged', list => {
+    const nextId = list[0]?.tempId
+    if (nextId === headId) return
+    headId = nextId
+    resetPreloadInfo()
+  })
   global.app_event.on('setProgress', setProgress)
   global.app_event.on('musicToggled', handleSetPlayInfo)
   global.state_event.on('configUpdated', handleConfigUpdated)

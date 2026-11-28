@@ -1,11 +1,13 @@
-import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react'
-import { View, StyleSheet } from 'react-native'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
+import { Animated, View, StyleSheet } from 'react-native'
 
 import Modal, { type ModalType } from './Modal'
 import IconButton from '@/components/common/IconButton'
 import { useKeyboard } from '@/utils/hooks'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
+import { useMotion } from '@/utils/useMotion'
+import { Q_UI } from '@/theme/ui'
 import Text from './Text'
 
 const styles = createStyle({
@@ -25,6 +27,18 @@ const styles = createStyle({
     minHeight: 50,
     alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  gripArea: {
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: 2,
+  },
+  grip: {
+    width: 34,
+    height: 4,
+    borderRadius: 2,
+    opacity: 0.28,
   },
   title: {
     flexShrink: 1,
@@ -76,12 +90,24 @@ export default forwardRef<PopupType, PopupProps>(({
   children,
 }: PopupProps, ref) => {
   const theme = useTheme()
+  const motion = useMotion()
   const { keyboardShown, keyboardHeight } = useKeyboard()
 
   const modalRef = useRef<ModalType>(null)
+  const reveal = useRef(new Animated.Value(1)).current
+
+  useEffect(() => {
+    if (!motion) {
+      reveal.stopAnimation()
+      reveal.setValue(1)
+    }
+    return () => { reveal.stopAnimation() }
+  }, [motion, reveal])
 
   useImperativeHandle(ref, () => ({
     setVisible(visible: boolean) {
+      reveal.stopAnimation()
+      if (visible) reveal.setValue(motion ? 0 : 1)
       modalRef.current?.setVisible(visible)
     },
   }))
@@ -112,10 +138,12 @@ export default forwardRef<PopupType, PopupProps>(({
           },
           {
             width: '100%',
+            maxWidth: 620,
+            alignSelf: 'center',
             maxHeight: '78%',
             minHeight: '20%',
-            borderBottomLeftRadius: 22,
-            borderBottomRightRadius: 22,
+            borderBottomLeftRadius: 24,
+            borderBottomRightRadius: 24,
           },
         ] as const
       case 'left':
@@ -169,26 +197,65 @@ export default forwardRef<PopupType, PopupProps>(({
           },
           {
             width: '100%',
+            maxWidth: 620,
+            alignSelf: 'center',
             maxHeight: '78%',
             minHeight: '20%',
-            borderTopLeftRadius: 22,
-            borderTopRightRadius: 22,
+            borderTopLeftRadius: 26,
+            borderTopRightRadius: 26,
           },
         ] as const
     }
   }, [position])
 
+  const panelTransform = useMemo(() => {
+    switch (position) {
+      case 'top':
+        return [{ translateY: reveal.interpolate({ inputRange: [0, 1], outputRange: [-32, 0] }) }]
+      case 'left':
+        return [{ translateX: reveal.interpolate({ inputRange: [0, 1], outputRange: [-36, 0] }) }]
+      case 'right':
+        return [{ translateX: reveal.interpolate({ inputRange: [0, 1], outputRange: [36, 0] }) }]
+      case 'bottom':
+      default:
+        return [{ translateY: reveal.interpolate({ inputRange: [0, 1], outputRange: [34, 0] }) }]
+    }
+  }, [position, reveal])
+
   return (
-    <Modal onHide={onHide} onShow={onShow} keyHide={keyHide} bgHide={bgHide} transient={transient} bgColor={theme['q-scrim']} ref={modalRef}>
+    <Modal
+      onHide={onHide}
+      onShow={() => {
+        if (motion) {
+          Animated.spring(reveal, {
+            toValue: 1,
+            ...Q_UI.motion.settle,
+            overshootClamping: true,
+            useNativeDriver: true,
+          }).start()
+        }
+        onShow?.()
+      }}
+      animationType="fade"
+      keyHide={keyHide}
+      bgHide={bgHide}
+      transient={transient}
+      bgColor={theme['q-scrim']}
+      ref={modalRef}
+    >
       <View pointerEvents="box-none" style={{ ...styles.centeredView, ...centeredViewStyle, paddingBottom: keyboardShown ? keyboardHeight : 0 }}>
-        <View
+        <Animated.View
           style={{
             ...styles.modalView,
             ...modalViewStyle,
             backgroundColor: theme['c-content-background'],
             borderColor: theme['q-outline'],
+            transform: panelTransform,
           }}
         >
+          {position == 'bottom' ? <View style={styles.gripArea} pointerEvents="none">
+            <View style={[styles.grip, { backgroundColor: theme['q-text-secondary'] }]} />
+          </View> : null}
           <View
             style={{
               ...styles.header,
@@ -200,7 +267,7 @@ export default forwardRef<PopupType, PopupProps>(({
             {closeBtnComponent}
           </View>
           {children}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   )

@@ -1,5 +1,5 @@
-import { memo } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { memo, useState } from 'react'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import Progress from '@/components/player/Progress'
 import Status from './Status'
@@ -8,25 +8,30 @@ import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import { useBufferProgress } from '@/plugins/player'
-
-// const FONT_SIZE = 13
+import { formatPlayTime2 } from '@/utils'
 
 const PlayTimeCurrent = ({ timeStr }: { timeStr: string }) => {
   const theme = useTheme()
-  // console.log(timeStr)
-  return <Text color={theme['c-500']}>{timeStr}</Text>
+  return <Text style={styles.timeText} color={theme['c-500']}>{timeStr}</Text>
 }
 
-const PlayTimeMax = memo(({ timeStr }: { timeStr: string }) => {
+const PlayTimeMax = memo(({ timeStr, onToggle }: { timeStr: string, onToggle: () => void }) => {
   const theme = useTheme()
-  return <Text color={theme['c-500']}>{timeStr}</Text>
+  return (
+    <Pressable hitSlop={8} accessibilityRole="button" onPress={onToggle}>
+      <Text style={styles.timeText} color={theme['c-500']}>{timeStr}</Text>
+    </Pressable>
+  )
 })
 
 export default () => {
   const theme = useTheme()
-  const { maxPlayTimeStr, nowPlayTimeStr, progress, maxPlayTime } = useProgress()
+  const { maxPlayTimeStr, nowPlayTimeStr, progress, maxPlayTime, nowPlayTime } = useProgress()
   const buffered = useBufferProgress()
-  // console.log('render playInfo')
+  const [showRemaining, setShowRemaining] = useState(false)
+  const rightTimeStr = showRemaining && Number.isFinite(maxPlayTime) && maxPlayTime > 0
+    ? `-${formatPlayTime2(Math.max(0, maxPlayTime - nowPlayTime))}`
+    : maxPlayTimeStr
 
   return (
     <View style={styles.container}>
@@ -36,7 +41,7 @@ export default () => {
       <View style={{ flexGrow: 0, flexShrink: 0, flexDirection: 'row' }} >
         <PlayTimeCurrent timeStr={nowPlayTimeStr} />
         <Text color={theme['c-500']}> / </Text>
-        <PlayTimeMax timeStr={maxPlayTimeStr} />
+        <PlayTimeMax timeStr={rightTimeStr} onToggle={() => { setShowRemaining(v => !v) }} />
       </View>
       <View style={[StyleSheet.absoluteFill, styles.progress]}><Progress progress={progress} duration={maxPlayTime} buffered={buffered} /></View>
     </View>
@@ -65,8 +70,9 @@ const styles = createStyle({
   info: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    // alignItems: 'center',
-    // backgroundColor: '#ccc',
+  },
+  timeText: {
+    fontVariant: ['tabular-nums'],
   },
   status: {
     flexGrow: 1,

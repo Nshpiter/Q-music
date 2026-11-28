@@ -426,8 +426,10 @@ export const resetRandomNextMusicInfo = () => {
   }
 }
 
+const getForwardTrack = () => playerState.tempPlayList[0]?.isTop ? null : playbackSession.history[playbackSession.cursor + 1]
+
 export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | null> => {
-  const forward = playbackSession.history[playbackSession.cursor + 1]
+  const forward = getForwardTrack()
   if (forward) return forward
 
   if (playerState.tempPlayList.length) { // 如果稍后播放列表存在歌曲则直接播放改列表的歌曲
@@ -521,7 +523,7 @@ const handlePlayNext = async(playMusicInfo: LX.Player.PlayMusicInfo, replay = fa
       const initial: LX.Player.PlayMusicInfo = { listId: current.listId, musicInfo: current.musicInfo, isTempPlay: current.isTempPlay }
       playbackSession.record(initial)
     }
-    playbackSession.record(playMusicInfo)
+    playbackSession.record(playMusicInfo, playMusicInfo.isTop)
   }
   setPlayMusicInfo(playMusicInfo.listId, playMusicInfo.musicInfo, playMusicInfo.isTempPlay)
   await handlePlay()
@@ -537,8 +539,12 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
   cancelPendingPlayback()
   const token = playbackRecovery.begin()
   setIsPlayPending(true)
-  const forward = playbackSession.forward()
-  if (forward) { await handlePlayNext(forward, true); return }
+  const forward = getForwardTrack()
+  if (forward) {
+    playbackSession.forward()
+    await handlePlayNext(forward, true)
+    return
+  }
   if (playerState.tempPlayList.length) { // 如果稍后播放列表存在歌曲则直接播放改列表的歌曲
     const playMusicInfo = playerState.tempPlayList[0]
     removeTempPlayList(0)

@@ -25,7 +25,7 @@ const parseRgb = (color: string): number[] => {
     return [0, 2, 4].map(index => parseInt(full.slice(index, index + 2), 16))
   }
   const parts = /^rgba?\(([^)]+)\)$/i.exec(color)?.[1].split(/[\s,/]+/).filter(Boolean).slice(0, 3).map(value => value.endsWith('%') ? parseFloat(value) * 2.55 : Number(value))
-  return parts?.length == 3 && parts.every(Number.isFinite) ? parts.map(value => Math.max(0, Math.min(255, value))) : [77, 175, 124]
+  return parts?.length == 3 && parts.every(Number.isFinite) ? parts.map(value => Math.max(0, Math.min(255, value))) : [31, 107, 82]
 }
 const rgb = (channels: number[]) => `rgb(${channels.map(Math.round).join(', ')})`
 const blend = (a: number[], b: number[], ratio: number) => a.map((value, index) => value * (1 - ratio) + b[index] * ratio)
@@ -37,16 +37,16 @@ const luminance = (channels: number[]) => channels.map(value => {
 export const adaptThemeAppearance = (theme: LX.Theme, dark: boolean): LX.Theme => {
   if (theme.isDark == dark) return theme
   const original = parseRgb(theme.config.themeColors['c-primary'])
-  const surface = dark ? blend([22, 24, 28], original, 0.06) : [255, 255, 255]
+  const surface = dark ? blend([18, 20, 22], original, 0.025) : [255, 255, 255]
   let accent = original
   // 保留色相，深色模式下只提高不足的亮度，避免水墨等深色强调色消失。
   if (dark) {
-    for (let i = 0; i < 20 && (luminance(accent) + 0.05) / (luminance(surface) + 0.05) < 4.5; i++) accent = blend(accent, [255, 255, 255], 0.1)
+    for (let i = 0; i < 20 && (luminance(accent) + 0.05) / (luminance(surface) + 0.05) < 4.8; i++) accent = blend(accent, [255, 255, 255], 0.1)
   }
   const colors = createThemeColors(rgb(accent), undefined, dark) as LX.ThemeColors
   if (dark) {
     for (let level = 600; level <= 1000; level += 100) {
-      const color = blend(surface, accent, (1000 - level) / 5000)
+      const color = blend(surface, accent, (1000 - level) / 12000)
       const key = `c-primary-light-${level}` as keyof LX.ThemeColors
       colors[key] = rgb(color)
       for (let alpha = 100; alpha <= 900; alpha += 100) colors[`${key}-alpha-${alpha}` as keyof LX.ThemeColors] = `rgba(${color.map(Math.round).join(', ')}, ${1 - alpha / 1000})`
@@ -59,8 +59,8 @@ export const adaptThemeAppearance = (theme: LX.Theme, dark: boolean): LX.Theme =
       themeColors: colors,
       extInfo: {
         ...theme.config.extInfo,
-        'c-app-background': dark ? 'rgba(0, 0, 0, 0.36)' : 'rgba(255, 255, 255, 0)',
-        'c-main-background': `rgba(${surface.map(Math.round).join(', ')}, ${dark ? '0.84' : '0.8'})`,
+        'c-app-background': dark ? 'rgba(13, 15, 17, 0.94)' : '#F4F2ED',
+        'c-main-background': `rgba(${surface.map(Math.round).join(', ')}, ${dark ? '0.92' : '0.90'})`,
       },
     },
   }

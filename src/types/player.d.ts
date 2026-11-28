@@ -40,6 +40,7 @@ declare global {
           */
         isTempPlay: boolean
         tempId?: number
+        isTop?: boolean
       }>
 
       interface PlayInfo {

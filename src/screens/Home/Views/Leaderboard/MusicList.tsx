@@ -13,15 +13,17 @@ import { handlePlay } from './listAction'
 export interface MusicListType {
   loadList: (source: LX.OnlineSource, listId: string) => void
   showLoading: () => void
-  showError: () => void
+  showError: (retry?: () => void) => void
 }
 
 export default forwardRef<MusicListType, {}>((props, ref) => {
   const listRef = useRef<OnlineListType>(null)
   const isUnmountedRef = useRef(false)
   const requestIdRef = useRef(0)
+  const retryDirectory = useRef<(() => void) | undefined>()
   useImperativeHandle(ref, () => ({
     async loadList(source, id) {
+      retryDirectory.current = undefined
       const requestId = ++requestIdRef.current
       const listDetailInfo = boardState.listDetailInfo
       listRef.current?.setList([])
@@ -50,11 +52,13 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
       }
     },
     showLoading() {
+      retryDirectory.current = undefined
       requestIdRef.current++
       listRef.current?.setList([])
       listRef.current?.setStatus('loading')
     },
-    showError() {
+    showError(retry) {
+      retryDirectory.current = retry
       requestIdRef.current++
       listRef.current?.setList([])
       listRef.current?.setStatus('error')
@@ -75,6 +79,10 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
     void handlePlay(listDetailInfo.id, listDetailInfo.list, index)
   }
   const handleRefresh: OnlineListProps['onRefresh'] = () => {
+    if (retryDirectory.current) {
+      retryDirectory.current()
+      return
+    }
     const requestId = ++requestIdRef.current
     const page = 1
     const id = boardState.listDetailInfo.id
@@ -90,6 +98,10 @@ export default forwardRef<MusicListType, {}>((props, ref) => {
     })
   }
   const handleLoadMore: OnlineListProps['onLoadMore'] = () => {
+    if (retryDirectory.current) {
+      retryDirectory.current()
+      return
+    }
     const requestId = ++requestIdRef.current
     listRef.current?.setStatus('loading')
     const { id, list, page: currentPage } = boardState.listDetailInfo

@@ -1,5 +1,5 @@
-import { memo } from 'react'
-import { View } from 'react-native'
+import { memo, useState } from 'react'
+import { Pressable, View } from 'react-native'
 
 import Progress from '@/components/player/ProgressBar'
 import Status from './Status'
@@ -8,25 +8,29 @@ import { useTheme } from '@/store/theme/hook'
 import { createStyle } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import { useBufferProgress } from '@/plugins/player'
-
-// const FONT_SIZE = 13
+import { formatPlayTime2 } from '@/utils'
 
 const PlayTimeCurrent = ({ timeStr }: { timeStr: string }) => {
   const theme = useTheme()
-  // console.log(timeStr)
-  return <Text size={11} color={theme['q-text-secondary']}>{timeStr}</Text>
+  return <Text size={11} style={styles.timeText} color={theme['q-text-secondary']}>{timeStr}</Text>
 }
 
-const PlayTimeMax = memo(({ timeStr }: { timeStr: string }) => {
+const PlayTimeMax = memo(({ timeStr, onToggle }: { timeStr: string, onToggle: () => void }) => {
   const theme = useTheme()
-  return <Text size={11} color={theme['q-text-secondary']}>{timeStr}</Text>
+  return (
+    <Pressable hitSlop={8} accessibilityRole="button" onPress={onToggle}>
+      <Text size={11} style={styles.timeText} color={theme['q-text-secondary']}>{timeStr}</Text>
+    </Pressable>
+  )
 })
 
 export default () => {
-  const { maxPlayTimeStr, nowPlayTimeStr, progress, maxPlayTime } = useProgress()
+  const { maxPlayTimeStr, nowPlayTimeStr, progress, maxPlayTime, nowPlayTime } = useProgress()
   const buffered = useBufferProgress()
-
-  // console.log('render playInfo')
+  const [showRemaining, setShowRemaining] = useState(false)
+  const rightTimeStr = showRemaining && Number.isFinite(maxPlayTime) && maxPlayTime > 0
+    ? `-${formatPlayTime2(Math.max(0, maxPlayTime - nowPlayTime))}`
+    : maxPlayTimeStr
 
   return (
     <>
@@ -36,7 +40,7 @@ export default () => {
         <View style={styles.status} >
           <Status />
         </View>
-        <PlayTimeMax timeStr={maxPlayTimeStr} />
+        <PlayTimeMax timeStr={rightTimeStr} onToggle={() => { setShowRemaining(v => !v) }} />
       </View>
     </>
   )
@@ -53,8 +57,9 @@ const styles = createStyle({
   info: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    // alignItems: 'center',
-    // backgroundColor: '#ccc',
+  },
+  timeText: {
+    fontVariant: ['tabular-nums'],
   },
   status: {
     flexGrow: 1,

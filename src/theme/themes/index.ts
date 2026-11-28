@@ -109,10 +109,11 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
 
   const colors = theme.config.themeColors
   const accent = colors['c-primary']
-  const accentText = theme.isDark ? colors['c-primary'] : colors['c-primary-dark-500']
+  const accentText = theme.isDark ? colors['c-primary'] : colors['c-primary-dark-200']
   const textPrimary = colors['c-850']
   const textSecondary = colors['c-650']
-  const outline = theme.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(40, 50, 66, 0.14)'
+  const outline = theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(28, 30, 32, 0.08)'
+  const neutralBtnBg = theme.isDark ? 'rgba(255, 255, 255, 0.065)' : 'rgba(28, 30, 32, 0.05)'
 
   return {
     id: theme.id,
@@ -128,12 +129,12 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     'c-primary-background': colors['c-primary-alpha-900'],
     'c-primary-background-hover': colors['c-primary-alpha-800'],
     'c-primary-background-active': colors['c-primary-alpha-700'],
-    'c-primary-input-background': colors['c-primary-alpha-900'],
-    'c-button-font': accentText,
+    'c-primary-input-background': theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(28, 30, 32, 0.045)',
+    'c-button-font': textPrimary,
     'c-button-font-selected': accentText,
-    'c-button-background': colors['c-primary-alpha-800'],
-    'c-button-background-selected': colors['c-primary-alpha-700'],
-    'c-button-background-hover': colors['c-primary-alpha-800'],
+    'c-button-background': neutralBtnBg,
+    'c-button-background-selected': colors['c-primary-alpha-800'],
+    'c-button-background-hover': theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(28, 30, 32, 0.08)',
     'c-button-background-active': colors['c-primary-alpha-700'],
     'c-list-header-border-bottom': outline,
     'c-content-background': colors['c-primary-light-1000'],
@@ -144,15 +145,15 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     'q-surface-raised': theme.isDark
       ? colors['c-primary-light-1000-alpha-100']
       : colors['c-primary-light-1000-alpha-200'],
-    'q-surface-tint': colors['c-primary-alpha-800'],
+    'q-surface-tint': colors['c-primary-alpha-900'],
     'q-text-primary': textPrimary,
     'q-text-secondary': textSecondary,
     'q-accent': accent,
     'q-accent-text': accentText,
     'q-on-accent': getContrastText(accent),
     'q-outline': outline,
-    'q-scrim': theme.isDark ? 'rgba(0, 0, 0, 0.64)' : 'rgba(40, 50, 66, 0.32)',
-    'q-playdetail-bg': theme.isDark ? '#161a1d' : '#fbfcf7',
+    'q-scrim': theme.isDark ? 'rgba(0, 0, 0, 0.64)' : 'rgba(28, 30, 32, 0.30)',
+    'q-playdetail-bg': theme.isDark ? '#121416' : '#f7f6f2',
     'q-playdetail-highlight': theme.isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.40)',
     'bg-image': bgImg,
   } as const

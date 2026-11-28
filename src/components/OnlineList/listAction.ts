@@ -11,6 +11,14 @@ import { toOldMusicInfo } from '@/utils'
 export const handlePlay = (musicInfo: LX.Music.MusicInfoOnline, list: LX.Music.MusicInfoOnline[] = [musicInfo]) => {
   void playFromPage('online_selection', list, list.findIndex(item => item.id == musicInfo.id && item.source == musicInfo.source))
 }
+export const handlePlayNext = (musicInfo: LX.Music.MusicInfoOnline, selectedList: LX.Music.MusicInfoOnline[], onCancelSelect: () => void) => {
+  if (selectedList.length) {
+    addTempPlayList(selectedList.map(musicInfo => ({ listId: '', musicInfo, isTop: true })))
+    onCancelSelect()
+  } else {
+    addTempPlayList([{ listId: '', musicInfo, isTop: true }])
+  }
+}
 export const handlePlayLater = (musicInfo: LX.Music.MusicInfoOnline, selectedList: LX.Music.MusicInfoOnline[], onCancelSelect: () => void) => {
   if (selectedList.length) {
     addTempPlayList(selectedList.map(s => ({ listId: '', musicInfo: s })))

@@ -100,9 +100,10 @@ export default forwardRef<ScriptImportOnlineType, {}>((props, ref) => {
     busyRef.current = true
     setBtn({ disabled: true, text: t('user_api_btn_import_online_input_loading') })
     try {
-      const script = await importer.load(urlInputRef.current?.getText() ?? '')
+      const sourceUrl = urlInputRef.current?.getText() ?? ''
+      const script = await importer.load(sourceUrl)
       if (script == null) return
-      void handleImportScript(script)
+      void handleImportScript(script, sourceUrl)
       alertRef.current?.setVisible(false)
     } catch (err: any) {
       toast(t('user_api_import_failed_tip', { message: err.message }), 'long')

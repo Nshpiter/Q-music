@@ -1,5 +1,5 @@
 import { memo, useMemo, useEffect, useRef, useCallback, useState } from 'react'
-import { View, PixelRatio, FlatList, type FlatListProps, type NativeSyntheticEvent, type NativeScrollEvent, type LayoutChangeEvent } from 'react-native'
+import { View, Pressable, PixelRatio, FlatList, type FlatListProps, type NativeSyntheticEvent, type NativeScrollEvent, type LayoutChangeEvent } from 'react-native'
 // import { useLayout } from '@/utils/hooks'
 import { type Line, useLrcPlay, useLrcSet } from '@/plugins/lyric'
 import { createStyle } from '@/utils/tools'
@@ -12,7 +12,7 @@ import playerState from '@/store/player/state'
 import { useInteractionMotion } from '@/utils/useMotion'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
 import { getLyricFontFamily } from '@/core/lyricFont'
-import LyricCopy from '../components/LyricCopy'
+import LyricCopy, { copyLyricLine } from '../components/LyricCopy'
 import { isInstrumental } from '@/utils/lyricStatus'
 import { usePlayerMusicInfo } from '@/store/player/hook'
 import { useI18n } from '@/lang'
@@ -56,7 +56,7 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
   // textBreakStrategy="simple" 用于解决某些设备上字体被截断的问题
   // https://stackoverflow.com/a/72822360
   return (
-    <View style={styles.line} onLayout={handleLayout}>
+    <Pressable onLongPress={() => { copyLyricLine(line) }} accessibilityHint={global.i18n.t('lyric_copy_line_hint')} style={styles.line} onLayout={handleLayout}>
       <AnimatedColorText style={{
         ...styles.lineText,
         textAlign,
@@ -73,7 +73,7 @@ const LrcLine = memo(({ line, lineNum, activeLine, onLayout }: LineProps) => {
           }} textBreakStrategy="simple" key={index} color={colors[1]} opacity={colors[2]} size={size * 0.8}>{lrc}</AnimatedColorText>)
         })
       }
-    </View>
+    </Pressable>
   )
 }, (prevProps, nextProps) => {
   return prevProps.line === nextProps.line &&
@@ -126,13 +126,22 @@ export default () => {
     }
   }
 
+  const endBrowse = () => {
+    if (scrollTimoutRef.current) clearTimeout(scrollTimoutRef.current)
+    scrollTimoutRef.current = null
+    isPauseScrollRef.current = false
+    retryCount.current = 0
+    playLineRef.current?.setVisible(false)
+  }
+  const returnToCurrentLine = () => {
+    endBrowse()
+    handleScrollToActive(Math.max(0, lineRef.current))
+  }
   const onScrollEndDrag = () => {
     if (!isPauseScrollRef.current) return
     if (scrollTimoutRef.current) clearTimeout(scrollTimoutRef.current)
     scrollTimoutRef.current = setTimeout(() => {
-      playLineRef.current?.setVisible(false)
-      scrollTimoutRef.current = null
-      isPauseScrollRef.current = false
+      endBrowse()
       if (!playerState.isPlay) return
       handleScrollToActive()
     }, 3000)
@@ -191,10 +200,10 @@ export default () => {
     playLineRef.current?.updateLayoutInfo(listLayoutInfoRef.current)
   }, [])
 
-  const handlePlayLine = useCallback((time: number) => {
-    playLineRef.current?.setVisible(false)
+  const handlePlayLine = (time: number) => {
+    endBrowse()
     global.app_event.setProgress(time)
-  }, [])
+  }
 
   const renderItem: FlatListType['renderItem'] = ({ item, index }) => {
     return (
@@ -209,7 +218,8 @@ export default () => {
 
   return (
     <>
-      <View style={{ alignItems: 'flex-end', paddingHorizontal: 12 }}><LyricCopy /></View>
+      <View style={{ alignItems: 'flex-end', paddingHorizontal: 12 }}><LyricCopy lines={lyricLines} onSeek={handlePlayLine} /></View>
+      <View style={{ flex: 1 }}>
       {lyricLines.length ? <FlatList
         key={fontFamily ?? 'default'}
         data={lyricLines}
@@ -222,13 +232,16 @@ export default () => {
         ListFooterComponent={spaceComponent}
         onScrollBeginDrag={handleScrollBeginDrag}
         onScrollEndDrag={onScrollEndDrag}
+        onMomentumScrollBegin={() => { if (scrollTimoutRef.current) clearTimeout(scrollTimoutRef.current) }}
+        onMomentumScrollEnd={onScrollEndDrag}
         onLayout={({ nativeEvent }) => { setHeight(nativeEvent.layout.height) }}
         fadingEdgeLength={PixelRatio.getPixelSizeForLayoutSize(height * edgeFade / 100)}
         initialNumToRender={12}
         onScrollToIndexFailed={handleScrollToIndexFailed}
         onScroll={handleScroll}
       /> : <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}><Text size={14} color={theme['q-text-secondary']}>{t(instrumental ? 'mobile_instrumental' : 'mobile_no_lyrics')}</Text></View>}
-      { lyricLines.length > 0 && isShowLyricProgressSetting ? <PlayLine ref={playLineRef} onPlayLine={handlePlayLine} /> : null }
+      {lyricLines.length > 0 ? <PlayLine ref={playLineRef} showSeek={isShowLyricProgressSetting} onReturn={returnToCurrentLine} onPlayLine={handlePlayLine} /> : null}
+      </View>
     </>
   )
 }

@@ -25,10 +25,15 @@ export default () => {
 
   useEffect(() => {
     isUnmountedRef.current = false
-    void getLeaderboardSetting().then(({ source, boardId }) => {
-      leftBarRef.current?.setBound(source, boardId)
-      musicListRef.current?.loadList(source, boardId)
-    })
+    const restore = () => {
+      musicListRef.current?.showLoading()
+      void getLeaderboardSetting().then(({ source, boardId }) => {
+        if (!isUnmountedRef.current) leftBarRef.current?.setBound(source, boardId)
+      }).catch(() => {
+        if (!isUnmountedRef.current) musicListRef.current?.showError(restore)
+      })
+    }
+    restore()
 
     return () => {
       isUnmountedRef.current = true
@@ -41,6 +46,7 @@ export default () => {
       <LeftBar
         ref={leftBarRef}
         onChangeList={handleChangeBound}
+        onLoadError={retry => musicListRef.current?.showError(retry)}
       />
       <MusicList
         ref={musicListRef}

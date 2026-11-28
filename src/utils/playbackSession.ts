@@ -8,11 +8,12 @@ export class PlaybackSession<T> {
   subscribe(listener: () => void) { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
   changed() { for (const listener of this.listeners) listener() }
   reset() { this.continuous = false; this.history = []; this.cursor = -1; this.ordered = null; this.changed() }
-  record(item: T) {
-    this.history.splice(this.cursor + 1)
-    this.history.push(item)
-    if (this.history.length > 500) this.history.shift()
-    this.cursor = this.history.length - 1
+  record(item: T, keepForward = false) {
+    this.cursor++
+    this.history.splice(this.cursor, keepForward ? 0 : this.history.length - this.cursor, item)
+    if (this.history.length > 500) {
+      if (this.cursor > 0) { this.history.shift(); this.cursor-- } else this.history.pop()
+    }
     this.changed()
   }
 

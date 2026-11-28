@@ -35,7 +35,7 @@ export default ({ embedded = false, catalog = false, onSelect }: { embedded?: bo
 
   const actionStyle = { minWidth: 44, height: 44, paddingHorizontal: 10, borderRadius: 12, overflow: 'hidden' as const, alignItems: 'center' as const, justifyContent: 'center' as const }
   const actionGroupStyle = { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 2, paddingHorizontal: 4, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, backgroundColor: theme['q-surface-raised'], borderColor: theme['q-outline'] }
-  const createBtnStyle = { width: 44, height: 44, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' as const, alignItems: 'center' as const, justifyContent: 'center' as const, backgroundColor: theme['q-surface-tint'], borderColor: theme['q-outline'] }
+  const createBtnStyle = { width: 44, height: 44, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' as const, alignItems: 'center' as const, justifyContent: 'center' as const, backgroundColor: theme['q-surface-raised'], borderColor: theme['q-outline'] }
   const header = <>
     {catalog ? <LibraryShortcuts onOpenList={onSelect} /> : null}
     <View style={{ paddingHorizontal: 16, paddingTop: embedded ? 12 : 6, paddingBottom: 8, gap: 10 }}>
@@ -50,7 +50,7 @@ export default ({ embedded = false, catalog = false, onSelect }: { embedded?: bo
             {sorting ? <Text size={12} color={theme['q-accent-text']} style={{ fontWeight: '600' }}>{t('playlist_order_done')}</Text> : <Icon name="slider" size={17} color={theme['q-text-secondary']} />}
           </Button>
         </View>
-        <Button pressScale={0.94} accessibilityLabel={t('list_create')} onPress={() => listNameEditRef.current?.showCreate(0)} style={createBtnStyle}><Icon name="add" size={20} color={theme['q-accent-text']} /></Button>
+        <Button pressScale={0.94} accessibilityLabel={t('list_create')} onPress={() => listNameEditRef.current?.showCreate(0)} style={createBtnStyle}><Icon name="add" size={20} color={theme['q-text-primary']} /></Button>
         {!embedded && !catalog ? <Button accessibilityLabel={t('close')} onPress={() => { global.app_event.changeLoveListVisible(false) }} style={actionStyle}><Icon name="close" size={20} color={theme['q-text-secondary']} /></Button> : null}
       </View>
       {!sorting ? <Button
@@ -58,8 +58,8 @@ export default ({ embedded = false, catalog = false, onSelect }: { embedded?: bo
         onPress={() => importRef.current?.show(listState.activeListId, 'bi')}
         style={{ minHeight: 48, borderRadius: 15, paddingHorizontal: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: theme['q-outline'], backgroundColor: theme['q-surface-raised'], flexDirection: 'row', alignItems: 'center', gap: 10 }}
       >
-        <View style={{ width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: theme['q-surface-tint'] }}>
-          <Icon accessible={false} name="play-outline" rawSize={17} color={theme['q-accent-text']} />
+        <View style={{ width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: theme['c-primary-input-background'] }}>
+          <Icon accessible={false} name="play-outline" rawSize={17} color={theme['q-text-primary']} />
         </View>
         <Text size={13} color={theme['q-text-primary']} style={{ flex: 1, minWidth: 0, fontWeight: '500' }} numberOfLines={1}>{t('bilibili_favorite_add')}</Text>
         <Icon accessible={false} name="chevron-right" rawSize={15} color={theme['q-text-secondary']} />
@@ -68,8 +68,8 @@ export default ({ embedded = false, catalog = false, onSelect }: { embedded?: bo
         <Button pressScale={0.97} onPress={() => {
           global.app_event.changeLoveListVisible(false)
           if (commonState.componentIds.home) pushMusicAccountScreen(commonState.componentIds.home)
-        }} style={{ flex: 1, minHeight: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: theme['q-surface-tint'] }}><Text size={12} color={theme['q-accent-text']}>{t('list_import')}</Text></Button>
-        <Button onPress={() => syncRef.current?.show()} style={{ flex: 1, minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: theme['q-surface-tint'] }}><Text size={12} color={theme['q-accent-text']}>{t('list_sync_entry')}</Text></Button>
+        }} style={{ flex: 1, minHeight: 48, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: theme['q-outline'], alignItems: 'center', justifyContent: 'center', backgroundColor: theme['q-surface-raised'] }}><Text size={12} color={theme['q-text-primary']}>{t('list_import')}</Text></Button>
+        <Button onPress={() => syncRef.current?.show()} style={{ flex: 1, minHeight: 44, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: theme['q-outline'], alignItems: 'center', justifyContent: 'center', backgroundColor: theme['q-surface-raised'] }}><Text size={12} color={theme['q-text-primary']}>{t('list_sync_entry')}</Text></Button>
       </View> : null}
     </View>
   </>

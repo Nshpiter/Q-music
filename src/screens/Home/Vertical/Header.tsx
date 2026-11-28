@@ -1,4 +1,5 @@
-import { Image, StyleSheet, View } from 'react-native'
+import { useEffect, useRef } from 'react'
+import { Animated, Easing, Image, StyleSheet, View } from 'react-native'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
 import Button from '@/components/common/Button'
@@ -8,6 +9,7 @@ import { setNavActiveId } from '@/core/common'
 import { useI18n } from '@/lang'
 import commonState from '@/store/common/state'
 import { backToSettingOverview, useSettingSection } from '@/store/setting/navigation'
+import { useMotion } from '@/utils/useMotion'
 import type { SettingScreenIds } from '../Views/Setting/Main'
 
 const HEADER_CONTENT_HEIGHT = 56
@@ -31,8 +33,33 @@ const HeaderContent = () => {
   const theme = useTheme()
   const activeId = useNavActiveId()
   const t = useI18n()
+  const motion = useMotion()
   const section = useSettingSection()
   const secondary = activeId == 'download' || activeId == 'nav_setting'
+  const titleText = t(activeId == 'nav_setting' && section != 'overview' ? `setting_${section}` : activeId == 'nav_love' ? 'mobile_library' : activeId)
+  const titleAnim = useRef(new Animated.Value(1)).current
+  const mountedRef = useRef(false)
+
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true
+      return
+    }
+    titleAnim.stopAnimation()
+    if (!motion) {
+      titleAnim.setValue(1)
+      return
+    }
+    titleAnim.setValue(0)
+    Animated.timing(titleAnim, {
+      toValue: 1,
+      duration: 200,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start()
+    return () => { titleAnim.stopAnimation() }
+  }, [motion, titleAnim, titleText])
+
   const handleBack = () => {
     if (activeId == 'nav_setting' && backToSettingOverview()) return
     setNavActiveId(activeId == 'download' ? 'nav_love' : commonState.lastNavActiveId == 'nav_setting' ? 'nav_love' : commonState.lastNavActiveId)
@@ -50,15 +77,25 @@ const HeaderContent = () => {
         {secondary
           ? <Button pressScale={0.92} accessibilityLabel={t('back')} style={styles.action} onPress={handleBack}><Icon name="chevron-left" rawSize={22} color={theme['q-text-primary']} /></Button>
           : <Image source={require('../../../resources/images/q-music.png')} style={styles.logo} />}
-        <Text
-          style={styles.title}
-          size={23}
-          color={theme['q-text-primary']}
-          numberOfLines={1}
+        <Animated.View
+          style={[
+            styles.titleContainer,
+            {
+              opacity: titleAnim.interpolate({ inputRange: [0, 1], outputRange: [0.36, 1] }),
+              transform: [{ translateY: titleAnim.interpolate({ inputRange: [0, 1], outputRange: [4, 0] }) }],
+            },
+          ]}
         >
-          {t(activeId == 'nav_setting' && section != 'overview' ? `setting_${section}` : activeId == 'nav_love' ? 'mobile_library' : activeId)}
-        </Text>
-        {activeId == 'nav_love' && <Button accessibilityLabel={t('nav_setting')} style={styles.action} onPress={() => { setNavActiveId('nav_setting') }}><Icon name="setting" rawSize={22} color={theme['q-text-primary']} /></Button>}
+          <Text
+            style={styles.title}
+            size={23}
+            color={theme['q-text-primary']}
+            numberOfLines={1}
+          >
+            {titleText}
+          </Text>
+        </Animated.View>
+        {activeId == 'nav_love' && <Button pressScale={0.92} accessibilityLabel={t('nav_setting')} style={styles.action} onPress={() => { setNavActiveId('nav_setting') }}><Icon name="setting" rawSize={22} color={theme['q-text-primary']} /></Button>}
       </View>
     </View>
   )
@@ -82,10 +119,14 @@ const styles = StyleSheet.create({
   logo: {
     width: 30,
     height: 30,
+    borderRadius: 8,
     marginRight: 10,
   },
-  title: {
+  titleContainer: {
     flex: 1,
+    minWidth: 0,
+  },
+  title: {
     fontWeight: '700',
   },
 })

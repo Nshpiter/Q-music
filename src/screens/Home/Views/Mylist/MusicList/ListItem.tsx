@@ -8,7 +8,9 @@ import Text from '@/components/common/Text'
 import SourceLogo from '@/components/SourceLogo'
 import TrackArtwork from '@/components/TrackArtwork'
 import SongDownloadButton from '@/components/SongDownloadButton'
+import { ActivePlayingWave } from '@/components/player/PlayingWave'
 import Button, { type BtnType } from '@/components/common/Button'
+import { Q_UI } from '@/theme/ui'
 
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 
@@ -49,26 +51,34 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
     <View style={[styles.row, { width: rowInfo.rowWidth, height: songRowHeight }]} onLayout={event => { setMeasuredWidth(event.nativeEvent.layout.width) }}>
       <View style={[
         styles.listItem,
-        isSelected
+        isSelected && active
           ? {
               backgroundColor: theme['q-surface-tint'],
-              borderColor: theme['q-outline'],
-              borderWidth: StyleSheet.hairlineWidth,
-              borderRadius: 10,
+              borderColor: theme['q-accent'],
+              borderWidth: 1,
+              borderRadius: Q_UI.radius.item,
             }
           : active
             ? {
                 backgroundColor: theme['q-surface-tint'],
-                borderColor: theme['c-primary-alpha-700'],
+                borderColor: theme['q-outline'],
                 borderWidth: StyleSheet.hairlineWidth,
-                borderRadius: 10,
+                borderRadius: Q_UI.radius.item,
               }
-            : {
-                backgroundColor: 'transparent',
-                borderBottomColor: theme.isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(40, 50, 66, 0.06)',
-                borderBottomWidth: StyleSheet.hairlineWidth,
-              },
+            : isSelected
+              ? {
+                  backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.075)' : 'rgba(28, 30, 32, 0.055)',
+                  borderColor: theme['q-outline'],
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderRadius: Q_UI.radius.item,
+                }
+              : {
+                  backgroundColor: 'transparent',
+                  borderBottomColor: theme.isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(40, 50, 66, 0.06)',
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                },
       ]}>
+        {active ? <View pointerEvents="none" style={[styles.playingRail, { backgroundColor: theme['q-accent'] }]} /> : null}
         <Button
           accessibilityLabel={`${item.name} · ${singer}`}
           accessibilityRole={isMultiSelectMode ? 'checkbox' : 'button'}
@@ -85,12 +95,15 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
                   </View>
                 </View>
               : active
-                ? <Icon accessible={false} style={styles.sn} name="play-outline" size={13} color={theme['q-accent-text']} />
+                ? <ActivePlayingWave style={styles.sn} size={14} color={theme['q-accent-text']} />
                 : <Text style={styles.sn} size={13} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} color={theme['q-text-secondary']}>{index + 1}</Text>
           }
-          <TrackArtwork item={item} style={{ width: isCar ? 48 : 36, height: isCar ? 48 : 36, borderRadius: 7, marginRight: 10, flexShrink: 0 }} />
+          <TrackArtwork item={item} style={{ width: isCar ? 48 : 40, height: isCar ? 48 : 40, borderRadius: 9, marginRight: 10, flexShrink: 0 }} />
           <View style={styles.itemInfo}>
-            <Text size={isCar ? 18 : 14} style={active ? styles.playingTitle : undefined} color={active ? theme['q-accent-text'] : theme['q-text-primary']} numberOfLines={1}>{item.name}</Text>
+            <View style={styles.titleLine}>
+              <Text size={isCar ? 18 : 14} style={[styles.titleText, active ? styles.playingTitle : undefined]} color={active ? theme['q-accent-text'] : theme['q-text-primary']} numberOfLines={1}>{item.name}</Text>
+              {isMultiSelectMode && active ? <ActivePlayingWave size={12} color={theme['q-accent-text']} style={styles.inlineWave} /> : null}
+            </View>
             <View style={styles.listItemSingle}>
               {item.source != 'local' ? <SourceLogo source={item.source} size={18} style={styles.sourceLogo} /> : null}
               <Text style={styles.listItemSingleText} size={isCar ? 13 : 11} color={theme['q-text-secondary']} numberOfLines={1}>
@@ -105,8 +118,8 @@ export default memo(({ item, index, activeIndex, onPress, onShowMenu, onLongPres
           }
         </Button>
         {!isMultiSelectMode && measuredWidth >= 480 ? <SongDownloadButton music={item} /> : null}
-        <Button accessibilityLabel={`${item.name} · ${global.i18n.t('more_actions')}`} onPress={handleShowMenu} ref={moreButtonRef} style={[styles.moreButton, isCar && { width: 56, height: 64 }]}>
-          <Icon accessible={false} name="dots-vertical" style={{ color: theme['q-text-secondary'] }} size={14} />
+        <Button accessibilityLabel={`${item.name} · ${global.i18n.t('more_actions')}`} onPress={handleShowMenu} ref={moreButtonRef} style={[styles.moreButton, isCar && { width: 48, height: 48 }]}>
+          <Icon accessible={false} name="dots-vertical" style={{ color: theme['q-text-secondary'] }} size={18} />
         </Button>
       </View>
     </View>
@@ -135,7 +148,16 @@ const styles = createStyle({
     flexWrap: 'nowrap',
     alignItems: 'center',
     overflow: 'hidden',
-    borderRadius: 10,
+    borderRadius: Q_UI.radius.item,
+  },
+  playingRail: {
+    position: 'absolute',
+    left: 0,
+    top: 8,
+    bottom: 8,
+    width: 3,
+    borderTopRightRadius: 3,
+    borderBottomRightRadius: 3,
   },
   listItemLeft: {
     flex: 1,
@@ -145,6 +167,20 @@ const styles = createStyle({
     flexDirection: 'row',
     alignItems: 'center',
     height: '100%',
+    paddingLeft: 4,
+    paddingRight: 4,
+    borderRadius: Q_UI.radius.item,
+  },
+  titleLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  titleText: {
+    flexShrink: 1,
+  },
+  inlineWave: {
+    flexShrink: 0,
   },
   sn: {
     width: 24,
@@ -209,9 +245,11 @@ const styles = createStyle({
   },
 
   moreButton: {
-    width: 48,
+    width: 40,
+    height: 40,
+    marginRight: 2,
+    borderRadius: 12,
     flexShrink: 0,
-    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },

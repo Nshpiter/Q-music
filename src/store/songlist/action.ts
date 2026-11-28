@@ -54,7 +54,7 @@ export default {
     state.listDetailInfo.limit = result.limit
     state.listDetailInfo.page = page
     state.listDetailInfo.info = { ...result.info }
-    state.listDetailInfo.maxPage = Math.ceil(state.listDetailInfo.total / result.limit)
+    state.listDetailInfo.maxPage = result.maxPage ?? Math.ceil(state.listDetailInfo.total / result.limit)
 
     return state.listDetailInfo
   },

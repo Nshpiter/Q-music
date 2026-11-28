@@ -104,6 +104,7 @@ test('酷狗不完整结果即使已被浏览缓存，也不能用于全量覆�
   const utils = { deduplicationList: rows => rows, toNewMusicInfo: row => row }
   const core = mobile ? load('src/core/songlist.ts', {
     '@/store/songlist/state': { default: {} }, '@/store/songlist/action': {}, '@/utils': utils, '@/utils/musicSdk': music,
+    './musicDetailPages': load('src/core/musicDetailPages.ts', { '@/utils': utils }),
     './browseRequest': { withBrowseTimeout: async value => value },
   }) : load('src/renderer/store/songList/action.ts', {
     '@renderer/utils': utils, '@renderer/utils/musicSdk': music, '@common/utils/vueTools': { markRaw: value => value, markRawList: value => value },

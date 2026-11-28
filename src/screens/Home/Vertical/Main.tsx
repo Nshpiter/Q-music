@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { Animated, StyleSheet, View } from 'react-native'
 import Search from '../Views/Search'
 import SongList from '../Views/SongList'
 import Mylist from '../Views/Mylist'
@@ -15,6 +15,8 @@ import Header from './Header'
 import { useNavActiveId } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
+import { useMotion } from '@/utils/useMotion'
+import { Q_UI } from '@/theme/ui'
 
 const hideKeys = [
   'list.isShowAlbumName',
@@ -340,12 +342,42 @@ const Main = () => {
   ), [onPageScrollStateChanged, onPageSelected, canSwipePages])
 
   const secondary = activeId == 'download' || activeId == 'nav_setting'
+  const motion = useMotion()
+  const secondaryAnim = useRef(new Animated.Value(secondary ? 1 : 0)).current
+  useEffect(() => {
+    if (!secondary) {
+      secondaryAnim.stopAnimation()
+      secondaryAnim.setValue(0)
+      return
+    }
+    secondaryAnim.stopAnimation()
+    if (!motion) {
+      secondaryAnim.setValue(1)
+      return
+    }
+    secondaryAnim.setValue(0)
+    Animated.spring(secondaryAnim, {
+      toValue: 1,
+      ...Q_UI.motion.settle,
+      overshootClamping: true,
+      useNativeDriver: true,
+    }).start()
+    return () => { secondaryAnim.stopAnimation() }
+  }, [activeId, motion, secondary, secondaryAnim])
+
   return <View style={styles.pageStyle}>
     <View collapsable={false} style={styles.pageStyle} pointerEvents={secondary ? 'none' : 'auto'} accessibilityElementsHidden={secondary} importantForAccessibility={secondary ? 'no-hide-descendants' : 'auto'}>{component}</View>
-    {secondary ? <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: theme['c-content-background'] }}>
+    {secondary ? <Animated.View style={[
+      StyleSheet.absoluteFillObject,
+      {
+        backgroundColor: theme['c-content-background'],
+        opacity: secondaryAnim.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] }),
+        transform: [{ translateY: secondaryAnim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }],
+      },
+    ]}>
       {activeId == 'download' || wide ? <Header /> : null}
       {activeId == 'download' ? <DownloadPage /> : <SettingPage />}
-    </View> : null}
+    </Animated.View> : null}
   </View>
 }
 

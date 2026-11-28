@@ -18,6 +18,14 @@ import { deleteLocalMusicFiles } from '@/utils/removeLocalMusic'
 export const handlePlay = (listId: SelectInfo['listId'], index: SelectInfo['index']) => {
   void playFromList(listId, index)
 }
+export const handlePlayNext = (listId: SelectInfo['listId'], musicInfo: SelectInfo['musicInfo'], selectedList: SelectInfo['selectedList'], onCancelSelect: () => void) => {
+  if (selectedList.length) {
+    addTempPlayList(selectedList.map(musicInfo => ({ listId, musicInfo, isTop: true })))
+    onCancelSelect()
+  } else {
+    addTempPlayList([{ listId, musicInfo, isTop: true }])
+  }
+}
 export const handlePlayLater = (listId: SelectInfo['listId'], musicInfo: SelectInfo['musicInfo'], selectedList: SelectInfo['selectedList'], onCancelSelect: () => void) => {
   if (selectedList.length) {
     addTempPlayList(selectedList.map(s => ({ listId, musicInfo: s })))

@@ -3,3 +3,12 @@ export const lyricCopyText = (lines: ReadonlyArray<{ text: string, extendedLyric
   .map(line => [line.text, ...line.extendedLyrics].map(text => text.trim()).filter(Boolean).join('\n'))
   .filter(Boolean)
   .join('\n\n')
+
+export const findLyricLines = <T extends { text: string, extendedLyrics: readonly string[] }>(lines: readonly T[], query: string): T[] => {
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  if (!words.length) return []
+  return lines.filter(line => {
+    const content = [line.text, ...line.extendedLyrics].join(' ').toLowerCase()
+    return words.every(word => content.includes(word))
+  })
+}

@@ -1,5 +1,5 @@
 export interface HistoryTrack { id: string, source: string, name: string, singer: string, meta: object }
-export interface HistoryEntry<T> { track: T, playedAt: number }
+export interface HistoryEntry<T> { track: T, playedAt: number, playCount: number }
 export interface HistorySnapshot<T> { entries: Array<HistoryEntry<T>>, limit: number }
 
 // 与用于“上一首”的会话栈分开存储；默认不自动删除，只有用户设置上限时裁剪。
@@ -27,7 +27,10 @@ export class PlayHistory<T extends HistoryTrack> {
         if (seen.has(key)) return false
         seen.add(key)
         return true
-      })
+      }).map(entry => ({
+        ...entry,
+        playCount: Number.isSafeInteger(entry.playCount) && entry.playCount > 0 ? entry.playCount : 1,
+      }))
       this.state = { entries: limit ? entries.slice(0, limit) : entries, limit }
       this.changed()
     }).catch(error => { this.ready = undefined; throw error })
@@ -49,7 +52,10 @@ export class PlayHistory<T extends HistoryTrack> {
     // 拷贝元数据，避免后续封面/取址更新修改已经落盘的记录。
     const snapshot = JSON.parse(JSON.stringify(track)) as T
     return this.mutate(state => {
-      const entries = [{ track: snapshot, playedAt }, ...state.entries.filter(item => item.track.source != track.source || item.track.id != track.id)]
+      const entries = [...state.entries]
+      const index = entries.findIndex(item => item.track.source == snapshot.source && item.track.id == snapshot.id)
+      const previous = index < 0 ? 0 : entries.splice(index, 1)[0].playCount
+      entries.unshift({ track: snapshot, playedAt, playCount: Math.min(previous + 1, Number.MAX_SAFE_INTEGER) })
       return { ...state, entries: state.limit ? entries.slice(0, state.limit) : entries }
     })
   }

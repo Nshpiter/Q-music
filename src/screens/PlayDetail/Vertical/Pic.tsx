@@ -14,6 +14,7 @@ import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
 import { useTrackChangeAnimation } from '@/components/player/useTrackChangeAnimation'
 import { useCoverPlayScale } from '@/components/player/useCoverPlayScale'
+import { qFloatingShadow } from '@/theme/ui'
 import { SongMetadata } from '../components/SongActions'
 
 export default ({ componentId, wide = false }: { componentId: string, wide?: boolean }) => {
@@ -52,8 +53,10 @@ export default ({ componentId, wide = false }: { componentId: string, wide?: boo
 
   return (
     <View style={styles.container} onLayout={onLayout}>
-      <Animated.View style={[styles.content, { opacity: coverAnimation.opacity, transform: [{ scale: coverScale }] }]}>
-        <Image url={pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={style} />
+      <Animated.View style={[styles.shadowWrap, qFloatingShadow, { opacity: coverAnimation.opacity, transform: [{ scale: coverScale }] }]}>
+        <View style={[styles.content, { borderColor: theme['q-outline'] }]}>
+          <Image url={pic} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_pic} style={style} />
+        </View>
       </Animated.View>
       <Animated.View style={[styles.trackInfo, wide && { width: '84%', marginTop: 12 }, infoAnimation]}>
         <Text size={20} style={styles.title} color={theme['q-text-primary']} numberOfLines={1}>{musicInfo.name}</Text>
@@ -74,10 +77,13 @@ const styles = createStyle({
     alignItems: 'center',
     // backgroundColor: 'rgba(0,0,0,0.1)',
   },
+  shadowWrap: {
+    borderRadius: 18,
+  },
   content: {
-    // elevation: 3,
     backgroundColor: 'rgba(0,0,0,0)',
     borderRadius: 18,
+    borderWidth: 0.5,
     overflow: 'hidden',
   },
   trackInfo: {

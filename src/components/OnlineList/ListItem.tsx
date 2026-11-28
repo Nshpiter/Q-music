@@ -13,6 +13,7 @@ import SourceLogo from '@/components/SourceLogo'
 import TrackArtwork from '@/components/TrackArtwork'
 import SongDownloadButton from '@/components/SongDownloadButton'
 import BilibiliPartsButton from '@/components/BilibiliPartsButton'
+import { ActivePlayingWave } from '@/components/player/PlayingWave'
 
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 
@@ -72,24 +73,34 @@ export default memo(({ item, index, showSource, isMultiSelectMode, rowHeight, on
     <View style={[styles.row, { width: rowInfo.rowWidth, height: rowHeight }]} onLayout={event => { setMeasuredWidth(event.nativeEvent.layout.width) }}>
       <View style={[
         styles.listItem,
-        isPlaying
+        isSelected && isPlaying
           ? {
               backgroundColor: theme['q-surface-tint'],
-              borderColor: theme['c-primary-alpha-700'],
-              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: theme['q-accent'],
+              borderWidth: 1,
               borderRadius: Q_UI.radius.item,
             }
-          : isSelected
+          : isPlaying
             ? {
-                backgroundColor: theme['c-primary-light-300-alpha-800'],
+                backgroundColor: theme['q-surface-tint'],
+                borderColor: theme['q-outline'],
+                borderWidth: StyleSheet.hairlineWidth,
                 borderRadius: Q_UI.radius.item,
               }
-            : {
-                backgroundColor: 'transparent',
-                borderBottomColor: theme.isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(40, 50, 66, 0.06)',
-                borderBottomWidth: StyleSheet.hairlineWidth,
-              },
+            : isSelected
+              ? {
+                  backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.075)' : 'rgba(28, 30, 32, 0.055)',
+                  borderColor: theme['q-outline'],
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderRadius: Q_UI.radius.item,
+                }
+              : {
+                  backgroundColor: 'transparent',
+                  borderBottomColor: theme.isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(40, 50, 66, 0.06)',
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                },
       ]}>
+        {isPlaying ? <View pointerEvents="none" style={[styles.playingRail, { backgroundColor: theme['q-accent'] }]} /> : null}
         <Button
           accessibilityLabel={`${item.name} · ${singer}`}
           accessibilityRole={isMultiSelectMode ? 'checkbox' : 'button'}
@@ -106,12 +117,15 @@ export default memo(({ item, index, showSource, isMultiSelectMode, rowHeight, on
                   </View>
                 </View>
               : isPlaying
-                ? <Icon accessible={false} style={styles.sn} name="play-outline" size={13} color={theme['q-accent-text']} />
+                ? <ActivePlayingWave style={styles.sn} size={14} color={theme['q-accent-text']} />
                 : <Text style={styles.sn} size={12} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} color={theme['q-text-secondary']}>{index + 1}</Text>
           }
-          <TrackArtwork item={item} style={{ width: isCar ? 48 : 36, height: isCar ? 48 : 36, borderRadius: 7, marginRight: 10, flexShrink: 0 }} />
+          <TrackArtwork item={item} style={{ width: isCar ? 48 : 40, height: isCar ? 48 : 40, borderRadius: 9, marginRight: 10, flexShrink: 0 }} />
           <View style={styles.itemInfo}>
-            <Text size={isCar ? 18 : 14} style={isPlaying ? styles.playingTitle : undefined} color={isPlaying ? theme['q-accent-text'] : theme['c-font']} numberOfLines={item.source == 'bi' ? 2 : 1}>{item.name}</Text>
+            <View style={styles.titleLine}>
+              <Text size={isCar ? 18 : 14} style={[styles.titleText, isPlaying ? styles.playingTitle : undefined]} color={isPlaying ? theme['q-accent-text'] : theme['c-font']} numberOfLines={item.source == 'bi' ? 2 : 1}>{item.name}</Text>
+              {isMultiSelectMode && isPlaying ? <ActivePlayingWave size={12} color={theme['q-accent-text']} style={styles.inlineWave} /> : null}
+            </View>
             <View style={styles.listItemSingle}>
               { tagInfo.type ? <Badge type={tagInfo.type}>{tagInfo.text}</Badge> : null }
               { showSource ? <SourceLogo source={item.source} size={18} style={styles.sourceLogo} /> : null }
@@ -126,8 +140,8 @@ export default memo(({ item, index, showSource, isMultiSelectMode, rowHeight, on
         </Button>
         {!isMultiSelectMode && item.source == 'bi' ? <BilibiliPartsButton music={item} /> : null}
         {!isMultiSelectMode && measuredWidth >= 480 ? <SongDownloadButton music={item} /> : null}
-        <Button accessibilityLabel={`${item.name} · ${global.i18n.t('more_actions')}`} onPress={handleShowMenu} ref={moreButtonRef} style={[styles.moreButton, isCar && { width: 56, height: 64 }]}>
-          <Icon accessible={false} name="dots-vertical" style={{ color: theme['q-text-secondary'] }} size={14} />
+        <Button accessibilityLabel={`${item.name} · ${global.i18n.t('more_actions')}`} onPress={handleShowMenu} ref={moreButtonRef} style={[styles.moreButton, isCar && { width: 48, height: 48 }]}>
+          <Icon accessible={false} name="dots-vertical" style={{ color: theme['q-text-secondary'] }} size={18} />
         </Button>
       </View>
     </View>
@@ -157,6 +171,15 @@ const styles = createStyle({
     overflow: 'hidden',
     borderRadius: Q_UI.radius.item,
   },
+  playingRail: {
+    position: 'absolute',
+    left: 0,
+    top: 8,
+    bottom: 8,
+    width: 3,
+    borderTopRightRadius: 3,
+    borderBottomRightRadius: 3,
+  },
   listItemLeft: {
     flex: 1,
     flexGrow: 1,
@@ -164,7 +187,20 @@ const styles = createStyle({
     flexDirection: 'row',
     alignItems: 'center',
     height: '100%',
-    paddingLeft: 2,
+    paddingLeft: 4,
+    paddingRight: 4,
+    borderRadius: Q_UI.radius.item,
+  },
+  titleLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  titleText: {
+    flexShrink: 1,
+  },
+  inlineWave: {
+    flexShrink: 0,
   },
   sn: {
     width: 26,
@@ -224,9 +260,11 @@ const styles = createStyle({
     justifyContent: 'center',
   },
   moreButton: {
-    width: 48,
+    width: 40,
+    height: 40,
+    marginRight: 2,
+    borderRadius: 12,
     flexShrink: 0,
-    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },

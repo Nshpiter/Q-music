@@ -1,6 +1,6 @@
 import { isInstrumental } from '@/utils/lyricStatus'
 import { memo, useMemo, useEffect, useRef, useCallback, useState } from 'react'
-import { Animated, View, PixelRatio, FlatList, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
+import { Animated, View, Pressable, PixelRatio, FlatList, type FlatListProps, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native'
 import { type Line, useLrcPlay, useLrcSet } from '@/plugins/lyric'
 import { createStyle } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
@@ -18,7 +18,7 @@ import Button from '@/components/common/Button'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
 import useAdaptiveLayout from '@/utils/hooks/useAdaptiveLayout'
 import { getLyricFontFamily } from '@/core/lyricFont'
-import LyricCopy from '../components/LyricCopy'
+import LyricCopy, { copyLyricLine } from '../components/LyricCopy'
 import { SongMetadata } from '../components/SongActions'
 
 type FlatListType = FlatListProps<Line>
@@ -50,12 +50,12 @@ const LrcLine = memo(({ line, lineNum, distance, motion, immersive, onLayout }: 
     animation.start()
     return () => { animation.stop() }
   }, [distance, emphasis, motion, opacity, scale])
-  return <View style={[styles.line, immersive && { paddingVertical: 18 }]} onLayout={({ nativeEvent }) => { onLayout(lineNum, nativeEvent.layout.height) }}>
+  return <Pressable onLongPress={() => { copyLyricLine(line) }} accessibilityHint={global.i18n.t('lyric_copy_line_hint')} style={[styles.line, immersive && { paddingVertical: 18 }]} onLayout={({ nativeEvent }) => { onLayout(lineNum, nativeEvent.layout.height) }}>
     <Animated.View style={{ opacity: emphasis, transform: [{ scale }] }}>
       <Text style={[styles.lineText, { textAlign, fontFamily, lineHeight: setSpText(size) * (immersive ? 1.24 : 1.4) }, immersive && { fontWeight: '800', letterSpacing: -0.7 }]} textBreakStrategy="simple" color={theme['q-text-primary']} size={size}>{line.text}</Text>
       {line.extendedLyrics.map((text, index) => <Text key={index} style={{ textAlign, fontFamily, marginTop: 7, lineHeight: setSpText(size * (immersive ? 0.6 : 0.72)) * 1.45 }} color={immersive ? theme['q-text-secondary'] : theme['q-text-primary']} size={size * (immersive ? 0.6 : 0.72)}>{text}</Text>)}
     </Animated.View>
-  </View>
+  </Pressable>
 })
 
 export default ({ active = true, wide = false, immersive = false }: { active?: boolean, wide?: boolean, immersive?: boolean }) => {
@@ -170,15 +170,17 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
     paused.current = true
     playLineRef.current?.setVisible(true)
   }
+  const returnToCurrentLine = () => {
+    clearTimers()
+    paused.current = false
+    playLineRef.current?.setVisible(false)
+    retryCount.current = 0
+    scrollToLine(Math.max(0, currentLine.current))
+  }
   const resumeFollow = () => {
     if (!paused.current) return
     if (followTimer.current) clearTimeout(followTimer.current)
-    followTimer.current = setTimeout(() => {
-      paused.current = false
-      playLineRef.current?.setVisible(false)
-      retryCount.current = 0
-      scrollToLine()
-    }, 3000)
+    followTimer.current = setTimeout(returnToCurrentLine, 3000)
   }
   const handleScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (paused.current) playLineRef.current?.updateScrollInfo(nativeEvent)
@@ -215,7 +217,7 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
         <Icon accessible={false} name="translation" rawSize={18} color={showTranslation ? theme['q-accent-text'] : theme['q-text-secondary']} />
         <Text size={11} color={showTranslation ? theme['q-accent-text'] : theme['q-text-secondary']}>{t('play_detail_bilingual')}</Text>
       </Button> : null}
-      <LyricCopy />
+      <LyricCopy lines={lyricLines} onSeek={handlePlayLine} />
     </View>
     <View style={styles.page} onLayout={onLayout}>
       {lyricLines.length ? <FlatList
@@ -242,7 +244,7 @@ export default ({ active = true, wide = false, immersive = false }: { active?: b
         <Icon name="lyric-on" rawSize={28} color={theme['q-text-secondary']} />
         <Text size={14} color={theme['q-text-secondary']} style={styles.emptyText}>{t(instrumental ? 'mobile_instrumental' : 'mobile_no_lyrics')}</Text>
       </View>}
-      {showProgress && lyricLines.length > 0 ? <PlayLine ref={playLineRef} onPlayLine={handlePlayLine} /> : null}
+      {lyricLines.length > 0 ? <PlayLine ref={playLineRef} showSeek={showProgress} onReturn={returnToCurrentLine} onPlayLine={handlePlayLine} /> : null}
     </View>
   </View>
 }

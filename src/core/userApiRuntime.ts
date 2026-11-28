@@ -50,6 +50,8 @@ export const pruneUserApiRuntimes = () => {
   resetUserApiRuntimes([...runtimes.keys()].filter(id => !isAllowed(id) || !state.list.some(api => api.id === id)))
 }
 
+export const hasUserApiRuntime = (id: string) => runtimes.has(id)
+
 export const loadUserApiRuntime = async(id: string, primary = false): Promise<LX.UserApi.UserApiInfo> => {
   if (!primary && !isAllowed(id)) return Promise.reject(new Error('source not enabled'))
   const existing = runtimes.get(id)

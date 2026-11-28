@@ -45,11 +45,9 @@ export default () => {
     const requestId = ++boardsRequestIdRef.current
     void getBoardsList(source).then(list => {
       if (isUnmountedRef.current || requestId != boardsRequestIdRef.current || boundInfo.current.source != source || boundInfo.current.id != id) return
-      requestAnimationFrame(() => {
-        const bound = list.find(l => l.id == id)
-        boundInfo.current.name = bound?.name ?? 'Unknown'
-        headerBarRef.current?.setBound(source, id, boundInfo.current.name)
-      })
+      const bound = list.find(l => l.id == id)
+      boundInfo.current.name = bound?.name ?? id
+      headerBarRef.current?.setBound(source, id, boundInfo.current.name)
     }).catch((error) => {
       if (isUnmountedRef.current || requestId != boardsRequestIdRef.current || boundInfo.current.source != source || boundInfo.current.id != id) return
       console.warn('[leaderboard] board name load failed', source, id, error)
@@ -62,13 +60,12 @@ export default () => {
     })
   }
   const onPlay: BoardsListProps['onPlay'] = (id) => {
-    boundInfo.current.id = id
     const currentList = boardState.listDetailInfo.id == id ? boardState.listDetailInfo.list : undefined
     void handlePlay(id, currentList)
   }
   const onCollect: BoardsListProps['onCollect'] = (id, name) => {
-    boundInfo.current.id = id
-    void handleCollect(id, name, boundInfo.current.source)
+    const [source] = id.split('__') as [LX.OnlineSource, string]
+    void handleCollect(id, name, source).catch(() => { toast(global.i18n.t('load_failed')) })
   }
   const onShowBound = () => {
     requestAnimationFrame(() => {
@@ -76,9 +73,13 @@ export default () => {
     })
   }
   const onSourceChange: HeaderBarProps['onSourceChange'] = (source) => {
-    if (source == boundInfo.current.source) return
     const previous = { ...boundInfo.current }
     const requestId = ++boardsRequestIdRef.current
+    if (source == previous.source && previous.id) {
+      headerBarRef.current?.setBound(source, previous.id, previous.name)
+      musicListRef.current?.loadList(source, previous.id)
+      return
+    }
     musicListRef.current?.showLoading()
     void getBoardsList(source).then(list => {
       if (isUnmountedRef.current || requestId != boardsRequestIdRef.current) return
@@ -86,13 +87,9 @@ export default () => {
       if (!firstBoard) throw new Error('empty leaderboard list')
       const { id, name } = firstBoard
       boundInfo.current = { source, id, name: name ?? 'Unknown' }
-      requestAnimationFrame(() => {
-        boardsListRef.current?.setList(list, id)
-        headerBarRef.current?.setBound(source, id, boundInfo.current.name)
-        requestAnimationFrame(() => {
-          handleBoundChange(source, id)
-        })
-      })
+      boardsListRef.current?.setList(list, id)
+      headerBarRef.current?.setBound(source, id, boundInfo.current.name)
+      handleBoundChange(source, id)
     }).catch((error) => {
       if (isUnmountedRef.current || requestId != boardsRequestIdRef.current) return
       console.warn('[leaderboard] source switch failed', source, error)
@@ -101,7 +98,7 @@ export default () => {
         headerBarRef.current?.setBound(previous.source, previous.id, previous.name)
         musicListRef.current?.loadList(previous.source, previous.id)
       } else {
-        musicListRef.current?.showError()
+        musicListRef.current?.showError(() => { onSourceChange(source) })
       }
       toast(global.i18n.t('load_failed'))
     })
@@ -129,10 +126,12 @@ export default () => {
 
 
     isUnmountedRef.current = false
-    musicListRef.current?.showLoading()
-    void getLeaderboardSetting().then(({ source, boardId }) => {
+    const restore = () => {
       const requestId = ++boardsRequestIdRef.current
-      void getBoardsList(source).then(list => {
+      musicListRef.current?.showLoading()
+      void getLeaderboardSetting().then(async({ source, boardId }) => {
+        if (isUnmountedRef.current || requestId != boardsRequestIdRef.current) return
+        const list = await getBoardsList(source)
         if (isUnmountedRef.current || requestId != boardsRequestIdRef.current) return
         const bound = list.find(l => l.id == boardId) ?? list[0]
         if (!bound) throw new Error('empty leaderboard list')
@@ -143,13 +142,10 @@ export default () => {
       }).catch((error) => {
         if (isUnmountedRef.current || requestId != boardsRequestIdRef.current) return
         console.warn('[leaderboard] initial load failed', error)
-        musicListRef.current?.showError()
+        musicListRef.current?.showError(restore)
       })
-    }).catch((error) => {
-      if (isUnmountedRef.current) return
-      console.warn('[leaderboard] setting load failed', error)
-      musicListRef.current?.showError()
-    })
+    }
+    restore()
 
     return () => {
       global.state_event.off('navActiveIdUpdated', handleFixDrawer)

@@ -20,9 +20,8 @@ export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 const Title = () => {
   const theme = useTheme()
 
-
   return (
-    <View style={styles.titleContent}>
+    <View pointerEvents="none" style={styles.titleContent}>
       <Text numberOfLines={1} style={styles.title} size={12} color={theme['q-text-secondary']}>{global.i18n.t('mobile_now_playing')}</Text>
     </View>
   )
@@ -44,9 +43,10 @@ export default memo(() => {
       <StatusBar />
       <View style={styles.container}>
         <Btn icon="chevron-down" accessibilityLabel={global.i18n.t('back')} onPress={back} />
-        <Title />
+        <View style={styles.spacer} />
         <TimeoutExitBtn />
         <Btn icon="slider" accessibilityLabel={global.i18n.t('play_detail_setting_title')} onPress={showSetting} />
+        <Title />
       </View>
       <SettingPopup ref={popupRef} direction="vertical" />
     </View>
@@ -56,20 +56,26 @@ export default memo(() => {
 
 const styles = StyleSheet.create({
   container: {
+    position: 'relative',
     flexDirection: 'row',
-    // justifyContent: 'center',
+    alignItems: 'center',
     height: '100%',
   },
-  titleContent: {
+  spacer: {
     flex: 1,
-    paddingLeft: HEADER_HEIGHT + 5,
-    paddingRight: 5,
+  },
+  titleContent: {
+    position: 'absolute',
+    left: 64,
+    right: 64,
+    top: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    // flex: 1,
     textAlign: 'center',
+    fontWeight: '600',
     letterSpacing: 1,
   },
   icon: {

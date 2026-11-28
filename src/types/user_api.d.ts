@@ -19,6 +19,8 @@ declare namespace LX {
       description: string
       // script: string
       allowShowUpdateAlert: boolean
+      sourceUrl?: string
+      autoUpdate?: boolean
       author: string
       homepage: string
       version: string

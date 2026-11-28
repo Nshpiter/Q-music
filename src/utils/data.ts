@@ -1,6 +1,7 @@
 import { getData, saveData, getAllKeys, removeDataMultiple, saveDataMultiple, removeData, getDataMultiple } from '@/plugins/storage'
 import { DEFAULT_SETTING, LIST_IDS, storageDataPrefix, type NAV_ID_Type } from '@/config/constant'
 import { throttle } from './common'
+import { normalizeUserApiUrl } from './userApiImport'
 // import { gzip, ungzip } from '@/utils/nativeModules/gzip'
 // import { readFile, writeFile, temporaryDirectoryPath, unlink } from '@/utils/fs'
 // import { isNotificationsEnabled, openNotificationPermissionActivity, shareText } from '@/utils/nativeModules/utils'
@@ -558,7 +559,7 @@ const matchInfo = (scriptInfo: string) => {
 
   return infos as Record<keyof typeof INFO_NAMES, string>
 }
-export const addUserApi = async(script: string): Promise<LX.UserApi.UserApiInfo> => {
+export const addUserApi = async(script: string, sourceUrl?: string): Promise<LX.UserApi.UserApiInfo> => {
   const result = /^\/\*[\S|\s]+?\*\//.exec(script)
   if (!result) throw new Error(global.i18n.t('user_api_add_failed_tip'))
 
@@ -569,6 +570,7 @@ export const addUserApi = async(script: string): Promise<LX.UserApi.UserApiInfo>
     id: `user_api_${Math.random().toString().substring(2, 5)}_${Date.now()}`,
     ...scriptInfo,
     allowShowUpdateAlert: true,
+    ...(sourceUrl?.trim() ? { sourceUrl: normalizeUserApiUrl(sourceUrl) } : {}),
   }
   userApis.push(apiInfo)
   await saveDataMultiple([
@@ -576,6 +578,36 @@ export const addUserApi = async(script: string): Promise<LX.UserApi.UserApiInfo>
     [`${userApiPrefix}${apiInfo.id}`, script],
   ])
   return apiInfo
+}
+export const replaceUserApiScript = async(id: string, script: string): Promise<{ changed: boolean, apiInfo: LX.UserApi.UserApiInfo, apiList: LX.UserApi.UserApiInfo[] }> => {
+  const targetApi = userApis?.find(api => api.id == id)
+  if (!targetApi) throw new Error('API not found')
+  const result = /^\/\*[\S|\s]+?\*\//.exec(script)
+  if (!result) throw new Error(global.i18n.t('user_api_add_failed_tip'))
+
+  const currentScript = await getUserApiScript(id)
+  if (currentScript === script) return { changed: false, apiInfo: { ...targetApi }, apiList: [...userApis] }
+
+  const scriptInfo = matchInfo(result[0])
+  scriptInfo.name ||= targetApi.name
+  Object.assign(targetApi, scriptInfo)
+  await saveDataMultiple([
+    [userApiPrefix, userApis],
+    [`${userApiPrefix}${id}`, script],
+  ])
+  return { changed: true, apiInfo: { ...targetApi }, apiList: [...userApis] }
+}
+export const updateUserApiMeta = async(id: string, patch: { sourceUrl?: string, autoUpdate?: boolean }): Promise<LX.UserApi.UserApiInfo[]> => {
+  const targetApi = userApis?.find(api => api.id == id)
+  if (!targetApi) return [...(userApis ?? [])]
+  if (patch.sourceUrl !== undefined) {
+    const trimmed = patch.sourceUrl.trim()
+    if (!trimmed) delete targetApi.sourceUrl
+    else targetApi.sourceUrl = normalizeUserApiUrl(trimmed)
+  }
+  if (patch.autoUpdate !== undefined) targetApi.autoUpdate = patch.autoUpdate
+  await saveData(userApiPrefix, userApis)
+  return [...userApis]
 }
 export const removeUserApi = async(ids: string[]) => {
   if (!userApis) return []
